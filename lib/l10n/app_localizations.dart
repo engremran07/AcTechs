@@ -1791,6 +1791,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other Groceries'**
   String get catOtherGroceries;
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger Zone'**
+  String get dangerZone;
+
+  /// No description provided for @flushDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush Database'**
+  String get flushDatabase;
+
+  /// No description provided for @flushDatabaseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all data to a clean state'**
+  String get flushDatabaseSubtitle;
+
+  /// No description provided for @flushStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1 of 2 — Confirm Intent'**
+  String get flushStep1Title;
+
+  /// No description provided for @flushStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2 of 2 — Final Confirmation'**
+  String get flushStep2Title;
+
+  /// No description provided for @flushWarningIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to permanently delete the following data:'**
+  String get flushWarningIntro;
+
+  /// No description provided for @flushItemJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'All job records'**
+  String get flushItemJobs;
+
+  /// No description provided for @flushItemExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'All expense & earning records'**
+  String get flushItemExpenses;
+
+  /// No description provided for @flushItemCompanies.
+  ///
+  /// In en, this message translates to:
+  /// **'All company records'**
+  String get flushItemCompanies;
+
+  /// No description provided for @flushItemUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'All non-admin user accounts'**
+  String get flushItemUsers;
+
+  /// No description provided for @flushAdminKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts will be preserved.'**
+  String get flushAdminKept;
+
+  /// No description provided for @flushProceedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed in {seconds}s'**
+  String flushProceedIn(int seconds);
+
+  /// No description provided for @flushProceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to Step 2'**
+  String get flushProceed;
+
+  /// No description provided for @flushEnterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your admin password to confirm'**
+  String get flushEnterPassword;
+
+  /// No description provided for @flushConfirmIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in {seconds}s'**
+  String flushConfirmIn(int seconds);
+
+  /// No description provided for @flushConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush Database'**
+  String get flushConfirm;
+
+  /// No description provided for @flushInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Flushing database…'**
+  String get flushInProgress;
+
+  /// No description provided for @flushSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Database flushed. Starting fresh.'**
+  String get flushSuccess;
+
+  /// No description provided for @flushFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush failed. Check connection and try again.'**
+  String get flushFailed;
+
+  /// No description provided for @flushWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get flushWrongPassword;
 }
 
 class _AppLocalizationsDelegate

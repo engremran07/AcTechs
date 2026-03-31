@@ -227,6 +227,52 @@ void main() {
     test('is an AppException', () {
       expect(AdminException.noPermission(), isA<AppException>());
     });
+
+    test('flushFailed has correct code', () {
+      expect(AdminException.flushFailed().code, 'admin_flush_failed');
+    });
+
+    test('flushFailed English message mentions flush', () {
+      expect(
+        AdminException.flushFailed().message('en'),
+        contains('flush'),
+      );
+    });
+
+    test('flushFailed Urdu message is non-empty', () {
+      expect(AdminException.flushFailed().message('ur'), isNotEmpty);
+    });
+
+    test('flushFailed Arabic message is non-empty', () {
+      expect(AdminException.flushFailed().message('ar'), isNotEmpty);
+    });
+
+    test('flushFailed is an AppException', () {
+      expect(AdminException.flushFailed(), isA<AppException>());
+    });
+
+    test('wrongPassword has correct code', () {
+      expect(AdminException.wrongPassword().code, 'admin_wrong_password');
+    });
+
+    test('wrongPassword English message mentions password', () {
+      expect(
+        AdminException.wrongPassword().message('en'),
+        contains('password'),
+      );
+    });
+
+    test('wrongPassword Urdu message is non-empty', () {
+      expect(AdminException.wrongPassword().message('ur'), isNotEmpty);
+    });
+
+    test('wrongPassword Arabic message is non-empty', () {
+      expect(AdminException.wrongPassword().message('ar'), isNotEmpty);
+    });
+
+    test('wrongPassword is an AppException', () {
+      expect(AdminException.wrongPassword(), isA<AppException>());
+    });
   });
 
   // ────────────────────────────────────────────────────────────

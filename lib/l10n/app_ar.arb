@@ -287,6 +287,33 @@
   "workExpenses": "مصروفات العمل",
   "homeExpenses": "مصروفات المنزل",
 
+  "dangerZone": "منطقة الخطر",
+  "flushDatabase": "مسح قاعدة البيانات",
+  "flushDatabaseSubtitle": "إعادة تعيين جميع البيانات إلى حالة نظيفة",
+  "flushStep1Title": "الخطوة 1 من 2 — تأكيد النية",
+  "flushStep2Title": "الخطوة 2 من 2 — التأكيد النهائي",
+  "flushWarningIntro": "أنت على وشك حذف البيانات التالية نهائياً:",
+  "flushItemJobs": "جميع سجلات الأعمال",
+  "flushItemExpenses": "جميع سجلات المصروفات والإيرادات",
+  "flushItemCompanies": "جميع سجلات الشركات",
+  "flushItemUsers": "جميع حسابات المستخدمين غير المسؤولين",
+  "flushAdminKept": "سيتم الحفاظ على حسابات المسؤولين.",
+  "flushProceedIn": "المتابعة خلال {seconds}ث",
+  "@flushProceedIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushProceed": "المتابعة إلى الخطوة 2",
+  "flushEnterPassword": "أدخل كلمة مرور المسؤول للتأكيد",
+  "flushConfirmIn": "التأكيد خلال {seconds}ث",
+  "@flushConfirmIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushConfirm": "مسح قاعدة البيانات",
+  "flushInProgress": "جارٍ مسح قاعدة البيانات…",
+  "flushSuccess": "تم مسح قاعدة البيانات. جاهز للبدء من جديد.",
+  "flushFailed": "فشل المسح. تحقق من الاتصال وحاول مرة أخرى.",
+  "flushWrongPassword": "كلمة المرور غير صحيحة. حاول مرة أخرى.",
+
   "catSplitAc": "مكيف سبليت",
   "catWindowAc": "مكيف نافذة",
   "catFreestandingAc": "مكيف قائم",

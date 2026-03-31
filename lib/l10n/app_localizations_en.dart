@@ -881,4 +881,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get catOtherGroceries => 'Other Groceries';
+
+  @override
+  String get dangerZone => 'Danger Zone';
+
+  @override
+  String get flushDatabase => 'Flush Database';
+
+  @override
+  String get flushDatabaseSubtitle => 'Reset all data to a clean state';
+
+  @override
+  String get flushStep1Title => 'Step 1 of 2 — Confirm Intent';
+
+  @override
+  String get flushStep2Title => 'Step 2 of 2 — Final Confirmation';
+
+  @override
+  String get flushWarningIntro =>
+      'You are about to permanently delete the following data:';
+
+  @override
+  String get flushItemJobs => 'All job records';
+
+  @override
+  String get flushItemExpenses => 'All expense & earning records';
+
+  @override
+  String get flushItemCompanies => 'All company records';
+
+  @override
+  String get flushItemUsers => 'All non-admin user accounts';
+
+  @override
+  String get flushAdminKept => 'Admin accounts will be preserved.';
+
+  @override
+  String flushProceedIn(int seconds) => 'Proceed in ${seconds}s';
+
+  @override
+  String get flushProceed => 'Proceed to Step 2';
+
+  @override
+  String get flushEnterPassword => 'Enter your admin password to confirm';
+
+  @override
+  String flushConfirmIn(int seconds) => 'Confirm in ${seconds}s';
+
+  @override
+  String get flushConfirm => 'Flush Database';
+
+  @override
+  String get flushInProgress => 'Flushing database\u2026';
+
+  @override
+  String get flushSuccess => 'Database flushed. Starting fresh.';
+
+  @override
+  String get flushFailed => 'Flush failed. Check connection and try again.';
+
+  @override
+  String get flushWrongPassword => 'Incorrect password. Please try again.';
 }

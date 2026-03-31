@@ -166,11 +166,63 @@ class AdminDashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
+                // Danger Zone
+                Text(
+                  l.dangerZone,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: ArcticTheme.arcticError,
+                  ),
+                ).animate().fadeIn(delay: 600.ms),
+                const SizedBox(height: 12),
+                ArcticCard(
+                  onTap: () => context.go('/admin/flush'),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: ArcticTheme.arcticError.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.delete_forever_rounded,
+                          color: ArcticTheme.arcticError,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.flushDatabase,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: ArcticTheme.arcticError,
+                              ),
+                            ),
+                            Text(
+                              l.flushDatabaseSubtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: ArcticTheme.arcticTextSecondary,
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 650.ms),
+                const SizedBox(height: 24),
+
                 // Recent Pending
                 Text(
                   l.recentPending,
                   style: Theme.of(context).textTheme.titleLarge,
-                ).animate().fadeIn(delay: 500.ms),
+                ).animate().fadeIn(delay: 700.ms),
                 const SizedBox(height: 12),
                 pending.when(
                   data: (jobs) {

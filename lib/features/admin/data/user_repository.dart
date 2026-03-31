@@ -211,4 +211,80 @@ class UserRepository {
       throw ExpenseException.userSaveFailed();
     }
   }
+
+  /// Verify admin password by re-authenticating with Firebase Auth.
+  /// Throws [AdminException.wrongPassword] on bad password.
+  Future<void> verifyAdminPassword(String password) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) {
+        throw AdminException.noPermission();
+      }
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on AdminException {
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('verifyAdminPassword error: `${e.code} — `${e.message}');
+      throw AdminException.wrongPassword();
+    } catch (_) {
+      throw AdminException.wrongPassword();
+    }
+  }
+
+  /// Flush the database: deletes all jobs, expenses, earnings, companies and
+  /// soft-deletes all non-admin users. Admin documents are preserved.
+  Future<void> flushDatabase() async {
+    try {
+      // Delete all operational collections in chunks (batch limit = 500).
+      for (final collection in [
+        AppConstants.jobsCollection,
+        AppConstants.expensesCollection,
+        AppConstants.earningsCollection,
+        AppConstants.companiesCollection,
+      ]) {
+        await _deleteCollectionInChunks(collection);
+      }
+
+      // Soft-delete non-admin users (keep admin accounts intact).
+      final usersSnap = await _usersRef.get();
+      if (usersSnap.docs.isNotEmpty) {
+        final batch = firestore.batch();
+        for (final doc in usersSnap.docs) {
+          final role =
+              doc.data()['role'] as String? ?? AppConstants.roleTechnician;
+          if (role != AppConstants.roleAdmin) {
+            batch.update(doc.reference, {
+              'isActive': false,
+              'deletedAt': FieldValue.serverTimestamp(),
+            });
+          }
+        }
+        await batch.commit();
+      }
+    } on FirebaseException catch (e) {
+      debugPrint('flushDatabase error: `${e.code} — `${e.message}');
+      throw AdminException.flushFailed();
+    }
+  }
+
+  /// Deletes all documents in [collectionName] in chunks of 400.
+  Future<void> _deleteCollectionInChunks(String collectionName) async {
+    const chunkSize = 400;
+    while (true) {
+      final snap = await firestore
+          .collection(collectionName)
+          .limit(chunkSize)
+          .get();
+      if (snap.docs.isEmpty) break;
+      final batch = firestore.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
 }

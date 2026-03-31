@@ -878,4 +878,67 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get catOtherGroceries => 'مشتريات أخرى';
+
+  @override
+  String get dangerZone => 'منطقة الخطر';
+
+  @override
+  String get flushDatabase => 'مسح قاعدة البيانات';
+
+  @override
+  String get flushDatabaseSubtitle =>
+      'إعادة تعيين جميع البيانات إلى حالة نظيفة';
+
+  @override
+  String get flushStep1Title => 'الخطوة 1 من 2 — تأكيد النية';
+
+  @override
+  String get flushStep2Title => 'الخطوة 2 من 2 — التأكيد النهائي';
+
+  @override
+  String get flushWarningIntro =>
+      'أنت على وشك حذف البيانات التالية نهائياً:';
+
+  @override
+  String get flushItemJobs => 'جميع سجلات الأعمال';
+
+  @override
+  String get flushItemExpenses => 'جميع سجلات المصروفات والإيرادات';
+
+  @override
+  String get flushItemCompanies => 'جميع سجلات الشركات';
+
+  @override
+  String get flushItemUsers => 'جميع حسابات المستخدمين غير المسؤولين';
+
+  @override
+  String get flushAdminKept => 'سيتم الحفاظ على حسابات المسؤولين.';
+
+  @override
+  String flushProceedIn(int seconds) => 'المتابعة خلال ${seconds}ث';
+
+  @override
+  String get flushProceed => 'المتابعة إلى الخطوة 2';
+
+  @override
+  String get flushEnterPassword => 'أدخل كلمة مرور المسؤول للتأكيد';
+
+  @override
+  String flushConfirmIn(int seconds) => 'التأكيد خلال ${seconds}ث';
+
+  @override
+  String get flushConfirm => 'مسح قاعدة البيانات';
+
+  @override
+  String get flushInProgress => 'جارٍ مسح قاعدة البيانات\u2026';
+
+  @override
+  String get flushSuccess => 'تم مسح قاعدة البيانات. جاهز للبدء من جديد.';
+
+  @override
+  String get flushFailed =>
+      'فشل المسح. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String get flushWrongPassword => 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
 }
