@@ -54,6 +54,13 @@ class AuthException extends AppException {
     'انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.',
   );
 
+  factory AuthException.updateFailed() => const AuthException(
+    'auth_update_failed',
+    'Could not update your profile. Please try again.',
+    'پروفائل اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'تعذر تحديث ملفك الشخصي. حاول مرة أخرى.',
+  );
+
   factory AuthException.fromFirebase(String firebaseCode) {
     return switch (firebaseCode) {
       'wrong-password' ||

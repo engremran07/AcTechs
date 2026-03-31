@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -45,6 +46,26 @@ class AuthRepository {
           'autoCreated': true,
         });
         userDoc = await userDocRef.get();
+      } else {
+        // Sync Firebase Auth changes to Firestore (e.g., email or displayName
+        // changed in the Firebase Console will now reflect in the app).
+        final authEmail = credential.user!.email ?? '';
+        final authDisplayName = credential.user!.displayName;
+        final data = userDoc.data() ?? {};
+        final Map<String, dynamic> updates = {};
+
+        if (authEmail.isNotEmpty && data['email'] != authEmail) {
+          updates['email'] = authEmail;
+        }
+        if (authDisplayName != null &&
+            authDisplayName.isNotEmpty &&
+            data['name'] != authDisplayName) {
+          updates['name'] = authDisplayName;
+        }
+        if (updates.isNotEmpty) {
+          await userDocRef.update(updates);
+          userDoc = await userDocRef.get();
+        }
       }
 
       final user = UserModel.fromFirestore(userDoc);
@@ -61,6 +82,24 @@ class AuthRepository {
       rethrow;
     } catch (_) {
       throw AuthException.wrongCredentials();
+    }
+  }
+
+  /// Update the current user's display name in both Firebase Auth and Firestore.
+  Future<void> updateDisplayName(String name) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) return;
+      // Update Firebase Auth displayName
+      await user.updateDisplayName(name);
+      // Update Firestore
+      await firestore
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid)
+          .update({'name': name});
+    } on FirebaseException catch (e) {
+      debugPrint('updateDisplayName error: ${e.code} — ${e.message}');
+      throw AuthException.updateFailed();
     }
   }
 

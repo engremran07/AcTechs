@@ -204,6 +204,238 @@ class PdfGenerator {
     return pdf.save();
   }
 
+  /// Generate a monthly expenses + income report PDF.
+  static Future<Uint8List> generateExpensesReport({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+    required String title,
+    String locale = 'en',
+    String? technicianName,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
+    final font = await _getLocaleFont(locale);
+    final dir = _dir(locale);
+    final isRtl = locale == 'ur' || locale == 'ar';
+
+    final pdf = pw.Document();
+
+    final headerStyle = pw.TextStyle(
+      font: font,
+      fontSize: 18,
+      fontWeight: pw.FontWeight.bold,
+    );
+    final subStyle = pw.TextStyle(
+      font: font,
+      fontSize: 10,
+      color: PdfColors.grey700,
+    );
+    final sectionStyle = pw.TextStyle(
+      font: font,
+      fontSize: 12,
+      fontWeight: pw.FontWeight.bold,
+    );
+    final cellStyle = pw.TextStyle(font: font, fontSize: 9);
+    final headerCellStyle = pw.TextStyle(
+      font: font,
+      fontSize: 9,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+
+    // Labels
+    final earningsLabel = locale == 'ur'
+        ? 'آمدنی (IN)'
+        : locale == 'ar'
+        ? 'الإيرادات (الدخل)'
+        : 'Earnings (IN)';
+    final expensesLabel = locale == 'ur'
+        ? 'اخراجات (OUT)'
+        : locale == 'ar'
+        ? 'المصروفات (الخروج)'
+        : 'Expenses (OUT)';
+    final totalEarningsLabel = locale == 'ur'
+        ? 'کل آمدنی'
+        : locale == 'ar'
+        ? 'إجمالي الإيرادات'
+        : 'Total Earnings';
+    final totalExpensesLabel = locale == 'ur'
+        ? 'کل اخراجات'
+        : locale == 'ar'
+        ? 'إجمالي المصروفات'
+        : 'Total Expenses';
+    final netLabel = locale == 'ur'
+        ? 'خالص منافع'
+        : locale == 'ar'
+        ? 'صافي الربح'
+        : 'Net Profit';
+
+    // Earnings table headers
+    final earningsHeaders = locale == 'ur'
+        ? ['زمرہ', 'رقم', 'تاریخ', 'نوٹ']
+        : locale == 'ar'
+        ? ['الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
+        : ['Category', 'Amount (SAR)', 'Date', 'Note'];
+
+    // Expenses table headers
+    final expensesHeaders = locale == 'ur'
+        ? ['نوع', 'زمرہ', 'رقم', 'تاریخ', 'نوٹ']
+        : locale == 'ar'
+        ? ['النوع', 'الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
+        : ['Type', 'Category', 'Amount (SAR)', 'Date', 'Note'];
+
+    final totalEarningsAmt = earnings.fold<double>(0, (s, e) => s + e.amount);
+    final totalExpensesAmt = expenses.fold<double>(0, (s, e) => s + e.amount);
+    final netProfit = totalEarningsAmt - totalExpensesAmt;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        textDirection: dir,
+        crossAxisAlignment: isRtl
+            ? pw.CrossAxisAlignment.end
+            : pw.CrossAxisAlignment.start,
+        build: (context) => [
+          // Header
+          pw.Text(title, style: headerStyle, textDirection: dir),
+          pw.SizedBox(height: 4),
+          if (technicianName != null)
+            pw.Text(technicianName, style: subStyle, textDirection: dir),
+          if (fromDate != null && toDate != null)
+            pw.Text(
+              '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}',
+              style: subStyle,
+              textDirection: dir,
+            ),
+          pw.SizedBox(height: 12),
+
+          // Summary row
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                pw.Column(
+                  children: [
+                    pw.Text(totalEarningsLabel,
+                        style: subStyle, textDirection: dir),
+                    pw.Text(AppFormatters.currency(totalEarningsAmt),
+                        style: cellStyle.copyWith(
+                          color: PdfColors.green700,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textDirection: dir),
+                  ],
+                ),
+                pw.Column(
+                  children: [
+                    pw.Text(totalExpensesLabel,
+                        style: subStyle, textDirection: dir),
+                    pw.Text(AppFormatters.currency(totalExpensesAmt),
+                        style: cellStyle.copyWith(
+                          color: PdfColors.red700,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textDirection: dir),
+                  ],
+                ),
+                pw.Column(
+                  children: [
+                    pw.Text(netLabel, style: subStyle, textDirection: dir),
+                    pw.Text(AppFormatters.currency(netProfit.abs()),
+                        style: cellStyle.copyWith(
+                          color:
+                              netProfit >= 0 ? PdfColors.green700 : PdfColors.red700,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textDirection: dir),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 16),
+
+          // Earnings section
+          if (earnings.isNotEmpty) ...[
+            pw.Text(earningsLabel, style: sectionStyle, textDirection: dir),
+            pw.SizedBox(height: 6),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: earningsHeaders,
+              data: earnings
+                  .map((e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ])
+                  .toList(),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFF00C853),
+              ),
+              cellAlignments: {
+                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
+              },
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 3,
+              ),
+            ),
+            pw.SizedBox(height: 16),
+          ],
+
+          // Expenses section
+          if (expenses.isNotEmpty) ...[
+            pw.Text(expensesLabel, style: sectionStyle, textDirection: dir),
+            pw.SizedBox(height: 6),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: expensesHeaders,
+              data: expenses
+                  .map((e) => [
+                        e.expenseType,
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ])
+                  .toList(),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFFD50000),
+              ),
+              cellAlignments: {
+                for (var i = 0; i < 5; i++) i: pw.Alignment.center,
+              },
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 3,
+              ),
+            ),
+          ],
+
+          pw.Spacer(),
+          pw.Text(
+            'Generated by AC Techs • ${AppFormatters.date(DateTime.now())}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+          ),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
   /// Share or print the generated PDF bytes.
   static Future<void> sharePdfBytes(Uint8List bytes, String fileName) async {
     await Printing.sharePdf(bytes: bytes, filename: fileName);

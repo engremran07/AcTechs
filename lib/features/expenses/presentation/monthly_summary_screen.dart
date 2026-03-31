@@ -6,10 +6,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
+import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
@@ -26,6 +28,7 @@ class MonthlySummaryScreen extends ConsumerStatefulWidget {
 class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   late DateTime _selectedMonth;
   bool _isExporting = false;
+  bool _isExportingPdf = false;
 
   @override
   void initState() {
@@ -195,6 +198,48 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     }
   }
 
+  Future<void> _exportMonthlyPdf() async {
+    setState(() => _isExportingPdf = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final expenses =
+          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
+      final earnings =
+          ref.read(monthlyEarningsProvider(_selectedMonth)).value ?? [];
+
+      if (expenses.isEmpty && earnings.isEmpty) {
+        if (!mounted) return;
+        ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+
+      final user = ref.read(currentUserProvider).value;
+      final locale = Localizations.localeOf(context).languageCode;
+      final fromDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+      final toDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+
+      final bytes = await PdfGenerator.generateExpensesReport(
+        earnings: earnings,
+        expenses: expenses,
+        title: l.monthlySummary,
+        locale: locale,
+        technicianName: user?.name,
+        fromDate: fromDate,
+        toDate: toDate,
+      );
+
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        'ac_techs_${_selectedMonth.year}_${_selectedMonth.month}.pdf',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(monthlyJobsProvider(_selectedMonth));
@@ -205,6 +250,19 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.monthlySummary),
         actions: [
+          // PDF Export
+          IconButton(
+            onPressed: _isExportingPdf ? null : _exportMonthlyPdf,
+            tooltip: AppLocalizations.of(context)!.exportToPdf,
+            icon: _isExportingPdf
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.picture_as_pdf_outlined),
+          ),
+          // Excel Export
           IconButton(
             onPressed: _isExporting ? null : _exportMonthlyExcel,
             tooltip: AppLocalizations.of(context)!.exportToExcel,

@@ -230,7 +230,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             tooltip: l.monthlySummary,
-            onPressed: () => context.go('/tech/summary'),
+            onPressed: () => context.push('/tech/summary'),
           ),
         ],
       ),
