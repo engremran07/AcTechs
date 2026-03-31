@@ -28,6 +28,32 @@ void main() {
     });
   });
 
+  group('AppFormatters.dateTime()', () {
+    test('formats date and time as dd/MM/yyyy  HH:mm', () {
+      final dt = DateTime(2025, 6, 15, 9, 5);
+      expect(AppFormatters.dateTime(dt), '15/06/2025  09:05');
+    });
+
+    test('pads single-digit hour and minute', () {
+      final dt = DateTime(2025, 1, 1, 3, 7);
+      expect(AppFormatters.dateTime(dt), '01/01/2025  03:07');
+    });
+
+    test('returns empty string for null', () {
+      expect(AppFormatters.dateTime(null), '');
+    });
+
+    test('midnight formats as 00:00', () {
+      final dt = DateTime(2025, 3, 31, 0, 0);
+      expect(AppFormatters.dateTime(dt), '31/03/2025  00:00');
+    });
+
+    test('end of day formats as 23:59', () {
+      final dt = DateTime(2025, 3, 31, 23, 59);
+      expect(AppFormatters.dateTime(dt), '31/03/2025  23:59');
+    });
+  });
+
   group('AppFormatters.currency()', () {
     test('formats zero as SAR 0', () {
       expect(AppFormatters.currency(0), 'SAR 0');

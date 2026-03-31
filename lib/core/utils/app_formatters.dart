@@ -18,6 +18,14 @@ class AppFormatters {
     return '$count ${count == 1 ? 'unit' : 'units'}';
   }
 
+  /// Format a date+time as dd/MM/yyyy HH:mm.
+  static String dateTime(DateTime? dt) {
+    if (dt == null) return '';
+    final hh = dt.hour.toString().padLeft(2, '0');
+    final mm = dt.minute.toString().padLeft(2, '0');
+    return '${date(dt)}  $hh:$mm';
+  }
+
   /// Short name for display (first 8 chars + ..).
   static String shortName(String name, [int max = 8]) {
     if (name.length <= max) return name;

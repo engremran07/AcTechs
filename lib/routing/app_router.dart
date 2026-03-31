@@ -21,6 +21,34 @@ import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.d
 
 final _routerKey = GlobalKey<NavigatorState>();
 
+/// A `CustomTransitionPage` that fades and slides up slightly — used for all
+/// full-screen route pushes so the app feels snappy and polished.
+CustomTransitionPage<T> _slideFadePage<T>({
+  required LocalKey pageKey,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final fadeTween = CurveTween(curve: Curves.easeOut);
+      final slideTween = Tween<Offset>(
+        begin: const Offset(0, 0.04),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeOutCubic));
+      return FadeTransition(
+        opacity: animation.drive(fadeTween),
+        child: SlideTransition(
+          position: animation.drive(slideTween),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
@@ -61,37 +89,64 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        pageBuilder: (context, state) => _slideFadePage(
+          pageKey: state.pageKey,
+          child: const LoginScreen(),
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) => TechShell(child: child),
         routes: [
           GoRoute(
             path: '/tech',
-            builder: (context, state) => const TechDashboardScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const TechDashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/submit',
-            builder: (context, state) => const SubmitJobScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const SubmitJobScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/inout',
-            builder: (context, state) => const DailyInOutScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const DailyInOutScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/summary',
-            builder: (context, state) => const MonthlySummaryScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const MonthlySummaryScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/history',
-            builder: (context, state) => const JobHistoryScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const JobHistoryScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/profile',
-            builder: (context, state) => const TechProfileScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const TechProfileScreen(),
+            ),
           ),
           GoRoute(
             path: '/tech/settings',
-            builder: (context, state) => const SettingsScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const SettingsScreen(),
+            ),
           ),
         ],
       ),
@@ -100,27 +155,45 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/admin',
-            builder: (context, state) => const AdminDashboardScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const AdminDashboardScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/approvals',
-            builder: (context, state) => const ApprovalsScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const ApprovalsScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/analytics',
-            builder: (context, state) => const AnalyticsScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const AnalyticsScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/team',
-            builder: (context, state) => const TeamScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const TeamScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/companies',
-            builder: (context, state) => const CompaniesScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const CompaniesScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/settings',
-            builder: (context, state) => const SettingsScreen(),
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const SettingsScreen(),
+            ),
           ),
         ],
       ),
