@@ -879,4 +879,68 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get catOtherGroceries => 'دیگر کریانہ';
+
+  @override
+  String get dangerZone => 'خطرناک علاقہ';
+
+  @override
+  String get flushDatabase => 'ڈیٹا بیس فلش کریں';
+
+  @override
+  String get flushDatabaseSubtitle =>
+      'تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں';
+
+  @override
+  String get flushStep1Title => 'مرحلہ 1 از 2 — ارادے کی تصدیق';
+
+  @override
+  String get flushStep2Title => 'مرحلہ 2 از 2 — حتمی تصدیق';
+
+  @override
+  String get flushWarningIntro =>
+      'آپ درج ذیل ڈیٹا کو مستقل طور پر حذف کرنے والے ہیں:';
+
+  @override
+  String get flushItemJobs => 'تمام کام کے ریکارڈ';
+
+  @override
+  String get flushItemExpenses => 'تمام اخراجات اور آمدنی کے ریکارڈ';
+
+  @override
+  String get flushItemCompanies => 'تمام کمپنی ریکارڈ';
+
+  @override
+  String get flushItemUsers => 'تمام غیر ایڈمن صارف اکاؤنٹس';
+
+  @override
+  String get flushAdminKept => 'ایڈمن اکاؤنٹس محفوظ رہیں گے۔';
+
+  @override
+  String flushProceedIn(int seconds) => '$seconds سیکنڈ میں آگے بڑھیں';
+
+  @override
+  String get flushProceed => 'مرحلہ 2 کی طرف بڑھیں';
+
+  @override
+  String get flushEnterPassword => 'تصدیق کے لیے اپنا ایڈمن پاس ورڈ درج کریں';
+
+  @override
+  String flushConfirmIn(int seconds) => '$seconds سیکنڈ میں تصدیق کریں';
+
+  @override
+  String get flushConfirm => 'ڈیٹا بیس فلش کریں';
+
+  @override
+  String get flushInProgress => 'ڈیٹا بیس فلش ہو رہی ہے\u2026';
+
+  @override
+  String get flushSuccess =>
+      'ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔';
+
+  @override
+  String get flushFailed =>
+      'فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get flushWrongPassword => 'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔';
 }

@@ -287,6 +287,33 @@
   "workExpenses": "کام کے اخراجات",
   "homeExpenses": "گھر کے اخراجات",
 
+  "dangerZone": "خطرناک علاقہ",
+  "flushDatabase": "ڈیٹا بیس فلش کریں",
+  "flushDatabaseSubtitle": "تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں",
+  "flushStep1Title": "مرحلہ 1 از 2 — ارادے کی تصدیق",
+  "flushStep2Title": "مرحلہ 2 از 2 — حتمی تصدیق",
+  "flushWarningIntro": "آپ درج ذیل ڈیٹا کو مستقل طور پر حذف کرنے والے ہیں:",
+  "flushItemJobs": "تمام کام کے ریکارڈ",
+  "flushItemExpenses": "تمام اخراجات اور آمدنی کے ریکارڈ",
+  "flushItemCompanies": "تمام کمپنی ریکارڈ",
+  "flushItemUsers": "تمام غیر ایڈمن صارف اکاؤنٹس",
+  "flushAdminKept": "ایڈمن اکاؤنٹس محفوظ رہیں گے۔",
+  "flushProceedIn": "{seconds} سیکنڈ میں آگے بڑھیں",
+  "@flushProceedIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushProceed": "مرحلہ 2 کی طرف بڑھیں",
+  "flushEnterPassword": "تصدیق کے لیے اپنا ایڈمن پاس ورڈ درج کریں",
+  "flushConfirmIn": "{seconds} سیکنڈ میں تصدیق کریں",
+  "@flushConfirmIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushConfirm": "ڈیٹا بیس فلش کریں",
+  "flushInProgress": "ڈیٹا بیس فلش ہو رہی ہے…",
+  "flushSuccess": "ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔",
+  "flushFailed": "فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔",
+  "flushWrongPassword": "غلط پاس ورڈ۔ دوبارہ کوشش کریں۔",
+
   "catSplitAc": "اسپلٹ اے سی",
   "catWindowAc": "ونڈو اے سی",
   "catFreestandingAc": "فری اسٹینڈنگ اے سی",

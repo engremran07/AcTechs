@@ -159,6 +159,20 @@ class AdminException extends AppException {
     'آپ کو اس عمل کے لیے ایڈمن رسائی نہیں ہے۔',
     'ليس لديك صلاحية المسؤول لهذا الإجراء.',
   );
+
+  factory AdminException.flushFailed() => const AdminException(
+    'admin_flush_failed',
+    "Database flush failed. Please check your connection and try again.",
+    'ڈیٹا بیس فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+    'فشل مسح قاعدة البيانات. تحقق من اتصالك وحاول مرة أخرى.',
+  );
+
+  factory AdminException.wrongPassword() => const AdminException(
+    'admin_wrong_password',
+    'Incorrect password. Please try again.',
+    'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔',
+    'كلمة المرور غير صحيحة. حاول مرة أخرى.',
+  );
 }
 
 class ExpenseException extends AppException {

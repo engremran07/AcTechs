@@ -287,6 +287,33 @@
   "workExpenses": "Work Expenses",
   "homeExpenses": "Home Expenses",
 
+  "dangerZone": "Danger Zone",
+  "flushDatabase": "Flush Database",
+  "flushDatabaseSubtitle": "Reset all data to a clean state",
+  "flushStep1Title": "Step 1 of 2 — Confirm Intent",
+  "flushStep2Title": "Step 2 of 2 — Final Confirmation",
+  "flushWarningIntro": "You are about to permanently delete the following data:",
+  "flushItemJobs": "All job records",
+  "flushItemExpenses": "All expense & earning records",
+  "flushItemCompanies": "All company records",
+  "flushItemUsers": "All non-admin user accounts",
+  "flushAdminKept": "Admin accounts will be preserved.",
+  "flushProceedIn": "Proceed in {seconds}s",
+  "@flushProceedIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushProceed": "Proceed to Step 2",
+  "flushEnterPassword": "Enter your admin password to confirm",
+  "flushConfirmIn": "Confirm in {seconds}s",
+  "@flushConfirmIn": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "flushConfirm": "Flush Database",
+  "flushInProgress": "Flushing database…",
+  "flushSuccess": "Database flushed. Starting fresh.",
+  "flushFailed": "Flush failed. Check connection and try again.",
+  "flushWrongPassword": "Incorrect password. Please try again.",
+
   "catSplitAc": "Split AC",
   "catWindowAc": "Window AC",
   "catFreestandingAc": "Freestanding AC",

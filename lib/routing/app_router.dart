@@ -15,6 +15,7 @@ import 'package:ac_techs/features/admin/presentation/approvals_screen.dart';
 import 'package:ac_techs/features/admin/presentation/analytics_screen.dart';
 import 'package:ac_techs/features/admin/presentation/companies_screen.dart';
 import 'package:ac_techs/features/admin/presentation/team_screen.dart';
+import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
@@ -193,6 +194,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const SettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/flush',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const FlushDatabaseScreen(),
             ),
           ),
         ],
