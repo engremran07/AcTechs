@@ -748,10 +748,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invoiceSuffix => 'رقم الفاتورة';
 
   @override
-  String get selectCompany => 'اختر الشركة';
+  String get selectCompany => 'اختر الشركة (اختياري)';
+
+  @override
+  String get noCompany => 'بدون شركة';
 
   @override
   String get noCompaniesYet => 'لم تتم إضافة شركات بعد';
+
+  @override
+  String get editProfile => 'تعديل الملف الشخصي';
+
+  @override
+  String get changeYourName => 'تغيير اسمك';
+
+  @override
+  String get profileUpdated => 'تم تحديث الملف الشخصي بنجاح!';
 
   @override
   String get companyCreated => 'تم إنشاء الشركة بنجاح!';

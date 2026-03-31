@@ -751,10 +751,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoiceSuffix => 'Invoice Number';
 
   @override
-  String get selectCompany => 'Select company';
+  String get selectCompany => 'Select company (optional)';
+
+  @override
+  String get noCompany => 'No company';
 
   @override
   String get noCompaniesYet => 'No companies added yet';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
+  String get changeYourName => 'Change your display name';
+
+  @override
+  String get profileUpdated => 'Profile updated successfully!';
 
   @override
   String get companyCreated => 'Company created successfully!';

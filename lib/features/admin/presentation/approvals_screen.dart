@@ -218,9 +218,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                             return SwipeActionCard(
                                   onSwipeRight: () async {
                                     // Approve on swipe right
-                                    final messenger = ScaffoldMessenger.of(
-                                      context,
-                                    );
                                     final approvedMsg = AppLocalizations.of(
                                       context,
                                     )!.jobApproved;
@@ -238,12 +235,16 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                                     ?.uid ??
                                                 '',
                                           );
-                                      messenger.showSnackBar(
-                                        SnackBar(content: Text(approvedMsg)),
+                                      if (!context.mounted) return;
+                                      AppFeedback.success(
+                                        context,
+                                        message: approvedMsg,
                                       );
                                     } catch (_) {
-                                      messenger.showSnackBar(
-                                        SnackBar(content: Text(failMsg)),
+                                      if (!context.mounted) return;
+                                      AppFeedback.error(
+                                        context,
+                                        message: failMsg,
                                       );
                                     }
                                   },

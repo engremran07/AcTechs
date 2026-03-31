@@ -749,10 +749,22 @@ class AppLocalizationsUr extends AppLocalizations {
   String get invoiceSuffix => 'انوائس نمبر';
 
   @override
-  String get selectCompany => 'کمپنی منتخب کریں';
+  String get selectCompany => 'کمپنی منتخب کریں (اختیاری)';
+
+  @override
+  String get noCompany => 'کوئی کمپنی نہیں';
 
   @override
   String get noCompaniesYet => 'ابھی تک کوئی کمپنی شامل نہیں کی گئی';
+
+  @override
+  String get editProfile => 'پروفائل تبدیل کریں';
+
+  @override
+  String get changeYourName => 'اپنا نام تبدیل کریں';
+
+  @override
+  String get profileUpdated => 'پروفائل کامیابی سے اپ ڈیٹ ہو گیا!';
 
   @override
   String get companyCreated => 'کمپنی کامیابی سے بن گئی!';

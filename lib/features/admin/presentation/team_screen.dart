@@ -53,21 +53,21 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   Future<void> _bulkActivate(bool activate) async {
     if (_selectedIds.isEmpty) return;
-    final messenger = ScaffoldMessenger.of(context);
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     try {
       await ref
           .read(userRepositoryProvider)
           .bulkToggleActive(_selectedIds.toList(), activate);
+      if (!mounted) return;
       _clearSelection();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(activate ? l.usersActivated : l.usersDeactivated),
-        ),
+      AppFeedback.success(
+        context,
+        message: activate ? l.usersActivated : l.usersDeactivated,
       );
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      if (!mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
@@ -152,7 +152,6 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     if (result != true) return;
     if (!mounted) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     try {
       await ref
@@ -163,15 +162,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             password: passCtrl.text,
           );
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)?.userCreated ?? 'User created!',
-          ),
-        ),
+      AppFeedback.success(
+        context,
+        message: AppLocalizations.of(context)?.userCreated ?? 'User created!',
       );
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
@@ -240,7 +236,6 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     if (result != true) return;
     if (!mounted) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     try {
       await ref
@@ -251,30 +246,24 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             email: emailCtrl.text.trim(),
           );
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)?.userUpdated ?? 'User updated!',
-          ),
-        ),
+      AppFeedback.success(
+        context,
+        message: AppLocalizations.of(context)?.userUpdated ?? 'User updated!',
       );
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
   Future<void> _handlePasswordReset(UserModel user) async {
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(userRepositoryProvider).sendPasswordReset(user.email);
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(l.passwordResetSent(user.email))),
-      );
+      AppFeedback.success(context, message: l.passwordResetSent(user.email));
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
@@ -303,13 +292,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     );
 
     if (confirmed != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(userRepositoryProvider).deleteUser(user.uid);
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(l.userDeleted)));
+      AppFeedback.success(context, message: l.userDeleted);
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
@@ -522,17 +510,32 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       child: GestureDetector(
         onLongPress: () => _toggleSelect(tech.uid),
         onTap: _selectMode ? () => _toggleSelect(tech.uid) : null,
-        child: _TechCard(user: tech, selected: isSelected),
+        child: _TechCard(
+          user: tech,
+          selected: isSelected,
+          onEdit: () => _showEditDialog(tech),
+          onResetPassword: () => _handlePasswordReset(tech),
+          onDelete: () => _handleDeleteUser(tech),
+        ),
       ),
     );
   }
 }
 
 class _TechCard extends ConsumerWidget {
-  const _TechCard({required this.user, this.selected = false});
+  const _TechCard({
+    required this.user,
+    this.selected = false,
+    this.onEdit,
+    this.onResetPassword,
+    this.onDelete,
+  });
 
   final UserModel user;
   final bool selected;
+  final VoidCallback? onEdit;
+  final VoidCallback? onResetPassword;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -581,6 +584,24 @@ class _TechCard extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: AppLocalizations.of(context)!.editTechnician,
+              icon: const Icon(Icons.edit_rounded, size: 20),
+              color: ArcticTheme.arcticBlue,
+              onPressed: onEdit,
+            ),
+            IconButton(
+              tooltip: AppLocalizations.of(context)!.resetPassword,
+              icon: const Icon(Icons.lock_reset_rounded, size: 20),
+              color: ArcticTheme.arcticWarning,
+              onPressed: onResetPassword,
+            ),
+            IconButton(
+              tooltip: AppLocalizations.of(context)!.deleteTechnician,
+              icon: const Icon(Icons.delete_outline_rounded, size: 20),
+              color: ArcticTheme.arcticError,
+              onPressed: onDelete,
             ),
             Switch(
               value: user.isActive,

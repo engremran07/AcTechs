@@ -79,7 +79,6 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     if (confirmed != true || !mounted) return;
 
     final locale = Localizations.localeOf(context).languageCode;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       if (company == null) {
         await ref
@@ -89,7 +88,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               invoicePrefix: prefixCtrl.text.trim(),
             );
         if (!mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text(l.companyCreated)));
+        AppFeedback.success(context, message: l.companyCreated);
       } else {
         await ref
             .read(companyRepositoryProvider)
@@ -99,15 +98,14 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               invoicePrefix: prefixCtrl.text.trim(),
             );
         if (!mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text(l.companyUpdated)));
+        AppFeedback.success(context, message: l.companyUpdated);
       }
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
   Future<void> _toggleCompany(CompanyModel company, bool isActive) async {
-    final messenger = ScaffoldMessenger.of(context);
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     try {
@@ -115,13 +113,12 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
           .read(companyRepositoryProvider)
           .toggleCompanyActive(company.id, isActive);
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(isActive ? l.companyActivated : l.companyDeactivated),
-        ),
+      AppFeedback.success(
+        context,
+        message: isActive ? l.companyActivated : l.companyDeactivated,
       );
     } on AppException catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message(locale))));
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 

@@ -1531,14 +1531,38 @@ abstract class AppLocalizations {
   /// No description provided for @selectCompany.
   ///
   /// In en, this message translates to:
-  /// **'Select company'**
+  /// **'Select company (optional)'**
   String get selectCompany;
+
+  /// No description provided for @noCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'No company'**
+  String get noCompany;
 
   /// No description provided for @noCompaniesYet.
   ///
   /// In en, this message translates to:
   /// **'No companies added yet'**
   String get noCompaniesYet;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProfile;
+
+  /// No description provided for @changeYourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Change your display name'**
+  String get changeYourName;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully!'**
+  String get profileUpdated;
 
   /// No description provided for @companyCreated.
   ///

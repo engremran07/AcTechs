@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -23,11 +24,11 @@ class CompanyRepository {
   }
 
   Stream<List<CompanyModel>> activeCompanies() {
-    return _ref
-        .where('isActive', isEqualTo: true)
-        .orderBy('name')
-        .snapshots()
-        .map((snap) => snap.docs.map(CompanyModel.fromFirestore).toList());
+    return _ref.where('isActive', isEqualTo: true).snapshots().map((snap) {
+      final list = snap.docs.map(CompanyModel.fromFirestore).toList();
+      list.sort((a, b) => a.name.compareTo(b.name)); // sort client-side
+      return list;
+    });
   }
 
   Future<void> createCompany({
@@ -41,7 +42,8 @@ class CompanyRepository {
         'isActive': true,
         'createdAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('createCompany error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -53,7 +55,8 @@ class CompanyRepository {
   }) async {
     try {
       await _ref.doc(id).update({'name': name, 'invoicePrefix': invoicePrefix});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('updateCompany error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -61,7 +64,8 @@ class CompanyRepository {
   Future<void> toggleCompanyActive(String id, bool isActive) async {
     try {
       await _ref.doc(id).update({'isActive': isActive});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('toggleCompanyActive error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }

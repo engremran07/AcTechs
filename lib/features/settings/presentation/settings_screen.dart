@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -30,6 +31,9 @@ class SettingsScreen extends ConsumerWidget {
             name: user?.name ?? 'User',
             email: user?.email ?? '',
             role: user?.role ?? 'technician',
+            onEditTap: user == null
+                ? null
+                : () => _showEditProfileDialog(context, ref, user),
           ).animate().fadeIn(duration: 300.ms),
           const SizedBox(height: 24),
 
@@ -140,6 +144,43 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.03),
+          const SizedBox(height: 24),
+
+          // ── Security ──
+          _SectionTitle(title: l.resetPassword),
+          const SizedBox(height: 8),
+          ArcticCard(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: const Icon(Icons.lock_reset_rounded),
+              title: Text(l.resetPassword),
+              subtitle: Text(
+                user?.email ?? '',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: user?.email == null || user!.email.isEmpty
+                  ? null
+                  : () async {
+                      final locale = Localizations.localeOf(
+                        context,
+                      ).languageCode;
+                      try {
+                        await ref
+                            .read(userRepositoryProvider)
+                            .sendPasswordReset(user.email);
+                        if (!context.mounted) return;
+                        SuccessSnackbar.show(
+                          context,
+                          message: l.passwordResetSent(user.email),
+                        );
+                      } on AppException catch (e) {
+                        if (!context.mounted) return;
+                        ErrorSnackbar.show(context, message: e.message(locale));
+                      }
+                    },
+            ),
+          ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.03),
           const SizedBox(height: 32),
 
           // ── Sign Out ──
@@ -167,6 +208,88 @@ class SettingsScreen extends ConsumerWidget {
     ref.read(appLocaleProvider.notifier).setLocale(lang);
     if (uid != null) {
       ref.read(userRepositoryProvider).updateLanguage(uid, lang);
+    }
+  }
+
+  Future<void> _showEditProfileDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserModel user,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final nameCtrl = TextEditingController(text: user.name);
+    final formKey = GlobalKey<FormState>();
+    final locale = Localizations.localeOf(context).languageCode;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.editProfile),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l.changeYourName, style: Theme.of(ctx).textTheme.bodySmall),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: nameCtrl,
+                autofocus: true,
+                textInputAction: TextInputAction.done,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.name,
+                  prefixIcon: const Icon(Icons.person_outline),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? l.required : null,
+              ),
+              const SizedBox(height: 8),
+              // Email is display-only (changing auth email requires reauth)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.email_outlined),
+                title: Text(
+                  user.email,
+                  style: Theme.of(ctx).textTheme.bodySmall,
+                ),
+                subtitle: Text(
+                  'Use password reset to change email.',
+                  style: Theme.of(ctx).textTheme.labelSmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref
+          .read(userRepositoryProvider)
+          .updateSelfName(user.uid, nameCtrl.text.trim());
+      if (!context.mounted) return;
+      AppFeedback.success(context, message: l.profileUpdated);
+    } on AppException catch (e) {
+      if (!context.mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
     }
   }
 
@@ -203,16 +326,19 @@ class _ProfileHeader extends StatelessWidget {
     required this.name,
     required this.email,
     required this.role,
+    this.onEditTap,
   });
 
   final String name;
   final String email;
   final String role;
+  final VoidCallback? onEditTap;
 
   @override
   Widget build(BuildContext context) {
     final isAdmin = role == 'admin';
     return ArcticCard(
+      onTap: onEditTap,
       child: Row(
         children: [
           Container(
@@ -273,6 +399,12 @@ class _ProfileHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (onEditTap != null)
+            Icon(
+              Icons.edit_rounded,
+              size: 18,
+              color: ArcticTheme.arcticTextSecondary,
+            ),
         ],
       ),
     );

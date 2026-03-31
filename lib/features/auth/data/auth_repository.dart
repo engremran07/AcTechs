@@ -28,13 +28,23 @@ class AuthRepository {
         password: password,
       );
       final uid = credential.user!.uid;
-      final userDoc = await firestore
+      final userDocRef = firestore
           .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .get();
+          .doc(uid);
+      var userDoc = await userDocRef.get();
 
+      // Auto-create Firestore doc for users created via Firebase Console
       if (!userDoc.exists) {
-        throw AuthException.wrongCredentials();
+        await userDocRef.set({
+          'name': credential.user!.displayName ?? email.split('@')[0],
+          'email': email,
+          'role': AppConstants.roleTechnician,
+          'isActive': true,
+          'language': 'en',
+          'createdAt': FieldValue.serverTimestamp(),
+          'autoCreated': true,
+        });
+        userDoc = await userDocRef.get();
       }
 
       final user = UserModel.fromFirestore(userDoc);

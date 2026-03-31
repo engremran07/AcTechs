@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:excel/excel.dart' as excel_pkg;
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
@@ -10,6 +13,7 @@ import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'dart:io';
 
 class MonthlySummaryScreen extends ConsumerStatefulWidget {
   const MonthlySummaryScreen({super.key});
@@ -21,6 +25,7 @@ class MonthlySummaryScreen extends ConsumerStatefulWidget {
 
 class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   late DateTime _selectedMonth;
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -61,6 +66,135 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     return '${months[_selectedMonth.month - 1]} ${_selectedMonth.year}';
   }
 
+  Future<void> _exportMonthlyExcel() async {
+    setState(() => _isExporting = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final jobs = ref.read(monthlyJobsProvider(_selectedMonth)).value ?? [];
+      final expenses =
+          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
+      final earnings =
+          ref.read(monthlyEarningsProvider(_selectedMonth)).value ?? [];
+
+      if (jobs.isEmpty && expenses.isEmpty && earnings.isEmpty) {
+        if (!mounted) return;
+        ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+
+      final file = excel_pkg.Excel.createExcel();
+
+      final summary = file['Summary'];
+      final totalInstallations = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
+      final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
+      final workExpenses = expenses
+          .where((e) => e.expenseType != AppConstants.expenseTypeHome)
+          .fold<double>(0, (s, e) => s + e.amount);
+      final homeExpenses = expenses
+          .where((e) => e.expenseType == AppConstants.expenseTypeHome)
+          .fold<double>(0, (s, e) => s + e.amount);
+
+      summary.appendRow([
+        excel_pkg.TextCellValue('Month'),
+        excel_pkg.TextCellValue(_monthLabel()),
+      ]);
+      summary.appendRow([
+        excel_pkg.TextCellValue('Jobs'),
+        excel_pkg.IntCellValue(jobs.length),
+      ]);
+      summary.appendRow([
+        excel_pkg.TextCellValue('Installations'),
+        excel_pkg.IntCellValue(totalInstallations),
+      ]);
+      summary.appendRow([
+        excel_pkg.TextCellValue('Earnings'),
+        excel_pkg.DoubleCellValue(totalEarnings),
+      ]);
+      summary.appendRow([
+        excel_pkg.TextCellValue('Work Expenses'),
+        excel_pkg.DoubleCellValue(workExpenses),
+      ]);
+      summary.appendRow([
+        excel_pkg.TextCellValue('Home Expenses'),
+        excel_pkg.DoubleCellValue(homeExpenses),
+      ]);
+
+      final jobsSheet = file['Jobs'];
+      jobsSheet.appendRow([
+        excel_pkg.TextCellValue('Invoice'),
+        excel_pkg.TextCellValue('Company'),
+        excel_pkg.TextCellValue('Client'),
+        excel_pkg.TextCellValue('Date'),
+        excel_pkg.TextCellValue('Units'),
+      ]);
+      for (final job in jobs) {
+        jobsSheet.appendRow([
+          excel_pkg.TextCellValue(job.invoiceNumber),
+          excel_pkg.TextCellValue(job.companyName),
+          excel_pkg.TextCellValue(job.clientName),
+          excel_pkg.TextCellValue(AppFormatters.date(job.date)),
+          excel_pkg.IntCellValue(job.totalUnits),
+        ]);
+      }
+
+      final expensesSheet = file['Expenses'];
+      expensesSheet.appendRow([
+        excel_pkg.TextCellValue('Type'),
+        excel_pkg.TextCellValue('Category'),
+        excel_pkg.TextCellValue('Amount'),
+        excel_pkg.TextCellValue('Date'),
+        excel_pkg.TextCellValue('Note'),
+      ]);
+      for (final expense in expenses) {
+        expensesSheet.appendRow([
+          excel_pkg.TextCellValue(expense.expenseType),
+          excel_pkg.TextCellValue(translateCategory(expense.category, l)),
+          excel_pkg.DoubleCellValue(expense.amount),
+          excel_pkg.TextCellValue(AppFormatters.date(expense.date)),
+          excel_pkg.TextCellValue(expense.note),
+        ]);
+      }
+
+      final earningsSheet = file['Earnings'];
+      earningsSheet.appendRow([
+        excel_pkg.TextCellValue('Category'),
+        excel_pkg.TextCellValue('Amount'),
+        excel_pkg.TextCellValue('Date'),
+        excel_pkg.TextCellValue('Note'),
+      ]);
+      for (final earning in earnings) {
+        earningsSheet.appendRow([
+          excel_pkg.TextCellValue(translateCategory(earning.category, l)),
+          excel_pkg.DoubleCellValue(earning.amount),
+          excel_pkg.TextCellValue(AppFormatters.date(earning.date)),
+          excel_pkg.TextCellValue(earning.note),
+        ]);
+      }
+
+      final bytes = file.save();
+      if (bytes == null) {
+        if (!mounted) return;
+        ErrorSnackbar.show(context, message: l.couldNotExport);
+        return;
+      }
+
+      final dir = await getTemporaryDirectory();
+      final outFile = File(
+        '${dir.path}/ac_techs_monthly_${_selectedMonth.year}_${_selectedMonth.month}.xlsx',
+      );
+      await outFile.writeAsBytes(bytes);
+      await Share.shareXFiles([XFile(outFile.path)]);
+
+      if (!mounted) return;
+      SuccessSnackbar.show(context, message: l.exportReady(jobs.length));
+    } catch (_) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final jobsAsync = ref.watch(monthlyJobsProvider(_selectedMonth));
@@ -68,7 +202,22 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     final earningsAsync = ref.watch(monthlyEarningsProvider(_selectedMonth));
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.monthlySummary)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.monthlySummary),
+        actions: [
+          IconButton(
+            onPressed: _isExporting ? null : _exportMonthlyExcel,
+            tooltip: AppLocalizations.of(context)!.exportToExcel,
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.file_download_outlined),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ArcticRefreshIndicator(
           onRefresh: () async {

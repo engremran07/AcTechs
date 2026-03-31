@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -18,17 +19,25 @@ class JobRepository {
   Future<void> submitJob(JobModel job) async {
     try {
       final data = job.toFirestore();
-      // Ensure Firestore-compatible types
       data['date'] ??= FieldValue.serverTimestamp();
       data['submittedAt'] ??= FieldValue.serverTimestamp();
       await _jobsRef.add(data);
+    } on FirebaseException catch (e) {
+      debugPrint('submitJob FirebaseException: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw const JobException(
+          'job_permission_denied',
+          'Permission denied. Please contact your admin.',
+          'اجازت نہیں۔ براہ کرم ایڈمن سے رابطہ کریں۔',
+          'ليس لديك إذن. تواصل مع المسؤول.',
+        );
+      }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw NetworkException.syncFailed();
+      }
+      throw JobException.saveFailed();
     } catch (e) {
-      // Log actual error for debugging
-      assert(() {
-        // ignore: avoid_print
-        print('submitJob error: $e');
-        return true;
-      }());
+      debugPrint('submitJob unknown error: $e');
       throw JobException.saveFailed();
     }
   }
@@ -40,7 +49,11 @@ class JobRepository {
         'approvedBy': adminUid,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('approveJob error: ${e.code} — ${e.message}');
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('approveJob unknown: $e');
       throw JobException.saveFailed();
     }
   }
@@ -53,7 +66,11 @@ class JobRepository {
         'adminNote': reason,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('rejectJob error: ${e.code} — ${e.message}');
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('rejectJob unknown: $e');
       throw JobException.saveFailed();
     }
   }

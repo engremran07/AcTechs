@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -36,7 +37,8 @@ class UserRepository {
   Future<void> toggleUserActive(String uid, bool isActive) async {
     try {
       await _usersRef.doc(uid).update({'isActive': isActive});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('toggleUserActive error: `${e.code} — `${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -44,7 +46,8 @@ class UserRepository {
   Future<void> updateLanguage(String uid, String language) async {
     try {
       await _usersRef.doc(uid).update({'language': language});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('updateLanguage error: `${e.code} — `${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -117,7 +120,7 @@ class UserRepository {
     }
   }
 
-  /// Update technician profile data in Firestore.
+  /// Update user name in Firestore (email display only — auth email unchanged).
   Future<void> updateUser({
     required String uid,
     required String name,
@@ -125,7 +128,26 @@ class UserRepository {
   }) async {
     try {
       await _usersRef.doc(uid).update({'name': name, 'email': email});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('updateUser error: `${e.code} — `${e.message}');
+      if (e.code == 'permission-denied') {
+        throw const AdminException(
+          'admin_permission',
+          'Permission denied. Are you still logged in as admin?',
+          'اجازت نہیں ہے۔ کیا آپ ابھی ایڈمن کے طور پر لاگ ان ہیں؟',
+          'لا يوجد إذن. هل أنت لا تزال مسجل دخولاً كمسؤول؟',
+        );
+      }
+      throw ExpenseException.userSaveFailed();
+    }
+  }
+
+  /// Update own display name (any authenticated user).
+  Future<void> updateSelfName(String uid, String name) async {
+    try {
+      await _usersRef.doc(uid).update({'name': name});
+    } on FirebaseException catch (e) {
+      debugPrint('updateSelfName error: `${e.code} — `${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -134,7 +156,8 @@ class UserRepository {
   Future<void> deactivateUser(String uid) async {
     try {
       await _usersRef.doc(uid).update({'isActive': false});
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('deactivateUser error: `${e.code} — `${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -147,28 +170,44 @@ class UserRepository {
         batch.update(_usersRef.doc(uid), {'isActive': isActive});
       }
       await batch.commit();
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('bulkToggleActive error: `${e.code} — `${e.message}');
       throw ExpenseException.userSaveFailed();
     }
   }
 
-  /// Send a password reset email to the user.
+  /// Send a password reset email — uses Firebase Auth (free, no cloud fn needed).
   Future<void> sendPasswordReset(String email) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-    } catch (_) {
-      throw ExpenseException.userSaveFailed();
+    } on FirebaseAuthException catch (e) {
+      debugPrint('sendPasswordReset error: `${e.code} — `${e.message}');
+      throw const ExpenseException(
+        'reset_failed',
+        'Could not send reset email. Check the address and try again.',
+        'ری سیٹ ای میل نہیں بھیجی جا سکی۔ پتہ چیک کریں اور دوبارہ کوشش کریں۔',
+        'تعذر إرسال البريد الإلكتروني لإعادة التعيين. تحقق من العنوان وحاول مرة أخرى.',
+      );
     }
   }
 
-  /// Delete user document from Firestore (soft-delete via deactivation).
+  /// Soft-delete: marks user inactive + timestamp.
   Future<void> deleteUser(String uid) async {
     try {
       await _usersRef.doc(uid).update({
         'isActive': false,
         'deletedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('deleteUser error: `${e.code} — `${e.message}');
+      if (e.code == 'permission-denied') {
+        throw const AdminException(
+          'admin_permission',
+          'Permission denied. Are you still logged in as admin?',
+          'اجازت نہیں ہے۔ کیا آپ ابھی ایڈمن کے طور پر لاگ ان ہیں؟',
+          'لا يوجد إذن. هل أنت لا تزال مسجل دخولاً كمسؤول؟',
+        );
+      }
       throw ExpenseException.userSaveFailed();
     }
   }

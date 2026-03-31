@@ -196,6 +196,64 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     title: l.invoiceDetails,
                   ),
                   const SizedBox(height: 8),
+                  companiesAsync
+                      .when(
+                        data: (companies) => companies.isEmpty
+                            ? const SizedBox.shrink()
+                            : DropdownButtonFormField<String>(
+                                initialValue: _selectedCompanyId,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  hintText: l.selectCompany,
+                                  prefixIcon: Icon(
+                                    Icons.apartment_rounded,
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                                ),
+                                items: [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text(
+                                      l.noCompany,
+                                      style: TextStyle(
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                  ...companies.map(
+                                    (company) => DropdownMenuItem(
+                                      value: company.id,
+                                      child: Text(company.name),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  CompanyModel? selectedCompany;
+                                  for (final company in companies) {
+                                    if (company.id == value) {
+                                      selectedCompany = company;
+                                      break;
+                                    }
+                                  }
+                                  setState(() {
+                                    _selectedCompanyId = value?.isEmpty ?? true
+                                        ? null
+                                        : value;
+                                    _selectedCompanyName =
+                                        selectedCompany?.name ?? '';
+                                    _selectedCompanyPrefix =
+                                        selectedCompany?.invoicePrefix ?? '';
+                                  });
+                                },
+                                // Company selection is optional
+                              ),
+                        loading: () =>
+                            const ArcticShimmer(height: 56, count: 1),
+                        error: (_, __) => const SizedBox.shrink(),
+                      )
+                      .animate()
+                      .fadeIn(delay: 100.ms),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _invoiceController,
                     textInputAction: TextInputAction.next,
@@ -211,55 +269,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     ),
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? l.required : null,
-                  ).animate().fadeIn(delay: 100.ms),
-                  const SizedBox(height: 12),
-                  companiesAsync
-                      .when(
-                        data: (companies) => DropdownButtonFormField<String>(
-                          initialValue: _selectedCompanyId,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            hintText: l.selectCompany,
-                            prefixIcon: Icon(
-                              Icons.apartment_rounded,
-                              color: ArcticTheme.arcticTextSecondary,
-                            ),
-                          ),
-                          items: companies
-                              .map(
-                                (company) => DropdownMenuItem(
-                                  value: company.id,
-                                  child: Text(company.name),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            CompanyModel? selectedCompany;
-                            for (final company in companies) {
-                              if (company.id == value) {
-                                selectedCompany = company;
-                                break;
-                              }
-                            }
-
-                            setState(() {
-                              _selectedCompanyId = value;
-                              _selectedCompanyName =
-                                  selectedCompany?.name ?? '';
-                              _selectedCompanyPrefix =
-                                  selectedCompany?.invoicePrefix ?? '';
-                            });
-                          },
-                          validator: (value) => value == null || value.isEmpty
-                              ? l.required
-                              : null,
-                        ),
-                        loading: () =>
-                            const ArcticShimmer(height: 56, count: 1),
-                        error: (_, __) => const SizedBox.shrink(),
-                      )
-                      .animate()
-                      .fadeIn(delay: 120.ms),
+                  ).animate().fadeIn(delay: 120.ms),
                   if (_selectedCompanyPrefix.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Align(

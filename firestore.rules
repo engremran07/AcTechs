@@ -27,10 +27,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAdmin();
-      // Admins can update anything; technicians can update their own language
+      // Admins can update anything; technicians can update their own language or name
       allow update: if isAdmin() ||
         (isOwner(userId) &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['language']));
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['language', 'name']));
       allow delete: if false;
     }
 
