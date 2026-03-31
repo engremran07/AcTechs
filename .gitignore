@@ -35,6 +35,7 @@ migrate_working_dir/
 .claude/
 android/app/google-services.json
 lib/firebase_options.dart
+scripts/node_modules/
 
 # Symbolication related
 app.*.symbols
