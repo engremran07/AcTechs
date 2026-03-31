@@ -720,6 +720,33 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get passwordResetConfirmTitle => 'پاس ورڈ ری سیٹ؟';
+
+  @override
+  String passwordResetConfirmBody(String email) {
+    return '$email پر ری سیٹ لنک بھیجا جائے گا۔ جاری رکھیں؟';
+  }
+
+  @override
+  String get passwordResetEmailSentTitle => 'ای میل بھیج دی گئی';
+
+  @override
+  String passwordResetEmailSentBody(String email) {
+    return '$email پر ری سیٹ لنک بھیج دیا گیا ہے۔\n\nبراہ کرم اپنا ان باکس چیک کریں۔ اگر چند منٹوں میں نظر نہ آئے تو اسپیم یا جنک فولڈر دیکھیں۔\n\nلنک 1 گھنٹے میں ختم ہو جائے گا۔';
+  }
+
+  @override
+  String get passwordResetNetworkError =>
+      'انٹرنیٹ کنکشن نہیں ہے۔ براہ کرم کنکٹ کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get passwordResetRateLimit =>
+      'بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get send => 'بھیجیں';
+
+  @override
   String confirmDeleteUser(String name) {
     return '$name کو غیر فعال کیا جائے گا اور وہ سائن ان نہیں کر سکیں گے۔ جاری رکھیں؟';
   }

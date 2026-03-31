@@ -347,5 +347,19 @@
   "catCookingOil": "زيت طبخ",
   "catMilk": "حليب",
   "catSpices": "بهارات",
-  "catOtherGroceries": "مشتريات أخرى"
+  "catOtherGroceries": "مشتريات أخرى",
+
+  "passwordResetConfirmTitle": "إعادة تعيين كلمة المرور؟",
+  "passwordResetConfirmBody": "سيتم إرسال رابط إعادة التعيين إلى {email}. متابعة؟",
+  "@passwordResetConfirmBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetEmailSentTitle": "تم إرسال البريد الإلكتروني",
+  "passwordResetEmailSentBody": "تم إرسال رابط إعادة التعيين إلى {email}.\n\nيرجى التحقق من صندوق الوارد. إذا لم تجده خلال بضع دقائق، تحقق من مجلد البريد العشوائي.\n\nينتهي صلاحية الرابط خلال ساعة واحدة.",
+  "@passwordResetEmailSentBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetNetworkError": "لا يوجد اتصال بالإنترنت. يرجى الاتصال والمحاولة مرة أخرى.",
+  "passwordResetRateLimit": "طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.",
+  "send": "إرسال"
 }

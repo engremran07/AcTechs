@@ -61,6 +61,27 @@ class AuthException extends AppException {
     'تعذر تحديث ملفك الشخصي. حاول مرة أخرى.',
   );
 
+  factory AuthException.resetNetworkError() => const AuthException(
+    'auth_reset_network',
+    'No internet connection. Please connect and try again.',
+    'انٹرنیٹ کنکشن نہیں ہے۔ براہ کرم کنکٹ کریں اور دوبارہ کوشش کریں۔',
+    'لا يوجد اتصال بالإنترنت. يرجى الاتصال والمحاولة مرة أخرى.',
+  );
+
+  factory AuthException.resetRateLimit() => const AuthException(
+    'auth_reset_rate_limit',
+    'Too many reset requests. Please wait a few minutes and try again.',
+    'بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔',
+    'طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.',
+  );
+
+  factory AuthException.resetFailed() => const AuthException(
+    'auth_reset_failed',
+    'Could not send reset email. Check the address and try again.',
+    'ری سیٹ ای میل نہیں بھیجی جا سکی۔ پتہ چیک کریں اور دوبارہ کوشش کریں۔',
+    'تعذر إرسال البريد الإلكتروني لإعادة التعيين. تحقق من العنوان وحاول مرة أخرى.',
+  );
+
   factory AuthException.fromFirebase(String firebaseCode) {
     return switch (firebaseCode) {
       'wrong-password' ||

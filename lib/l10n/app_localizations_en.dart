@@ -722,6 +722,33 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get passwordResetConfirmTitle => 'Reset Password?';
+
+  @override
+  String passwordResetConfirmBody(String email) {
+    return 'A reset link will be sent to $email. Continue?';
+  }
+
+  @override
+  String get passwordResetEmailSentTitle => 'Email Sent';
+
+  @override
+  String passwordResetEmailSentBody(String email) {
+    return "A reset link has been sent to $email.\n\nPlease check your inbox. If you don't see it within a few minutes, check your Spam or Junk folder.\n\nThe link expires in 1 hour.";
+  }
+
+  @override
+  String get passwordResetNetworkError =>
+      'No internet connection. Please connect and try again.';
+
+  @override
+  String get passwordResetRateLimit =>
+      'Too many reset requests. Please wait a few minutes and try again.';
+
+  @override
+  String get send => 'Send';
+
+  @override
   String confirmDeleteUser(String name) {
     return 'This will deactivate $name and they won\'t be able to sign in. Continue?';
   }

@@ -1474,6 +1474,48 @@ abstract class AppLocalizations {
   /// **'Password reset email sent to {email}'**
   String passwordResetSent(String email);
 
+  /// No description provided for @passwordResetConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password?'**
+  String get passwordResetConfirmTitle;
+
+  /// No description provided for @passwordResetConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A reset link will be sent to {email}. Continue?'**
+  String passwordResetConfirmBody(String email);
+
+  /// No description provided for @passwordResetEmailSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Sent'**
+  String get passwordResetEmailSentTitle;
+
+  /// No description provided for @passwordResetEmailSentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A reset link has been sent to {email}. ...'**
+  String passwordResetEmailSentBody(String email);
+
+  /// No description provided for @passwordResetNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Please connect and try again.'**
+  String get passwordResetNetworkError;
+
+  /// No description provided for @passwordResetRateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many reset requests. Please wait a few minutes and try again.'**
+  String get passwordResetRateLimit;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
   /// No description provided for @confirmDeleteUser.
   ///
   /// In en, this message translates to:

@@ -719,6 +719,33 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get passwordResetConfirmTitle => 'إعادة تعيين كلمة المرور؟';
+
+  @override
+  String passwordResetConfirmBody(String email) {
+    return 'سيتم إرسال رابط إعادة التعيين إلى $email. متابعة؟';
+  }
+
+  @override
+  String get passwordResetEmailSentTitle => 'تم إرسال البريد الإلكتروني';
+
+  @override
+  String passwordResetEmailSentBody(String email) {
+    return 'تم إرسال رابط إعادة التعيين إلى $email.\n\nيرجى التحقق من صندوق الوارد. إذا لم تجده خلال بضع دقائق، تحقق من مجلد البريد العشوائي.\n\nينتهي صلاحية الرابط خلال ساعة واحدة.';
+  }
+
+  @override
+  String get passwordResetNetworkError =>
+      'لا يوجد اتصال بالإنترنت. يرجى الاتصال والمحاولة مرة أخرى.';
+
+  @override
+  String get passwordResetRateLimit =>
+      'طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.';
+
+  @override
+  String get send => 'إرسال';
+
+  @override
   String confirmDeleteUser(String name) {
     return 'سيتم تعطيل $name ولن يتمكن من تسجيل الدخول. متابعة؟';
   }
