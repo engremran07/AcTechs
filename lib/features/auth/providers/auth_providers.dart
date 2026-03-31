@@ -1,0 +1,68 @@
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
+import 'package:ac_techs/features/admin/data/user_repository.dart';
+
+final authStateProvider = StreamProvider<User?>((ref) {
+  return ref.watch(authRepositoryProvider).authStateChanges;
+});
+
+final currentUserProvider = StreamProvider<UserModel?>((ref) {
+  final authState = ref.watch(authStateProvider);
+  return authState.when(
+    data: (user) {
+      if (user == null) return Stream.value(null);
+      return ref.watch(authRepositoryProvider).userStream(user.uid);
+    },
+    loading: () => Stream.value(null),
+    error: (_, __) => Stream.value(null),
+  );
+});
+
+final signInProvider = AsyncNotifierProvider<SignInNotifier, void>(
+  SignInNotifier.new,
+);
+
+class SignInNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<UserModel> signIn(String email, String password) async {
+    state = const AsyncLoading();
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .signIn(email, password);
+      state = const AsyncData(null);
+      return user;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    // 1. Invalidate all data providers to stop Firestore listeners
+    ref.invalidate(technicianJobsProvider);
+    ref.invalidate(todaysJobsProvider);
+    ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(allJobsProvider);
+    ref.invalidate(allTechniciansProvider);
+    ref.invalidate(allUsersProvider);
+    ref.invalidate(currentUserProvider);
+
+    // 2. Sign out from Firebase Auth
+    await ref.read(authRepositoryProvider).signOut();
+
+    // 3. Invalidate repository providers so next login gets fresh Firestore instances
+    ref.invalidate(jobRepositoryProvider);
+    ref.invalidate(userRepositoryProvider);
+    ref.invalidate(authRepositoryProvider);
+    ref.invalidate(authStateProvider);
+  }
+}

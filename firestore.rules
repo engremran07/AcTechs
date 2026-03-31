@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if caller is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: get the caller's user document
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Helper: check if caller is admin
+    function isAdmin() {
+      return isAuth() && userData().role == 'admin';
+    }
+
+    // Helper: check if caller is the document owner
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // ─── Users ───
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin();
+      // Admins can update anything; technicians can update their own language
+      allow update: if isAdmin() ||
+        (isOwner(userId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['language']));
+      allow delete: if false;
+    }
+
+    // ─── Jobs ───
+    match /jobs/{jobId} {
+      allow read: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+
+      allow create: if isAuth() &&
+        request.resource.data.techId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      allow update: if isAdmin() ||
+        (isOwner(resource.data.techId) && resource.data.status == 'pending');
+
+      allow delete: if false;
+    }
+
+    // ─── Expenses ───
+    match /expenses/{expenseId} {
+      // Techs read own; admins read all
+      allow read: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+
+      // Techs create own expenses
+      allow create: if isAuth() &&
+        request.resource.data.techId == request.auth.uid;
+
+      // Techs can update/delete own; admins can update/delete any
+      allow update, delete: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+    }
+
+    // ─── Earnings ───
+    match /earnings/{earningId} {
+      // Techs read own; admins read all
+      allow read: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+
+      // Techs create own earnings
+      allow create: if isAuth() &&
+        request.resource.data.techId == request.auth.uid;
+
+      // Techs can update/delete own; admins can update/delete any
+      allow update, delete: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+    }
+
+    // ─── Companies ───
+    match /companies/{companyId} {
+      allow read: if isAuth();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+  }
+}

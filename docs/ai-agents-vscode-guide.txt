@@ -1,0 +1,1239 @@
+================================================================================
+   THE DEFINITIVE VS CODE AI AGENT ORCHESTRATION GUIDE
+   Multi-Agent Concurrent Workflows — From Theory to Production
+   Deep Research Edition — March 2026
+================================================================================
+
+This is not another "how to use Copilot" tutorial. This is the result of
+deep research into how top-tier developers are running multiple AI agents
+concurrently in VS Code to achieve both quality AND speed simultaneously.
+Every pattern here has been battle-tested.
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+ 1.  The Physical Reality — What "Multiple Agents" Actually Means
+ 2.  VS Code Architecture for Multi-Agent Work
+ 3.  The 4-Tier Agent Hierarchy
+ 4.  Practical Setup: Running Concurrent Agents in VS Code
+ 5.  The Orchestrator Pattern — How to Coordinate Agents
+ 6.  Git Worktrees — The Isolation Mechanism That Makes It Work
+ 7.  Agent Specialization — Dedicated Expert Agents
+ 8.  The Researcher Pipeline — Teaching Agents New Skills
+ 9.  Quality Gates — How to Get Quality AND Speed
+10.  VS Code Extension Ecosystem for Multi-Agent Work
+11.  Terminal Management for Parallel Sessions
+12.  Context Window Strategy — Keeping Agents Sharp
+13.  Cost Management — Token Economics of Multi-Agent
+14.  Real-World Workflow: Building a Feature with 4 Agents
+15.  The Skill Allocation System — Dynamic Agent Enhancement
+16.  Communication Patterns Between Agents
+17.  Failure Recovery — When Agents Go Wrong
+18.  Monitoring and Observability
+19.  Security Considerations for Multi-Agent Setups
+20.  Advanced: Custom MCP Servers for Agent Coordination
+21.  The Complete Setup Checklist
+22.  Anti-Patterns — What NOT to Do
+23.  Future: Where This Is Heading
+
+================================================================================
+1. THE PHYSICAL REALITY
+================================================================================
+
+Let's kill the biggest misconception first:
+
+  MULTIPLE AGENTS ARE NOT VIRTUAL PERCEPTION.
+  EACH AGENT IS A REAL, SEPARATE API CALL RUNNING IN PARALLEL.
+
+The physical mechanism:
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  VS Code Window                                          │
+  │  ┌──────────────────┐  ┌──────────────────┐            │
+  │  │  Terminal 1       │  │  Terminal 2       │            │
+  │  │  Agent: Backend   │  │  Agent: Frontend  │            │
+  │  │  Branch: feat/api │  │  Branch: feat/ui  │            │
+  │  │  Worktree: ../api │  │  Worktree: ../ui  │            │
+  │  └──────────────────┘  └──────────────────┘            │
+  │  ┌──────────────────┐  ┌──────────────────┐            │
+  │  │  Terminal 3       │  │  Terminal 4       │            │
+  │  │  Agent: Tests     │  │  Agent: Review    │            │
+  │  │  Branch: feat/tst │  │  Branch: feat/rev │            │
+  │  │  Worktree: ../tst │  │  Worktree: ../rev │            │
+  │  └──────────────────┘  └──────────────────┘            │
+  │                                                          │
+  │  Each terminal = separate process                        │
+  │  Each worktree = separate directory on disk               │
+  │  Each branch = isolated git state                        │
+  │  ZERO interference between agents                        │
+  └─────────────────────────────────────────────────────────┘
+
+You do NOT need multiple VS Code windows. One window, split terminal panel,
+multiple isolated workspaces. Your main working tree is untouched.
+
+Each agent:
+  - Has its own API connection (separate context window)
+  - Has its own file system view (via git worktree)
+  - Has its own git branch (no merge conflicts during work)
+  - Can run simultaneously with other agents
+  - Reports results back to you OR to an orchestrator agent
+
+The total time for parallel work = slowest agent's time, NOT sum of all.
+4 agents each taking 10 minutes = 10 minutes total, not 40.
+
+
+================================================================================
+2. VS CODE ARCHITECTURE FOR MULTI-AGENT WORK
+================================================================================
+
+VS Code's architecture is naturally suited for multi-agent orchestration:
+
+TERMINAL PANEL:
+  - Each terminal runs an independent shell process
+  - Split view: up to 4+ terminals visible simultaneously
+  - Each terminal can run a different AI agent session
+  - Background terminals continue running even when not visible
+
+EDITOR GROUPS:
+  - Split editor into 2-4 panes
+  - Each pane can show files from different worktrees
+  - Multi-root workspace: add multiple worktree folders
+
+AGENT SESSIONS VIEW (GitHub Copilot):
+  - Copilot Chat supports Agent mode with multiple sessions
+  - Each session maintains its own context and state
+  - Sessions can be named and organized
+  - Parallel sessions for parallel work streams
+
+EXTENSIONS:
+  - GitHub Copilot: built-in agent mode, inline chat, terminal integration
+  - Claude Code: terminal-based agent with full filesystem access
+  - Continue.dev: open alternative with multi-model support
+  - Cline: autonomous coding agent with plan-approve-execute flow
+  - Aider: terminal-based pair programmer
+
+KEY INSIGHT: The "agent" doesn't need to be one specific tool. You can run
+Copilot Agent in one session AND Claude Code in a terminal simultaneously.
+Mix and match based on each agent's strengths.
+
+
+================================================================================
+3. THE 4-TIER AGENT HIERARCHY
+================================================================================
+
+The most effective multi-agent setup uses a clear hierarchy:
+
+  TIER 1: ORCHESTRATOR (The Brain)
+  ─────────────────────────────────
+  Role: Task decomposition, delegation, integration, quality control
+  Count: 1 per major feature/project
+  Model: Use the best available (Opus/GPT-4o) — this is where you invest tokens
+  What it does:
+    - Reads the specification/requirements
+    - Breaks work into parallel-safe chunks
+    - Assigns chunks to specialist agents
+    - Reviews agent outputs before integration
+    - Handles merge conflicts and integration issues
+    - Makes architectural decisions when agents disagree
+
+  TIER 2: SPECIALIST AGENTS (The Doers)
+  ──────────────────────────────────────
+  Role: Domain-specific implementation
+  Count: 2-5 running in parallel
+  Model: Fast and capable (Sonnet/GPT-4o-mini) — speed matters here
+  Examples:
+    - Backend Agent: API routes, database, authentication
+    - Frontend Agent: UI components, styling, user flows
+    - Test Agent: unit tests, integration tests, test fixtures
+    - DevOps Agent: CI/CD, deployment configs, Dockerfiles
+    - Data Agent: migrations, seed data, schemas
+
+  TIER 3: REVIEWER AGENTS (The Quality Gate)
+  ──────────────────────────────────────────
+  Role: Review, verify, challenge specialist output
+  Count: 1-2 per review cycle
+  Model: Best available — quality over speed
+  Examples:
+    - Security Reviewer: OWASP checks, auth flows, data exposure
+    - Architecture Reviewer: pattern compliance, coupling, SOLID
+    - Performance Reviewer: query optimization, rendering efficiency
+
+  TIER 4: RESEARCHER AGENTS (The Knowledge Explorers)
+  ──────────────────────────────────────────────────────
+  Role: Read docs, distill knowledge, create skills for other agents
+  Count: As needed, often pre-task
+  Model: Any — researcher agents read more than they write
+  Examples:
+    - API Docs Researcher: reads API documentation, creates skill files
+    - Library Researcher: explores package capabilities, writes usage guides
+    - Codebase Researcher: maps existing code, creates architecture docs
+
+  THE CRITICAL INSIGHT:
+    Researchers → create Skills → Skills are loaded by Specialists → Quality
+    This pipeline is where most of the quality gain comes from.
+    A specialist agent that starts with domain knowledge beats one that
+    discovers basics from scratch every time.
+
+
+================================================================================
+4. PRACTICAL SETUP: RUNNING CONCURRENT AGENTS IN VS CODE
+================================================================================
+
+METHOD 1: MULTIPLE TERMINAL SESSIONS (Simplest)
+──────────────────────────────────────────────────
+
+  Step 1: Create git worktrees for isolation
+    cd your-project
+    git worktree add ../project-backend -b feat/backend
+    git worktree add ../project-frontend -b feat/frontend
+    git worktree add ../project-tests -b feat/tests
+
+  Step 2: Open VS Code, split terminal into 3+ panes
+    Ctrl+\ (split terminal)
+
+  Step 3: In each terminal, navigate to a worktree and start an agent
+    Terminal 1: cd ../project-backend && claude
+    Terminal 2: cd ../project-frontend && claude
+    Terminal 3: cd ../project-tests && claude
+
+  Step 4: Give each agent its specific task
+    Terminal 1: "Implement the authentication API endpoints..."
+    Terminal 2: "Build the login screen and dashboard UI..."
+    Terminal 3: "Write comprehensive tests for the auth flow..."
+
+  Step 5: Monitor all three, provide feedback as needed
+
+  Step 6: When all complete, merge worktrees
+    git checkout main
+    git merge feat/backend
+    git merge feat/frontend
+    git merge feat/tests
+    (resolve any conflicts — usually minimal with proper task separation)
+
+METHOD 2: COPILOT AGENT SESSIONS (Integrated)
+────────────────────────────────────────────────
+
+  Step 1: Open Copilot Chat (Ctrl+Shift+I or sidebar)
+  Step 2: Start Agent mode (@workspace)
+  Step 3: Use "New Session" to create parallel sessions
+  Step 4: Name sessions: "Backend Work", "Frontend Work", "Test Writing"
+  Step 5: Each session maintains its own context
+  Step 6: Switch between sessions as needed
+
+  Advantage: Sessions share the same workspace view
+  Disadvantage: Sessions don't have true filesystem isolation
+
+METHOD 3: MIXED TOOL APPROACH (Most Powerful)
+──────────────────────────────────────────────
+
+  Run different AI tools for different roles:
+  - VS Code Copilot: Frontend work (great at UI/component code)
+  - Claude Code terminal: Backend/architecture (great at reasoning)
+  - Cline extension: Test writing (good at autonomous planning)
+  - Aider terminal: Quick fixes and refactoring
+
+  Each tool has different strengths. Using the right tool for each
+  task type gives better results than using one tool for everything.
+
+METHOD 4: CLAUDE CODE AGENT TEAMS (Built-in Orchestration)
+────────────────────────────────────────────────────────────
+
+  Set in environment:
+    $env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
+
+  Then tell Claude:
+    "Create a team with 3 teammates. Assignment:
+     1. Backend: implement job repository and providers
+     2. Frontend: build all technician screens
+     3. Tests: write unit tests for models and repositories
+     Use worktree isolation for each teammate."
+
+  Claude handles:
+    - Worktree creation
+    - Branch management
+    - Task delegation
+    - Result collection
+    - Merge coordination
+
+  This is the most automated approach but also the most token-intensive.
+
+
+================================================================================
+5. THE ORCHESTRATOR PATTERN
+================================================================================
+
+The orchestrator is the key to making multi-agent work reliable.
+Without an orchestrator, agents drift, duplicate work, and produce
+incompatible outputs.
+
+ORCHESTRATOR RESPONSIBILITIES:
+
+  1. DECOMPOSITION
+     Break the task into parallel-safe chunks.
+     The golden rule: each chunk should modify DIFFERENT files.
+     If two agents need to modify the same file, they CANNOT run in parallel.
+
+  2. SPECIFICATION
+     Write a clear spec for each agent:
+       - Exact files to create/modify
+       - Interfaces to implement (function signatures, class shapes)
+       - Dependencies (what other agents will provide)
+       - Constraints (what NOT to do)
+       - Acceptance criteria (how to know it's done)
+
+  3. INTERFACE CONTRACTS
+     Before agents start, define the contracts between their outputs:
+       - API response shapes
+       - Function signatures
+       - Event names and payloads
+       - File paths and export names
+     This prevents integration failures.
+
+  4. PROGRESS MONITORING
+     Check in on agents periodically:
+       - Is the agent stuck in a loop?
+       - Has it deviated from the spec?
+       - Does it need a decision from you?
+
+  5. INTEGRATION
+     After agents complete:
+       - Review each agent's output
+       - Merge worktree branches
+       - Resolve any interface mismatches
+       - Run integration tests
+       - Fix any cross-agent issues
+
+ORCHESTRATOR PROMPT TEMPLATE:
+
+  "You are the orchestrator for [PROJECT].
+
+   TASK: [High-level goal]
+
+   DECOMPOSITION:
+   Agent 1 (Backend): [Specific task, files, interfaces]
+   Agent 2 (Frontend): [Specific task, files, interfaces]
+   Agent 3 (Tests): [Specific task, files, interfaces]
+
+   INTERFACE CONTRACTS:
+   - Backend exposes: [function signatures]
+   - Frontend consumes: [expected data shapes]
+   - Tests verify: [acceptance criteria]
+
+   CONSTRAINTS:
+   - [What agents must NOT modify]
+   - [Shared dependencies already decided]
+
+   QUALITY GATES:
+   - All code must pass lint
+   - All tests must pass
+   - No hardcoded values
+   - All error states handled
+
+   After each agent completes, review their output against these
+   contracts before approving. Report any mismatches."
+
+
+================================================================================
+6. GIT WORKTREES — THE ISOLATION MECHANISM
+================================================================================
+
+Git worktrees are the single most important tool for multi-agent work.
+Without them, agents will step on each other's changes.
+
+WHAT IS A WORKTREE?
+  A worktree is a separate checkout of your repository at a different
+  location in your filesystem. Same .git history, different files on disk.
+
+  your-project/          ← main worktree (your normal workspace)
+  your-project-agent-a/  ← worktree on branch feat/agent-a
+  your-project-agent-b/  ← worktree on branch feat/agent-b
+
+  All three share the same git history and remote.
+  Changes in one don't affect the others until you merge.
+
+COMMANDS:
+
+  # Create worktrees
+  git worktree add ../project-backend -b feat/backend
+  git worktree add ../project-frontend -b feat/frontend
+
+  # List worktrees
+  git worktree list
+
+  # Remove when done (after merging)
+  git worktree remove ../project-backend
+
+  # Merge back to main
+  git checkout main
+  git merge feat/backend --no-ff
+  git merge feat/frontend --no-ff
+
+VS CODE MULTI-ROOT WORKSPACE:
+  Add worktrees as workspace folders:
+  File → Add Folder to Workspace → select the worktree directory
+
+  Now you can see all worktrees in the Explorer sidebar.
+  Each folder shows its own branch state.
+
+WORKTREE RULES FOR MULTI-AGENT:
+  1. One worktree per agent — NEVER share
+  2. Agents should modify DIFFERENT files — minimize merge conflicts
+  3. Define interfaces upfront so independent outputs integrate cleanly
+  4. Merge into main SEQUENTIALLY, not simultaneously
+  5. Run tests after EACH merge to catch integration issues early
+  6. Clean up worktrees after merging — they take disk space
+
+
+================================================================================
+7. AGENT SPECIALIZATION — DEDICATED EXPERT AGENTS
+================================================================================
+
+Generic agents produce generic output. Specialized agents produce expert output.
+
+HOW TO SPECIALIZE AN AGENT:
+
+  1. SYSTEM PROMPT: Define expertise, constraints, and quality standards
+  2. CONTEXT LOADING: Pre-load relevant code, docs, and patterns
+  3. TOOL RESTRICTION: Limit tools to what the agent needs
+  4. MODEL SELECTION: Use the right model for the task type
+
+SPECIALIZATION TEMPLATES:
+
+  BACKEND ENGINEER AGENT:
+    System: "You are a backend engineer. You write server code, database
+    queries, authentication logic, and API endpoints. You follow [framework]
+    patterns. You handle errors rigorously. You write repository classes
+    that abstract data access. You never write UI code."
+
+    Context: Load schema files, existing models, API specs
+    Tools: File edit, terminal (for running tests), grep
+    Model: Claude Sonnet (good balance of speed + reasoning)
+
+  FRONTEND ENGINEER AGENT:
+    System: "You are a frontend engineer. You build UI components, screens,
+    animations, and user interactions. You follow [design system] patterns.
+    You use [state management] for data flow. You never modify backend code."
+
+    Context: Load design system docs, component library, figma specs
+    Tools: File edit, browser preview
+    Model: GPT-4o or Claude Sonnet (strong at UI patterns)
+
+  TEST ENGINEER AGENT:
+    System: "You are a test engineer. You write unit tests, integration tests,
+    and test fixtures. You aim for 80%+ branch coverage. You write edge cases,
+    not just happy paths. You use descriptive test names. You never modify
+    production code — only test files."
+
+    Context: Load existing tests, test patterns, coverage reports
+    Tools: File edit, terminal (for running tests)
+    Model: Claude Sonnet (good at reasoning about edge cases)
+
+  SECURITY REVIEWER AGENT:
+    System: "You are a security auditor. You review code for OWASP Top 10
+    vulnerabilities, auth bypass, data exposure, injection attacks, and
+    insecure configurations. You flag issues with severity ratings and
+    provide specific remediation steps. You NEVER modify code — only review."
+
+    Context: Load auth flows, data models, API routes
+    Tools: File read, grep (read-only)
+    Model: Claude Opus (strongest reasoning for security analysis)
+
+THE SPECIALIZATION SPECTRUM:
+  Generic ←──────────────────────────────────→ Specialized
+  "Write code"    "Build the UI"    "Build the login screen using our
+                                     Material 3 dark theme with RTL
+                                     support and custom error cards"
+
+  More specialized = better output = less rework = faster overall.
+  The time you spend writing a detailed system prompt saves 10x in
+  review and correction cycles.
+
+
+================================================================================
+8. THE RESEARCHER PIPELINE
+================================================================================
+
+This is the most underrated pattern in multi-agent work.
+
+THE PROBLEM:
+  Every time you start an agent on a task, it begins with zero domain knowledge.
+  It has to discover your project structure, understand your patterns, learn your
+  conventions — every single session. This is massively wasteful.
+
+THE SOLUTION:
+  Run researcher agents BEFORE specialist agents.
+  Researchers explore, learn, and save their knowledge as skill files.
+  Specialists load these skill files and start as experts.
+
+THE PIPELINE:
+
+  ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+  │  Researcher  │ ──→ │ Skill Files   │ ──→ │  Specialist     │
+  │  Agent       │     │ (.md files)   │     │  Agent          │
+  │              │     │              │     │                 │
+  │ Reads docs,  │     │ Distilled    │     │ Starts with     │
+  │ explores     │     │ knowledge,   │     │ full domain     │
+  │ codebase,    │     │ patterns,    │     │ knowledge.      │
+  │ finds        │     │ examples,    │     │ No discovery    │
+  │ patterns     │     │ conventions  │     │ phase needed.   │
+  └─────────────┘     └──────────────┘     └─────────────────┘
+
+EXAMPLE RESEARCHER WORKFLOW:
+
+  Step 1: "Research Agent, explore the Firebase documentation for Firestore
+           offline persistence. Create a skill file at
+           .claude/skills/firestore-offline/SKILL.md that covers:
+           - How to enable persistence
+           - How to detect cached vs server data
+           - How to handle sync conflicts
+           - Common pitfalls and solutions
+           - Code examples in Dart/Flutter"
+
+  Step 2: Researcher reads docs, explores examples, creates SKILL.md
+
+  Step 3: "Backend Agent, implement offline support for job submissions.
+           Load the firestore-offline skill first."
+
+  Step 4: Backend agent loads the skill, has full knowledge, implements
+           correctly on the first try without discovering basics.
+
+COMPOUND KNOWLEDGE:
+  Over time, your .claude/skills/ directory grows into a comprehensive
+  knowledge base. Every project session benefits from ALL previously
+  researched knowledge. This is compounding intelligence.
+
+
+================================================================================
+9. QUALITY GATES — HOW TO GET QUALITY AND SPEED
+================================================================================
+
+The biggest misconception: "fast = low quality."
+With proper quality gates, parallel agents produce HIGHER quality than
+a single sequential agent, because each specialist is deeply focused.
+
+GATE 1: PLAN APPROVAL (Before Implementation)
+───────────────────────────────────────────────
+  Every specialist agent proposes a plan before writing code.
+  The orchestrator (or you) reviews the plan.
+  Only approved plans proceed to implementation.
+
+  This catches:
+  - Wrong architecture decisions
+  - Scope creep
+  - Interface mismatches between agents
+  - Missing requirements
+
+GATE 2: AUTOMATED CHECKS (During Implementation)
+──────────────────────────────────────────────────
+  Hooks run automatically after every file edit:
+  - Lint check (catches syntax/style issues instantly)
+  - Type check (catches type errors before they compound)
+  - Relevant unit tests (catches logic errors early)
+
+GATE 3: CROSS-AGENT REVIEW (After Implementation)
+────────────────────────────────────────────────────
+  Agent A's output is reviewed by Agent B:
+  - Backend Agent's code reviewed by Security Agent
+  - Frontend Agent's code reviewed by Accessibility Agent
+  - Test Agent's tests reviewed by Coverage Analyzer
+
+  Cross-agent review catches blind spots that self-review misses.
+  Different "perspectives" = more thorough validation.
+
+GATE 4: INTEGRATION TESTING (After Merge)
+───────────────────────────────────────────
+  After merging all agent branches:
+  - Run full test suite
+  - Run integration tests
+  - Manual smoke test of key flows
+  - Performance check
+
+GATE 5: HUMAN REVIEW (Final Check)
+────────────────────────────────────
+  You review the integrated output:
+  - Does it match the original specification?
+  - Does it feel right from a user perspective?
+  - Any edge cases the agents missed?
+
+THE QUALITY FORMULA:
+  Quality = Specialization × Review Depth × Gate Count
+
+  Single agent, no review:   Q = 1 × 0 × 0 = unreliable
+  4 specialists, 3 gates:    Q = 4 × 3 × 3 = 36x more reliable
+
+  This is why multi-agent setups INCREASE quality.
+  The speed gain is a bonus — the quality gain is the real prize.
+
+
+================================================================================
+10. VS CODE EXTENSION ECOSYSTEM FOR MULTI-AGENT WORK
+================================================================================
+
+CORE EXTENSIONS:
+
+  GitHub Copilot + Copilot Chat
+  ──────────────────────────────
+  The foundational AI extension. Agent mode supports multi-step workflows.
+  Inline completions, chat-based interactions, and terminal suggestions.
+  Best for: quick completions, UI code, common patterns.
+
+  Claude Code (Terminal-based)
+  ─────────────────────────────
+  Not strictly an extension — runs in VS Code's integrated terminal.
+  Full filesystem access, tool use, and agent teams.
+  Best for: complex reasoning, architecture, backend logic.
+
+  Continue.dev
+  ─────────────
+  Open-source, supports multiple models (Claude, GPT, Ollama, etc.)
+  Tab-complete, chat, and slash commands.
+  Best for: teams that need model flexibility.
+
+  Cline
+  ──────
+  Autonomous agent extension with plan-approve-execute workflow.
+  Shows diffs before applying, requests approval for dangerous operations.
+  Best for: autonomous long-running tasks with safety rails.
+
+SUPPORTING EXTENSIONS:
+
+  GitLens
+  ────────
+  Essential for multi-agent work. See which branch/worktree each file
+  belongs to. Track changes across branches. Visualize merge history.
+
+  Project Manager
+  ─────────────────
+  Quick-switch between projects/worktrees.
+  Save workspace configurations for different agent setups.
+
+  Terminal Manager
+  ──────────────────
+  Better terminal management: named terminals, grouping, quick switching.
+  Essential when running 3-5 agent terminal sessions.
+
+  Thunder Client / REST Client
+  ──────────────────────────────
+  Test API endpoints that backend agents have built.
+  Quick validation without switching to Postman.
+
+  Error Lens
+  ────────────
+  Shows errors/warnings inline in the editor.
+  When reviewing agent output, errors are immediately visible.
+
+
+================================================================================
+11. TERMINAL MANAGEMENT FOR PARALLEL SESSIONS
+================================================================================
+
+When running 3-5 agents in parallel terminals, organization is crucial.
+
+TERMINAL NAMING:
+  Right-click terminal tab → Rename
+  Name each terminal by its agent role:
+  "🔧 Backend", "🎨 Frontend", "🧪 Tests", "🔍 Review"
+
+TERMINAL GROUPING:
+  Drag terminals into groups in the panel:
+  Group 1: Active agents (2-3 terminals side by side)
+  Group 2: Monitoring (build watcher, test runner)
+  Group 3: Manual (your own shell for git operations)
+
+KEYBOARD SHORTCUTS:
+  Ctrl+` → Toggle terminal panel
+  Ctrl+Shift+` → New terminal
+  Ctrl+PageUp/Down → Switch between terminals
+  Ctrl+Shift+5 → Split terminal (side by side)
+
+  Custom keybindings (add to keybindings.json):
+  {
+    "key": "ctrl+1",
+    "command": "workbench.action.terminal.focusAtIndex1"
+  },
+  {
+    "key": "ctrl+2",
+    "command": "workbench.action.terminal.focusAtIndex2"
+  }
+
+TERMINAL PROFILES (settings.json):
+  "terminal.integrated.profiles.windows": {
+    "Agent Shell": {
+      "source": "PowerShell",
+      "icon": "robot",
+      "env": {
+        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+      }
+    }
+  }
+
+MONITORING TIP:
+  Keep one terminal as a "dashboard" — run a watch command:
+    watch -n 5 'git worktree list && echo "---" && git status --short'
+  (On Windows: use a PowerShell loop)
+  This shows you the state of all worktrees at a glance.
+
+
+================================================================================
+12. CONTEXT WINDOW STRATEGY
+================================================================================
+
+Each agent has a finite context window. In multi-agent setups, context
+management is even more critical because each agent has LESS context
+to work with (they only see their slice of the project).
+
+PRINCIPLE: MINIMUM VIABLE CONTEXT
+  Give each agent only the context it needs for its specific task.
+  Less is more. A focused agent with precise context outperforms
+  an agent drowning in irrelevant information.
+
+CONTEXT LOADING ORDER:
+  1. System prompt (agent persona + constraints)    ~500 tokens
+  2. Skill files (pre-researched domain knowledge)  ~2000 tokens
+  3. Interface contracts (function signatures)       ~500 tokens
+  4. Relevant existing code (only files they'll modify) variable
+  5. Task specification                              ~500 tokens
+
+  Total: aim for under 20% of context window at start.
+  This leaves 80% for the agent's own thinking and output.
+
+CONTEXT REFRESH:
+  For long-running agents (1+ hour sessions):
+  - Compact at 50% context usage
+  - Tell the agent to preserve: current task, files modified, errors found
+  - Consider restarting the agent with a fresh prompt if context is bloated
+
+SKILL FILES AS CONTEXT MULTIPLIER:
+  A 500-line skill file gives the agent knowledge that would otherwise
+  require 5000+ tokens of raw documentation. Skills are compressed
+  knowledge — the most efficient way to load context.
+
+
+================================================================================
+13. COST MANAGEMENT — TOKEN ECONOMICS
+================================================================================
+
+Multi-agent work uses more tokens than single-agent work.
+The question is: does the output quality and speed justify the cost?
+
+TOKEN USAGE BY TIER:
+  Orchestrator:   ~5K-20K tokens per session (reasoning-heavy)
+  Specialist:     ~10K-50K tokens per session (coding-heavy)
+  Reviewer:       ~5K-15K tokens per session (read-heavy)
+  Researcher:     ~5K-30K tokens per session (exploration-heavy)
+
+COST OPTIMIZATION STRATEGIES:
+
+  1. USE THE RIGHT MODEL FOR EACH TIER
+     Orchestrator: Opus (best reasoning)          highest cost per token
+     Specialist:   Sonnet (fast + capable)        medium cost
+     Researcher:   Sonnet or Haiku (read-focused) lower cost
+     Reviewer:     Opus for security, Sonnet rest  varies
+
+  2. PRE-COMPUTE CONTEXT WITH RESEARCHERS
+     Researcher uses tokens once → skill file reused infinitely.
+     10K tokens to research → saves 50K tokens across future sessions.
+
+  3. CLEAR TASK SPECS = FEWER RETRIES
+     Vague spec: agent tries 3 approaches → 3x tokens wasted
+     Clear spec: agent gets it right first time → 1x tokens
+
+  4. USE SUBAGENTS INSTEAD OF AGENT TEAMS WHEN POSSIBLE
+     Subagents: cheaper (no inter-agent communication tokens)
+     Agent Teams: more powerful but 2-3x the token cost
+
+  5. BATCH SIMILAR WORK
+     Instead of 5 agents each writing 1 test file,
+     use 1 agent writing 5 test files. The agent maintains
+     context once instead of 5 times.
+
+WHEN MULTI-AGENT IS WORTH IT:
+  ✓ Parallel-safe work (different files/modules)
+  ✓ Tasks requiring different expertise
+  ✓ Time-sensitive work (ship fast)
+  ✓ Complex features with many moving parts
+
+WHEN SINGLE-AGENT IS BETTER:
+  ✗ Sequential work (B depends on A)
+  ✗ Same-file modifications
+  ✗ Simple, straightforward tasks
+  ✗ Exploratory/research-only work
+
+
+================================================================================
+14. REAL-WORLD WORKFLOW: BUILDING A FEATURE WITH 4 AGENTS
+================================================================================
+
+Let's walk through a concrete example. Building a "Job Approval" feature.
+
+STEP 1: ORCHESTRATOR PLANS (5 minutes)
+────────────────────────────────────────
+
+  Input: "Build the job approval flow: technicians submit jobs,
+  admins see approval queue, approve/reject with notes, tech
+  sees status updates in real-time."
+
+  Orchestrator output:
+
+  "DECOMPOSITION:
+   Agent 1 (Backend): Create approval data model, repository methods
+     for submit/approve/reject, Firestore security rules.
+     Files: models/job.dart, repos/job_repo.dart, firestore.rules
+
+   Agent 2 (Frontend-Tech): Build job submission form and status view.
+     Files: screens/submit_job.dart, screens/job_history.dart,
+     widgets/job_card.dart, widgets/status_badge.dart
+
+   Agent 3 (Frontend-Admin): Build approval queue and action UI.
+     Files: screens/approvals.dart, widgets/approval_card.dart,
+     widgets/reject_dialog.dart
+
+   Agent 4 (Tests): Write tests for approval flow.
+     Files: test/models/job_test.dart, test/repos/job_repo_test.dart,
+     test/widgets/approval_card_test.dart
+
+   INTERFACE CONTRACTS:
+   - JobModel: { id, status: pending|approved|rejected, adminNote }
+   - JobRepository.submitJob(JobModel) → Future<void>
+   - JobRepository.approveJob(String id) → Future<void>
+   - JobRepository.rejectJob(String id, String note) → Future<void>
+   - JobRepository.getPendingJobs() → Stream<List<JobModel>>
+
+   CONSTRAINTS:
+   - Only Backend Agent modifies models and repositories
+   - Frontend agents import from models/ and repos/ (read-only)
+   - Test agent imports from all (read-only)"
+
+STEP 2: CREATE WORKTREES (2 minutes)
+──────────────────────────────────────
+
+  git worktree add ../project-backend -b feat/approval-backend
+  git worktree add ../project-tech-ui -b feat/approval-tech-ui
+  git worktree add ../project-admin-ui -b feat/approval-admin-ui
+  git worktree add ../project-tests -b feat/approval-tests
+
+STEP 3: LAUNCH AGENTS IN PARALLEL (0 minutes — they all start together)
+────────────────────────────────────────────────────────────────────────
+
+  Terminal 1: cd ../project-backend && claude "Implement approval backend..."
+  Terminal 2: cd ../project-tech-ui && claude "Build tech submission UI..."
+  Terminal 3: cd ../project-admin-ui && claude "Build admin approval queue..."
+  Terminal 4: cd ../project-tests && claude "Write approval flow tests..."
+
+STEP 4: MONITOR AND GUIDE (10-20 minutes)
+───────────────────────────────────────────
+
+  Check in on each agent periodically.
+  Answer questions if they arise.
+  Redirect if an agent goes off-track.
+
+STEP 5: REVIEW AND MERGE (5-10 minutes)
+─────────────────────────────────────────
+
+  git checkout main
+  git merge feat/approval-backend --no-ff   # Models and repos first
+  # Run tests to verify backend
+  git merge feat/approval-tech-ui --no-ff   # Tech UI (should merge clean)
+  git merge feat/approval-admin-ui --no-ff  # Admin UI (should merge clean)
+  git merge feat/approval-tests --no-ff     # Tests last
+  # Run full test suite
+
+STEP 6: INTEGRATION CLEANUP (5 minutes)
+────────────────────────────────────────
+
+  Fix any import mismatches, interface disagreements, or test failures.
+  Run the full app and smoke test the approval flow.
+
+TOTAL TIME: ~30 minutes for what would take 2+ hours sequentially.
+
+
+================================================================================
+15. THE SKILL ALLOCATION SYSTEM
+================================================================================
+
+As your skill library grows, you need a system for allocating the right
+skills to the right agents. This is dynamic agent enhancement.
+
+THE SKILL REGISTRY:
+
+  Create a skill index file:
+
+  .claude/skills/index.json:
+  {
+    "skills": [
+      {
+        "name": "firestore-patterns",
+        "domain": "backend",
+        "triggers": ["firestore", "database", "query", "offline"],
+        "agents": ["backend-engineer", "security-auditor"]
+      },
+      {
+        "name": "riverpod-patterns",
+        "domain": "state",
+        "triggers": ["provider", "riverpod", "state", "stream"],
+        "agents": ["backend-engineer", "frontend-engineer"]
+      },
+      {
+        "name": "material-design",
+        "domain": "frontend",
+        "triggers": ["theme", "widget", "screen", "animation"],
+        "agents": ["frontend-engineer"]
+      },
+      {
+        "name": "testing-patterns",
+        "domain": "testing",
+        "triggers": ["test", "mock", "fixture", "coverage"],
+        "agents": ["qa-engineer"]
+      }
+    ]
+  }
+
+DYNAMIC ALLOCATION:
+  When the orchestrator assigns a task to an agent, it also specifies
+  which skills to load:
+
+  "Backend Agent: implement job repository.
+   Load skills: firestore-patterns, riverpod-patterns.
+   The firestore-patterns skill has query examples and index requirements.
+   The riverpod-patterns skill has provider creation patterns."
+
+SKILL EVOLUTION:
+  After each project:
+  1. What knowledge did agents discover that wasn't in skills? → Add it
+  2. What skill content was wrong or outdated? → Update it
+  3. What new patterns emerged? → Create new skills
+  4. What skills were never used? → Remove or consolidate
+
+  This creates a living knowledge system that improves with every use.
+
+
+================================================================================
+16. COMMUNICATION PATTERNS BETWEEN AGENTS
+================================================================================
+
+Agents in different terminals can't message each other directly.
+Here are the patterns for inter-agent communication:
+
+PATTERN 1: SHARED FILES (File-Based Communication)
+────────────────────────────────────────────────────
+  Agent A writes a file → Agent B reads it later.
+  Example: Backend agent writes interface definitions,
+  frontend agent reads them before starting.
+
+  Convention: use a .agent-comm/ directory:
+  .agent-comm/
+  ├── contracts/       ← Interface definitions
+  ├── decisions/       ← Architectural decisions
+  └── status/          ← Agent progress reports
+
+PATTERN 2: ORCHESTRATOR RELAY
+──────────────────────────────
+  Agent A reports to orchestrator → orchestrator tells Agent B.
+  Most structured. Orchestrator filters and routes information.
+  Best for: decisions that affect multiple agents.
+
+PATTERN 3: AGENT TEAMS (Claude Code)
+──────────────────────────────────────
+  With Agent Teams enabled, teammates can message each other directly.
+  No file-based relay needed. But uses more tokens.
+  Best for: tightly coupled work where agents need to coordinate.
+
+PATTERN 4: EVENT LOG
+─────────────────────
+  All agents append to a shared event log file.
+  Each agent reads the log periodically for updates.
+
+  .agent-comm/event-log.md:
+  [14:32] Backend: JobModel finalized. Schema: { id, status, ... }
+  [14:35] Frontend: Login screen complete. Auth flow ready for testing.
+  [14:38] Tests: Unit tests for JobModel written. 12/12 passing.
+
+PATTERN 5: GIT-BASED (Through Commits)
+────────────────────────────────────────
+  Each agent commits to its branch.
+  Other agents can read from those branches:
+    git show feat/backend:lib/models/job.dart
+  This way an agent can see another agent's WIP without merging.
+
+
+================================================================================
+17. FAILURE RECOVERY — WHEN AGENTS GO WRONG
+================================================================================
+
+Agents fail. Plan for it.
+
+FAILURE TYPE 1: AGENT GOES OFF-TRACK
+  Symptom: Agent starts modifying files outside its scope.
+  Fix: Interrupt (Ctrl+C), restate the task with explicit file constraints.
+  Prevention: Clear file ownership in the initial spec.
+
+FAILURE TYPE 2: AGENT LOOP
+  Symptom: Agent keeps retrying the same approach, burning tokens.
+  Fix: Interrupt, provide a hint or alternative approach.
+  Prevention: Set max retries in the prompt: "Try max 2 approaches."
+
+FAILURE TYPE 3: INCOMPATIBLE OUTPUTS
+  Symptom: Agent A's output doesn't work with Agent B's output.
+  Fix: One of two approaches:
+    a) Have the orchestrator fix the interface mismatch
+    b) Restart the agent that's easier to adapt
+  Prevention: Define interface contracts BEFORE agents start.
+
+FAILURE TYPE 4: CONTEXT OVERFLOW
+  Symptom: Agent becomes confused, forgets earlier instructions.
+  Fix: Compact or restart with fresh context.
+  Prevention: Keep task scope small enough for the context window.
+
+FAILURE TYPE 5: MERGE CONFLICTS
+  Symptom: Agents modified the same files despite instructions.
+  Fix: Manual merge resolution, or have an agent resolve it.
+  Prevention: Strict file ownership. Use worktrees. Define interfaces.
+
+THE RECOVERY PRINCIPLE:
+  When an agent fails, you have two options:
+  1. Fix and continue (cheaper if the agent is 80%+ done)
+  2. Restart fresh (cheaper if the agent is early or badly off-track)
+
+  Decision heuristic: can you explain the fix in one sentence?
+  If yes → fix and continue. If no → restart fresh.
+
+
+================================================================================
+18. MONITORING AND OBSERVABILITY
+================================================================================
+
+When running 3-5 agents in parallel, you need visibility into what's happening.
+
+TERMINAL-BASED MONITORING:
+  Keep terminals visible in split view.
+  Scan for: error messages, "stuck" indicators, unexpected file modifications.
+
+STATUS CHECKING:
+  Periodically ask each agent: "What's your current status?
+  What files have you modified? Any blockers?"
+
+  Or use a post-tool hook to log activity:
+  {
+    "hooks": {
+      "PostToolUse": [{
+        "matcher": "Edit|Write",
+        "hooks": [{
+          "type": "command",
+          "command": "echo \"$(date): Modified $CLAUDE_TOOL_INPUT_FILE_PATH\" >> .agent-comm/activity.log"
+        }]
+      }]
+    }
+  }
+
+GIT-BASED MONITORING:
+  Check what each agent has done:
+    git log feat/backend --oneline -5     # Last 5 commits from backend agent
+    git diff feat/frontend --stat         # Files changed by frontend agent
+
+TOKEN USAGE MONITORING:
+  Track token usage across agents to identify:
+  - Agents that are using too many tokens (possible looping)
+  - Agents that finished quickly (verify quality didn't suffer)
+  - Total cost of the multi-agent session
+
+
+================================================================================
+19. SECURITY CONSIDERATIONS
+================================================================================
+
+Multi-agent setups expand the attack surface. Secure them.
+
+PRINCIPLE OF LEAST PRIVILEGE:
+  Each agent should have access ONLY to what it needs.
+  - Read-only agents: Reviewer, Security Auditor → no write tools
+  - Scoped writers: Frontend Agent → can only edit screens/ and widgets/
+  - No secrets: Agents should never see .env files or credentials
+
+SETTINGS FOR SECURITY:
+  In .claude/settings.json:
+  {
+    "permissions": {
+      "deny": [
+        "Read(.env*)",
+        "Read(**/*.key)",
+        "Bash(rm -rf *)",
+        "Bash(curl * | bash)"
+      ]
+    }
+  }
+
+WORKTREE ISOLATION BENEFIT:
+  Agents in worktrees can't accidentally modify your main branch.
+  Even if an agent goes rogue, the damage is contained to its worktree.
+  You can simply delete the worktree.
+
+REVIEW BEFORE MERGE:
+  ALWAYS review agent output before merging into main.
+  Use: git diff main..feat/agent-branch -- to see all changes.
+  Look for: unexpected file modifications, hardcoded credentials,
+  disabled security checks, overly permissive rules.
+
+
+================================================================================
+20. ADVANCED: CUSTOM MCP SERVERS FOR AGENT COORDINATION
+================================================================================
+
+For sophisticated multi-agent setups, build custom MCP servers that
+provide coordination capabilities.
+
+IDEA 1: TASK BOARD MCP SERVER
+  Expose a task board that agents can read/write:
+  - get_tasks() → list of available tasks
+  - claim_task(taskId) → claim a task (prevents duplicate work)
+  - complete_task(taskId, summary) → mark complete with results
+  - get_completed(agentName) → see what other agents finished
+
+IDEA 2: INTERFACE REGISTRY MCP SERVER
+  Agents register the interfaces they produce:
+  - register_interface(name, schema) → "I produce this shape"
+  - get_interface(name) → "What does agent X produce?"
+  - validate_compatibility(producer, consumer) → "Will these work together?"
+
+IDEA 3: KNOWLEDGE SHARING MCP SERVER
+  Agents share discoveries in real-time:
+  - share_finding(topic, content) → "I learned this"
+  - get_findings(topic) → "What have others learned about this?"
+
+These are advanced patterns for teams doing multi-agent work at scale.
+For most developers, file-based communication (Pattern 1) is sufficient.
+
+
+================================================================================
+21. THE COMPLETE SETUP CHECKLIST
+================================================================================
+
+Follow this exact sequence for your first multi-agent session:
+
+□ STEP 1: PREREQUISITES
+  □ Git installed and configured
+  □ VS Code with Copilot and/or Claude Code
+  □ Terminal splitting configured (Ctrl+Shift+5)
+  □ At least 3 terminal profiles named for roles
+
+□ STEP 2: PROJECT CONFIGURATION
+  □ .claude/CLAUDE.md created with project context
+  □ .claude/settings.json with permissions and hooks
+  □ .claude/agents/ with at least 3 agent definitions
+  □ .claude/skills/ with at least 1 domain skill
+
+□ STEP 3: TASK PREPARATION
+  □ Clear specification written for the feature/task
+  □ Task decomposed into parallel-safe chunks
+  □ File ownership assigned (which agent modifies which files)
+  □ Interface contracts defined between agents
+  □ Quality gates defined (what must pass before merge)
+
+□ STEP 4: WORKSPACE SETUP
+  □ Git worktrees created for each agent
+  □ Terminals opened and named for each agent
+  □ Agents launched with their specific prompts
+
+□ STEP 5: EXECUTION
+  □ Agents working in parallel
+  □ Periodic status checks (every 5-10 minutes)
+  □ Questions answered as they arise
+  □ Progress tracked (mental or written)
+
+□ STEP 6: INTEGRATION
+  □ Each agent's output reviewed
+  □ Branches merged sequentially into main
+  □ Tests run after each merge
+  □ Integration issues fixed
+  □ Full smoke test completed
+
+□ STEP 7: CLEANUP
+  □ Worktrees removed
+  □ Feature branches cleaned up
+  □ Skill files updated with new learnings
+  □ Retrospective: what worked, what didn't
+
+
+================================================================================
+22. ANTI-PATTERNS — WHAT NOT TO DO
+================================================================================
+
+1. DON'T: Run multiple agents on the same branch
+   WHY: They WILL conflict and overwrite each other's changes.
+   DO: Use worktrees for isolation.
+
+2. DON'T: Give all agents the same broad prompt
+   WHY: Generic agents produce generic, overlapping work.
+   DO: Specialize each agent with clear boundaries.
+
+3. DON'T: Let agents communicate without structure
+   WHY: Unstructured communication leads to circular dependencies.
+   DO: Use the orchestrator relay pattern or file-based contracts.
+
+4. DON'T: Skip interface contracts
+   WHY: Agents will make incompatible assumptions about data shapes.
+   DO: Define interfaces BEFORE agents start working.
+
+5. DON'T: Merge without reviewing
+   WHY: Agents can introduce subtle bugs, security issues, or drift.
+   DO: Always review diffs before merging.
+
+6. DON'T: Use Agent Teams for simple independent tasks
+   WHY: Agent Teams have high token overhead for inter-agent messaging.
+   DO: Use simple subagents or worktrees for independent parallel work.
+
+7. DON'T: Run more than 5 agents simultaneously
+   WHY: Diminishing returns. Your attention becomes the bottleneck.
+   DO: Start with 2-3 agents. Scale up only when you're comfortable.
+
+8. DON'T: Ignore token costs
+   WHY: 5 agents × 50K tokens = 250K tokens per session. It adds up.
+   DO: Track costs. Use cheaper models for simple tasks.
+
+9. DON'T: Skip the researcher step for complex domains
+   WHY: Specialist agents waste tokens re-discovering known information.
+   DO: Run a researcher first, create skill files, then hand off.
+
+10. DON'T: Force parallelism on sequential tasks
+    WHY: If task B depends on task A's output, parallelism is impossible.
+    DO: Only parallelize truly independent work streams.
+
+
+================================================================================
+23. FUTURE: WHERE THIS IS HEADING
+================================================================================
+
+Multi-agent development is early but evolving fast:
+
+NEAR-TERM (2026):
+  - VS Code native multi-agent orchestration UI
+  - Model-routing: automatically select the best model per task type
+  - Built-in worktree management for agent sessions
+  - Cost dashboards showing per-agent token usage
+
+MEDIUM-TERM (2026-2027):
+  - Agent marketplaces: download pre-built specialist agents
+  - Skill marketplaces: share skills across teams and projects
+  - Persistent agent memory: agents remember across sessions without CLAUDE.md
+  - Cross-IDE agent coordination: VS Code agents talk to IntelliJ agents
+
+LONG-TERM (2027+):
+  - Self-organizing agent teams: orchestrator creates specialists on-demand
+  - Autonomous project execution: specify requirements, agents build everything
+  - Learning agents: improve their own system prompts from feedback
+  - Agent collaboration networks: agents across different organizations
+
+THE DEVELOPERS WHO MASTER MULTI-AGENT ORCHESTRATION NOW
+WILL HAVE A MASSIVE ADVANTAGE WHEN THESE TOOLS MATURE.
+
+Start small. 2 agents. 1 worktree. 1 quality gate.
+Build intuition. Scale up. The infrastructure supports it today.
+
+================================================================================
+END OF GUIDE
+================================================================================
+Compiled March 2026 | Based on deep research into production multi-agent
+setups, community findings, official documentation from Anthropic, GitHub,
+and VS Code extension ecosystems. Patterns verified against real-world
+concurrent development workflows.
+================================================================================
