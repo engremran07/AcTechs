@@ -39,6 +39,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create firebase_options stub (for static analysis)
+        run: |
+          cat > lib/firebase_options.dart << 'DART_EOF'
+          // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
+          // CI stub — not used at runtime.
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform =>
+                throw UnsupportedError('CI stub only.');
+          }
+          DART_EOF
+
       - name: Dart format check
         run: dart format --output=none --set-exit-if-changed lib/ test/
 
@@ -64,6 +77,19 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Create firebase_options stub (for tests)
+        run: |
+          cat > lib/firebase_options.dart << 'DART_EOF'
+          // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
+          // CI stub — not used at runtime.
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform =>
+                throw UnsupportedError('CI stub only.');
+          }
+          DART_EOF
 
       - name: Run tests
         run: flutter test --coverage
