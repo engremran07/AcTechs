@@ -22,6 +22,21 @@ class NavigateBackIntent extends Intent {
   const NavigateBackIntent();
 }
 
+/// Ctrl+N — trigger a "create new" action on the current screen.
+class NewItemIntent extends Intent {
+  const NewItemIntent();
+}
+
+/// Ctrl+P — trigger a print / PDF-export action on the current screen.
+class PrintIntent extends Intent {
+  const PrintIntent();
+}
+
+/// Ctrl+E — trigger an export (e.g. Excel) action on the current screen.
+class ExportIntent extends Intent {
+  const ExportIntent();
+}
+
 /// Provides app-wide keyboard shortcuts binding.
 /// Wrap a screen body with this to add standard shortcuts.
 class AppShortcuts extends StatelessWidget {
@@ -32,6 +47,9 @@ class AppShortcuts extends StatelessWidget {
     this.onRefresh,
     this.onSearch,
     this.onEscape,
+    this.onNewItem,
+    this.onPrint,
+    this.onExport,
   });
 
   final Widget child;
@@ -39,6 +57,9 @@ class AppShortcuts extends StatelessWidget {
   final VoidCallback? onRefresh;
   final VoidCallback? onSearch;
   final VoidCallback? onEscape;
+  final VoidCallback? onNewItem;
+  final VoidCallback? onPrint;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +75,12 @@ class AppShortcuts extends StatelessWidget {
         const SingleActivator(LogicalKeyboardKey.escape): const EscapeIntent(),
         const SingleActivator(LogicalKeyboardKey.backspace, alt: true):
             const NavigateBackIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyN, control: true):
+            const NewItemIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyP, control: true):
+            const PrintIntent(),
+        const SingleActivator(LogicalKeyboardKey.keyE, control: true):
+            const ExportIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -72,6 +99,18 @@ class AppShortcuts extends StatelessWidget {
           if (onEscape != null)
             EscapeIntent: CallbackAction<EscapeIntent>(
               onInvoke: (_) => onEscape!(),
+            ),
+          if (onNewItem != null)
+            NewItemIntent: CallbackAction<NewItemIntent>(
+              onInvoke: (_) => onNewItem!(),
+            ),
+          if (onPrint != null)
+            PrintIntent: CallbackAction<PrintIntent>(
+              onInvoke: (_) => onPrint!(),
+            ),
+          if (onExport != null)
+            ExportIntent: CallbackAction<ExportIntent>(
+              onInvoke: (_) => onExport!(),
             ),
           NavigateBackIntent: CallbackAction<NavigateBackIntent>(
             onInvoke: (_) {

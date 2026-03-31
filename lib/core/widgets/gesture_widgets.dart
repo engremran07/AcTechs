@@ -2,6 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 
+/// A button-like widget that wraps [child] in a [MouseRegion] so that the
+/// pointer cursor changes appropriately on desktop/web targets.
+///
+/// Provides:
+///  • `SystemMouseCursors.click`  while hovering over interactive widgets.
+///  • Subtle background-colour highlight on hover (respects theme).
+///  • Optional [onTap] callback.
+class CursorWidget extends StatefulWidget {
+  const CursorWidget({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.cursor = SystemMouseCursors.click,
+    this.hoverColor,
+    this.borderRadius,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final MouseCursor cursor;
+
+  /// Background tint shown on hover.  If null, defaults to
+  /// `theme.colorScheme.onSurface.withValues(alpha: 0.04)`.
+  final Color? hoverColor;
+
+  final BorderRadius? borderRadius;
+
+  @override
+  State<CursorWidget> createState() => _CursorWidgetState();
+}
+
+class _CursorWidgetState extends State<CursorWidget> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hoverTint =
+        widget.hoverColor ??
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05);
+
+    return MouseRegion(
+      cursor: widget.cursor,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: _hovered ? hoverTint : Colors.transparent,
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
 /// Wraps a child with swipe-to-action (left = primary, right = secondary).
 /// Used for approval cards (swipe right = approve, swipe left = reject) and
 /// job history cards (swipe to view details).
