@@ -13,6 +13,7 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/admin/approvals')) return 1;
     if (location.startsWith('/admin/analytics')) return 2;
     if (location.startsWith('/admin/team')) return 3;
+    if (location.startsWith('/admin/companies')) return -1; // accessed from dashboard card
     if (location.startsWith('/admin/settings')) return -1; // Not in bottom nav
     return 0;
   }
@@ -20,11 +21,19 @@ class AdminShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final idx = _currentIndex(context);
-    final isHome = idx <= 0;
+    // Only the root admin dashboard is "home" — all other routes (including
+    // settings and companies with idx=-1) should navigate back to /admin.
+    final isHome = idx == 0;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        // Allow router to pop pushed screens first
+        final router = GoRouter.of(context);
+        if (router.canPop()) {
+          router.pop();
+          return;
+        }
         if (!isHome) {
           context.go('/admin');
         } else {

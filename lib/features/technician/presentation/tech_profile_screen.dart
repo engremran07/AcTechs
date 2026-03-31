@@ -2,22 +2,105 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
-class TechProfileScreen extends ConsumerWidget {
+class TechProfileScreen extends ConsumerStatefulWidget {
   const TechProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TechProfileScreen> createState() => _TechProfileScreenState();
+}
+
+class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
+  Future<void> _showEditNameDialog() async {
+    final l = AppLocalizations.of(context)!;
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return;
+
+    final nameCtrl = TextEditingController(text: user.name);
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.editProfile),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: nameCtrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            enableInteractiveSelection: true,
+            decoration: InputDecoration(
+              hintText: l.name,
+              helperText: l.changeYourName,
+              prefixIcon: const Icon(Icons.person_outline),
+            ),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? l.required : null,
+            onFieldSubmitted: (_) {
+              if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    final newName = nameCtrl.text.trim();
+    if (newName == user.name) return;
+
+    final locale = Localizations.localeOf(context).languageCode;
+    try {
+      // Update Firebase Auth displayName + Firestore in one call
+      await ref.read(authRepositoryProvider).updateDisplayName(newName);
+      if (!mounted) return;
+      AppFeedback.success(
+        context,
+        message: AppLocalizations.of(context)!.profileUpdated,
+      );
+    } on AppException catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
+    final l = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.profile)),
+      appBar: AppBar(
+        title: Text(l.profile),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: l.editProfile,
+            onPressed: _showEditNameDialog,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -48,7 +131,7 @@ class TechProfileScreen extends ConsumerWidget {
                 ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
                 const SizedBox(height: 12),
                 Text(
-                  user?.name ?? AppLocalizations.of(context)!.technician,
+                  user?.name ?? l.technician,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ).animate().fadeIn(delay: 100.ms),
                 Text(
@@ -66,7 +149,7 @@ class TechProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocalizations.of(context)!.language,
+                  l.language,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
@@ -100,7 +183,7 @@ class TechProfileScreen extends ConsumerWidget {
               if (context.mounted) context.go('/login');
             },
             icon: const Icon(Icons.logout_rounded),
-            label: Text(AppLocalizations.of(context)!.signOut),
+            label: Text(l.signOut),
             style: OutlinedButton.styleFrom(
               foregroundColor: ArcticTheme.arcticError,
               side: const BorderSide(color: ArcticTheme.arcticError),
