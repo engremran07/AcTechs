@@ -177,17 +177,33 @@ class UserRepository {
   }
 
   /// Send a password reset email — uses Firebase Auth (free, no cloud fn needed).
+  ///
+  /// [ActionCodeSettings] configure the deep-link so Android can offer to
+  /// reopen the app after the user resets their password in the browser, and
+  /// the continue URL gives users a clear landing page post-reset.
   Future<void> sendPasswordReset(String email) async {
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      final settings = ActionCodeSettings(
+        url: 'https://actechs-d415e.web.app',
+        handleCodeInApp: false,
+        androidPackageName: 'com.actechs.pk',
+        androidInstallApp: false,
+        // API level 21 = Android 5.0 Lollipop (minimum supported version)
+        androidMinimumVersion: '21',
+      );
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+        actionCodeSettings: settings,
+      );
     } on FirebaseAuthException catch (e) {
       debugPrint('sendPasswordReset error: `${e.code} — `${e.message}');
-      throw const ExpenseException(
-        'reset_failed',
-        'Could not send reset email. Check the address and try again.',
-        'ری سیٹ ای میل نہیں بھیجی جا سکی۔ پتہ چیک کریں اور دوبارہ کوشش کریں۔',
-        'تعذر إرسال البريد الإلكتروني لإعادة التعيين. تحقق من العنوان وحاول مرة أخرى.',
-      );
+      if (e.code == 'network-request-failed') {
+        throw AuthException.resetNetworkError();
+      }
+      if (e.code == 'too-many-requests') {
+        throw AuthException.resetRateLimit();
+      }
+      throw AuthException.resetFailed();
     }
   }
 

@@ -347,5 +347,19 @@
   "catCookingOil": "کوکنگ آئل",
   "catMilk": "دودھ",
   "catSpices": "مصالحہ جات",
-  "catOtherGroceries": "دیگر کریانہ"
+  "catOtherGroceries": "دیگر کریانہ",
+
+  "passwordResetConfirmTitle": "پاس ورڈ ری سیٹ؟",
+  "passwordResetConfirmBody": "{email} پر ری سیٹ لنک بھیجا جائے گا۔ جاری رکھیں؟",
+  "@passwordResetConfirmBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetEmailSentTitle": "ای میل بھیج دی گئی",
+  "passwordResetEmailSentBody": "{email} پر ری سیٹ لنک بھیج دیا گیا ہے۔\n\nبراہ کرم اپنا ان باکس چیک کریں۔ اگر چند منٹوں میں نظر نہ آئے تو اسپیم یا جنک فولڈر دیکھیں۔\n\nلنک 1 گھنٹے میں ختم ہو جائے گا۔",
+  "@passwordResetEmailSentBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetNetworkError": "انٹرنیٹ کنکشن نہیں ہے۔ براہ کرم کنکٹ کریں اور دوبارہ کوشش کریں۔",
+  "passwordResetRateLimit": "بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔",
+  "send": "بھیجیں"
 }

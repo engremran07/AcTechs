@@ -347,5 +347,19 @@
   "catCookingOil": "Cooking Oil",
   "catMilk": "Milk",
   "catSpices": "Spices",
-  "catOtherGroceries": "Other Groceries"
+  "catOtherGroceries": "Other Groceries",
+
+  "passwordResetConfirmTitle": "Reset Password?",
+  "passwordResetConfirmBody": "A reset link will be sent to {email}. Continue?",
+  "@passwordResetConfirmBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetEmailSentTitle": "Email Sent",
+  "passwordResetEmailSentBody": "A reset link has been sent to {email}.\n\nPlease check your inbox. If you don't see it within a few minutes, check your Spam or Junk folder.\n\nThe link expires in 1 hour.",
+  "@passwordResetEmailSentBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "passwordResetNetworkError": "No internet connection. Please connect and try again.",
+  "passwordResetRateLimit": "Too many reset requests. Please wait a few minutes and try again.",
+  "send": "Send"
 }

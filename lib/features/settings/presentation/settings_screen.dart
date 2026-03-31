@@ -11,11 +11,18 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _sendingReset = false;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
     final themeMode = ref.watch(appThemeModeProvider);
     final locale = ref.watch(appLocaleProvider);
@@ -33,7 +40,7 @@ class SettingsScreen extends ConsumerWidget {
             role: user?.role ?? 'technician',
             onEditTap: user == null
                 ? null
-                : () => _showEditProfileDialog(context, ref, user),
+                : () => _showEditProfileDialog(context, user),
           ).animate().fadeIn(duration: 300.ms),
           const SizedBox(height: 24),
 
@@ -97,21 +104,21 @@ class SettingsScreen extends ConsumerWidget {
                   flag: '🇬🇧',
                   label: l.english,
                   selected: locale == 'en',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'en'),
+                  onTap: () => _updateLanguage(user?.uid, 'en'),
                 ),
                 const Divider(height: 1),
                 _LanguageTile(
                   flag: '🇵🇰',
                   label: l.urdu,
                   selected: locale == 'ur',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'ur'),
+                  onTap: () => _updateLanguage(user?.uid, 'ur'),
                 ),
                 const Divider(height: 1),
                 _LanguageTile(
                   flag: '🇸🇦',
                   label: l.arabic,
                   selected: locale == 'ar',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'ar'),
+                  onTap: () => _updateLanguage(user?.uid, 'ar'),
                 ),
               ],
             ),
@@ -152,33 +159,24 @@ class SettingsScreen extends ConsumerWidget {
           ArcticCard(
             child: ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: const Icon(Icons.lock_reset_rounded),
+              leading: _sendingReset
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.lock_reset_rounded),
               title: Text(l.resetPassword),
               subtitle: Text(
                 user?.email ?? '',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: user?.email == null || user!.email.isEmpty
+              onTap: _sendingReset ||
+                      user?.email == null ||
+                      (user?.email.isEmpty ?? true)
                   ? null
-                  : () async {
-                      final locale = Localizations.localeOf(
-                        context,
-                      ).languageCode;
-                      try {
-                        await ref
-                            .read(userRepositoryProvider)
-                            .sendPasswordReset(user.email);
-                        if (!context.mounted) return;
-                        SuccessSnackbar.show(
-                          context,
-                          message: l.passwordResetSent(user.email),
-                        );
-                      } on AppException catch (e) {
-                        if (!context.mounted) return;
-                        ErrorSnackbar.show(context, message: e.message(locale));
-                      }
-                    },
+                  : () => _handlePasswordReset(user!.email),
             ),
           ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.03),
           const SizedBox(height: 32),
@@ -204,16 +202,70 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _updateLanguage(WidgetRef ref, String? uid, String lang) {
+  void _updateLanguage(String? uid, String lang) {
     ref.read(appLocaleProvider.notifier).setLocale(lang);
     if (uid != null) {
       ref.read(userRepositoryProvider).updateLanguage(uid, lang);
     }
   }
 
+  Future<void> _handlePasswordReset(String email) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+
+    // Confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.passwordResetConfirmTitle),
+        content: Text(l.passwordResetConfirmBody(email)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.send),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _sendingReset = true);
+    try {
+      await ref.read(userRepositoryProvider).sendPasswordReset(email);
+      if (!mounted) return;
+      // Rich success dialog with spam-folder guidance
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(
+            Icons.mark_email_read_outlined,
+            size: 48,
+          ),
+          title: Text(l.passwordResetEmailSentTitle),
+          content: Text(l.passwordResetEmailSentBody(email)),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.confirm),
+            ),
+          ],
+        ),
+      );
+    } on AppException catch (e) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: e.message(locale));
+    } finally {
+      if (mounted) setState(() => _sendingReset = false);
+    }
+  }
+
   Future<void> _showEditProfileDialog(
     BuildContext context,
-    WidgetRef ref,
     UserModel user,
   ) async {
     final l = AppLocalizations.of(context)!;

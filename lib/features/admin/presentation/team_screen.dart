@@ -258,11 +258,48 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   Future<void> _handlePasswordReset(UserModel user) async {
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
+
+    // Confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.passwordResetConfirmTitle),
+        content: Text(l.passwordResetConfirmBody(user.email)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.send),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
     try {
       await ref.read(userRepositoryProvider).sendPasswordReset(user.email);
       if (!mounted) return;
-      AppFeedback.success(context, message: l.passwordResetSent(user.email));
+      // Rich success dialog with spam-folder guidance
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.mark_email_read_outlined, size: 48),
+          title: Text(l.passwordResetEmailSentTitle),
+          content: Text(l.passwordResetEmailSentBody(user.email)),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.confirm),
+            ),
+          ],
+        ),
+      );
     } on AppException catch (e) {
+      if (!mounted) return;
       AppFeedback.error(context, message: e.message(locale));
     }
   }
