@@ -228,7 +228,7 @@ class UserRepository {
     } on AdminException {
       rethrow;
     } on FirebaseAuthException catch (e) {
-      debugPrint('verifyAdminPassword error: `${e.code}');
+      debugPrint('verifyAdminPassword error: `${e.code} — `${e.message}');
       throw AdminException.wrongPassword();
     } catch (_) {
       throw AdminException.wrongPassword();

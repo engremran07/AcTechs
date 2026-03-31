@@ -222,7 +222,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 Text(
                   l.recentPending,
                   style: Theme.of(context).textTheme.titleLarge,
-                ).animate().fadeIn(delay: 500.ms),
+                ).animate().fadeIn(delay: 700.ms),
                 const SizedBox(height: 12),
                 pending.when(
                   data: (jobs) {
