@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -132,6 +134,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingApprovalsProvider);
+    final successTone = Theme.of(context).brightness == Brightness.light
+        ? ArcticTheme.lightSuccess
+        : ArcticTheme.arcticSuccess;
 
     return AppShortcuts(
       onRefresh: _refreshApprovals,
@@ -183,9 +188,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                             Icon(
                               Icons.check_circle_rounded,
                               size: 64,
-                              color: ArcticTheme.arcticSuccess.withValues(
-                                alpha: 0.5,
-                              ),
+                              color: successTone.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -356,6 +359,14 @@ class _ApprovalCard extends ConsumerStatefulWidget {
 class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
   bool _isProcessing = false;
 
+  Color get _successTone => Theme.of(context).brightness == Brightness.light
+      ? ArcticTheme.lightSuccess
+      : ArcticTheme.arcticSuccess;
+
+  Color get _warningTone => Theme.of(context).brightness == Brightness.light
+      ? ArcticTheme.lightWarning
+      : ArcticTheme.arcticWarning;
+
   Future<void> _approve() async {
     setState(() => _isProcessing = true);
     try {
@@ -440,6 +451,12 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
+    final colorScheme = Theme.of(context).colorScheme;
+    final dividerColor = Theme.of(context).dividerColor;
+    final textSecondary =
+        Theme.of(context).textTheme.bodySmall?.color ??
+        ArcticTheme.arcticTextSecondary;
+    final chipBg = Theme.of(context).cardColor;
 
     return ArcticCard(
       child: Column(
@@ -450,7 +467,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
               Checkbox(
                 value: widget.isSelected,
                 onChanged: (v) => widget.onSelect(v ?? false),
-                activeColor: ArcticTheme.arcticBlue,
+                activeColor: colorScheme.primary,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
@@ -458,7 +475,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: ArcticTheme.arcticBlue.withValues(alpha: 0.15),
+                  color: colorScheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
@@ -467,7 +484,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                         ? job.techName[0].toUpperCase()
                         : 'T',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: ArcticTheme.arcticBlue,
+                      color: colorScheme.primary,
                     ),
                   ),
                 ),
@@ -483,7 +500,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      'INV-${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                      '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -491,14 +508,10 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
               ),
             ],
           ),
-          const Divider(height: 24),
+          Divider(height: 24, color: dividerColor),
           Row(
             children: [
-              const Icon(
-                Icons.person_outline,
-                size: 16,
-                color: ArcticTheme.arcticTextSecondary,
-              ),
+              Icon(Icons.person_outline, size: 16, color: textSecondary),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -509,14 +522,42 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
               ),
             ],
           ),
+          if (job.clientContact.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.phone_outlined, size: 16, color: textSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    job.clientContact,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    await WhatsAppLauncher.openChat(job.clientContact);
+                  },
+                  icon: const Icon(
+                    FontAwesomeIcons.whatsapp,
+                    color: ArcticTheme.arcticSuccess,
+                    size: 16,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 28,
+                    minWidth: 28,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(
-                Icons.ac_unit_rounded,
-                size: 16,
-                color: ArcticTheme.arcticTextSecondary,
-              ),
+              Icon(Icons.ac_unit_rounded, size: 16, color: textSecondary),
               const SizedBox(width: 6),
               Text(
                 AppFormatters.units(job.totalUnits),
@@ -524,18 +565,14 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
               ),
               if (job.expenses > 0) ...[
                 const SizedBox(width: 16),
-                const Icon(
-                  Icons.payments_outlined,
-                  size: 16,
-                  color: ArcticTheme.arcticWarning,
-                ),
+                Icon(Icons.payments_outlined, size: 16, color: _warningTone),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     AppFormatters.currency(job.expenses),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: ArcticTheme.arcticWarning,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: _warningTone),
                   ),
                 ),
               ],
@@ -553,7 +590,8 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                         '${translateCategory(u.type, AppLocalizations.of(context)!)} × ${u.quantity}',
                         style: const TextStyle(fontSize: 12),
                       ),
-                      backgroundColor: ArcticTheme.arcticSurface,
+                      backgroundColor: chipBg,
+                      side: BorderSide(color: dividerColor),
                       padding: EdgeInsets.zero,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -570,8 +608,8 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                   icon: const Icon(Icons.close_rounded, size: 18),
                   label: Text(AppLocalizations.of(context)!.reject),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: ArcticTheme.arcticError,
-                    side: const BorderSide(color: ArcticTheme.arcticError),
+                    foregroundColor: colorScheme.error,
+                    side: BorderSide(color: colorScheme.error),
                     minimumSize: const Size(0, 44),
                   ),
                 ),
@@ -592,7 +630,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                       : const Icon(Icons.check_rounded, size: 18),
                   label: Text(AppLocalizations.of(context)!.approve),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ArcticTheme.arcticSuccess,
+                    backgroundColor: _successTone,
                     minimumSize: const Size(0, 44),
                   ),
                 ),

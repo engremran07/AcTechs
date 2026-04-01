@@ -1702,6 +1702,48 @@ abstract class AppLocalizations {
   /// **'{count} rows skipped: technician not found'**
   String importUnresolvedTechRows(int count);
 
+  /// No description provided for @importTargetTechnician.
+  ///
+  /// In en, this message translates to:
+  /// **'Target technician'**
+  String get importTargetTechnician;
+
+  /// No description provided for @importTargetTechnicianRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the technician who should receive the imported history.'**
+  String get importTargetTechnicianRequired;
+
+  /// No description provided for @importTechnicianKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Source technician filter'**
+  String get importTechnicianKeyword;
+
+  /// No description provided for @importTechnicianKeywordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: imran'**
+  String get importTechnicianKeywordHint;
+
+  /// No description provided for @importTechnicianKeywordHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Only rows whose technician name, email, or ID matches this text will be imported.'**
+  String get importTechnicianKeywordHelp;
+
+  /// No description provided for @importBundledTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Import bundled history templates'**
+  String get importBundledTemplates;
+
+  /// No description provided for @importBundledTemplatesMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No bundled history templates were found in the app package.'**
+  String get importBundledTemplatesMissing;
+
   /// No description provided for @dangerZone.
   ///
   /// In en, this message translates to:
@@ -1762,6 +1804,12 @@ abstract class AppLocalizations {
   /// **'All non-admin user accounts'**
   String get flushItemUsers;
 
+  /// No description provided for @flushItemUsersOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-admin user accounts (optional)'**
+  String get flushItemUsersOptional;
+
   /// No description provided for @flushAdminKept.
   ///
   /// In en, this message translates to:
@@ -1803,6 +1851,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Flushing database…'**
   String get flushInProgress;
+
+  /// No description provided for @flushDeleteUsersOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Also delete technician/user accounts'**
+  String get flushDeleteUsersOption;
+
+  /// No description provided for @flushDeleteUsersHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'If enabled, all non-admin user documents are permanently deleted.'**
+  String get flushDeleteUsersHelp;
+
+  /// No description provided for @flushDeleteUsersEnabledWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'User deletion is enabled. All technician and other non-admin user records will be permanently removed during this flush.'**
+  String get flushDeleteUsersEnabledWarning;
 
   /// No description provided for @flushSuccess.
   ///

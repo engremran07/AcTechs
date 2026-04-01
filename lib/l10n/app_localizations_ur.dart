@@ -844,6 +844,30 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String get importTargetTechnician => 'ٹارگٹ ٹیکنیشن';
+
+  @override
+  String get importTargetTechnicianRequired =>
+      'وہ ٹیکنیشن منتخب کریں جس کے اکاؤنٹ میں یہ تاریخی ڈیٹا ڈالنا ہے۔';
+
+  @override
+  String get importTechnicianKeyword => 'سورس ٹیکنیشن فلٹر';
+
+  @override
+  String get importTechnicianKeywordHint => 'مثال: imran';
+
+  @override
+  String get importTechnicianKeywordHelp =>
+      'صرف وہ قطاریں امپورٹ ہوں گی جن میں ٹیکنیشن کا نام، ای میل، یا آئی ڈی اس متن سے میچ کرے۔';
+
+  @override
+  String get importBundledTemplates => 'بنڈل شدہ تاریخی ٹیمپلیٹس امپورٹ کریں';
+
+  @override
+  String get importBundledTemplatesMissing =>
+      'ایپ پیکیج میں کوئی بنڈل شدہ تاریخی ٹیمپلیٹ نہیں ملا۔';
+
+  @override
   String get dangerZone => 'خطرناک علاقہ';
 
   @override
@@ -876,6 +900,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get flushItemUsers => 'تمام غیر ایڈمن صارف اکاؤنٹس';
 
   @override
+  String get flushItemUsersOptional => 'غیر ایڈمن صارف اکاؤنٹس (اختیاری)';
+
+  @override
   String get flushAdminKept => 'ایڈمن اکاؤنٹس محفوظ رہیں گے۔';
 
   @override
@@ -899,6 +926,17 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get flushInProgress => 'ڈیٹا بیس فلش ہو رہی ہے…';
+
+  @override
+  String get flushDeleteUsersOption => 'ٹیکنیشن/یوزر اکاؤنٹس بھی حذف کریں';
+
+  @override
+  String get flushDeleteUsersHelp =>
+      'فعال کرنے پر تمام غیر ایڈمن صارف ڈاکیومنٹس مستقل طور پر حذف ہو جائیں گے۔';
+
+  @override
+  String get flushDeleteUsersEnabledWarning =>
+      'یوزر حذف کرنا فعال ہے۔ اس فلش کے دوران تمام ٹیکنیشن اور دیگر غیر ایڈمن صارف ریکارڈ مستقل طور پر حذف ہو جائیں گے۔';
 
   @override
   String get flushSuccess => 'ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔';

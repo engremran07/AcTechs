@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ac_techs/core/models/user_model.dart';
+import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/presentation/login_screen.dart';
 import 'package:ac_techs/features/auth/presentation/splash_screen.dart';
@@ -9,6 +9,8 @@ import 'package:ac_techs/features/technician/presentation/tech_shell.dart';
 import 'package:ac_techs/features/technician/presentation/tech_dashboard_screen.dart';
 import 'package:ac_techs/features/technician/presentation/submit_job_screen.dart';
 import 'package:ac_techs/features/technician/presentation/job_history_screen.dart';
+import 'package:ac_techs/features/technician/presentation/job_details_screen.dart';
+import 'package:ac_techs/features/jobs/presentation/job_type_filter_screen.dart';
 import 'package:ac_techs/features/technician/presentation/tech_profile_screen.dart';
 import 'package:ac_techs/features/admin/presentation/admin_shell.dart';
 import 'package:ac_techs/features/admin/presentation/admin_dashboard_screen.dart';
@@ -21,6 +23,7 @@ import 'package:ac_techs/features/admin/presentation/historical_import_screen.da
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 final _routerKey = GlobalKey<NavigatorState>();
 
@@ -205,6 +208,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: '/tech/job/:jobId',
+            pageBuilder: (context, state) {
+              final initialJob = state.extra is JobModel
+                  ? state.extra as JobModel
+                  : null;
+              final jobId = state.pathParameters['jobId'] ?? '';
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: JobDetailsScreen(jobId: jobId, initialJob: initialJob),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/tech/jobs/filter/:type',
+            pageBuilder: (context, state) {
+              final typeRaw = state.pathParameters['type'] ?? '';
+              final filter = jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: JobTypeFilterScreen(filter: filter, isAdminScope: false),
+              );
+            },
+          ),
+          GoRoute(
             path: '/tech/profile',
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
@@ -278,6 +305,30 @@ final routerProvider = Provider<GoRouter>((ref) {
               pageKey: state.pageKey,
               child: const FlushDatabaseScreen(),
             ),
+          ),
+          GoRoute(
+            path: '/admin/jobs/filter/:type',
+            pageBuilder: (context, state) {
+              final typeRaw = state.pathParameters['type'] ?? '';
+              final filter = jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: JobTypeFilterScreen(filter: filter, isAdminScope: true),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/admin/job/:jobId',
+            pageBuilder: (context, state) {
+              final initialJob = state.extra is JobModel
+                  ? state.extra as JobModel
+                  : null;
+              final jobId = state.pathParameters['jobId'] ?? '';
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: JobDetailsScreen(jobId: jobId, initialJob: initialJob),
+              );
+            },
           ),
         ],
       ),

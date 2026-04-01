@@ -312,6 +312,13 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importTargetTechnician": "الفني المستهدف",
+  "importTargetTechnicianRequired": "اختر الفني الذي يجب أن تُنسب إليه البيانات التاريخية المستوردة.",
+  "importTechnicianKeyword": "مرشح الفني المصدر",
+  "importTechnicianKeywordHint": "مثال: imran",
+  "importTechnicianKeywordHelp": "سيتم استيراد الصفوف التي يطابق فيها اسم الفني أو بريده أو معرّفه هذا النص فقط.",
+  "importBundledTemplates": "استيراد القوالب التاريخية المضمنة",
+  "importBundledTemplatesMissing": "لم يتم العثور على قوالب تاريخية مضمنة داخل حزمة التطبيق.",
 
   "dangerZone": "منطقة الخطر",
   "flushDatabase": "مسح قاعدة البيانات",
@@ -323,6 +330,7 @@
   "flushItemExpenses": "جميع سجلات المصروفات والإيرادات",
   "flushItemCompanies": "جميع سجلات الشركات",
   "flushItemUsers": "جميع حسابات المستخدمين غير المسؤولين",
+  "flushItemUsersOptional": "حسابات المستخدمين غير المسؤولين (اختياري)",
   "flushAdminKept": "سيتم الحفاظ على حسابات المسؤولين.",
   "flushProceedIn": "المتابعة خلال {seconds}ث",
   "@flushProceedIn": {
@@ -336,6 +344,9 @@
   },
   "flushConfirm": "مسح قاعدة البيانات",
   "flushInProgress": "جارٍ مسح قاعدة البيانات…",
+  "flushDeleteUsersOption": "احذف أيضاً حسابات الفنيين/المستخدمين",
+  "flushDeleteUsersHelp": "عند التفعيل، سيتم حذف جميع مستندات المستخدمين غير المسؤولين نهائياً.",
+  "flushDeleteUsersEnabledWarning": "حذف المستخدمين مفعّل. سيتم حذف جميع سجلات الفنيين وبقية المستخدمين غير المسؤولين نهائياً أثناء هذا المسح.",
   "flushSuccess": "تم مسح قاعدة البيانات. جاهز للبدء من جديد.",
   "flushFailed": "فشل المسح. تحقق من الاتصال وحاول مرة أخرى.",
   "flushWrongPassword": "كلمة المرور غير صحيحة. حاول مرة أخرى.",

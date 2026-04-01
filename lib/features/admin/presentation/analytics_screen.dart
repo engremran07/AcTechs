@@ -115,7 +115,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   Future<void> _exportToPdf(List<JobModel> jobs) async {
     final locale = ref.read(appLocaleProvider);
-    await PdfGenerator.previewPdf(context, jobs, locale);
+    try {
+      await PdfGenerator.previewPdf(context, jobs, locale);
+    } catch (_) {
+      if (mounted) {
+        ErrorSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.couldNotExport,
+        );
+      }
+    }
   }
 
   Future<void> _exportToExcel() async {

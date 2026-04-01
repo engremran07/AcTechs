@@ -16,6 +16,26 @@ class JobRepository {
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
 
+  String _normalizeInvoice(String invoice) {
+    final trimmed = invoice.trim();
+    if (trimmed.isEmpty) return '';
+    final upper = trimmed.toUpperCase();
+    if (upper.startsWith('INV-')) {
+      return trimmed.substring(4).trim();
+    }
+    if (upper.startsWith('INV ')) {
+      return trimmed.substring(4).trim();
+    }
+    return trimmed;
+  }
+
+  String _safeImportDocId(JobModel job) {
+    final invoice = _normalizeInvoice(job.invoiceNumber).toLowerCase();
+    final safe = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    final scoped = 'inv_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
+    return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
+  }
+
   Future<void> submitJob(JobModel job) async {
     try {
       final data = job.toFirestore();
@@ -194,11 +214,14 @@ class JobRepository {
       for (final chunk in chunks) {
         final batch = firestore.batch();
         for (final job in chunk) {
-          final ref = _jobsRef.doc();
-          final data = job.toFirestore();
+          final normalizedInvoice = _normalizeInvoice(job.invoiceNumber);
+          final ref = _jobsRef.doc(_safeImportDocId(job));
+          final data = job
+              .copyWith(invoiceNumber: normalizedInvoice)
+              .toFirestore();
           data['date'] ??= FieldValue.serverTimestamp();
           data['submittedAt'] ??= FieldValue.serverTimestamp();
-          batch.set(ref, data);
+          batch.set(ref, data, SetOptions(merge: true));
           imported++;
         }
         await batch.commit();

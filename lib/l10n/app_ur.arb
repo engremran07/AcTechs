@@ -312,6 +312,13 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importTargetTechnician": "ٹارگٹ ٹیکنیشن",
+  "importTargetTechnicianRequired": "وہ ٹیکنیشن منتخب کریں جس کے اکاؤنٹ میں یہ تاریخی ڈیٹا ڈالنا ہے۔",
+  "importTechnicianKeyword": "سورس ٹیکنیشن فلٹر",
+  "importTechnicianKeywordHint": "مثال: imran",
+  "importTechnicianKeywordHelp": "صرف وہ قطاریں امپورٹ ہوں گی جن میں ٹیکنیشن کا نام، ای میل، یا آئی ڈی اس متن سے میچ کرے۔",
+  "importBundledTemplates": "بنڈل شدہ تاریخی ٹیمپلیٹس امپورٹ کریں",
+  "importBundledTemplatesMissing": "ایپ پیکیج میں کوئی بنڈل شدہ تاریخی ٹیمپلیٹ نہیں ملا۔",
 
   "dangerZone": "خطرناک علاقہ",
   "flushDatabase": "ڈیٹا بیس فلش کریں",
@@ -323,6 +330,7 @@
   "flushItemExpenses": "تمام اخراجات اور آمدنی کے ریکارڈ",
   "flushItemCompanies": "تمام کمپنی ریکارڈ",
   "flushItemUsers": "تمام غیر ایڈمن صارف اکاؤنٹس",
+  "flushItemUsersOptional": "غیر ایڈمن صارف اکاؤنٹس (اختیاری)",
   "flushAdminKept": "ایڈمن اکاؤنٹس محفوظ رہیں گے۔",
   "flushProceedIn": "{seconds} سیکنڈ میں آگے بڑھیں",
   "@flushProceedIn": {
@@ -336,6 +344,9 @@
   },
   "flushConfirm": "ڈیٹا بیس فلش کریں",
   "flushInProgress": "ڈیٹا بیس فلش ہو رہی ہے…",
+  "flushDeleteUsersOption": "ٹیکنیشن/یوزر اکاؤنٹس بھی حذف کریں",
+  "flushDeleteUsersHelp": "فعال کرنے پر تمام غیر ایڈمن صارف ڈاکیومنٹس مستقل طور پر حذف ہو جائیں گے۔",
+  "flushDeleteUsersEnabledWarning": "یوزر حذف کرنا فعال ہے۔ اس فلش کے دوران تمام ٹیکنیشن اور دیگر غیر ایڈمن صارف ریکارڈ مستقل طور پر حذف ہو جائیں گے۔",
   "flushSuccess": "ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔",
   "flushFailed": "فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔",
   "flushWrongPassword": "غلط پاس ورڈ۔ دوبارہ کوشش کریں۔",

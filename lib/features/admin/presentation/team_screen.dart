@@ -87,77 +87,80 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           title: Text(l.addTechnician),
+          scrollable: true,
           content: Form(
             key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameCtrl,
-                  textInputAction: TextInputAction.next,
-                  enableInteractiveSelection: true,
-                  decoration: InputDecoration(
-                    hintText: l.name,
-                    prefixIcon: const Icon(Icons.person_outline),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? l.required : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  enableInteractiveSelection: true,
-                  decoration: InputDecoration(
-                    hintText: l.email,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return l.required;
-                    if (!v.contains('@')) return l.invalidEmail;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: passCtrl,
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
-                  enableInteractiveSelection: true,
-                  decoration: InputDecoration(
-                    hintText: l.password,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.length < 6) return l.minChars(6);
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedRole,
-                  decoration: InputDecoration(
-                    hintText: l.role,
-                    prefixIcon: const Icon(Icons.security_rounded),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: AppConstants.roleTechnician,
-                      child: Text(l.technician),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    textInputAction: TextInputAction.next,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.name,
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
-                    DropdownMenuItem(
-                      value: AppConstants.roleAdmin,
-                      child: Text(l.admin),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? l.required : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
                     ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setLocalState(() => selectedRole = value);
-                    }
-                  },
-                ),
-              ],
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return l.required;
+                      if (!v.contains('@')) return l.invalidEmail;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: passCtrl,
+                    obscureText: true,
+                    textInputAction: TextInputAction.done,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.password,
+                      prefixIcon: const Icon(Icons.lock_outline),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.length < 6) return l.minChars(6);
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedRole,
+                    decoration: InputDecoration(
+                      hintText: l.role,
+                      prefixIcon: const Icon(Icons.security_rounded),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: AppConstants.roleTechnician,
+                        child: Text(l.technician),
+                      ),
+                      DropdownMenuItem(
+                        value: AppConstants.roleAdmin,
+                        child: Text(l.admin),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setLocalState(() => selectedRole = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -213,39 +216,42 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l.editTechnician),
+        scrollable: true,
         content: Form(
           key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameCtrl,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.name,
-                  prefixIcon: const Icon(Icons.person_outline),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  enableInteractiveSelection: true,
+                  decoration: InputDecoration(
+                    hintText: l.name,
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? l.required : null,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? l.required : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.email,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.done,
+                  enableInteractiveSelection: true,
+                  decoration: InputDecoration(
+                    hintText: l.email,
+                    prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return l.required;
+                    if (!v.contains('@')) return l.invalidEmail;
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return l.required;
-                  if (!v.contains('@')) return l.invalidEmail;
-                  return null;
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -400,8 +406,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 onPressed: () => _bulkActivate(true),
               ),
               IconButton(
-                icon: const Icon(Icons.person_off_rounded),
-                tooltip: l.bulkDeactivate,
+                icon: const Icon(Icons.delete_outline_rounded),
+                tooltip: l.delete,
                 onPressed: () => _bulkActivate(false),
               ),
             ],
@@ -551,16 +557,6 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           color: ArcticTheme.arcticWarning,
         ),
         ContextMenuItem(
-          id: 'toggle',
-          label: tech.isActive ? l.deactivate : l.activate,
-          icon: tech.isActive
-              ? Icons.person_off_rounded
-              : Icons.person_add_rounded,
-          color: tech.isActive
-              ? ArcticTheme.arcticError
-              : ArcticTheme.arcticSuccess,
-        ),
-        ContextMenuItem(
           id: 'delete',
           label: l.deleteTechnician,
           icon: Icons.delete_outline_rounded,
@@ -568,11 +564,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
         ),
       ],
       onSelected: (action) {
-        if (action == 'toggle') {
-          ref
-              .read(userRepositoryProvider)
-              .toggleUserActive(tech.uid, !tech.isActive);
-        } else if (action == 'edit') {
+        if (action == 'edit') {
           _showEditDialog(tech);
         } else if (action == 'resetPassword') {
           _handlePasswordReset(tech);
@@ -687,18 +679,6 @@ class _TechCard extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-            Transform.scale(
-              scale: 0.85,
-              child: Switch(
-                value: user.isActive,
-                activeTrackColor: ArcticTheme.arcticSuccess,
-                onChanged: (value) {
-                  ref
-                      .read(userRepositoryProvider)
-                      .toggleUserActive(user.uid, value);
-                },
               ),
             ),
             PopupMenuButton<String>(

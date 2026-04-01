@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
@@ -174,7 +177,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                 final jobList = jobs.value;
                 if (jobList == null || jobList.isEmpty) return;
                 final filtered = _applyFilters(jobList);
-                await PdfGenerator.previewPdf(context, filtered, locale);
+                try {
+                  await PdfGenerator.previewPdf(context, filtered, locale);
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ErrorSnackbar.show(context, message: l.couldNotExport);
+                }
               },
             ),
             IconButton(
@@ -308,7 +316,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                                     if (action == 'copy_invoice') {
                                       Clipboard.setData(
                                         ClipboardData(
-                                          text: 'INV-${job.invoiceNumber}',
+                                          text: job.invoiceNumber,
                                         ),
                                       );
                                       SuccessSnackbar.show(
@@ -316,12 +324,27 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                                         message: l.invoiceCopied,
                                       );
                                     } else if (action == 'export_pdf') {
-                                      await PdfGenerator.previewPdf(context, [
-                                        job,
-                                      ], locale);
+                                      try {
+                                        await PdfGenerator.previewPdf(context, [
+                                          job,
+                                        ], locale);
+                                      } catch (_) {
+                                        if (context.mounted) {
+                                          ErrorSnackbar.show(
+                                            context,
+                                            message: l.couldNotExport,
+                                          );
+                                        }
+                                      }
                                     }
                                   },
-                                  child: _HistoryJobCard(job: job),
+                                  child: _HistoryJobCard(
+                                    job: job,
+                                    onTap: () => context.push(
+                                      '/tech/job/${job.id}',
+                                      extra: job,
+                                    ),
+                                  ),
                                 )
                                 .animate(delay: (index * 80).ms)
                                 .fadeIn()
@@ -348,14 +371,20 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
 }
 
 class _HistoryJobCard extends StatelessWidget {
-  const _HistoryJobCard({required this.job});
+  const _HistoryJobCard({required this.job, required this.onTap});
 
   final JobModel job;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ArcticCard(
-      child: Column(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: ArcticCard(
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -371,7 +400,7 @@ class _HistoryJobCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'INV-${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                      '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -398,6 +427,42 @@ class _HistoryJobCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (job.clientContact.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.phone_outlined,
+                  size: 15,
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    job.clientContact,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    await WhatsAppLauncher.openChat(job.clientContact);
+                  },
+                  icon: const Icon(
+                    FontAwesomeIcons.whatsapp,
+                    color: ArcticTheme.arcticSuccess,
+                    size: 16,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 28,
+                    minWidth: 28,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (job.isRejected && job.adminNote.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
@@ -427,6 +492,8 @@ class _HistoryJobCard extends StatelessWidget {
             ),
           ],
         ],
+          ),
+        ),
       ),
     );
   }

@@ -846,6 +846,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importTargetTechnician => 'Target technician';
+
+  @override
+  String get importTargetTechnicianRequired =>
+      'Select the technician who should receive the imported history.';
+
+  @override
+  String get importTechnicianKeyword => 'Source technician filter';
+
+  @override
+  String get importTechnicianKeywordHint => 'Example: imran';
+
+  @override
+  String get importTechnicianKeywordHelp =>
+      'Only rows whose technician name, email, or ID matches this text will be imported.';
+
+  @override
+  String get importBundledTemplates => 'Import bundled history templates';
+
+  @override
+  String get importBundledTemplatesMissing =>
+      'No bundled history templates were found in the app package.';
+
+  @override
   String get dangerZone => 'Danger Zone';
 
   @override
@@ -877,6 +901,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flushItemUsers => 'All non-admin user accounts';
 
   @override
+  String get flushItemUsersOptional => 'Non-admin user accounts (optional)';
+
+  @override
   String get flushAdminKept => 'Admin accounts will be preserved.';
 
   @override
@@ -900,6 +927,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get flushInProgress => 'Flushing database…';
+
+  @override
+  String get flushDeleteUsersOption => 'Also delete technician/user accounts';
+
+  @override
+  String get flushDeleteUsersHelp =>
+      'If enabled, all non-admin user documents are permanently deleted.';
+
+  @override
+  String get flushDeleteUsersEnabledWarning =>
+      'User deletion is enabled. All technician and other non-admin user records will be permanently removed during this flush.';
 
   @override
   String get flushSuccess => 'Database flushed. Starting fresh.';

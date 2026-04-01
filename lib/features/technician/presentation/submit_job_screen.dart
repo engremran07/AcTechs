@@ -595,7 +595,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   }
 
   String _buildInvoiceNumber() {
-    final entered = _invoiceController.text.trim();
+    var entered = _invoiceController.text.trim();
+    final upper = entered.toUpperCase();
+    if (upper.startsWith('INV-')) {
+      entered = entered.substring(4).trim();
+    } else if (upper.startsWith('INV ')) {
+      entered = entered.substring(4).trim();
+    }
     if (_selectedCompanyPrefix.isEmpty || entered.isEmpty) return entered;
     final prefix = _selectedCompanyPrefix.trim();
     if (entered.startsWith(prefix)) return entered;

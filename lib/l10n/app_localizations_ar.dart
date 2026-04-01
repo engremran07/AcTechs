@@ -843,6 +843,30 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get importTargetTechnician => 'الفني المستهدف';
+
+  @override
+  String get importTargetTechnicianRequired =>
+      'اختر الفني الذي يجب أن تُنسب إليه البيانات التاريخية المستوردة.';
+
+  @override
+  String get importTechnicianKeyword => 'مرشح الفني المصدر';
+
+  @override
+  String get importTechnicianKeywordHint => 'مثال: imran';
+
+  @override
+  String get importTechnicianKeywordHelp =>
+      'سيتم استيراد الصفوف التي يطابق فيها اسم الفني أو بريده أو معرّفه هذا النص فقط.';
+
+  @override
+  String get importBundledTemplates => 'استيراد القوالب التاريخية المضمنة';
+
+  @override
+  String get importBundledTemplatesMissing =>
+      'لم يتم العثور على قوالب تاريخية مضمنة داخل حزمة التطبيق.';
+
+  @override
   String get dangerZone => 'منطقة الخطر';
 
   @override
@@ -874,6 +898,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get flushItemUsers => 'جميع حسابات المستخدمين غير المسؤولين';
 
   @override
+  String get flushItemUsersOptional =>
+      'حسابات المستخدمين غير المسؤولين (اختياري)';
+
+  @override
   String get flushAdminKept => 'سيتم الحفاظ على حسابات المسؤولين.';
 
   @override
@@ -897,6 +925,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get flushInProgress => 'جارٍ مسح قاعدة البيانات…';
+
+  @override
+  String get flushDeleteUsersOption => 'احذف أيضاً حسابات الفنيين/المستخدمين';
+
+  @override
+  String get flushDeleteUsersHelp =>
+      'عند التفعيل، سيتم حذف جميع مستندات المستخدمين غير المسؤولين نهائياً.';
+
+  @override
+  String get flushDeleteUsersEnabledWarning =>
+      'حذف المستخدمين مفعّل. سيتم حذف جميع سجلات الفنيين وبقية المستخدمين غير المسؤولين نهائياً أثناء هذا المسح.';
 
   @override
   String get flushSuccess => 'تم مسح قاعدة البيانات. جاهز للبدء من جديد.';

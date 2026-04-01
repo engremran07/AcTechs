@@ -44,7 +44,7 @@ service cloud.firestore {
         (isOwner(userId) &&
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['language', 'name']));
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ─── Jobs ───
@@ -94,7 +94,7 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ─── Expenses ───
@@ -132,7 +132,7 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ─── Earnings ───
@@ -168,14 +168,14 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // ─── Companies ───
     match /companies/{companyId} {
       allow read: if isAuth();
       allow create, update: if isAdmin();
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
   }
 }

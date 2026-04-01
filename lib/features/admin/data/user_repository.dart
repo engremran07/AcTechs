@@ -18,15 +18,14 @@ class UserRepository {
   CollectionReference<Map<String, dynamic>> get _usersRef =>
       firestore.collection(AppConstants.usersCollection);
 
+  Query<Map<String, dynamic>> get _activeTechniciansQuery => _usersRef
+      .where('role', isEqualTo: AppConstants.roleTechnician)
+      .where('isActive', isEqualTo: true);
+
   Stream<List<UserModel>> allTechnicians() {
-    return _usersRef
-        .where('role', isEqualTo: 'technician')
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList(),
-        );
+    return _activeTechniciansQuery.snapshots().map(
+      (snap) => _dedupeUsers(snap.docs),
+    );
   }
 
   Stream<List<UserModel>> allUsers() {
@@ -41,17 +40,42 @@ class UserRepository {
 
   Future<List<UserModel>> usersForImport() async {
     try {
-      final snap = await _usersRef.get();
-      return snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+      final snap = await _activeTechniciansQuery.get();
+      return _dedupeUsers(snap.docs);
     } on FirebaseException catch (e) {
       debugPrint('usersForImport error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
     }
   }
 
+  List<UserModel> _dedupeUsers(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final uniqueUsers = <String, UserModel>{};
+
+    for (final doc in docs) {
+      final user = UserModel.fromFirestore(doc);
+      final normalizedEmail = user.email.trim().toLowerCase();
+      final normalizedName = user.name.trim().toLowerCase();
+      final dedupeKey = normalizedEmail.isNotEmpty
+          ? 'email:$normalizedEmail'
+          : 'name:$normalizedName';
+
+      uniqueUsers.putIfAbsent(dedupeKey, () => user);
+    }
+
+    final users = uniqueUsers.values.toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return users;
+  }
+
   Future<void> toggleUserActive(String uid, bool isActive) async {
     try {
-      await _usersRef.doc(uid).update({'isActive': isActive});
+      if (isActive) {
+        await _usersRef.doc(uid).update({'isActive': true});
+      } else {
+        await _usersRef.doc(uid).delete();
+      }
     } on FirebaseException catch (e) {
       debugPrint('toggleUserActive error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
@@ -188,7 +212,11 @@ class UserRepository {
     try {
       final batch = firestore.batch();
       for (final uid in uids) {
-        batch.update(_usersRef.doc(uid), {'isActive': isActive});
+        if (isActive) {
+          batch.update(_usersRef.doc(uid), {'isActive': true});
+        } else {
+          batch.delete(_usersRef.doc(uid));
+        }
       }
       await batch.commit();
     } on FirebaseException catch (e) {
@@ -228,18 +256,14 @@ class UserRepository {
     }
   }
 
-  /// Delete user by marking as inactive in Firestore (soft-delete).
-  /// - Sign-in is blocked via isActive check in auth_repository.dart
-  /// - User will not appear in team list (filtered by isActive=true)
-  /// - Firebase Auth account deletion requires Admin SDK (Cloud Functions).
-  ///   For free tier: Auth account persists but cannot log in. For full cleanup
-  ///   use Firebase Console to delete Auth or deploy Cloud Function.
+  /// Delete user by removing the Firestore user document permanently.
+  ///
+  /// The Firebase Auth account still requires deletion from Firebase Console or
+  /// Admin SDK. This method removes the app-visible record so the APK and
+  /// Firestore data remain clean and aligned.
   Future<void> deleteUser(String uid) async {
     try {
-      await _usersRef.doc(uid).update({
-        'isActive': false,
-        'deletedAt': FieldValue.serverTimestamp(),
-      });
+      await _usersRef.doc(uid).delete();
     } on FirebaseException catch (e) {
       debugPrint('deleteUser error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -277,9 +301,11 @@ class UserRepository {
     }
   }
 
-  /// Flush the database: deletes all jobs, expenses, earnings, companies and
-  /// soft-deletes all non-admin users. Admin documents are preserved.
-  Future<void> flushDatabase() async {
+  /// Flush the database: deletes all jobs, expenses, earnings, and companies.
+  ///
+  /// When [deleteNonAdminUsers] is true, it also permanently deletes all
+  /// non-admin user documents. Admin documents are always preserved.
+  Future<void> flushDatabase({bool deleteNonAdminUsers = false}) async {
     try {
       // Delete all operational collections in chunks (batch limit = 500).
       for (final collection in [
@@ -291,21 +317,20 @@ class UserRepository {
         await _deleteCollectionInChunks(collection);
       }
 
-      // Soft-delete non-admin users (keep admin accounts intact).
-      final usersSnap = await _usersRef.get();
-      if (usersSnap.docs.isNotEmpty) {
-        final batch = firestore.batch();
-        for (final doc in usersSnap.docs) {
-          final role =
-              doc.data()['role'] as String? ?? AppConstants.roleTechnician;
-          if (role != AppConstants.roleAdmin) {
-            batch.update(doc.reference, {
-              'isActive': false,
-              'deletedAt': FieldValue.serverTimestamp(),
-            });
+      if (deleteNonAdminUsers) {
+        // Permanently delete non-admin Firestore user documents.
+        final usersSnap = await _usersRef.get();
+        if (usersSnap.docs.isNotEmpty) {
+          final batch = firestore.batch();
+          for (final doc in usersSnap.docs) {
+            final role =
+                doc.data()['role'] as String? ?? AppConstants.roleTechnician;
+            if (role != AppConstants.roleAdmin) {
+              batch.delete(doc.reference);
+            }
           }
+          await batch.commit();
         }
-        await batch.commit();
       }
     } on FirebaseException catch (e) {
       debugPrint('flushDatabase error code: ${e.code}');

@@ -34,6 +34,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
   final _passwordCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _deleteNonAdminUsers = false;
 
   @override
   void initState() {
@@ -76,7 +77,9 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
     final password = _passwordCtrl.text;
 
     try {
-      await ref.read(flushDatabaseProvider.notifier).flush(password);
+      await ref
+          .read(flushDatabaseProvider.notifier)
+          .flush(password, deleteNonAdminUsers: _deleteNonAdminUsers);
       if (!mounted) return;
       AppFeedback.success(context, message: l.flushSuccess);
       context.go('/admin');
@@ -88,6 +91,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
         _step = 1;
         _countdown = _kStep1Delay;
         _passwordCtrl.clear();
+        _deleteNonAdminUsers = false;
       });
       _startCountdown();
     }
@@ -122,6 +126,9 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   formKey: _formKey,
                   passwordCtrl: _passwordCtrl,
                   obscurePassword: _obscurePassword,
+                  deleteNonAdminUsers: _deleteNonAdminUsers,
+                  onToggleDeleteUsers: (value) =>
+                      setState(() => _deleteNonAdminUsers = value),
                   onToggleObscure: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                   onFlush: _executeFlush,
@@ -158,29 +165,32 @@ class _Step1View extends StatelessWidget {
       children: [
         // Warning icon
         Center(
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: ArcticTheme.arcticError.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.warning_amber_rounded,
-              size: 44,
-              color: ArcticTheme.arcticError,
-            ),
-          ),
-        ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: ArcticTheme.arcticError.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 44,
+                  color: ArcticTheme.arcticError,
+                ),
+              ),
+            )
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .scale(begin: const Offset(0.8, 0.8)),
         const SizedBox(height: 16),
 
         // Step label
         Center(
           child: Text(
             l.flushStep1Title,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: ArcticTheme.arcticError,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: ArcticTheme.arcticError),
           ),
         ).animate().fadeIn(delay: 100.ms),
         const SizedBox(height: 8),
@@ -206,11 +216,11 @@ class _Step1View extends StatelessWidget {
 
         // Delete list
         ...[
-          l.flushItemJobs,
-          l.flushItemExpenses,
-          l.flushItemCompanies,
-          l.flushItemUsers,
-        ]
+              l.flushItemJobs,
+              l.flushItemExpenses,
+              l.flushItemCompanies,
+              l.flushItemUsersOptional,
+            ]
             .map(
               (item) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -269,12 +279,11 @@ class _Step1View extends StatelessWidget {
             icon: Icon(
               waiting ? Icons.hourglass_empty_rounded : Icons.arrow_forward,
             ),
-            label: Text(
-              waiting ? l.flushProceedIn(countdown) : l.flushProceed,
-            ),
+            label: Text(waiting ? l.flushProceedIn(countdown) : l.flushProceed),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  waiting ? ArcticTheme.arcticTextSecondary : ArcticTheme.arcticError,
+              backgroundColor: waiting
+                  ? ArcticTheme.arcticTextSecondary
+                  : ArcticTheme.arcticError,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -309,12 +318,16 @@ class _Step2View extends StatelessWidget {
     required this.onFlush,
     required this.onCancel,
     required this.isLoading,
+    required this.deleteNonAdminUsers,
+    required this.onToggleDeleteUsers,
   });
 
   final int countdown;
   final GlobalKey<FormState> formKey;
   final TextEditingController passwordCtrl;
   final bool obscurePassword;
+  final bool deleteNonAdminUsers;
+  final ValueChanged<bool> onToggleDeleteUsers;
   final VoidCallback onToggleObscure;
   final VoidCallback onFlush;
   final VoidCallback onCancel;
@@ -330,29 +343,32 @@ class _Step2View extends StatelessWidget {
       children: [
         // Icon
         Center(
-          child: Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: ArcticTheme.arcticError.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.delete_forever_rounded,
-              size: 44,
-              color: ArcticTheme.arcticError,
-            ),
-          ),
-        ).animate().fadeIn(duration: 300.ms).scale(begin: const Offset(0.8, 0.8)),
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: ArcticTheme.arcticError.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_forever_rounded,
+                  size: 44,
+                  color: ArcticTheme.arcticError,
+                ),
+              ),
+            )
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .scale(begin: const Offset(0.8, 0.8)),
         const SizedBox(height: 16),
 
         // Step label
         Center(
           child: Text(
             l.flushStep2Title,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: ArcticTheme.arcticError,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: ArcticTheme.arcticError),
           ),
         ).animate().fadeIn(delay: 100.ms),
         const SizedBox(height: 8),
@@ -386,10 +402,68 @@ class _Step2View extends StatelessWidget {
                 onPressed: onToggleObscure,
               ),
             ),
-            validator: (v) =>
-                (v == null || v.isEmpty) ? l.required : null,
+            validator: (v) => (v == null || v.isEmpty) ? l.required : null,
           ),
         ).animate().fadeIn(delay: 200.ms),
+        const SizedBox(height: 12),
+
+        CheckboxListTile(
+          value: deleteNonAdminUsers,
+          onChanged: isLoading
+              ? null
+              : (value) => onToggleDeleteUsers(value ?? false),
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          activeColor: ArcticTheme.arcticError,
+          title: Text(
+            l.flushDeleteUsersOption,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: deleteNonAdminUsers
+                  ? ArcticTheme.arcticError
+                  : ArcticTheme.arcticTextPrimary,
+              fontWeight: deleteNonAdminUsers ? FontWeight.w700 : null,
+            ),
+          ),
+          subtitle: Text(
+            l.flushDeleteUsersHelp,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: deleteNonAdminUsers
+                  ? ArcticTheme.arcticError
+                  : ArcticTheme.arcticTextSecondary,
+            ),
+          ),
+        ).animate().fadeIn(delay: 220.ms),
+        if (deleteNonAdminUsers)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: ArcticTheme.arcticError.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: ArcticTheme.arcticError.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: ArcticTheme.arcticError,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    l.flushDeleteUsersEnabledWarning,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: ArcticTheme.arcticError,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 240.ms).slideY(begin: 0.08),
         const SizedBox(height: 32),
 
         // Countdown / flush button

@@ -312,6 +312,13 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importTargetTechnician": "Target technician",
+  "importTargetTechnicianRequired": "Select the technician who should receive the imported history.",
+  "importTechnicianKeyword": "Source technician filter",
+  "importTechnicianKeywordHint": "Example: imran",
+  "importTechnicianKeywordHelp": "Only rows whose technician name, email, or ID matches this text will be imported.",
+  "importBundledTemplates": "Import bundled history templates",
+  "importBundledTemplatesMissing": "No bundled history templates were found in the app package.",
 
   "dangerZone": "Danger Zone",
   "flushDatabase": "Flush Database",
@@ -323,6 +330,7 @@
   "flushItemExpenses": "All expense & earning records",
   "flushItemCompanies": "All company records",
   "flushItemUsers": "All non-admin user accounts",
+  "flushItemUsersOptional": "Non-admin user accounts (optional)",
   "flushAdminKept": "Admin accounts will be preserved.",
   "flushProceedIn": "Proceed in {seconds}s",
   "@flushProceedIn": {
@@ -336,6 +344,9 @@
   },
   "flushConfirm": "Flush Database",
   "flushInProgress": "Flushing database…",
+  "flushDeleteUsersOption": "Also delete technician/user accounts",
+  "flushDeleteUsersHelp": "If enabled, all non-admin user documents are permanently deleted.",
+  "flushDeleteUsersEnabledWarning": "User deletion is enabled. All technician and other non-admin user records will be permanently removed during this flush.",
   "flushSuccess": "Database flushed. Starting fresh.",
   "flushFailed": "Flush failed. Check connection and try again.",
   "flushWrongPassword": "Incorrect password. Please try again.",

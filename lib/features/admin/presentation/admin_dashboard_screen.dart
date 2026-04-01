@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -73,6 +74,30 @@ class AdminDashboardScreen extends ConsumerWidget {
                     final approvedCount = jobs
                         .where((j) => j.isApproved)
                         .length;
+                    final splitCount = jobs.fold<int>(
+                      0,
+                      (sum, job) =>
+                          sum +
+                          job.acUnits
+                              .where((u) => u.type == 'Split AC')
+                              .fold<int>(0, (s, u) => s + u.quantity),
+                    );
+                    final windowCount = jobs.fold<int>(
+                      0,
+                      (sum, job) =>
+                          sum +
+                          job.acUnits
+                              .where((u) => u.type == 'Window AC')
+                              .fold<int>(0, (s, u) => s + u.quantity),
+                    );
+                    final freeStandingCount = jobs.fold<int>(
+                      0,
+                      (sum, job) =>
+                          sum +
+                          job.acUnits
+                              .where((u) => u.type == 'Freestanding AC')
+                              .fold<int>(0, (s, u) => s + u.quantity),
+                    );
                     final totalExpenses = jobs.fold<double>(
                       0,
                       (s, j) => s + j.expenses,
@@ -124,6 +149,46 @@ class AdminDashboardScreen extends ConsumerWidget {
                             ),
                           ],
                         ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _DashCard(
+                                title: l.splits,
+                                value: '$splitCount',
+                                icon: Icons.ac_unit_rounded,
+                                color: ArcticTheme.arcticBlue,
+                                onTap: () => context.push(
+                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.split)}',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _DashCard(
+                                title: l.windowAc,
+                                value: '$windowCount',
+                                icon: Icons.window_rounded,
+                                color: ArcticTheme.arcticSuccess,
+                                onTap: () => context.push(
+                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.window)}',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _DashCard(
+                                title: l.standing,
+                                value: '$freeStandingCount',
+                                icon: Icons.kitchen_rounded,
+                                color: ArcticTheme.arcticWarning,
+                                onTap: () => context.push(
+                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.freestanding)}',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1),
                       ],
                     );
                   },
@@ -302,7 +367,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                                           ).textTheme.titleSmall,
                                         ),
                                         Text(
-                                          '${job.techName} • INV-${job.invoiceNumber}',
+                                          '${job.techName} • ${job.invoiceNumber}',
                                           style: Theme.of(
                                             context,
                                           ).textTheme.bodySmall,
@@ -350,42 +415,68 @@ class _DashCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ArcticCard(
-      margin: EdgeInsets.zero,
-      onTap: onTap,
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: color),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 156;
+        final iconBoxSize = isCompact ? 38.0 : 44.0;
+        final iconSize = isCompact ? 18.0 : 22.0;
+        final gap = isCompact ? 8.0 : 12.0;
+
+        return ArcticCard(
+          margin: EdgeInsets.zero,
+          padding: EdgeInsets.all(isCompact ? 12 : 16),
+          onTap: onTap,
+          child: Row(
+            children: [
+              Container(
+                width: iconBoxSize,
+                height: iconBoxSize,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Text(title, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
+                child: Icon(icon, color: color, size: iconSize),
+              ),
+              SizedBox(width: gap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      alignment: Alignment.centerLeft,
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: color,
+                          fontSize: Responsive.scaledFontSize(
+                            context,
+                            isCompact ? 15 : 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title,
+                      maxLines: isCompact ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (onTap != null && !isCompact)
+                const Icon(
+                  Icons.chevron_right,
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
+            ],
           ),
-          if (onTap != null)
-            const Icon(
-              Icons.chevron_right,
-              color: ArcticTheme.arcticTextSecondary,
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

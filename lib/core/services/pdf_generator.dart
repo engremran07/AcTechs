@@ -27,6 +27,12 @@ class PdfGenerator {
     return value.replaceAll('\n', ' ').trim();
   }
 
+  static String _safeTableCellText(String? value, {int maxLength = 120}) {
+    final cleaned = _safeText(value);
+    if (cleaned.length <= maxLength) return cleaned;
+    return '${cleaned.substring(0, maxLength - 3)}...';
+  }
+
   static bool _isCustomerCashPaid(String? note) {
     final normalized = _safeText(note).toLowerCase();
     if (normalized.isEmpty) return false;
@@ -365,9 +371,9 @@ class PdfGenerator {
             data: jobs.map((j) {
               final statusText = statusMap[j.status.name] ?? j.status.name;
               return [
-                j.invoiceNumber,
-                j.techName,
-                j.clientName,
+                _safeTableCellText(j.invoiceNumber, maxLength: 40),
+                _safeTableCellText(j.techName, maxLength: 35),
+                _safeTableCellText(j.clientName, maxLength: 40),
                 AppFormatters.date(j.date),
                 '${j.totalUnits}',
                 AppFormatters.currency(j.expenses),
@@ -1192,7 +1198,12 @@ class PdfGenerator {
                   .where((n) => n.isNotEmpty)
                   .toSet()
                   .join(', ');
-              return [company, '${companyJobs.length}', '$units', techs];
+              return [
+                _safeTableCellText(company, maxLength: 42),
+                '${companyJobs.length}',
+                '$units',
+                _safeTableCellText(techs, maxLength: 120),
+              ];
             }).toList(),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
@@ -1237,15 +1248,16 @@ class PdfGenerator {
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
+    int maxPages = 2000,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
     final isRtl = locale == 'ur' || locale == 'ar';
 
-    final cellStyle = pw.TextStyle(font: font, fontSize: 7);
+    final cellStyle = pw.TextStyle(font: font, fontSize: 6.6);
     final headerCellStyle = pw.TextStyle(
       font: font,
-      fontSize: 8,
+      fontSize: 7,
       fontWeight: pw.FontWeight.bold,
       color: PdfColors.white,
     );
@@ -1299,8 +1311,9 @@ class PdfGenerator {
     final pdf = pw.Document();
     pdf.addPage(
       pw.MultiPage(
+        maxPages: maxPages,
         pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.fromLTRB(20, 16, 20, 16),
+        margin: const pw.EdgeInsets.fromLTRB(12, 12, 12, 12),
         textDirection: dir,
         crossAxisAlignment: isRtl
             ? pw.CrossAxisAlignment.end
@@ -1316,7 +1329,7 @@ class PdfGenerator {
         build: (context) => [
           if (technicianName != null) ...[
             pw.Text(technicianName, style: cellStyle, textDirection: dir),
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 4),
           ],
           pw.TableHelper.fromTextArray(
             context: context,
@@ -1345,7 +1358,7 @@ class PdfGenerator {
               final dolabQty = j.acUnits
                   .where((u) => u.type == 'Freestanding AC')
                   .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallDetail = () {
+                final uninstallDetail = () {
                 final splitPart = uninstallSplitQty > 0
                     ? 'S:$uninstallSplitQty'
                     : '';
@@ -1360,7 +1373,7 @@ class PdfGenerator {
                   windowPart,
                   standingPart,
                 ].where((p) => p.isNotEmpty).toList();
-                if (parts.isNotEmpty) return parts.join(' | ');
+                if (parts.isNotEmpty) return parts.join('|');
                 return '';
               }();
               final uninstallTotal =
@@ -1391,32 +1404,49 @@ class PdfGenerator {
                   );
               return [
                 AppFormatters.date(j.date),
-                _safeText(j.invoiceNumber),
-                j.clientContact.isEmpty ? '—' : _safeText(j.clientContact),
+                _safeTableCellText(j.invoiceNumber, maxLength: 24),
+                j.clientContact.isEmpty
+                    ? '—'
+                    : _safeTableCellText(j.clientContact, maxLength: 20),
                 '$splitQty',
                 '$windowQty',
                 '$uninstallTotal',
                 '$dolabQty',
                 bracketText,
                 deliveryText,
-                _safeText(j.techName),
-                description,
+                _safeTableCellText(j.techName, maxLength: 24),
+                _safeTableCellText(description, maxLength: 70),
               ];
             }).toList(),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
             headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(1.0),
+              1: const pw.FlexColumnWidth(1.0),
+              2: const pw.FlexColumnWidth(1.0),
+              3: const pw.FlexColumnWidth(0.55),
+              4: const pw.FlexColumnWidth(0.55),
+              5: const pw.FlexColumnWidth(0.75),
+              6: const pw.FlexColumnWidth(0.65),
+              7: const pw.FlexColumnWidth(0.75),
+              8: const pw.FlexColumnWidth(0.75),
+              9: const pw.FlexColumnWidth(1.0),
+              10: const pw.FlexColumnWidth(2.0),
+            },
             cellAlignments: {
               for (var i = 0; i < 11; i++) i: pw.Alignment.center,
+              10: pw.Alignment.centerLeft,
+              9: pw.Alignment.centerLeft,
             },
             oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
             border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
             cellPadding: const pw.EdgeInsets.symmetric(
-              horizontal: 3,
-              vertical: 2,
+              horizontal: 2,
+              vertical: 1.5,
             ),
           ),
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 4),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
             children: [
@@ -1616,6 +1646,33 @@ class PdfGenerator {
             'Net Profit/Loss',
           ];
 
+    final jobsHeaders = locale == 'ur'
+        ? [
+            'انوائس',
+            'کمپنی',
+            'کلائنٹ',
+            'رابطہ',
+            'یونٹس/تفصیل',
+            'ٹیکنیشن',
+          ]
+        : locale == 'ar'
+        ? [
+            'الفاتورة',
+            'الشركة',
+            'العميل',
+            'رقم الاتصال',
+            'الوحدات/التفاصيل',
+            'الفني',
+          ]
+        : [
+            'Invoice',
+            'Company',
+            'Client',
+            'Contact',
+            'Units / Details',
+            'Technician',
+          ];
+
     final cellStyle = pw.TextStyle(font: font, fontSize: 8);
     final headerCellStyle = pw.TextStyle(
       font: font,
@@ -1680,6 +1737,78 @@ class PdfGenerator {
               vertical: 5,
             ),
           ),
+          if (todaysJobs.isNotEmpty) ...[
+            pw.SizedBox(height: 12),
+            _sectionBanner(
+              locale == 'ur'
+                  ? 'آج کی ملازمت کی تفصیل'
+                  : locale == 'ar'
+                  ? 'تفاصيل وظائف اليوم'
+                  : 'Today Jobs Details',
+              font,
+              pw.TextStyle(
+                font: font,
+                fontSize: 10,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.white,
+              ),
+              _kBrandBlue,
+            ),
+            pw.SizedBox(height: 6),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: jobsHeaders,
+              data: todaysJobs.map((job) {
+                final units = job.acUnits
+                    .map((u) => '${u.type} x${u.quantity}')
+                    .join(', ');
+                final details = [
+                  if (units.isNotEmpty) units,
+                  if (job.expenseNote.trim().isNotEmpty) job.expenseNote.trim(),
+                ].join(' | ');
+
+                return [
+                  _safeTableCellText(job.invoiceNumber, maxLength: 40),
+                  job.companyName.trim().isEmpty
+                      ? '—'
+                      : _safeTableCellText(job.companyName, maxLength: 38),
+                  _safeTableCellText(job.clientName, maxLength: 36),
+                  job.clientContact.trim().isEmpty
+                      ? '—'
+                      : _safeTableCellText(job.clientContact, maxLength: 28),
+                  details.isEmpty
+                      ? '—'
+                      : _safeTableCellText(details, maxLength: 120),
+                  _safeTableCellText(job.techName, maxLength: 30),
+                ];
+              }).toList(),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(0.9),
+                1: const pw.FlexColumnWidth(1.1),
+                2: const pw.FlexColumnWidth(1.0),
+                3: const pw.FlexColumnWidth(0.9),
+                4: const pw.FlexColumnWidth(2.2),
+                5: const pw.FlexColumnWidth(1.0),
+              },
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              cellAlignments: {
+                0: pw.Alignment.center,
+                1: pw.Alignment.centerLeft,
+                2: pw.Alignment.centerLeft,
+                3: pw.Alignment.center,
+                4: pw.Alignment.centerLeft,
+                5: pw.Alignment.centerLeft,
+              },
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 3,
+                vertical: 2,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -2235,15 +2364,28 @@ class PdfGenerator {
     List<JobModel> jobs,
     String locale,
   ) async {
-    final bytes = await generateJobsDetailsReport(
-      jobs: jobs,
-      title: locale == 'ur'
-          ? 'ملازمتوں کی رپورٹ'
-          : locale == 'ar'
-          ? 'تقرير الوظائف'
-          : 'Jobs Report',
-      locale: locale,
-    );
+    final reportTitle = locale == 'ur'
+        ? 'ملازمتوں کی رپورٹ'
+        : locale == 'ar'
+        ? 'تقرير الوظائف'
+        : 'Jobs Report';
+
+    Uint8List bytes;
+    try {
+      bytes = await generateJobsDetailsReport(
+        jobs: jobs,
+        maxPages: 2000,
+        title: reportTitle,
+        locale: locale,
+      );
+    } catch (_) {
+      bytes = await generateJobsReport(
+        jobs: jobs,
+        title: reportTitle,
+        locale: locale,
+      );
+    }
+
     await Printing.layoutPdf(onLayout: (_) => bytes);
   }
 }
