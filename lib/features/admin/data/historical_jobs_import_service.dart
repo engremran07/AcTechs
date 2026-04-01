@@ -227,16 +227,6 @@ class HistoricalJobsImportService {
             ),
           );
         }
-
-        final invoiceKey = invoice.toLowerCase();
-        sheetUniqueInvoices.add(invoiceKey);
-        sheetInstalledSplit += splitQty;
-        sheetInstalledWindow += windowQty;
-        sheetInstalledFreestanding += standingQty;
-        sheetUninstallSplit += uninstallDistribution.split;
-        sheetUninstallWindow += uninstallDistribution.window;
-        sheetUninstallFreestanding += uninstallDistribution.freestanding;
-        sheetUninstallOld += uninstallDistribution.old;
         if (uninstallDistribution.split > 0) {
           units.add(
             AcUnit(
@@ -261,6 +251,22 @@ class HistoricalJobsImportService {
             ),
           );
         }
+
+        if (units.isEmpty) {
+          skipped++;
+          sheetSkippedRows++;
+          continue;
+        }
+
+        final invoiceKey = invoice.toLowerCase();
+        sheetUniqueInvoices.add(invoiceKey);
+        sheetInstalledSplit += splitQty;
+        sheetInstalledWindow += windowQty;
+        sheetInstalledFreestanding += standingQty;
+        sheetUninstallSplit += uninstallDistribution.split;
+        sheetUninstallWindow += uninstallDistribution.window;
+        sheetUninstallFreestanding += uninstallDistribution.freestanding;
+        sheetUninstallOld += uninstallDistribution.old;
 
         final bracket = _doubleValue(row, headerMap, ['bracket']);
         final delivery = _doubleValue(row, headerMap, ['delivery']);
@@ -682,7 +688,19 @@ class HistoricalJobsImportService {
   }
 
   static String _importedClientName(String periodLabel, String invoice) {
-    return 'Imported $periodLabel • $invoice';
+    final normalizedPeriod = periodLabel.trim();
+    final normalizedInvoice = invoice.trim();
+
+    if (normalizedPeriod.isNotEmpty && normalizedInvoice.isNotEmpty) {
+      return 'Imported $normalizedPeriod • $normalizedInvoice';
+    }
+    if (normalizedInvoice.isNotEmpty) {
+      return 'Imported • $normalizedInvoice';
+    }
+    if (normalizedPeriod.isNotEmpty) {
+      return 'Imported $normalizedPeriod';
+    }
+    return 'Imported Record';
   }
 
   static UserModel? _resolveUser(

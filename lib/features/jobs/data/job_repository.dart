@@ -67,6 +67,14 @@ class JobRepository {
           'ليس لديك إذن. تواصل مع المسؤول.',
         );
       }
+      if (e.code == 'failed-precondition') {
+        throw const JobException(
+          'job_backend_sync_in_progress',
+          'Backend update is still syncing. Please retry in a minute.',
+          'بیک اینڈ اپڈیٹ ابھی سنک ہو رہی ہے۔ ایک منٹ بعد دوبارہ کوشش کریں۔',
+          'تحديث الخادم ما زال قيد المزامنة. حاول مرة أخرى بعد دقيقة.',
+        );
+      }
       if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
         throw NetworkException.syncFailed();
       }
@@ -243,6 +251,22 @@ class JobRepository {
       return imported;
     } on FirebaseException catch (e) {
       debugPrint('importJobs FirebaseException: ${e.code} — ${e.message}');
+        if (e.code == 'permission-denied') {
+          throw const JobException(
+            'job_import_permission_denied',
+            'You do not have permission to import jobs. Contact your admin.',
+            'آپ کو jobs درآمد کرنے کی اجازت نہیں۔ اپنے ایڈمن سے رابطہ کریں۔',
+            'ليس لديك إذن لاستيراد الوظائف. تواصل مع المسؤول.',
+          );
+        }
+      if (e.code == 'failed-precondition') {
+        throw const JobException(
+          'job_backend_sync_in_progress',
+          'Backend update is still syncing. Please retry in a minute.',
+          'بیک اینڈ اپڈیٹ ابھی سنک ہو رہی ہے۔ ایک منٹ بعد دوبارہ کوشش کریں۔',
+          'تحديث الخادم ما زال قيد المزامنة. حاول مرة أخرى بعد دقيقة.',
+        );
+      }
       throw JobException.saveFailed();
     } catch (e) {
       debugPrint('importJobs unknown error: $e');

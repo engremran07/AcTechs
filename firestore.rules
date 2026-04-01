@@ -20,7 +20,9 @@ service cloud.firestore {
 
     // Helper: check if caller is admin
     function isAdmin() {
-      return userExists() && userData().role == 'admin';
+        return userExists() &&
+          userData().role is string &&
+          userData().role.lower() in ['admin', 'administrator'];
     }
 
     function validJobCreatePayload() {
@@ -38,7 +40,6 @@ service cloud.firestore {
       request.resource.data.invoiceNumber is string &&
       request.resource.data.invoiceNumber.size() > 0 &&
       request.resource.data.clientName is string &&
-      request.resource.data.clientName.size() > 0 &&
       request.resource.data.acUnits is list &&
       request.resource.data.acUnits.size() > 0 &&
       request.resource.data.expenses is number &&
