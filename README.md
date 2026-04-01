@@ -1,174 +1,116 @@
-# AC Techs — AC Technician Management System
+# AC Techs - AC Technician Management System
 
-Multi-role mobile + web app for an AC installation company in Saudi Arabia.
+📱 Multi-role Flutter app for AC installation operations in Saudi Arabia.
 
-## About Repo
+## ✨ Highlights
 
-🚀 Welcome to AC Techs: a production-focused, tri-lingual technician operations app built for real field work in Saudi Arabia.
+- 🧰 Technician-first daily workflow: invoice jobs, IN/OUT entries, and quick history access
+- 🛡️ Admin control center: approvals, analytics, team/company management, and safe database flush
+- 🌍 Full tri-lingual support: English + Urdu (RTL) + Arabic (RTL)
+- 🔄 Real-time + offline-ready Firestore data flow
+- 📄 Export pipeline for Excel and PDF reports
+- 🧪 Production-focused structure with clean architecture and repository boundaries
 
-✨ What makes this repo special:
-- Fast technician workflows for invoices and daily IN/OUT tracking
-- Admin-first control for approvals, team management, and companies
-- Real-time Firebase sync with offline resilience
-- RTL-ready Urdu/Arabic UX and export support
-- Practical architecture optimized for scaling features without chaos
+## 🧩 Core Features
 
-💡 If you want one repo that is clean, deployable, and business-ready for AC service operations, this is it.
+### Technician
+- Submit jobs with invoice normalization and multi-unit AC support
+- Track work and home expenses with daily IN/OUT summaries
+- Open job details, call/WhatsApp from cards, and navigate filtered history views
 
-## Features
+### Admin
+- Approve/reject pending jobs with notes
+- Manage technicians and companies
+- Run period and technician-scoped analytics
+- Import historical Excel workbooks with technician mapping and period-aware parsing
+- Flush operational data with a two-step confirmation and optional non-admin user deletion
 
-- **Technicians**: Submit invoices with company-specific prefixes, batch-add daily IN/OUT entries, separate work and home expenses, view history, and track approval status
-- **Admins**: Approve/reject jobs, view analytics, manage technicians, manage client companies, and export to Excel/PDF
-- **Tri-lingual**: English, Urdu (RTL), Arabic (RTL)
-- **Offline-first**: Firestore local persistence with automatic sync
-- **Theme modes**: Auto, Dark, Light, High Contrast
-
-## Stack
+## 🏗️ Tech Stack
 
 | Layer | Technology |
 | --- | --- |
-| Framework | Flutter 3.x (Android APK + Web) |
-| Backend | Firebase Auth + Firestore (Spark/free tier) |
+| Framework | Flutter 3.x (Android + Web) |
+| Backend | Firebase Auth + Cloud Firestore |
 | State | Riverpod 3.x |
-| Navigation | GoRouter with auth redirect guards |
-| Theme | Material 3 Dark, arctic blue (#00D4FF) seed |
-| Fonts | Syne + DM Sans (English), NotoNastaliqUrdu (Urdu), NotoNaskhArabic (Arabic) — bundled offline |
+| Navigation | GoRouter with auth guards |
+| Theme | Material 3 (Arctic style system) |
+| Localization | ARB-based l10n (`en`, `ur`, `ar`) |
+| Data Models | Freezed + JSON Serializable |
 | Charts | fl_chart |
-| Export | excel + share_plus (Excel), pdf + printing (PDF with RTL) |
-| i18n | flutter_localizations + ARB (en, ur, ar) |
-| Models | freezed + json_serializable |
+| Export | excel, share_plus, pdf, printing |
 
-## Getting Started
+## 📂 Architecture
+
+- Feature-first clean architecture under `lib/features/*`
+- Layer split per feature: `data`, `domain`, `presentation`, `providers`
+- Shared modules in `lib/core/*` (theme, constants, errors, widgets, utilities)
+- Firestore access isolated in repositories
+
+## 🚀 Getting Started
 
 ```bash
-# Install dependencies
 flutter pub get
-
-# Generate freezed/json code
 dart run build_runner build --delete-conflicting-outputs
-
-# Generate localization files
 flutter gen-l10n
-
-# Run on connected device
-flutter run
-
-# Run on Chrome
-flutter run -d chrome
-
-# Build release APK
-flutter build apk --release
-
-# Build release web
-flutter build web --release
-
-# Lint check
 flutter analyze
-
-# Run tests
 flutter test
 ```
 
-## Install On Phone (Debug + Release)
-
-### 1) Build APKs
+Run app:
 
 ```bash
-# Debug APK (faster builds, development)
+flutter run
+flutter run -d chrome
+```
+
+Build artifacts:
+
+```bash
 flutter build apk --debug
-
-# Release APK (optimized production build)
 flutter build apk --release --no-tree-shake-icons
+flutter build web --release
 ```
 
-### 2) Install APK To Connected Android Device
+## 📲 Install APK On Device
 
 ```bash
-# Verify device is connected
-adb devices
+flutter devices
+flutter install -d <deviceId> --use-application-binary build/app/outputs/flutter-apk/app-debug.apk
+```
 
-# Install debug APK
+Alternative via ADB:
+
+```bash
 adb install -r build/app/outputs/flutter-apk/app-debug.apk
-
-# Install release APK
-adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
-### 3) Run Directly In Debug Mode (alternative)
+## 🧪 Debug Workflow
 
 ```bash
-flutter run -d <deviceId>
-```
-
-Use `flutter devices` to list available device IDs.
-
-## Realtime Logs And Rapid Fix Workflow
-
-### Collect realtime logs
-
-```bash
-# Flutter app logs (best for Dart exceptions)
+flutter analyze
+flutter test
 flutter logs
-
-# Full Android logs (filter later for app/package)
-adb logcat
-
-# Useful filtered logcat (Windows PowerShell)
 adb logcat | findstr /I "flutter dart AndroidRuntime FATAL EXCEPTION"
 ```
 
-### Triage and fix loop
-
-```bash
-# 1) Analyze static issues
-flutter analyze
-
-# 2) Run tests
-flutter test
-
-# 3) Re-run app and monitor logs
-flutter run -d <deviceId>
-```
-
-Recommended issue-fix order:
-1. Crash/exception blockers from `AndroidRuntime` or Dart stack traces
-2. Firestore permission and write failures
-3. UI overflows and input/cursor issues
-4. Localization and RTL layout mismatches
-
-For Firebase permission errors, ensure rules/indexes are deployed:
+If Firestore permissions/indexes are out of sync:
 
 ```bash
 firebase deploy --only firestore --project actechs-d415e
 ```
 
-## Dependency Status
+## 🔐 Firebase Notes
 
-- Riverpod stack is on 3.x: `flutter_riverpod`, `riverpod_annotation`, and `riverpod_generator`
-- Dependency health command: `flutter pub outdated`
-- Policy: avoid deprecated packages and keep versions actively maintained
-- Some packages may be intentionally pinned below latest major versions for Flutter SDK compatibility and stability
+- Firestore rules and indexes are versioned in this repo
+- Admin deletes are enabled by rules for operational cleanup flows
+- Use repository methods for Firestore writes/deletes instead of direct UI-layer calls
 
-## Firebase Setup
+## 📦 Project Identity
 
-See [docs/firebase-setup-guide.md](docs/firebase-setup-guide.md) for full setup instructions.
+- Android package: `com.actechs.pk`
+- Firebase project: `actechs-d415e`
 
-## Architecture
+## 📚 Additional Docs
 
-Clean Architecture with feature folders: `auth`, `technician`, `admin`, `expenses`, `settings`.  
-Each feature has `data/`, `domain/`, `presentation/`, and `providers/` layers.  
-Shared code lives in `core/` (theme, widgets, errors, utils, constants).
-
-## Current Functional Areas
-
-- `admin/team`: create, edit, deactivate, delete, and reset-password flows for technicians
-- `admin/companies`: add, edit, and activate/deactivate installation companies and invoice prefixes
-- `tech/submit`: submit invoice jobs against an active company
-- `tech/inout`: batch-add daily earnings and expenses, including separate home-expense tracking
-- `tech/summary`: monthly totals for earnings, work expenses, home expenses, and net profit
-- `settings`: locale-aware themes and language switching
-
-## Package
-
-- **Android Package**: `com.actechs.pk`
-- **Firebase Project**: `actechs-d415e`
+- Firebase setup guide: [docs/firebase-setup-guide.md](docs/firebase-setup-guide.md)
+- Error catalog: [docs/error-messages.md](docs/error-messages.md)
