@@ -21,6 +21,7 @@ class UserRepository {
   Stream<List<UserModel>> allTechnicians() {
     return _usersRef
         .where('role', isEqualTo: 'technician')
+        .where('isActive', isEqualTo: true)
         .snapshots()
         .map(
           (snap) =>
@@ -29,16 +30,30 @@ class UserRepository {
   }
 
   Stream<List<UserModel>> allUsers() {
-    return _usersRef.snapshots().map(
-      (snap) => snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList(),
-    );
+    return _usersRef
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Future<List<UserModel>> usersForImport() async {
+    try {
+      final snap = await _usersRef.get();
+      return snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+    } on FirebaseException catch (e) {
+      debugPrint('usersForImport error code: ${e.code}');
+      throw ExpenseException.userSaveFailed();
+    }
   }
 
   Future<void> toggleUserActive(String uid, bool isActive) async {
     try {
       await _usersRef.doc(uid).update({'isActive': isActive});
     } on FirebaseException catch (e) {
-      debugPrint('toggleUserActive error: `${e.code} — `${e.message}');
+      debugPrint('toggleUserActive error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -47,18 +62,19 @@ class UserRepository {
     try {
       await _usersRef.doc(uid).update({'language': language});
     } on FirebaseException catch (e) {
-      debugPrint('updateLanguage error: `${e.code} — `${e.message}');
+      debugPrint('updateLanguage error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
     }
   }
 
-  /// Create a new technician user via a secondary Firebase App so the
-  /// admin session is preserved (createUserWithEmailAndPassword signs in
-  /// as the new user on the primary app).
-  Future<void> createTechnician({
+  /// Create a new user (technician or admin) via a secondary Firebase App.
+  /// Admin session is preserved since createUserWithEmailAndPassword on a
+  /// secondary app doesn't sign out the primary auth context.
+  Future<void> createUser({
     required String name,
     required String email,
     required String password,
+    required String role,
   }) async {
     FirebaseApp? secondaryApp;
     final appName = 'userCreation_${DateTime.now().millisecondsSinceEpoch}';
@@ -75,12 +91,15 @@ class UserRepository {
         password: password,
       );
       final uid = credential.user!.uid;
+      final normalizedRole = role.trim().toLowerCase() == AppConstants.roleAdmin
+          ? AppConstants.roleAdmin
+          : AppConstants.roleTechnician;
 
-      // Create the Firestore user document (uses the primary Firestore)
+      // Create the Firestore user document with the specified role
       await _usersRef.doc(uid).set({
         'name': name,
         'email': email,
-        'role': AppConstants.roleTechnician,
+        'role': normalizedRole,
         'isActive': true,
         'language': 'en',
         'createdAt': FieldValue.serverTimestamp(),
@@ -129,7 +148,7 @@ class UserRepository {
     try {
       await _usersRef.doc(uid).update({'name': name, 'email': email});
     } on FirebaseException catch (e) {
-      debugPrint('updateUser error: `${e.code} — `${e.message}');
+      debugPrint('updateUser error code: ${e.code}');
       if (e.code == 'permission-denied') {
         throw const AdminException(
           'admin_permission',
@@ -147,20 +166,22 @@ class UserRepository {
     try {
       await _usersRef.doc(uid).update({'name': name});
     } on FirebaseException catch (e) {
-      debugPrint('updateSelfName error: `${e.code} — `${e.message}');
+      debugPrint('updateSelfName error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
     }
   }
 
-  /// Soft-delete: deactivate the user. Firestore rules prevent hard delete.
-  Future<void> deactivateUser(String uid) async {
-    try {
-      await _usersRef.doc(uid).update({'isActive': false});
-    } on FirebaseException catch (e) {
-      debugPrint('deactivateUser error: `${e.code} — `${e.message}');
-      throw ExpenseException.userSaveFailed();
-    }
-  }
+  /// Backward-compatibility: technicianonly wrapper for createUser.
+  Future<void> createTechnician({
+    required String name,
+    required String email,
+    required String password,
+  }) async => createUser(
+    name: name,
+    email: email,
+    password: password,
+    role: AppConstants.roleTechnician,
+  );
 
   /// Bulk toggle active status for a list of user IDs.
   Future<void> bulkToggleActive(List<String> uids, bool isActive) async {
@@ -171,7 +192,7 @@ class UserRepository {
       }
       await batch.commit();
     } on FirebaseException catch (e) {
-      debugPrint('bulkToggleActive error: `${e.code} — `${e.message}');
+      debugPrint('bulkToggleActive error code: ${e.code}');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -186,17 +207,17 @@ class UserRepository {
       final settings = ActionCodeSettings(
         url: 'https://actechs-d415e.web.app',
         handleCodeInApp: false,
-        androidPackageName: 'com.actechs.pk',
+        androidPackageName: 'com.actechs.ac_techs',
         androidInstallApp: false,
-        // API level 21 = Android 5.0 Lollipop (minimum supported version)
-        androidMinimumVersion: '21',
+        // Match app minimum supported Android API level.
+        androidMinimumVersion: '29',
       );
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: email,
         actionCodeSettings: settings,
       );
     } on FirebaseAuthException catch (e) {
-      debugPrint('sendPasswordReset error: `${e.code} — `${e.message}');
+      debugPrint('sendPasswordReset error code: ${e.code}');
       if (e.code == 'network-request-failed') {
         throw AuthException.resetNetworkError();
       }
@@ -207,7 +228,12 @@ class UserRepository {
     }
   }
 
-  /// Soft-delete: marks user inactive + timestamp.
+  /// Delete user by marking as inactive in Firestore (soft-delete).
+  /// - Sign-in is blocked via isActive check in auth_repository.dart
+  /// - User will not appear in team list (filtered by isActive=true)
+  /// - Firebase Auth account deletion requires Admin SDK (Cloud Functions).
+  ///   For free tier: Auth account persists but cannot log in. For full cleanup
+  ///   use Firebase Console to delete Auth or deploy Cloud Function.
   Future<void> deleteUser(String uid) async {
     try {
       await _usersRef.doc(uid).update({
@@ -215,7 +241,7 @@ class UserRepository {
         'deletedAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {
-      debugPrint('deleteUser error: `${e.code} — `${e.message}');
+      debugPrint('deleteUser error code: ${e.code}');
       if (e.code == 'permission-denied') {
         throw const AdminException(
           'admin_permission',
@@ -244,7 +270,7 @@ class UserRepository {
     } on AdminException {
       rethrow;
     } on FirebaseAuthException catch (e) {
-      debugPrint('verifyAdminPassword error: `${e.code} — `${e.message}');
+      debugPrint('verifyAdminPassword error code: ${e.code}');
       throw AdminException.wrongPassword();
     } catch (_) {
       throw AdminException.wrongPassword();
@@ -282,7 +308,15 @@ class UserRepository {
         await batch.commit();
       }
     } on FirebaseException catch (e) {
-      debugPrint('flushDatabase error: `${e.code} — `${e.message}');
+      debugPrint('flushDatabase error code: ${e.code}');
+      if (e.code == 'permission-denied') {
+        throw const AdminException(
+          'admin_flush_permission_denied',
+          'Database flush is blocked by security rules. Contact admin support.',
+          'ڈیٹا بیس فلش سیکیورٹی رولز کی وجہ سے بلاک ہے۔ ایڈمن سپورٹ سے رابطہ کریں۔',
+          'تم حظر مسح قاعدة البيانات بواسطة قواعد الأمان. تواصل مع دعم المسؤول.',
+        );
+      }
       throw AdminException.flushFailed();
     }
   }

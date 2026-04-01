@@ -39,6 +39,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterValidEmail => 'يرجى إدخال بريد إلكتروني صالح';
 
   @override
+  String get enterValidPhone => 'يرجى إدخال رقم هاتف صالح';
+
+  @override
   String get enterPassword => 'يرجى إدخال كلمة المرور';
 
   @override
@@ -137,7 +140,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addUnit => 'إضافة وحدة';
 
   @override
-  String get unitType => 'نوع الوحدة';
+  String get unitType => 'النوع';
 
   @override
   String get quantity => 'الكمية';
@@ -583,6 +586,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get uninstalls => 'إزالة';
 
   @override
+  String get uninstallSplit => 'فك تركيب سبليت';
+
+  @override
+  String get uninstallWindow => 'فك تركيب شباك';
+
+  @override
+  String get uninstallStanding => 'فك تركيب قائم';
+
+  @override
   String get jobStatus => 'حالة العمل';
 
   @override
@@ -699,6 +711,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exportToExcel => 'تصدير إلى Excel';
 
   @override
+  String get reportPreset => 'إعداد التقرير';
+
+  @override
+  String get byTechnician => 'حسب الفني';
+
+  @override
+  String get uninstallRateBreakdown => 'تفصيل معدل الإزالة';
+
+  @override
   String exportReady(int count) {
     return 'التصدير جاهز! تم تصدير $count وظائف إلى Excel.';
   }
@@ -717,33 +738,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String passwordResetSent(String email) {
     return 'تم إرسال بريد إعادة تعيين كلمة المرور إلى $email';
   }
-
-  @override
-  String get passwordResetConfirmTitle => 'إعادة تعيين كلمة المرور؟';
-
-  @override
-  String passwordResetConfirmBody(String email) {
-    return 'سيتم إرسال رابط إعادة التعيين إلى $email. متابعة؟';
-  }
-
-  @override
-  String get passwordResetEmailSentTitle => 'تم إرسال البريد الإلكتروني';
-
-  @override
-  String passwordResetEmailSentBody(String email) {
-    return 'تم إرسال رابط إعادة التعيين إلى $email.\n\nيرجى التحقق من صندوق الوارد. إذا لم تجده خلال بضع دقائق، تحقق من مجلد البريد العشوائي.\n\nينتهي صلاحية الرابط خلال ساعة واحدة.';
-  }
-
-  @override
-  String get passwordResetNetworkError =>
-      'لا يوجد اتصال بالإنترنت. يرجى الاتصال والمحاولة مرة أخرى.';
-
-  @override
-  String get passwordResetRateLimit =>
-      'طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.';
-
-  @override
-  String get send => 'إرسال';
 
   @override
   String confirmDeleteUser(String name) {
@@ -809,6 +803,109 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get homeExpenses => 'مصروفات المنزل';
+
+  @override
+  String get importHistoryData => 'استيراد البيانات السابقة';
+
+  @override
+  String get importHistoryDataSubtitle =>
+      'قم برفع ملف أو أكثر من Excel لاستيراد تركيبات الفنيين السابقة حسب معرف/البريد/الاسم.';
+
+  @override
+  String get uploadExcel => 'رفع Excel';
+
+  @override
+  String get deleteSourceAfterImport =>
+      'حذف الملف المصدر بعد الاستيراد (عند الإمكان)';
+
+  @override
+  String get importInProgress => 'جارٍ الاستيراد...';
+
+  @override
+  String get importNoFileSelected => 'لم يتم اختيار ملف.';
+
+  @override
+  String get importFailedNoRows => 'لا توجد صفوف صالحة للاستيراد.';
+
+  @override
+  String importCompletedCount(int count) {
+    return 'تم استيراد $count صف';
+  }
+
+  @override
+  String importSkippedCount(int count) {
+    return 'تم تخطي $count صف';
+  }
+
+  @override
+  String importUnresolvedTechRows(int count) {
+    return 'تم تخطي $count صف: لم يتم العثور على الفني';
+  }
+
+  @override
+  String get dangerZone => 'منطقة الخطر';
+
+  @override
+  String get flushDatabase => 'مسح قاعدة البيانات';
+
+  @override
+  String get flushDatabaseSubtitle =>
+      'إعادة تعيين جميع البيانات إلى حالة نظيفة';
+
+  @override
+  String get flushStep1Title => 'الخطوة 1 من 2 — تأكيد النية';
+
+  @override
+  String get flushStep2Title => 'الخطوة 2 من 2 — التأكيد النهائي';
+
+  @override
+  String get flushWarningIntro => 'أنت على وشك حذف البيانات التالية نهائياً:';
+
+  @override
+  String get flushItemJobs => 'جميع سجلات الأعمال';
+
+  @override
+  String get flushItemExpenses => 'جميع سجلات المصروفات والإيرادات';
+
+  @override
+  String get flushItemCompanies => 'جميع سجلات الشركات';
+
+  @override
+  String get flushItemUsers => 'جميع حسابات المستخدمين غير المسؤولين';
+
+  @override
+  String get flushAdminKept => 'سيتم الحفاظ على حسابات المسؤولين.';
+
+  @override
+  String flushProceedIn(int seconds) {
+    return 'المتابعة خلال $secondsث';
+  }
+
+  @override
+  String get flushProceed => 'المتابعة إلى الخطوة 2';
+
+  @override
+  String get flushEnterPassword => 'أدخل كلمة مرور المسؤول للتأكيد';
+
+  @override
+  String flushConfirmIn(int seconds) {
+    return 'التأكيد خلال $secondsث';
+  }
+
+  @override
+  String get flushConfirm => 'مسح قاعدة البيانات';
+
+  @override
+  String get flushInProgress => 'جارٍ مسح قاعدة البيانات…';
+
+  @override
+  String get flushSuccess => 'تم مسح قاعدة البيانات. جاهز للبدء من جديد.';
+
+  @override
+  String get flushFailed => 'فشل المسح. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String get flushWrongPassword => 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
 
   @override
   String get catSplitAc => 'مكيف سبليت';
@@ -907,65 +1004,137 @@ class AppLocalizationsAr extends AppLocalizations {
   String get catOtherGroceries => 'مشتريات أخرى';
 
   @override
-  String get dangerZone => 'منطقة الخطر';
+  String get passwordResetConfirmTitle => 'إعادة تعيين كلمة المرور؟';
 
   @override
-  String get flushDatabase => 'مسح قاعدة البيانات';
+  String passwordResetConfirmBody(String email) {
+    return 'سيتم إرسال رابط إعادة التعيين إلى $email. متابعة؟';
+  }
 
   @override
-  String get flushDatabaseSubtitle =>
-      'إعادة تعيين جميع البيانات إلى حالة نظيفة';
+  String get passwordResetEmailSentTitle => 'تم إرسال البريد الإلكتروني';
 
   @override
-  String get flushStep1Title => 'الخطوة 1 من 2 — تأكيد النية';
+  String passwordResetEmailSentBody(String email) {
+    return 'تم إرسال رابط إعادة التعيين إلى $email.\n\nيرجى التحقق من صندوق الوارد. إذا لم تجده خلال بضع دقائق، تحقق من مجلد البريد العشوائي.\n\nينتهي صلاحية الرابط خلال ساعة واحدة.';
+  }
 
   @override
-  String get flushStep2Title => 'الخطوة 2 من 2 — التأكيد النهائي';
+  String get passwordResetNetworkError =>
+      'لا يوجد اتصال بالإنترنت. يرجى الاتصال والمحاولة مرة أخرى.';
 
   @override
-  String get flushWarningIntro =>
-      'أنت على وشك حذف البيانات التالية نهائياً:';
+  String get passwordResetRateLimit =>
+      'طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.';
 
   @override
-  String get flushItemJobs => 'جميع سجلات الأعمال';
+  String get send => 'إرسال';
 
   @override
-  String get flushItemExpenses => 'جميع سجلات المصروفات والإيرادات';
+  String get changeEmail => 'تغيير البريد الإلكتروني';
 
   @override
-  String get flushItemCompanies => 'جميع سجلات الشركات';
+  String get changePassword => 'تغيير كلمة المرور';
 
   @override
-  String get flushItemUsers => 'جميع حسابات المستخدمين غير المسؤولين';
+  String get currentPassword => 'كلمة المرور الحالية';
 
   @override
-  String get flushAdminKept => 'سيتم الحفاظ على حسابات المسؤولين.';
+  String get newPassword => 'كلمة المرور الجديدة';
 
   @override
-  String flushProceedIn(int seconds) => 'المتابعة خلال ${seconds}ث';
+  String get confirmNewPassword => 'تأكيد كلمة المرور الجديدة';
 
   @override
-  String get flushProceed => 'المتابعة إلى الخطوة 2';
+  String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين.';
 
   @override
-  String get flushEnterPassword => 'أدخل كلمة مرور المسؤول للتأكيد';
+  String get emailUpdated => 'تم تحديث البريد الإلكتروني بنجاح.';
 
   @override
-  String flushConfirmIn(int seconds) => 'التأكيد خلال ${seconds}ث';
+  String get emailChangeVerificationSent =>
+      'تم إرسال رسالة تحقق. افتح بريدك لتأكيد البريد الإلكتروني الجديد.';
 
   @override
-  String get flushConfirm => 'مسح قاعدة البيانات';
+  String get passwordUpdated => 'تم تحديث كلمة المرور بنجاح.';
 
   @override
-  String get flushInProgress => 'جارٍ مسح قاعدة البيانات\u2026';
+  String get editEntry => 'تعديل الإدخال';
 
   @override
-  String get flushSuccess => 'تم مسح قاعدة البيانات. جاهز للبدء من جديد.';
+  String get entryUpdated => 'تم تحديث الإدخال بنجاح.';
 
   @override
-  String get flushFailed =>
-      'فشل المسح. تحقق من الاتصال وحاول مرة أخرى.';
+  String get selectPdfDateRange => 'حدد نطاق تاريخ PDF';
 
   @override
-  String get flushWrongPassword => 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
+  String get pdfDateRangeMonthOnly =>
+      'يرجى اختيار نطاق تاريخ ضمن الشهر المحدد.';
+
+  @override
+  String get exportTodayCompanyInvoices => 'تصدير فواتير الشركات لليوم';
+
+  @override
+  String get noInvoicesToday => 'لا توجد فواتير لليوم.';
+
+  @override
+  String get couldNotOpenSummary => 'تعذر فتح شاشة الملخص. حاول مرة أخرى.';
+
+  @override
+  String get userDataLoading => 'يرجى الانتظار — جارٍ تحميل ملفك الشخصي...';
+
+  @override
+  String get couldNotSubmitJob =>
+      'تعذر الإرسال. يرجى تسجيل الخروج وإعادة تسجيل الدخول.';
+
+  @override
+  String get invoiceSopTitle => 'تدفق إجراءات الفاتورة';
+
+  @override
+  String get excelStyleEntry => 'إدخال بنمط إكسل';
+
+  @override
+  String get descriptionLabel => 'الوصف';
+
+  @override
+  String get invoiceSopStep1 => '1) اختر التاريخ والشركة';
+
+  @override
+  String get invoiceSopStep2 => '2) أدخل الفاتورة والعميل والتواصل';
+
+  @override
+  String get invoiceSopStep3 => '3) أضف وحدات التكييف والرسوم الاختيارية';
+
+  @override
+  String get invoiceSopStep4 => '4) أرسل لاعتماد المسؤول';
+
+  @override
+  String get jobsDetailsReport => 'تقرير تفاصيل الوظائف';
+
+  @override
+  String get earningsReport => 'تقرير الأرباح';
+
+  @override
+  String get expensesDetailedReport => 'تقرير النفقات (العمل والمنزل)';
+
+  @override
+  String get exportJobsAsExcel => 'تصدير الوظائف إلى Excel';
+
+  @override
+  String get exportJobsAsPdf => 'تصدير الوظائف إلى PDF';
+
+  @override
+  String get exportEarningsAsExcel => 'تصدير الأرباح إلى Excel';
+
+  @override
+  String get exportEarningsAsPdf => 'تصدير الأرباح إلى PDF';
+
+  @override
+  String get exportExpensesAsExcel => 'تصدير النفقات إلى Excel';
+
+  @override
+  String get exportExpensesAsPdf => 'تصدير النفقات إلى PDF';
+
+  @override
+  String get selectReportType => 'اختر نوع التقرير';
 }

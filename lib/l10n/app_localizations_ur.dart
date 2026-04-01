@@ -39,6 +39,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get enterValidEmail => 'براہ کرم درست ای میل درج کریں';
 
   @override
+  String get enterValidPhone => 'براہ کرم درست فون نمبر درج کریں';
+
+  @override
   String get enterPassword => 'براہ کرم پاس ورڈ درج کریں';
 
   @override
@@ -137,7 +140,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get addUnit => 'یونٹ شامل کریں';
 
   @override
-  String get unitType => 'یونٹ کی قسم';
+  String get unitType => 'قسم';
 
   @override
   String get quantity => 'تعداد';
@@ -585,6 +588,15 @@ class AppLocalizationsUr extends AppLocalizations {
   String get uninstalls => 'ان انسٹال';
 
   @override
+  String get uninstallSplit => 'ان انسٹال سپلٹ';
+
+  @override
+  String get uninstallWindow => 'ان انسٹال ونڈو';
+
+  @override
+  String get uninstallStanding => 'ان انسٹال اسٹینڈنگ';
+
+  @override
   String get jobStatus => 'کام کی حالت';
 
   @override
@@ -701,6 +713,15 @@ class AppLocalizationsUr extends AppLocalizations {
   String get exportToExcel => 'ایکسل میں برآمد';
 
   @override
+  String get reportPreset => 'رپورٹ پری سیٹ';
+
+  @override
+  String get byTechnician => 'ٹیکنیشن کے مطابق';
+
+  @override
+  String get uninstallRateBreakdown => 'ان انسٹال ریٹ بریک ڈاؤن';
+
+  @override
   String exportReady(int count) {
     return 'برآمد تیار! $count جابز ایکسل میں برآمد ہوئیں۔';
   }
@@ -718,33 +739,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String passwordResetSent(String email) {
     return '$email پر پاس ورڈ ری سیٹ ای میل بھیج دی گئی';
   }
-
-  @override
-  String get passwordResetConfirmTitle => 'پاس ورڈ ری سیٹ؟';
-
-  @override
-  String passwordResetConfirmBody(String email) {
-    return '$email پر ری سیٹ لنک بھیجا جائے گا۔ جاری رکھیں؟';
-  }
-
-  @override
-  String get passwordResetEmailSentTitle => 'ای میل بھیج دی گئی';
-
-  @override
-  String passwordResetEmailSentBody(String email) {
-    return '$email پر ری سیٹ لنک بھیج دیا گیا ہے۔\n\nبراہ کرم اپنا ان باکس چیک کریں۔ اگر چند منٹوں میں نظر نہ آئے تو اسپیم یا جنک فولڈر دیکھیں۔\n\nلنک 1 گھنٹے میں ختم ہو جائے گا۔';
-  }
-
-  @override
-  String get passwordResetNetworkError =>
-      'انٹرنیٹ کنکشن نہیں ہے۔ براہ کرم کنکٹ کریں اور دوبارہ کوشش کریں۔';
-
-  @override
-  String get passwordResetRateLimit =>
-      'بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔';
-
-  @override
-  String get send => 'بھیجیں';
 
   @override
   String confirmDeleteUser(String name) {
@@ -810,6 +804,111 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get homeExpenses => 'گھر کے اخراجات';
+
+  @override
+  String get importHistoryData => 'پرانا ڈیٹا امپورٹ کریں';
+
+  @override
+  String get importHistoryDataSubtitle =>
+      'ٹیکنیشن آئی ڈی/ای میل/نام کے مطابق پچھلا انسٹالیشن ڈیٹا امپورٹ کرنے کے لیے ایک یا زیادہ ایکسل فائلیں اپ لوڈ کریں۔';
+
+  @override
+  String get uploadExcel => 'ایکسل اپ لوڈ کریں';
+
+  @override
+  String get deleteSourceAfterImport =>
+      'امپورٹ کے بعد سورس فائل حذف کریں (جہاں ممکن ہو)';
+
+  @override
+  String get importInProgress => 'امپورٹ ہو رہا ہے...';
+
+  @override
+  String get importNoFileSelected => 'کوئی فائل منتخب نہیں کی گئی۔';
+
+  @override
+  String get importFailedNoRows => 'امپورٹ کے لیے کوئی درست قطار نہیں ملی۔';
+
+  @override
+  String importCompletedCount(int count) {
+    return '$count قطاریں امپورٹ ہوئیں';
+  }
+
+  @override
+  String importSkippedCount(int count) {
+    return '$count قطاریں اسکپ ہوئیں';
+  }
+
+  @override
+  String importUnresolvedTechRows(int count) {
+    return '$count قطاریں اسکپ ہوئیں: ٹیکنیشن نہیں ملا';
+  }
+
+  @override
+  String get dangerZone => 'خطرناک علاقہ';
+
+  @override
+  String get flushDatabase => 'ڈیٹا بیس فلش کریں';
+
+  @override
+  String get flushDatabaseSubtitle =>
+      'تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں';
+
+  @override
+  String get flushStep1Title => 'مرحلہ 1 از 2 — ارادے کی تصدیق';
+
+  @override
+  String get flushStep2Title => 'مرحلہ 2 از 2 — حتمی تصدیق';
+
+  @override
+  String get flushWarningIntro =>
+      'آپ درج ذیل ڈیٹا کو مستقل طور پر حذف کرنے والے ہیں:';
+
+  @override
+  String get flushItemJobs => 'تمام کام کے ریکارڈ';
+
+  @override
+  String get flushItemExpenses => 'تمام اخراجات اور آمدنی کے ریکارڈ';
+
+  @override
+  String get flushItemCompanies => 'تمام کمپنی ریکارڈ';
+
+  @override
+  String get flushItemUsers => 'تمام غیر ایڈمن صارف اکاؤنٹس';
+
+  @override
+  String get flushAdminKept => 'ایڈمن اکاؤنٹس محفوظ رہیں گے۔';
+
+  @override
+  String flushProceedIn(int seconds) {
+    return '$seconds سیکنڈ میں آگے بڑھیں';
+  }
+
+  @override
+  String get flushProceed => 'مرحلہ 2 کی طرف بڑھیں';
+
+  @override
+  String get flushEnterPassword => 'تصدیق کے لیے اپنا ایڈمن پاس ورڈ درج کریں';
+
+  @override
+  String flushConfirmIn(int seconds) {
+    return '$seconds سیکنڈ میں تصدیق کریں';
+  }
+
+  @override
+  String get flushConfirm => 'ڈیٹا بیس فلش کریں';
+
+  @override
+  String get flushInProgress => 'ڈیٹا بیس فلش ہو رہی ہے…';
+
+  @override
+  String get flushSuccess => 'ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔';
+
+  @override
+  String get flushFailed =>
+      'فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get flushWrongPassword => 'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔';
 
   @override
   String get catSplitAc => 'اسپلٹ اے سی';
@@ -908,66 +1007,139 @@ class AppLocalizationsUr extends AppLocalizations {
   String get catOtherGroceries => 'دیگر کریانہ';
 
   @override
-  String get dangerZone => 'خطرناک علاقہ';
+  String get passwordResetConfirmTitle => 'پاس ورڈ ری سیٹ؟';
 
   @override
-  String get flushDatabase => 'ڈیٹا بیس فلش کریں';
+  String passwordResetConfirmBody(String email) {
+    return '$email پر ری سیٹ لنک بھیجا جائے گا۔ جاری رکھیں؟';
+  }
 
   @override
-  String get flushDatabaseSubtitle =>
-      'تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں';
+  String get passwordResetEmailSentTitle => 'ای میل بھیج دی گئی';
 
   @override
-  String get flushStep1Title => 'مرحلہ 1 از 2 — ارادے کی تصدیق';
+  String passwordResetEmailSentBody(String email) {
+    return '$email پر ری سیٹ لنک بھیج دیا گیا ہے۔\n\nبراہ کرم اپنا ان باکس چیک کریں۔ اگر چند منٹوں میں نظر نہ آئے تو اسپیم یا جنک فولڈر دیکھیں۔\n\nلنک 1 گھنٹے میں ختم ہو جائے گا۔';
+  }
 
   @override
-  String get flushStep2Title => 'مرحلہ 2 از 2 — حتمی تصدیق';
+  String get passwordResetNetworkError =>
+      'انٹرنیٹ کنکشن نہیں ہے۔ براہ کرم کنکٹ کریں اور دوبارہ کوشش کریں۔';
 
   @override
-  String get flushWarningIntro =>
-      'آپ درج ذیل ڈیٹا کو مستقل طور پر حذف کرنے والے ہیں:';
+  String get passwordResetRateLimit =>
+      'بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔';
 
   @override
-  String get flushItemJobs => 'تمام کام کے ریکارڈ';
+  String get send => 'بھیجیں';
 
   @override
-  String get flushItemExpenses => 'تمام اخراجات اور آمدنی کے ریکارڈ';
+  String get changeEmail => 'ای میل تبدیل کریں';
 
   @override
-  String get flushItemCompanies => 'تمام کمپنی ریکارڈ';
+  String get changePassword => 'پاس ورڈ تبدیل کریں';
 
   @override
-  String get flushItemUsers => 'تمام غیر ایڈمن صارف اکاؤنٹس';
+  String get currentPassword => 'موجودہ پاس ورڈ';
 
   @override
-  String get flushAdminKept => 'ایڈمن اکاؤنٹس محفوظ رہیں گے۔';
+  String get newPassword => 'نیا پاس ورڈ';
 
   @override
-  String flushProceedIn(int seconds) => '$seconds سیکنڈ میں آگے بڑھیں';
+  String get confirmNewPassword => 'نئے پاس ورڈ کی تصدیق';
 
   @override
-  String get flushProceed => 'مرحلہ 2 کی طرف بڑھیں';
+  String get passwordsDoNotMatch => 'پاس ورڈ ایک جیسے نہیں ہیں۔';
 
   @override
-  String get flushEnterPassword => 'تصدیق کے لیے اپنا ایڈمن پاس ورڈ درج کریں';
+  String get emailUpdated => 'ای میل کامیابی سے اپ ڈیٹ ہو گئی۔';
 
   @override
-  String flushConfirmIn(int seconds) => '$seconds سیکنڈ میں تصدیق کریں';
+  String get emailChangeVerificationSent =>
+      'تصدیقی ای میل بھیج دی گئی ہے۔ نئی ای میل کی تصدیق کے لیے ان باکس کھولیں۔';
 
   @override
-  String get flushConfirm => 'ڈیٹا بیس فلش کریں';
+  String get passwordUpdated => 'پاس ورڈ کامیابی سے اپ ڈیٹ ہو گیا۔';
 
   @override
-  String get flushInProgress => 'ڈیٹا بیس فلش ہو رہی ہے\u2026';
+  String get editEntry => 'اندراج میں ترمیم';
 
   @override
-  String get flushSuccess =>
-      'ڈیٹا بیس فلش ہو گئی۔ نئے سرے سے شروع ہو رہے ہیں۔';
+  String get entryUpdated => 'اندراج کامیابی سے اپ ڈیٹ ہو گیا۔';
 
   @override
-  String get flushFailed =>
-      'فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔';
+  String get selectPdfDateRange => 'PDF کی تاریخ کی حد منتخب کریں';
 
   @override
-  String get flushWrongPassword => 'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔';
+  String get pdfDateRangeMonthOnly =>
+      'براہ کرم منتخب مہینے کے اندر تاریخ کی حد منتخب کریں۔';
+
+  @override
+  String get exportTodayCompanyInvoices => 'آج کی کمپنی انوائسز PDF برآمد کریں';
+
+  @override
+  String get noInvoicesToday => 'آج کے لیے کوئی انوائس نہیں ملی۔';
+
+  @override
+  String get couldNotOpenSummary =>
+      'خلاصہ اسکرین نہیں کھل سکی۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get userDataLoading =>
+      'براہ کرم انتظار فرمائیں — آپ کا پروفائل لوڈ ہو رہا ہے...';
+
+  @override
+  String get couldNotSubmitJob =>
+      'جمع نہیں ہو سکا۔ براہ کرم سائن آؤٹ کریں اور دوبارہ سائن ان کریں۔';
+
+  @override
+  String get invoiceSopTitle => 'انوائس SOP فلو';
+
+  @override
+  String get excelStyleEntry => 'ایکسل اسٹائل انٹری';
+
+  @override
+  String get descriptionLabel => 'تفصیل';
+
+  @override
+  String get invoiceSopStep1 => '1) تاریخ اور کمپنی منتخب کریں';
+
+  @override
+  String get invoiceSopStep2 => '2) انوائس، کلائنٹ اور رابطہ شامل کریں';
+
+  @override
+  String get invoiceSopStep3 => '3) اے سی یونٹس اور اضافی چارجز شامل کریں';
+
+  @override
+  String get invoiceSopStep4 => '4) ایڈمن منظوری کے لیے جمع کریں';
+
+  @override
+  String get jobsDetailsReport => 'ملازمتوں کی تفصیل رپورٹ';
+
+  @override
+  String get earningsReport => 'کمائی کی رپورٹ';
+
+  @override
+  String get expensesDetailedReport => 'اخراجات کی رپورٹ (کام اور گھر)';
+
+  @override
+  String get exportJobsAsExcel => 'ملازمتیں Excel میں نکالیں';
+
+  @override
+  String get exportJobsAsPdf => 'ملازمتیں PDF میں نکالیں';
+
+  @override
+  String get exportEarningsAsExcel => 'کمائی Excel میں نکالیں';
+
+  @override
+  String get exportEarningsAsPdf => 'کمائی PDF میں نکالیں';
+
+  @override
+  String get exportExpensesAsExcel => 'اخراجات Excel میں نکالیں';
+
+  @override
+  String get exportExpensesAsPdf => 'اخراجات PDF میں نکالیں';
+
+  @override
+  String get selectReportType => 'رپورٹ کی قسم منتخب کریں';
 }

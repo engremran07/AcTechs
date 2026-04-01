@@ -777,8 +777,8 @@ return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.compa
 }
 
 /// @nodoc
-@JsonSerializable()
 
+@JsonSerializable(explicitToJson: true)
 class _JobModel implements JobModel {
   const _JobModel({this.id = '', required this.techId, required this.techName, this.companyId = '', this.companyName = '', required this.invoiceNumber, required this.clientName, this.clientContact = '', final  List<AcUnit> acUnits = const <AcUnit>[], this.status = JobStatus.pending, this.expenses = 0.0, this.expenseNote = '', this.adminNote = '', this.approvedBy = '', this.charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt}): _acUnits = acUnits;
   factory _JobModel.fromJson(Map<String, dynamic> json) => _$JobModelFromJson(json);

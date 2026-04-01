@@ -40,6 +40,13 @@ class AuthException extends AppException {
     'تم تعطيل حسابك. تواصل مع المسؤول.',
   );
 
+  factory AuthException.accountNotProvisioned() => const AuthException(
+    'auth_account_not_provisioned',
+    'Your account is not available in app records. Contact your admin.',
+    'آپ کا اکاؤنٹ ایپ ریکارڈ میں موجود نہیں ہے۔ ایڈمن سے رابطہ کریں۔',
+    'حسابك غير متاح في سجلات التطبيق. تواصل مع المسؤول.',
+  );
+
   factory AuthException.tooManyAttempts() => const AuthException(
     'auth_too_many_attempts',
     'Too many failed attempts. Please wait a few minutes.',
@@ -59,6 +66,34 @@ class AuthException extends AppException {
     'Could not update your profile. Please try again.',
     'پروفائل اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
     'تعذر تحديث ملفك الشخصي. حاول مرة أخرى.',
+  );
+
+  factory AuthException.invalidEmail() => const AuthException(
+    'auth_invalid_email',
+    'Please enter a valid email address.',
+    'براہ کرم درست ای میل درج کریں۔',
+    'يرجى إدخال بريد إلكتروني صحيح.',
+  );
+
+  factory AuthException.emailAlreadyInUse() => const AuthException(
+    'auth_email_in_use',
+    'This email is already in use by another account.',
+    'یہ ای میل پہلے سے کسی اور اکاؤنٹ میں استعمال ہو رہی ہے۔',
+    'هذا البريد مستخدم بالفعل بواسطة حساب آخر.',
+  );
+
+  factory AuthException.weakPassword() => const AuthException(
+    'auth_weak_password',
+    'Password is too weak. Use at least 6 characters.',
+    'پاس ورڈ کمزور ہے۔ کم از کم 6 حروف استعمال کریں۔',
+    'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.',
+  );
+
+  factory AuthException.recentLoginRequired() => const AuthException(
+    'auth_recent_login_required',
+    'Please sign in again before changing sensitive account details.',
+    'حساس اکاؤنٹ تبدیلیوں سے پہلے دوبارہ سائن اِن کریں۔',
+    'يرجى تسجيل الدخول مرة أخرى قبل تعديل بيانات الحساب الحساسة.',
   );
 
   factory AuthException.resetNetworkError() => const AuthException(

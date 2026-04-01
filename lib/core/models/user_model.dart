@@ -23,7 +23,13 @@ abstract class UserModel with _$UserModel {
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    return UserModel.fromJson({'uid': doc.id, ...data});
+    final rawRole = (data['role'] as String? ?? 'technician').trim();
+    final normalizedRole =
+        (rawRole.toLowerCase() == 'admin' ||
+            rawRole.toLowerCase() == 'administrator')
+        ? 'admin'
+        : 'technician';
+    return UserModel.fromJson({'uid': doc.id, ...data, 'role': normalizedRole});
   }
 }
 
@@ -39,8 +45,12 @@ dynamic _timestampToJson(DateTime? date) {
 }
 
 extension UserModelX on UserModel {
-  bool get isAdmin => role == 'admin';
-  bool get isTechnician => role == 'technician';
+  bool get isAdmin {
+    final normalized = role.trim().toLowerCase();
+    return normalized == 'admin' || normalized == 'administrator';
+  }
+
+  bool get isTechnician => !isAdmin;
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();

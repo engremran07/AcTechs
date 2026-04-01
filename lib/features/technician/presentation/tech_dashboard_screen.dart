@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -79,9 +80,11 @@ class TechDashboardScreen extends ConsumerWidget {
                     final totalWindow = countByType('Window AC');
                     final totalFreestanding = countByType('Freestanding AC');
                     final totalCassette = countByType('Cassette AC');
-                    final totalUninstalls = countByType(
-                      'Uninstallation (Old AC)',
-                    );
+                    final totalUninstalls =
+                        countByType(AppConstants.unitTypeUninstallOld) +
+                        countByType(AppConstants.unitTypeUninstallSplit) +
+                        countByType(AppConstants.unitTypeUninstallWindow) +
+                        countByType(AppConstants.unitTypeUninstallFreestanding);
 
                     return Column(
                       children: [
@@ -184,7 +187,7 @@ class TechDashboardScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const ArcticShimmer(height: 90, count: 1),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 24),
 

@@ -3,7 +3,7 @@ import 'package:ac_techs/core/models/expense_model.dart';
 
 void main() {
   group('ExpenseModel.fromJson()', () {
-    Map<String, dynamic> _baseExpense() => {
+    Map<String, dynamic> baseExpense() => {
           'techId': 'tech-01',
           'techName': 'Hassan',
           'category': 'Food',
@@ -11,7 +11,7 @@ void main() {
         };
 
     test('parses required fields correctly', () {
-      final model = ExpenseModel.fromJson(_baseExpense());
+      final model = ExpenseModel.fromJson(baseExpense());
       expect(model.techId, 'tech-01');
       expect(model.techName, 'Hassan');
       expect(model.category, 'Food');
@@ -19,35 +19,35 @@ void main() {
     });
 
     test('defaults id to empty string when absent', () {
-      expect(ExpenseModel.fromJson(_baseExpense()).id, '');
+      expect(ExpenseModel.fromJson(baseExpense()).id, '');
     });
 
     test('parses provided id', () {
-      final json = {..._baseExpense(), 'id': 'exp-999'};
+      final json = {...baseExpense(), 'id': 'exp-999'};
       expect(ExpenseModel.fromJson(json).id, 'exp-999');
     });
 
     test('defaults note to empty string when absent', () {
-      expect(ExpenseModel.fromJson(_baseExpense()).note, '');
+      expect(ExpenseModel.fromJson(baseExpense()).note, '');
     });
 
     test('parses note', () {
-      final json = {..._baseExpense(), 'note': 'lunch'};
+      final json = {...baseExpense(), 'note': 'lunch'};
       expect(ExpenseModel.fromJson(json).note, 'lunch');
     });
 
     test('defaults expenseType to "work" when absent', () {
-      expect(ExpenseModel.fromJson(_baseExpense()).expenseType, 'work');
+      expect(ExpenseModel.fromJson(baseExpense()).expenseType, 'work');
     });
 
     test('parses expenseType "home"', () {
-      final json = {..._baseExpense(), 'expenseType': 'home'};
+      final json = {...baseExpense(), 'expenseType': 'home'};
       expect(ExpenseModel.fromJson(json).expenseType, 'home');
     });
 
     test('parses date from ISO string', () {
       final json = {
-        ..._baseExpense(),
+        ...baseExpense(),
         'date': '2024-08-01T00:00:00.000',
       };
       final model = ExpenseModel.fromJson(json);
@@ -57,15 +57,15 @@ void main() {
     });
 
     test('date is null when absent', () {
-      expect(ExpenseModel.fromJson(_baseExpense()).date, isNull);
+      expect(ExpenseModel.fromJson(baseExpense()).date, isNull);
     });
 
     test('createdAt is null when absent', () {
-      expect(ExpenseModel.fromJson(_baseExpense()).createdAt, isNull);
+      expect(ExpenseModel.fromJson(baseExpense()).createdAt, isNull);
     });
 
     test('parses integer amount as double', () {
-      final json = {..._baseExpense(), 'amount': 50};
+      final json = {...baseExpense(), 'amount': 50};
       expect(ExpenseModel.fromJson(json).amount, 50.0);
       expect(ExpenseModel.fromJson(json).amount, isA<double>());
     });

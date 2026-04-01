@@ -6,13 +6,15 @@ import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
+import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 
-final authStateProvider = StreamProvider<User?>((ref) {
+final authStateProvider = StreamProvider.autoDispose<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-final currentUserProvider = StreamProvider<UserModel?>((ref) {
+final currentUserProvider = StreamProvider.autoDispose<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.when(
     data: (user) {
@@ -20,7 +22,7 @@ final currentUserProvider = StreamProvider<UserModel?>((ref) {
       return ref.watch(authRepositoryProvider).userStream(user.uid);
     },
     loading: () => Stream.value(null),
-    error: (_, __) => Stream.value(null),
+    error: (e, _) => Stream.value(null),
   );
 });
 
@@ -54,6 +56,18 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(allJobsProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allUsersProvider);
+    ref.invalidate(allCompaniesProvider);
+    ref.invalidate(activeCompaniesProvider);
+    ref.invalidate(techExpensesProvider);
+    ref.invalidate(todaysExpensesProvider);
+    ref.invalidate(todaysWorkExpensesProvider);
+    ref.invalidate(todaysHomeExpensesProvider);
+    ref.invalidate(monthlyExpensesProvider);
+    ref.invalidate(monthlyWorkExpensesProvider);
+    ref.invalidate(monthlyHomeExpensesProvider);
+    ref.invalidate(techEarningsProvider);
+    ref.invalidate(todaysEarningsProvider);
+    ref.invalidate(monthlyEarningsProvider);
     ref.invalidate(currentUserProvider);
 
     // 2. Sign out from Firebase Auth

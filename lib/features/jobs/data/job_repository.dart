@@ -24,6 +24,9 @@ class JobRepository {
       await _jobsRef.add(data);
     } on FirebaseException catch (e) {
       debugPrint('submitJob FirebaseException: ${e.code} — ${e.message}');
+      if (e.code == 'unauthenticated') {
+        throw AuthException.sessionExpired();
+      }
       if (e.code == 'permission-denied') {
         throw const JobException(
           'job_permission_denied',
@@ -71,6 +74,34 @@ class JobRepository {
       throw JobException.saveFailed();
     } catch (e) {
       debugPrint('rejectJob unknown: $e');
+      throw JobException.saveFailed();
+    }
+  }
+
+  Future<void> bulkApproveJobs(List<String> jobIds, String adminUid) async {
+    try {
+      if (jobIds.isEmpty) return;
+      const chunkSize = 400;
+      for (var i = 0; i < jobIds.length; i += chunkSize) {
+        final end = (i + chunkSize > jobIds.length)
+            ? jobIds.length
+            : i + chunkSize;
+        final chunk = jobIds.sublist(i, end);
+        final batch = firestore.batch();
+        for (final id in chunk) {
+          batch.update(_jobsRef.doc(id), {
+            'status': AppConstants.statusApproved,
+            'approvedBy': adminUid,
+            'reviewedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
+      }
+    } on FirebaseException catch (e) {
+      debugPrint('bulkApproveJobs error: ${e.code} — ${e.message}');
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('bulkApproveJobs unknown: $e');
       throw JobException.saveFailed();
     }
   }
@@ -147,5 +178,38 @@ class JobRepository {
         .get();
 
     return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+  }
+
+  Future<int> importJobs(List<JobModel> jobs) async {
+    try {
+      if (jobs.isEmpty) return 0;
+      final chunks = <List<JobModel>>[];
+      const chunkSize = 400;
+      for (var i = 0; i < jobs.length; i += chunkSize) {
+        final end = (i + chunkSize > jobs.length) ? jobs.length : i + chunkSize;
+        chunks.add(jobs.sublist(i, end));
+      }
+
+      var imported = 0;
+      for (final chunk in chunks) {
+        final batch = firestore.batch();
+        for (final job in chunk) {
+          final ref = _jobsRef.doc();
+          final data = job.toFirestore();
+          data['date'] ??= FieldValue.serverTimestamp();
+          data['submittedAt'] ??= FieldValue.serverTimestamp();
+          batch.set(ref, data);
+          imported++;
+        }
+        await batch.commit();
+      }
+      return imported;
+    } on FirebaseException catch (e) {
+      debugPrint('importJobs FirebaseException: ${e.code} — ${e.message}');
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('importJobs unknown error: $e');
+      throw JobException.saveFailed();
+    }
   }
 }

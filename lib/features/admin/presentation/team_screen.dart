@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -60,6 +61,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           .read(userRepositoryProvider)
           .bulkToggleActive(_selectedIds.toList(), activate);
       if (!mounted) return;
+      // Invalidate provider to refresh the list after bulk action
+      ref.invalidate(allUsersProvider);
       _clearSelection();
       AppFeedback.success(
         context,
@@ -77,75 +80,101 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    String selectedRole = AppConstants.roleTechnician;
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.addTechnician),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameCtrl,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.name,
-                  prefixIcon: const Icon(Icons.person_outline),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: Text(l.addTechnician),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  enableInteractiveSelection: true,
+                  decoration: InputDecoration(
+                    hintText: l.name,
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? l.required : null,
                 ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? l.required : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.email,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  enableInteractiveSelection: true,
+                  decoration: InputDecoration(
+                    hintText: l.email,
+                    prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return l.required;
+                    if (!v.contains('@')) return l.invalidEmail;
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return l.required;
-                  if (!v.contains('@')) return l.invalidEmail;
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: passCtrl,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.password,
-                  prefixIcon: const Icon(Icons.lock_outline),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: passCtrl,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  enableInteractiveSelection: true,
+                  decoration: InputDecoration(
+                    hintText: l.password,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.length < 6) return l.minChars(6);
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.length < 6) return l.minChars(6);
-                  return null;
-                },
-              ),
-            ],
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedRole,
+                  decoration: InputDecoration(
+                    hintText: l.role,
+                    prefixIcon: const Icon(Icons.security_rounded),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: AppConstants.roleTechnician,
+                      child: Text(l.technician),
+                    ),
+                    DropdownMenuItem(
+                      value: AppConstants.roleAdmin,
+                      child: Text(l.admin),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setLocalState(() => selectedRole = value);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: Text(l.save),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            child: Text(l.save),
-          ),
-        ],
       ),
     );
 
@@ -156,12 +185,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     try {
       await ref
           .read(userRepositoryProvider)
-          .createTechnician(
+          .createUser(
             name: nameCtrl.text.trim(),
             email: emailCtrl.text.trim(),
             password: passCtrl.text,
+            role: selectedRole,
           );
       if (!mounted) return;
+      // Invalidate provider to show new user in team list
+      ref.invalidate(allUsersProvider);
       AppFeedback.success(
         context,
         message: AppLocalizations.of(context)?.userCreated ?? 'User created!',
@@ -246,6 +278,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             email: emailCtrl.text.trim(),
           );
       if (!mounted) return;
+      // Invalidate provider to refresh the list if needed
+      ref.invalidate(allUsersProvider);
       AppFeedback.success(
         context,
         message: AppLocalizations.of(context)?.userUpdated ?? 'User updated!',
@@ -332,6 +366,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     try {
       await ref.read(userRepositoryProvider).deleteUser(user.uid);
       if (!mounted) return;
+      // Invalidate the provider to force a fresh fetch from Firestore
+      ref.invalidate(allUsersProvider);
       AppFeedback.success(context, message: l.userDeleted);
     } on AppException catch (e) {
       AppFeedback.error(context, message: e.message(locale));
@@ -340,11 +376,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final technicians = ref.watch(allTechniciansProvider);
+    final technicians = ref.watch(allUsersProvider);
     final l = AppLocalizations.of(context)!;
 
     return AppShortcuts(
-      onRefresh: () => ref.invalidate(allTechniciansProvider),
+      onRefresh: () => ref.invalidate(allUsersProvider),
       child: Scaffold(
         appBar: AppBar(
           title: _selectMode
@@ -438,7 +474,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                           )
                         : ArcticRefreshIndicator(
                             onRefresh: () async =>
-                                ref.invalidate(allTechniciansProvider),
+                                ref.invalidate(allUsersProvider),
                             child: ListView(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -576,6 +612,7 @@ class _TechCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
     return ArcticCard(
       child: DecoratedBox(
         decoration: selected
@@ -587,8 +624,8 @@ class _TechCard extends ConsumerWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 color: user.isActive
                     ? ArcticTheme.arcticBlue.withValues(alpha: 0.15)
@@ -606,48 +643,81 @@ class _TechCard extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     user.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     user.email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (user.isAdmin
+                                  ? ArcticTheme.arcticWarning
+                                  : ArcticTheme.arcticBlue)
+                              .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      user.isAdmin ? l.admin : l.technician,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: user.isAdmin
+                            ? ArcticTheme.arcticWarning
+                            : ArcticTheme.arcticBlue,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            IconButton(
-              tooltip: AppLocalizations.of(context)!.editTechnician,
-              icon: const Icon(Icons.edit_rounded, size: 20),
-              color: ArcticTheme.arcticBlue,
-              onPressed: onEdit,
+            Transform.scale(
+              scale: 0.85,
+              child: Switch(
+                value: user.isActive,
+                activeTrackColor: ArcticTheme.arcticSuccess,
+                onChanged: (value) {
+                  ref
+                      .read(userRepositoryProvider)
+                      .toggleUserActive(user.uid, value);
+                },
+              ),
             ),
-            IconButton(
-              tooltip: AppLocalizations.of(context)!.resetPassword,
-              icon: const Icon(Icons.lock_reset_rounded, size: 20),
-              color: ArcticTheme.arcticWarning,
-              onPressed: onResetPassword,
-            ),
-            IconButton(
-              tooltip: AppLocalizations.of(context)!.deleteTechnician,
-              icon: const Icon(Icons.delete_outline_rounded, size: 20),
-              color: ArcticTheme.arcticError,
-              onPressed: onDelete,
-            ),
-            Switch(
-              value: user.isActive,
-              activeTrackColor: ArcticTheme.arcticSuccess,
-              onChanged: (value) {
-                ref
-                    .read(userRepositoryProvider)
-                    .toggleUserActive(user.uid, value);
+            PopupMenuButton<String>(
+              tooltip: l.editTechnician,
+              onSelected: (action) {
+                if (action == 'edit') {
+                  onEdit?.call();
+                } else if (action == 'reset') {
+                  onResetPassword?.call();
+                } else if (action == 'delete') {
+                  onDelete?.call();
+                }
               },
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'edit', child: Text(l.editTechnician)),
+                PopupMenuItem(value: 'reset', child: Text(l.resetPassword)),
+                PopupMenuItem(value: 'delete', child: Text(l.deleteTechnician)),
+              ],
+              icon: const Icon(Icons.more_vert_rounded),
             ),
           ],
         ),

@@ -20,17 +20,15 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
   AppThemeMode build() {
     _init();
 
-    // Sync from Firestore user doc after login
-    ref.listen(currentUserProvider, (_, next) {
-      final user = next.value;
-      if (user != null && !_syncedFromUser) {
-        _syncedFromUser = true;
-        _loadFromFirestore(user.uid);
-      }
-      if (user == null) {
-        _syncedFromUser = false;
-      }
-    });
+    // React to auth/user changes via watch inside build.
+    final user = ref.watch(currentUserProvider).value;
+    if (user != null && !_syncedFromUser) {
+      _syncedFromUser = true;
+      _loadFromFirestore(user.uid);
+    }
+    if (user == null) {
+      _syncedFromUser = false;
+    }
 
     return AppThemeMode.dark;
   }

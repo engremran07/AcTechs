@@ -128,7 +128,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const ArcticShimmer(height: 90, count: 2),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 24),
 
@@ -156,15 +156,57 @@ class AdminDashboardScreen extends ConsumerWidget {
                           ),
                           loading: () =>
                               const ArcticShimmer(height: 70, count: 1),
-                          error: (_, __) => const SizedBox.shrink(),
+                          error: (e, _) => const SizedBox.shrink(),
                         ),
                       ],
                     );
                   },
                   loading: () => const ArcticShimmer(height: 70, count: 1),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 24),
+
+                ArcticCard(
+                  onTap: () => context.go('/admin/import'),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.upload_file_rounded,
+                          color: ArcticTheme.arcticBlue,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.importHistoryData,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            Text(
+                              l.importHistoryDataSubtitle,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: ArcticTheme.arcticTextSecondary,
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 580.ms),
+                const SizedBox(height: 16),
 
                 // Danger Zone
                 Text(
@@ -182,7 +224,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: ArcticTheme.arcticError.withValues(alpha: 0.15),
+                          color: ArcticTheme.arcticError.withValues(
+                            alpha: 0.15,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -198,9 +242,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                           children: [
                             Text(
                               l.flushDatabase,
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: ArcticTheme.arcticError,
-                              ),
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(color: ArcticTheme.arcticError),
                             ),
                             Text(
                               l.flushDatabaseSubtitle,
@@ -279,7 +322,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const ArcticShimmer(count: 3),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
                 ),
               ],
             ),

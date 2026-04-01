@@ -13,6 +13,11 @@ class AppConstants {
 
   static const String expenseTypeWork = 'work';
   static const String expenseTypeHome = 'home';
+  static const String unitTypeUninstallOld = 'Uninstallation (Old AC)';
+  static const String unitTypeUninstallSplit = 'Uninstallation Split';
+  static const String unitTypeUninstallWindow = 'Uninstallation Window';
+  static const String unitTypeUninstallFreestanding =
+      'Uninstallation Freestanding';
 
   // AC Service Types — what a tech records per invoice
   static const List<String> acUnitTypes = [
@@ -20,7 +25,10 @@ class AppConstants {
     'Window AC',
     'Freestanding AC',
     'Cassette AC',
-    'Uninstallation (Old AC)',
+    unitTypeUninstallOld,
+    unitTypeUninstallSplit,
+    unitTypeUninstallWindow,
+    unitTypeUninstallFreestanding,
   ];
 
   // Expense Categories

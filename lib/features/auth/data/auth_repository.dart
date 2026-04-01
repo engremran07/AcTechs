@@ -33,26 +33,32 @@ class AuthRepository {
           .collection(AppConstants.usersCollection)
           .doc(uid);
       var userDoc = await userDocRef.get();
+      final authEmail = credential.user!.email ?? '';
+      final authDisplayName = credential.user!.displayName;
 
-      // Auto-create Firestore doc for users created via Firebase Console
+      // Auto-provision a basic technician profile when account exists in Auth
+      // but profile doc is missing (e.g., created from Firebase Console).
       if (!userDoc.exists) {
         await userDocRef.set({
-          'name': credential.user!.displayName ?? email.split('@')[0],
-          'email': email,
+          'name': (authDisplayName != null && authDisplayName.trim().isNotEmpty)
+              ? authDisplayName.trim()
+              : 'Technician',
+          'email': authEmail,
           'role': AppConstants.roleTechnician,
           'isActive': true,
-          'language': 'en',
+          'language': AppConstants.langEnglish,
           'createdAt': FieldValue.serverTimestamp(),
-          'autoCreated': true,
-        });
+        }, SetOptions(merge: true));
         userDoc = await userDocRef.get();
       } else {
         // Sync Firebase Auth changes to Firestore (e.g., email or displayName
         // changed in the Firebase Console will now reflect in the app).
-        final authEmail = credential.user!.email ?? '';
-        final authDisplayName = credential.user!.displayName;
         final data = userDoc.data() ?? {};
         final Map<String, dynamic> updates = {};
+        final rawRole = (data['role'] as String? ?? '').trim().toLowerCase();
+        final normalizedRole = rawRole == 'admin' || rawRole == 'administrator'
+            ? AppConstants.roleAdmin
+            : AppConstants.roleTechnician;
 
         if (authEmail.isNotEmpty && data['email'] != authEmail) {
           updates['email'] = authEmail;
@@ -61,6 +67,9 @@ class AuthRepository {
             authDisplayName.isNotEmpty &&
             data['name'] != authDisplayName) {
           updates['name'] = authDisplayName;
+        }
+        if (data['role'] != normalizedRole) {
+          updates['role'] = normalizedRole;
         }
         if (updates.isNotEmpty) {
           await userDocRef.update(updates);
@@ -99,6 +108,81 @@ class AuthRepository {
           .update({'name': name});
     } on FirebaseException catch (e) {
       debugPrint('updateDisplayName error: ${e.code} — ${e.message}');
+      throw AuthException.updateFailed();
+    }
+  }
+
+  Future<void> _reauthenticateWithPassword(String currentPassword) async {
+    final user = auth.currentUser;
+    if (user == null || user.email == null) {
+      throw AuthException.sessionExpired();
+    }
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        throw AuthException.wrongCredentials();
+      }
+      if (e.code == 'too-many-requests') {
+        throw AuthException.tooManyAttempts();
+      }
+      throw AuthException.updateFailed();
+    }
+  }
+
+  Future<void> updateEmail({
+    required String newEmail,
+    required String currentPassword,
+  }) async {
+    try {
+      await _reauthenticateWithPassword(currentPassword);
+      final user = auth.currentUser;
+      if (user == null) throw AuthException.sessionExpired();
+
+      await user.verifyBeforeUpdateEmail(newEmail);
+    } on AuthException {
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-email') throw AuthException.invalidEmail();
+      if (e.code == 'email-already-in-use') {
+        throw AuthException.emailAlreadyInUse();
+      }
+      if (e.code == 'requires-recent-login') {
+        throw AuthException.recentLoginRequired();
+      }
+      if (e.code == 'network-request-failed') {
+        throw NetworkException.offline();
+      }
+      throw AuthException.updateFailed();
+    } on FirebaseException {
+      throw AuthException.updateFailed();
+    }
+  }
+
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _reauthenticateWithPassword(currentPassword);
+      final user = auth.currentUser;
+      if (user == null) throw AuthException.sessionExpired();
+
+      await user.updatePassword(newPassword);
+    } on AuthException {
+      rethrow;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') throw AuthException.weakPassword();
+      if (e.code == 'requires-recent-login') {
+        throw AuthException.recentLoginRequired();
+      }
+      if (e.code == 'network-request-failed') {
+        throw NetworkException.offline();
+      }
       throw AuthException.updateFailed();
     }
   }

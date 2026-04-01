@@ -69,7 +69,7 @@ void main() {
 
   // ────────────────────────────────────────────────────────────
   group('JobModel.fromJson()', () {
-    Map<String, dynamic> _baseJob() => {
+    Map<String, dynamic> baseJob() => {
           'techId': 'tech-1',
           'techName': 'Khalid',
           'invoiceNumber': 'INV-001',
@@ -77,7 +77,7 @@ void main() {
         };
 
     test('parses required fields', () {
-      final model = JobModel.fromJson(_baseJob());
+      final model = JobModel.fromJson(baseJob());
       expect(model.techId, 'tech-1');
       expect(model.techName, 'Khalid');
       expect(model.invoiceNumber, 'INV-001');
@@ -85,39 +85,39 @@ void main() {
     });
 
     test('defaults id to empty string when absent', () {
-      expect(JobModel.fromJson(_baseJob()).id, '');
+      expect(JobModel.fromJson(baseJob()).id, '');
     });
 
     test('defaults status to pending when absent', () {
-      expect(JobModel.fromJson(_baseJob()).status, JobStatus.pending);
+      expect(JobModel.fromJson(baseJob()).status, JobStatus.pending);
     });
 
     test('parses status "approved"', () {
-      final json = {..._baseJob(), 'status': 'approved'};
+      final json = {...baseJob(), 'status': 'approved'};
       expect(JobModel.fromJson(json).status, JobStatus.approved);
     });
 
     test('parses status "rejected"', () {
-      final json = {..._baseJob(), 'status': 'rejected'};
+      final json = {...baseJob(), 'status': 'rejected'};
       expect(JobModel.fromJson(json).status, JobStatus.rejected);
     });
 
     test('defaults expenses to 0.0 when absent', () {
-      expect(JobModel.fromJson(_baseJob()).expenses, 0.0);
+      expect(JobModel.fromJson(baseJob()).expenses, 0.0);
     });
 
     test('parses expenses amount', () {
-      final json = {..._baseJob(), 'expenses': 200.0};
+      final json = {...baseJob(), 'expenses': 200.0};
       expect(JobModel.fromJson(json).expenses, 200.0);
     });
 
     test('defaults acUnits to empty list when absent', () {
-      expect(JobModel.fromJson(_baseJob()).acUnits, isEmpty);
+      expect(JobModel.fromJson(baseJob()).acUnits, isEmpty);
     });
 
     test('parses acUnits list', () {
       final json = {
-        ..._baseJob(),
+        ...baseJob(),
         'acUnits': [
           {'type': 'Split AC', 'quantity': 2},
           {'type': 'Window AC', 'quantity': 1},
@@ -132,7 +132,7 @@ void main() {
 
     test('parses nested charges object', () {
       final json = {
-        ..._baseJob(),
+        ...baseJob(),
         'charges': {
           'acBracket': true,
           'bracketAmount': 100.0,
@@ -148,12 +148,12 @@ void main() {
     });
 
     test('charges is null when absent', () {
-      expect(JobModel.fromJson(_baseJob()).charges, isNull);
+      expect(JobModel.fromJson(baseJob()).charges, isNull);
     });
 
     test('parses date from ISO string', () {
       final json = {
-        ..._baseJob(),
+        ...baseJob(),
         'date': '2024-07-20T00:00:00.000',
       };
       final model = JobModel.fromJson(json);
@@ -163,7 +163,7 @@ void main() {
     });
 
     test('date is null when absent', () {
-      expect(JobModel.fromJson(_baseJob()).date, isNull);
+      expect(JobModel.fromJson(baseJob()).date, isNull);
     });
   });
 
@@ -357,11 +357,13 @@ void main() {
     });
 
     test('values are pending, approved, rejected', () {
-      expect(JobStatus.values, containsAll([
-        JobStatus.pending,
-        JobStatus.approved,
-        JobStatus.rejected,
-      ]));
+      expect(
+          JobStatus.values,
+          containsAll([
+            JobStatus.pending,
+            JobStatus.approved,
+            JobStatus.rejected,
+          ]));
     });
   });
 }

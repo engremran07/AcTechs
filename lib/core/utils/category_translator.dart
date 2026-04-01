@@ -12,6 +12,9 @@ String translateCategory(String key, AppLocalizations l) {
     'Freestanding AC' => l.catFreestandingAc,
     'Cassette AC' => l.catCassetteAc,
     'Uninstallation (Old AC)' => l.catUninstallOldAc,
+    'Uninstallation Split' => l.uninstallSplit,
+    'Uninstallation Window' => l.uninstallWindow,
+    'Uninstallation Freestanding' => l.uninstallStanding,
 
     // Expense categories
     'Food' => l.catFood,

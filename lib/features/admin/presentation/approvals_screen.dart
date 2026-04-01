@@ -43,9 +43,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       final admin = ref.read(currentUserProvider).value;
       if (admin == null) return;
       final repo = ref.read(jobRepositoryProvider);
-      for (final id in _selected) {
-        await repo.approveJob(id, admin.uid);
-      }
+      await repo.bulkApproveJobs(_selected.toList(), admin.uid);
       if (mounted) {
         SuccessSnackbar.show(
           context,

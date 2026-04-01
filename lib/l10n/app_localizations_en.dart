@@ -39,6 +39,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterValidEmail => 'Please enter a valid email';
 
   @override
+  String get enterValidPhone => 'Please enter a valid phone number';
+
+  @override
   String get enterPassword => 'Please enter your password';
 
   @override
@@ -586,6 +589,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uninstalls => 'Uninstalls';
 
   @override
+  String get uninstallSplit => 'Uninstall Split';
+
+  @override
+  String get uninstallWindow => 'Uninstall Window';
+
+  @override
+  String get uninstallStanding => 'Uninstall Standing';
+
+  @override
   String get jobStatus => 'Job Status';
 
   @override
@@ -702,6 +714,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportToExcel => 'Export to Excel';
 
   @override
+  String get reportPreset => 'Report Preset';
+
+  @override
+  String get byTechnician => 'By Technician';
+
+  @override
+  String get uninstallRateBreakdown => 'Uninstall Rate Breakdown';
+
+  @override
   String exportReady(int count) {
     return 'Export ready! $count jobs exported to Excel.';
   }
@@ -720,33 +741,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String passwordResetSent(String email) {
     return 'Password reset email sent to $email';
   }
-
-  @override
-  String get passwordResetConfirmTitle => 'Reset Password?';
-
-  @override
-  String passwordResetConfirmBody(String email) {
-    return 'A reset link will be sent to $email. Continue?';
-  }
-
-  @override
-  String get passwordResetEmailSentTitle => 'Email Sent';
-
-  @override
-  String passwordResetEmailSentBody(String email) {
-    return "A reset link has been sent to $email.\n\nPlease check your inbox. If you don't see it within a few minutes, check your Spam or Junk folder.\n\nThe link expires in 1 hour.";
-  }
-
-  @override
-  String get passwordResetNetworkError =>
-      'No internet connection. Please connect and try again.';
-
-  @override
-  String get passwordResetRateLimit =>
-      'Too many reset requests. Please wait a few minutes and try again.';
-
-  @override
-  String get send => 'Send';
 
   @override
   String confirmDeleteUser(String name) {
@@ -812,6 +806,109 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeExpenses => 'Home Expenses';
+
+  @override
+  String get importHistoryData => 'Import Historical Data';
+
+  @override
+  String get importHistoryDataSubtitle =>
+      'Upload one or more Excel files to import previous technician installations by technician ID/email/name.';
+
+  @override
+  String get uploadExcel => 'Upload Excel';
+
+  @override
+  String get deleteSourceAfterImport =>
+      'Delete source file after import (best effort)';
+
+  @override
+  String get importInProgress => 'Importing...';
+
+  @override
+  String get importNoFileSelected => 'No file selected.';
+
+  @override
+  String get importFailedNoRows => 'No valid rows found for import.';
+
+  @override
+  String importCompletedCount(int count) {
+    return 'Imported $count rows';
+  }
+
+  @override
+  String importSkippedCount(int count) {
+    return 'Skipped $count rows';
+  }
+
+  @override
+  String importUnresolvedTechRows(int count) {
+    return '$count rows skipped: technician not found';
+  }
+
+  @override
+  String get dangerZone => 'Danger Zone';
+
+  @override
+  String get flushDatabase => 'Flush Database';
+
+  @override
+  String get flushDatabaseSubtitle => 'Reset all data to a clean state';
+
+  @override
+  String get flushStep1Title => 'Step 1 of 2 — Confirm Intent';
+
+  @override
+  String get flushStep2Title => 'Step 2 of 2 — Final Confirmation';
+
+  @override
+  String get flushWarningIntro =>
+      'You are about to permanently delete the following data:';
+
+  @override
+  String get flushItemJobs => 'All job records';
+
+  @override
+  String get flushItemExpenses => 'All expense & earning records';
+
+  @override
+  String get flushItemCompanies => 'All company records';
+
+  @override
+  String get flushItemUsers => 'All non-admin user accounts';
+
+  @override
+  String get flushAdminKept => 'Admin accounts will be preserved.';
+
+  @override
+  String flushProceedIn(int seconds) {
+    return 'Proceed in ${seconds}s';
+  }
+
+  @override
+  String get flushProceed => 'Proceed to Step 2';
+
+  @override
+  String get flushEnterPassword => 'Enter your admin password to confirm';
+
+  @override
+  String flushConfirmIn(int seconds) {
+    return 'Confirm in ${seconds}s';
+  }
+
+  @override
+  String get flushConfirm => 'Flush Database';
+
+  @override
+  String get flushInProgress => 'Flushing database…';
+
+  @override
+  String get flushSuccess => 'Database flushed. Starting fresh.';
+
+  @override
+  String get flushFailed => 'Flush failed. Check connection and try again.';
+
+  @override
+  String get flushWrongPassword => 'Incorrect password. Please try again.';
 
   @override
   String get catSplitAc => 'Split AC';
@@ -910,63 +1007,138 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catOtherGroceries => 'Other Groceries';
 
   @override
-  String get dangerZone => 'Danger Zone';
+  String get passwordResetConfirmTitle => 'Reset Password?';
 
   @override
-  String get flushDatabase => 'Flush Database';
+  String passwordResetConfirmBody(String email) {
+    return 'A reset link will be sent to $email. Continue?';
+  }
 
   @override
-  String get flushDatabaseSubtitle => 'Reset all data to a clean state';
+  String get passwordResetEmailSentTitle => 'Email Sent';
 
   @override
-  String get flushStep1Title => 'Step 1 of 2 — Confirm Intent';
+  String passwordResetEmailSentBody(String email) {
+    return 'A reset link has been sent to $email.\n\nPlease check your inbox. If you don\'t see it within a few minutes, check your Spam or Junk folder.\n\nThe link expires in 1 hour.';
+  }
 
   @override
-  String get flushStep2Title => 'Step 2 of 2 — Final Confirmation';
+  String get passwordResetNetworkError =>
+      'No internet connection. Please connect and try again.';
 
   @override
-  String get flushWarningIntro =>
-      'You are about to permanently delete the following data:';
+  String get passwordResetRateLimit =>
+      'Too many reset requests. Please wait a few minutes and try again.';
 
   @override
-  String get flushItemJobs => 'All job records';
+  String get send => 'Send';
 
   @override
-  String get flushItemExpenses => 'All expense & earning records';
+  String get changeEmail => 'Change Email';
 
   @override
-  String get flushItemCompanies => 'All company records';
+  String get changePassword => 'Change Password';
 
   @override
-  String get flushItemUsers => 'All non-admin user accounts';
+  String get currentPassword => 'Current Password';
 
   @override
-  String get flushAdminKept => 'Admin accounts will be preserved.';
+  String get newPassword => 'New Password';
 
   @override
-  String flushProceedIn(int seconds) => 'Proceed in ${seconds}s';
+  String get confirmNewPassword => 'Confirm New Password';
 
   @override
-  String get flushProceed => 'Proceed to Step 2';
+  String get passwordsDoNotMatch => 'Passwords do not match.';
 
   @override
-  String get flushEnterPassword => 'Enter your admin password to confirm';
+  String get emailUpdated => 'Email updated successfully.';
 
   @override
-  String flushConfirmIn(int seconds) => 'Confirm in ${seconds}s';
+  String get emailChangeVerificationSent =>
+      'Verification email sent. Open your inbox to confirm new email.';
 
   @override
-  String get flushConfirm => 'Flush Database';
+  String get passwordUpdated => 'Password updated successfully.';
 
   @override
-  String get flushInProgress => 'Flushing database\u2026';
+  String get editEntry => 'Edit Entry';
 
   @override
-  String get flushSuccess => 'Database flushed. Starting fresh.';
+  String get entryUpdated => 'Entry updated successfully.';
 
   @override
-  String get flushFailed => 'Flush failed. Check connection and try again.';
+  String get selectPdfDateRange => 'Select PDF date range';
 
   @override
-  String get flushWrongPassword => 'Incorrect password. Please try again.';
+  String get pdfDateRangeMonthOnly =>
+      'Please select a date range within the selected month.';
+
+  @override
+  String get exportTodayCompanyInvoices => 'Export today\'s company invoices';
+
+  @override
+  String get noInvoicesToday => 'No invoices found for today.';
+
+  @override
+  String get couldNotOpenSummary =>
+      'Could not open summary screen. Please try again.';
+
+  @override
+  String get userDataLoading => 'Please wait — loading your profile...';
+
+  @override
+  String get couldNotSubmitJob =>
+      'Could not submit. Please sign out and sign back in.';
+
+  @override
+  String get invoiceSopTitle => 'Invoice SOP Flow';
+
+  @override
+  String get excelStyleEntry => 'Excel Style Entry';
+
+  @override
+  String get descriptionLabel => 'Description';
+
+  @override
+  String get invoiceSopStep1 => '1) Select date and company';
+
+  @override
+  String get invoiceSopStep2 => '2) Add invoice, client and contact';
+
+  @override
+  String get invoiceSopStep3 => '3) Add AC units and optional charges';
+
+  @override
+  String get invoiceSopStep4 => '4) Submit for admin approval';
+
+  @override
+  String get jobsDetailsReport => 'Jobs Details Report';
+
+  @override
+  String get earningsReport => 'Earnings Report';
+
+  @override
+  String get expensesDetailedReport => 'Expenses Report (Work & Home)';
+
+  @override
+  String get exportJobsAsExcel => 'Export Jobs as Excel';
+
+  @override
+  String get exportJobsAsPdf => 'Export Jobs as PDF';
+
+  @override
+  String get exportEarningsAsExcel => 'Export Earnings as Excel';
+
+  @override
+  String get exportEarningsAsPdf => 'Export Earnings as PDF';
+
+  @override
+  String get exportExpensesAsExcel => 'Export Expenses as Excel';
+
+  @override
+  String get exportExpensesAsPdf => 'Export Expenses as PDF';
+
+  @override
+  String get selectReportType => 'Select Report Type';
 }

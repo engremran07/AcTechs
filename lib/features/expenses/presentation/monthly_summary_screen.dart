@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:excel/excel.dart' as excel_pkg;
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
+import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -15,7 +13,6 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
-import 'dart:io';
 
 class MonthlySummaryScreen extends ConsumerStatefulWidget {
   const MonthlySummaryScreen({super.key});
@@ -27,6 +24,7 @@ class MonthlySummaryScreen extends ConsumerStatefulWidget {
 
 class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   late DateTime _selectedMonth;
+  DateTimeRange? _pdfDateRange;
   bool _isExporting = false;
   bool _isExportingPdf = false;
 
@@ -35,11 +33,19 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
+  }
+
+  DateTimeRange _defaultPdfRangeForMonth(DateTime month) {
+    final start = DateTime(month.year, month.month, 1);
+    final end = DateTime(month.year, month.month + 1, 0);
+    return DateTimeRange(start: start, end: end);
   }
 
   void _prevMonth() {
     setState(() {
       _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+      _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
     });
   }
 
@@ -47,7 +53,49 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     final now = DateTime.now();
     final next = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
     if (next.isAfter(DateTime(now.year, now.month + 1))) return;
-    setState(() => _selectedMonth = next);
+    setState(() {
+      _selectedMonth = next;
+      _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
+    });
+  }
+
+  Future<void> _pickPdfDateRange() async {
+    final l = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final monthStart = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+    final monthEnd = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(_selectedMonth.year, _selectedMonth.month, 1),
+      lastDate:
+          DateTime(
+            monthEnd.year,
+            monthEnd.month,
+            monthEnd.day,
+            23,
+            59,
+          ).isAfter(now)
+          ? now
+          : monthEnd,
+      initialDateRange:
+          _pdfDateRange ?? _defaultPdfRangeForMonth(_selectedMonth),
+      helpText: l.selectPdfDateRange,
+    );
+    if (picked == null) return;
+    final start = DateTime(
+      picked.start.year,
+      picked.start.month,
+      picked.start.day,
+    );
+    final end = DateTime(picked.end.year, picked.end.month, picked.end.day);
+    if (start.isBefore(monthStart) || end.isAfter(monthEnd)) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.pdfDateRangeMonthOnly);
+      return;
+    }
+    setState(() {
+      _pdfDateRange = DateTimeRange(start: start, end: end);
+    });
   }
 
   String _monthLabel() {
@@ -69,174 +117,250 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     return '${months[_selectedMonth.month - 1]} ${_selectedMonth.year}';
   }
 
-  Future<void> _exportMonthlyExcel() async {
+  DateTimeRange _activeExportRange() =>
+      _pdfDateRange ?? _defaultPdfRangeForMonth(_selectedMonth);
+
+  List<JobModel> _filteredJobsForRange(
+    List<JobModel> jobs,
+    DateTimeRange range,
+  ) {
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+    );
+    return jobs.where((job) {
+      final d = job.date;
+      if (d == null) return false;
+      return !d.isBefore(start) && !d.isAfter(end);
+    }).toList();
+  }
+
+  List<EarningModel> _filteredEarningsForRange(
+    List<EarningModel> earnings,
+    DateTimeRange range,
+  ) {
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+    );
+    return earnings.where((earning) {
+      final d = earning.date;
+      if (d == null) return false;
+      return !d.isBefore(start) && !d.isAfter(end);
+    }).toList();
+  }
+
+  List<ExpenseModel> _filteredExpensesForRange(
+    List<ExpenseModel> expenses,
+    DateTimeRange range,
+  ) {
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+    );
+    return expenses.where((expense) {
+      final d = expense.date;
+      if (d == null) return false;
+      return !d.isBefore(start) && !d.isAfter(end);
+    }).toList();
+  }
+
+  Future<void> _exportJobsPdf() async {
+    setState(() => _isExportingPdf = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final allJobs = ref.read(monthlyJobsProvider(_selectedMonth)).value ?? [];
+      final range = _activeExportRange();
+      final jobs = _filteredJobsForRange(allJobs, range);
+      if (jobs.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+      final user = ref.read(currentUserProvider).value;
+      final locale = Localizations.localeOf(context).languageCode;
+      final bytes = await PdfGenerator.generateJobsDetailsReport(
+        jobs: jobs,
+        title: l.jobs,
+        locale: locale,
+        technicianName: user?.name,
+        fromDate: range.start,
+        toDate: range.end,
+      );
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        'jobs_${_selectedMonth.year}_${_selectedMonth.month}_${range.start.day}-${range.end.day}.pdf',
+      );
+    } catch (_) {
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
+
+  Future<void> _exportEarningsPdf() async {
+    setState(() => _isExportingPdf = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final allEarnings =
+          ref.read(monthlyEarningsProvider(_selectedMonth)).value ?? [];
+      final range = _activeExportRange();
+      final earnings = _filteredEarningsForRange(allEarnings, range);
+      if (earnings.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+      final user = ref.read(currentUserProvider).value;
+      final locale = Localizations.localeOf(context).languageCode;
+      final bytes = await PdfGenerator.generateEarningsReport(
+        earnings: earnings,
+        title: l.earningsIn,
+        locale: locale,
+        technicianName: user?.name,
+        fromDate: range.start,
+        toDate: range.end,
+      );
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        'earnings_${_selectedMonth.year}_${_selectedMonth.month}_${range.start.day}-${range.end.day}.pdf',
+      );
+    } catch (_) {
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
+
+  Future<void> _exportExpensesPdf() async {
+    setState(() => _isExportingPdf = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final allExpenses =
+          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
+      final range = _activeExportRange();
+      final expenses = _filteredExpensesForRange(allExpenses, range);
+      if (expenses.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+      final user = ref.read(currentUserProvider).value;
+      final locale = Localizations.localeOf(context).languageCode;
+      final bytes = await PdfGenerator.generateExpensesDetailedReport(
+        expenses: expenses,
+        title: l.expensesOut,
+        locale: locale,
+        technicianName: user?.name,
+        fromDate: range.start,
+        toDate: range.end,
+      );
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        'expenses_${_selectedMonth.year}_${_selectedMonth.month}_${range.start.day}-${range.end.day}.pdf',
+      );
+    } catch (_) {
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
+
+  Future<void> _exportJobsExcel() async {
     setState(() => _isExporting = true);
     final l = AppLocalizations.of(context)!;
     try {
-      final jobs = ref.read(monthlyJobsProvider(_selectedMonth)).value ?? [];
-      final expenses =
-          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
-      final earnings =
-          ref.read(monthlyEarningsProvider(_selectedMonth)).value ?? [];
-
-      if (jobs.isEmpty && expenses.isEmpty && earnings.isEmpty) {
-        if (!mounted) return;
-        ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+      final allJobs = ref.read(monthlyJobsProvider(_selectedMonth)).value ?? [];
+      final jobs = _filteredJobsForRange(allJobs, _activeExportRange());
+      if (jobs.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
         return;
       }
-
-      final file = excel_pkg.Excel.createExcel();
-
-      final summary = file['Summary'];
-      final totalInstallations = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
-      final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
-      final workExpenses = expenses
-          .where((e) => e.expenseType != AppConstants.expenseTypeHome)
-          .fold<double>(0, (s, e) => s + e.amount);
-      final homeExpenses = expenses
-          .where((e) => e.expenseType == AppConstants.expenseTypeHome)
-          .fold<double>(0, (s, e) => s + e.amount);
-
-      summary.appendRow([
-        excel_pkg.TextCellValue('Month'),
-        excel_pkg.TextCellValue(_monthLabel()),
-      ]);
-      summary.appendRow([
-        excel_pkg.TextCellValue('Jobs'),
-        excel_pkg.IntCellValue(jobs.length),
-      ]);
-      summary.appendRow([
-        excel_pkg.TextCellValue('Installations'),
-        excel_pkg.IntCellValue(totalInstallations),
-      ]);
-      summary.appendRow([
-        excel_pkg.TextCellValue('Earnings'),
-        excel_pkg.DoubleCellValue(totalEarnings),
-      ]);
-      summary.appendRow([
-        excel_pkg.TextCellValue('Work Expenses'),
-        excel_pkg.DoubleCellValue(workExpenses),
-      ]);
-      summary.appendRow([
-        excel_pkg.TextCellValue('Home Expenses'),
-        excel_pkg.DoubleCellValue(homeExpenses),
-      ]);
-
-      final jobsSheet = file['Jobs'];
-      jobsSheet.appendRow([
-        excel_pkg.TextCellValue('Invoice'),
-        excel_pkg.TextCellValue('Company'),
-        excel_pkg.TextCellValue('Client'),
-        excel_pkg.TextCellValue('Date'),
-        excel_pkg.TextCellValue('Units'),
-      ]);
-      for (final job in jobs) {
-        jobsSheet.appendRow([
-          excel_pkg.TextCellValue(job.invoiceNumber),
-          excel_pkg.TextCellValue(job.companyName),
-          excel_pkg.TextCellValue(job.clientName),
-          excel_pkg.TextCellValue(AppFormatters.date(job.date)),
-          excel_pkg.IntCellValue(job.totalUnits),
-        ]);
-      }
-
-      final expensesSheet = file['Expenses'];
-      expensesSheet.appendRow([
-        excel_pkg.TextCellValue('Type'),
-        excel_pkg.TextCellValue('Category'),
-        excel_pkg.TextCellValue('Amount'),
-        excel_pkg.TextCellValue('Date'),
-        excel_pkg.TextCellValue('Note'),
-      ]);
-      for (final expense in expenses) {
-        expensesSheet.appendRow([
-          excel_pkg.TextCellValue(expense.expenseType),
-          excel_pkg.TextCellValue(translateCategory(expense.category, l)),
-          excel_pkg.DoubleCellValue(expense.amount),
-          excel_pkg.TextCellValue(AppFormatters.date(expense.date)),
-          excel_pkg.TextCellValue(expense.note),
-        ]);
-      }
-
-      final earningsSheet = file['Earnings'];
-      earningsSheet.appendRow([
-        excel_pkg.TextCellValue('Category'),
-        excel_pkg.TextCellValue('Amount'),
-        excel_pkg.TextCellValue('Date'),
-        excel_pkg.TextCellValue('Note'),
-      ]);
-      for (final earning in earnings) {
-        earningsSheet.appendRow([
-          excel_pkg.TextCellValue(translateCategory(earning.category, l)),
-          excel_pkg.DoubleCellValue(earning.amount),
-          excel_pkg.TextCellValue(AppFormatters.date(earning.date)),
-          excel_pkg.TextCellValue(earning.note),
-        ]);
-      }
-
-      final bytes = file.save();
-      if (bytes == null) {
-        if (!mounted) return;
-        ErrorSnackbar.show(context, message: l.couldNotExport);
-        return;
-      }
-
-      final dir = await getTemporaryDirectory();
-      final outFile = File(
-        '${dir.path}/ac_techs_monthly_${_selectedMonth.year}_${_selectedMonth.month}.xlsx',
+      final user = ref.read(currentUserProvider).value;
+      await ExcelExport.exportJobsToExcel(
+        jobs: jobs,
+        technicianName: user?.name,
       );
-      await outFile.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(outFile.path)]);
-
-      if (!mounted) return;
-      SuccessSnackbar.show(context, message: l.exportReady(jobs.length));
     } catch (_) {
-      if (!mounted) return;
-      ErrorSnackbar.show(context, message: l.couldNotExport);
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
   }
 
-  Future<void> _exportMonthlyPdf() async {
-    setState(() => _isExportingPdf = true);
+  Future<void> _exportEarningsExcel() async {
+    setState(() => _isExporting = true);
     final l = AppLocalizations.of(context)!;
     try {
-      final expenses =
-          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
-      final earnings =
+      final allEarnings =
           ref.read(monthlyEarningsProvider(_selectedMonth)).value ?? [];
-
-      if (expenses.isEmpty && earnings.isEmpty) {
-        if (!mounted) return;
-        ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+      final earnings = _filteredEarningsForRange(
+        allEarnings,
+        _activeExportRange(),
+      );
+      if (earnings.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
         return;
       }
-
       final user = ref.read(currentUserProvider).value;
-      final locale = Localizations.localeOf(context).languageCode;
-      final fromDate = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-      final toDate = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0);
-
-      final bytes = await PdfGenerator.generateExpensesReport(
+      await ExcelExport.exportEarningsToExcel(
         earnings: earnings,
-        expenses: expenses,
-        title: l.monthlySummary,
-        locale: locale,
         technicianName: user?.name,
-        fromDate: fromDate,
-        toDate: toDate,
-      );
-
-      await PdfGenerator.sharePdfBytes(
-        bytes,
-        'ac_techs_${_selectedMonth.year}_${_selectedMonth.month}.pdf',
       );
     } catch (_) {
-      if (!mounted) return;
-      ErrorSnackbar.show(context, message: l.couldNotExport);
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
     } finally {
-      if (mounted) setState(() => _isExportingPdf = false);
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  Future<void> _exportExpensesExcel() async {
+    setState(() => _isExporting = true);
+    final l = AppLocalizations.of(context)!;
+    try {
+      final allExpenses =
+          ref.read(monthlyExpensesProvider(_selectedMonth)).value ?? [];
+      final expenses = _filteredExpensesForRange(
+        allExpenses,
+        _activeExportRange(),
+      );
+      if (expenses.isEmpty) {
+        if (mounted) ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        return;
+      }
+      final user = ref.read(currentUserProvider).value;
+      await ExcelExport.exportExpensesToExcel(
+        expenses: expenses,
+        technicianName: user?.name,
+      );
+    } catch (_) {
+      if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
@@ -250,10 +374,40 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.monthlySummary),
         actions: [
-          // PDF Export
           IconButton(
-            onPressed: _isExportingPdf ? null : _exportMonthlyPdf,
+            onPressed: _pickPdfDateRange,
+            tooltip: AppLocalizations.of(context)!.selectPdfDateRange,
+            icon: const Icon(Icons.date_range_rounded),
+          ),
+          PopupMenuButton<String>(
             tooltip: AppLocalizations.of(context)!.exportToPdf,
+            onSelected: (value) {
+              switch (value) {
+                case 'jobs':
+                  _exportJobsPdf();
+                  break;
+                case 'earnings':
+                  _exportEarningsPdf();
+                  break;
+                case 'expenses':
+                  _exportExpensesPdf();
+                  break;
+              }
+            },
+            itemBuilder: (_) {
+              final l = AppLocalizations.of(context)!;
+              return [
+                PopupMenuItem(value: 'jobs', child: Text('${l.jobs} (PDF)')),
+                PopupMenuItem(
+                  value: 'earnings',
+                  child: Text('${l.earningsIn} (PDF)'),
+                ),
+                PopupMenuItem(
+                  value: 'expenses',
+                  child: Text('${l.expensesOut} (PDF)'),
+                ),
+              ];
+            },
             icon: _isExportingPdf
                 ? const SizedBox(
                     width: 20,
@@ -262,10 +416,35 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
                   )
                 : const Icon(Icons.picture_as_pdf_outlined),
           ),
-          // Excel Export
-          IconButton(
-            onPressed: _isExporting ? null : _exportMonthlyExcel,
+          PopupMenuButton<String>(
             tooltip: AppLocalizations.of(context)!.exportToExcel,
+            onSelected: (value) {
+              switch (value) {
+                case 'jobs':
+                  _exportJobsExcel();
+                  break;
+                case 'earnings':
+                  _exportEarningsExcel();
+                  break;
+                case 'expenses':
+                  _exportExpensesExcel();
+                  break;
+              }
+            },
+            itemBuilder: (_) {
+              final l = AppLocalizations.of(context)!;
+              return [
+                PopupMenuItem(value: 'jobs', child: Text('${l.jobs} (Excel)')),
+                PopupMenuItem(
+                  value: 'earnings',
+                  child: Text('${l.earningsIn} (Excel)'),
+                ),
+                PopupMenuItem(
+                  value: 'expenses',
+                  child: Text('${l.expensesOut} (Excel)'),
+                ),
+              ];
+            },
             icon: _isExporting
                 ? const SizedBox(
                     width: 20,
@@ -288,6 +467,21 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             children: [
               // Month Selector
               _buildMonthSelector(context),
+              if (_pdfDateRange != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${AppLocalizations.of(context)!.date}: '
+                      '${AppFormatters.date(_pdfDateRange!.start)} - '
+                      '${AppFormatters.date(_pdfDateRange!.end)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: ArcticTheme.arcticTextSecondary,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 20),
 
               // Summary Cards

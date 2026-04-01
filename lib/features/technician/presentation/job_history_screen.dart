@@ -7,6 +7,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
+import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -22,9 +23,83 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
   String _search = '';
   String _statusFilter = 'all';
   bool _sortNewest = true;
+  bool _isExportingExcel = false;
+  String _periodFilter = 'all';
+  DateTimeRange? _customDateRange;
+
+  Future<void> _pickCustomDateRange() async {
+    final l = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 2, 1, 1),
+      lastDate: now,
+      initialDateRange: _customDateRange,
+      helpText: l.selectPdfDateRange,
+    );
+    if (picked == null) return;
+    setState(() {
+      _periodFilter = 'custom';
+      _customDateRange = DateTimeRange(
+        start: DateTime(
+          picked.start.year,
+          picked.start.month,
+          picked.start.day,
+        ),
+        end: DateTime(picked.end.year, picked.end.month, picked.end.day),
+      );
+    });
+  }
+
+  DateTimeRange? _activeRange() {
+    final now = DateTime.now();
+    if (_periodFilter == 'today') {
+      final start = DateTime(now.year, now.month, now.day);
+      return DateTimeRange(start: start, end: start);
+    }
+    if (_periodFilter == 'month') {
+      final start = DateTime(now.year, now.month, 1);
+      final end = DateTime(now.year, now.month + 1, 0);
+      return DateTimeRange(start: start, end: end);
+    }
+    if (_periodFilter == 'custom') {
+      return _customDateRange;
+    }
+    return null;
+  }
+
+  String _periodLabel(AppLocalizations l) {
+    final range = _activeRange();
+    if (range == null) return l.all;
+    if (_periodFilter == 'today') return l.today;
+    if (_periodFilter == 'month') return l.thisMonth;
+    return '${AppFormatters.date(range.start)} - ${AppFormatters.date(range.end)}';
+  }
 
   List<JobModel> _applyFilters(List<JobModel> jobs) {
     var filtered = jobs.toList();
+
+    final range = _activeRange();
+    if (range != null) {
+      final start = DateTime(
+        range.start.year,
+        range.start.month,
+        range.start.day,
+      );
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
+      filtered = filtered.where((j) {
+        final d = j.date;
+        if (d == null) return false;
+        return !d.isBefore(start) && !d.isAfter(end);
+      }).toList();
+    }
 
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
@@ -67,6 +142,31 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
         appBar: AppBar(
           title: Text(l.jobHistory),
           actions: [
+            PopupMenuButton<String>(
+              tooltip: l.selectDate,
+              icon: const Icon(Icons.date_range_rounded),
+              onSelected: (value) async {
+                if (value == 'custom') {
+                  await _pickCustomDateRange();
+                  return;
+                }
+                setState(() {
+                  _periodFilter = value;
+                  if (value != 'custom') {
+                    _customDateRange = null;
+                  }
+                });
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'all', child: Text(l.all)),
+                PopupMenuItem(value: 'today', child: Text(l.today)),
+                PopupMenuItem(value: 'month', child: Text(l.thisMonth)),
+                PopupMenuItem(
+                  value: 'custom',
+                  child: Text(l.selectPdfDateRange),
+                ),
+              ],
+            ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_outlined),
               tooltip: l.exportPdf,
@@ -76,6 +176,31 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                 final filtered = _applyFilters(jobList);
                 await PdfGenerator.previewPdf(context, filtered, locale);
               },
+            ),
+            IconButton(
+              icon: _isExportingExcel
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.file_download_outlined),
+              tooltip: l.exportToExcel,
+              onPressed: _isExportingExcel
+                  ? null
+                  : () async {
+                      final jobList = jobs.value;
+                      if (jobList == null || jobList.isEmpty) return;
+                      final filtered = _applyFilters(jobList);
+                      setState(() => _isExportingExcel = true);
+                      try {
+                        await ExcelExport.exportJobsToExcel(jobs: filtered);
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isExportingExcel = false);
+                        }
+                      }
+                    },
             ),
           ],
         ),
@@ -117,6 +242,19 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                       rejectedCount: rejectedCount,
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${l.date}: ${_periodLabel(l)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   if (filtered.isEmpty)
                     Expanded(
                       child: Center(

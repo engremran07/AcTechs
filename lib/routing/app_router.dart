@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/models/user_model.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/presentation/login_screen.dart';
+import 'package:ac_techs/features/auth/presentation/splash_screen.dart';
 import 'package:ac_techs/features/technician/presentation/tech_shell.dart';
 import 'package:ac_techs/features/technician/presentation/tech_dashboard_screen.dart';
 import 'package:ac_techs/features/technician/presentation/submit_job_screen.dart';
@@ -16,6 +17,7 @@ import 'package:ac_techs/features/admin/presentation/analytics_screen.dart';
 import 'package:ac_techs/features/admin/presentation/companies_screen.dart';
 import 'package:ac_techs/features/admin/presentation/team_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
+import 'package:ac_techs/features/admin/presentation/historical_import_screen.dart';
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
@@ -50,49 +52,116 @@ CustomTransitionPage<T> _slideFadePage<T>({
   );
 }
 
+CustomTransitionPage<T> _splashHandoffPage<T>({
+  required LocalKey pageKey,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 420),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final fade = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      final slide = Tween<Offset>(
+        begin: const Offset(0, 0.06),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+      return FadeTransition(
+        opacity: fade,
+        child: SlideTransition(position: slide, child: child),
+      );
+    },
+  );
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
 
-  ref.listen(authStateProvider, (_, __) => notifier.value++);
-  ref.listen(currentUserProvider, (_, __) => notifier.value++);
+  ref.listen(authStateProvider, (_, _) => notifier.value++);
+  ref.listen(currentUserProvider, (_, _) => notifier.value++);
 
   ref.onDispose(() => notifier.dispose());
 
   return GoRouter(
     navigatorKey: _routerKey,
-    initialLocation: '/login',
+    initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
+      final isSplashRoute = state.matchedLocation == '/splash';
+      final isLoginRoute = state.matchedLocation == '/login';
+
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
 
       final isLoggedIn = authState.value != null;
-      final isLoginRoute = state.matchedLocation == '/login';
       final user = currentUser.value;
+
+      // Allow splash route to pass through (don't redirect from it)
+      if (isSplashRoute) {
+        return null;
+      }
 
       if (!isLoggedIn) {
         return isLoginRoute ? null : '/login';
       }
 
-      if (isLoginRoute && user != null) {
+      if (currentUser.isLoading || currentUser.hasError || user == null) {
+        return isLoginRoute ? null : '/login';
+      }
+
+      if (!user.isActive) {
+        return '/login';
+      }
+
+      if (isLoginRoute) {
         return user.isAdmin ? '/admin' : '/tech';
       }
 
       // Prevent technician from accessing admin routes and vice versa
-      if (user != null) {
-        final isAdminRoute = state.matchedLocation.startsWith('/admin');
-        final isTechRoute = state.matchedLocation.startsWith('/tech');
-        if (user.isAdmin && isTechRoute) return '/admin';
-        if (!user.isAdmin && isAdminRoute) return '/tech';
-      }
+      final isAdminRoute = state.matchedLocation.startsWith('/admin');
+      final isTechRoute = state.matchedLocation.startsWith('/tech');
+      if (user.isAdmin && isTechRoute) return '/admin';
+      if (!user.isAdmin && isAdminRoute) return '/tech';
 
       return null;
     },
     routes: [
+      // ✅ Splash Screen (shown on every app launch)
+      GoRoute(
+        path: '/splash',
+        pageBuilder: (context, state) {
+          final authState = ref.read(authStateProvider);
+          final currentUser = ref.read(currentUserProvider);
+
+          return MaterialPage(
+            child: SplashScreen(
+              onComplete: () {
+                // Determine where to navigate after splash
+                final isLoggedIn = authState.value != null;
+                if (isLoggedIn && currentUser.value != null) {
+                  // User is authenticated, go to dashboard
+                  if (currentUser.value!.isAdmin) {
+                    context.go('/admin');
+                  } else {
+                    context.go('/tech');
+                  }
+                } else {
+                  // User not authenticated, go to login
+                  context.go('/login');
+                }
+              },
+            ),
+          );
+        },
+      ),
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) => _slideFadePage(
+        pageBuilder: (context, state) => _splashHandoffPage(
           pageKey: state.pageKey,
           child: const LoginScreen(),
         ),
@@ -187,6 +256,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const CompaniesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/import',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const HistoricalImportScreen(),
             ),
           ),
           GoRoute(

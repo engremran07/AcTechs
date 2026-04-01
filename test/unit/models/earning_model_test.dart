@@ -3,7 +3,7 @@ import 'package:ac_techs/core/models/earning_model.dart';
 
 void main() {
   group('EarningModel.fromJson()', () {
-    Map<String, dynamic> _baseEarning() => {
+    Map<String, dynamic> baseEarning() => {
           'techId': 'tech-02',
           'techName': 'Bilal',
           'category': 'Sold Old AC',
@@ -11,7 +11,7 @@ void main() {
         };
 
     test('parses required fields correctly', () {
-      final model = EarningModel.fromJson(_baseEarning());
+      final model = EarningModel.fromJson(baseEarning());
       expect(model.techId, 'tech-02');
       expect(model.techName, 'Bilal');
       expect(model.category, 'Sold Old AC');
@@ -19,26 +19,26 @@ void main() {
     });
 
     test('defaults id to empty string when absent', () {
-      expect(EarningModel.fromJson(_baseEarning()).id, '');
+      expect(EarningModel.fromJson(baseEarning()).id, '');
     });
 
     test('parses provided id', () {
-      final json = {..._baseEarning(), 'id': 'earn-100'};
+      final json = {...baseEarning(), 'id': 'earn-100'};
       expect(EarningModel.fromJson(json).id, 'earn-100');
     });
 
     test('defaults note to empty string when absent', () {
-      expect(EarningModel.fromJson(_baseEarning()).note, '');
+      expect(EarningModel.fromJson(baseEarning()).note, '');
     });
 
     test('parses note', () {
-      final json = {..._baseEarning(), 'note': 'decent price'};
+      final json = {...baseEarning(), 'note': 'decent price'};
       expect(EarningModel.fromJson(json).note, 'decent price');
     });
 
     test('parses date from ISO string', () {
       final json = {
-        ..._baseEarning(),
+        ...baseEarning(),
         'date': '2024-09-10T12:00:00.000',
       };
       final model = EarningModel.fromJson(json);
@@ -48,15 +48,15 @@ void main() {
     });
 
     test('date is null when absent', () {
-      expect(EarningModel.fromJson(_baseEarning()).date, isNull);
+      expect(EarningModel.fromJson(baseEarning()).date, isNull);
     });
 
     test('createdAt is null when absent', () {
-      expect(EarningModel.fromJson(_baseEarning()).createdAt, isNull);
+      expect(EarningModel.fromJson(baseEarning()).createdAt, isNull);
     });
 
     test('parses integer amount as double', () {
-      final json = {..._baseEarning(), 'amount': 300};
+      final json = {...baseEarning(), 'amount': 300};
       final model = EarningModel.fromJson(json);
       expect(model.amount, 300.0);
       expect(model.amount, isA<double>());

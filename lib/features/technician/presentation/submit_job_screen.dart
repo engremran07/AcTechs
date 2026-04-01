@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
-import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
@@ -26,12 +26,18 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   final _bracketAmountController = TextEditingController();
   final _deliveryAmountController = TextEditingController();
   final _deliveryNoteController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
-  final List<AcUnit> _acUnits = [const AcUnit(type: 'Split AC', quantity: 1)];
   bool _isSubmitting = false;
   bool _hasBracket = false;
   bool _hasDelivery = false;
+  int _splitQty = 0;
+  int _windowQty = 0;
+  int _uninstallSplitQty = 0;
+  int _uninstallWindowQty = 0;
+  int _uninstallStandingQty = 0;
+  int _dolabQty = 0;
   String? _selectedCompanyId;
   String _selectedCompanyName = '';
   String _selectedCompanyPrefix = '';
@@ -44,19 +50,54 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _bracketAmountController.dispose();
     _deliveryAmountController.dispose();
     _deliveryNoteController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
-  void _addUnit() {
-    setState(() {
-      _acUnits.add(const AcUnit(type: 'Split AC', quantity: 1));
-    });
+  List<AcUnit> _unitsFromQuickTemplate() {
+    final units = <AcUnit>[];
+    if (_splitQty > 0) {
+      units.add(AcUnit(type: 'Split AC', quantity: _splitQty));
+    }
+    if (_windowQty > 0) {
+      units.add(AcUnit(type: 'Window AC', quantity: _windowQty));
+    }
+    if (_uninstallSplitQty > 0) {
+      units.add(
+        AcUnit(
+          type: AppConstants.unitTypeUninstallSplit,
+          quantity: _uninstallSplitQty,
+        ),
+      );
+    }
+    if (_uninstallWindowQty > 0) {
+      units.add(
+        AcUnit(
+          type: AppConstants.unitTypeUninstallWindow,
+          quantity: _uninstallWindowQty,
+        ),
+      );
+    }
+    if (_uninstallStandingQty > 0) {
+      units.add(
+        AcUnit(
+          type: AppConstants.unitTypeUninstallFreestanding,
+          quantity: _uninstallStandingQty,
+        ),
+      );
+    }
+    if (_dolabQty > 0) {
+      units.add(AcUnit(type: 'Freestanding AC', quantity: _dolabQty));
+    }
+    return units;
   }
 
-  void _removeUnit(int index) {
-    if (_acUnits.length > 1) {
-      setState(() => _acUnits.removeAt(index));
-    }
+  String _normalizeContact(String raw) {
+    final trimmed = raw.trim();
+    final hasLeadingPlus = trimmed.startsWith('+');
+    final digitsOnly = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) return '';
+    return hasLeadingPlus ? '+$digitsOnly' : digitsOnly;
   }
 
   void _resetForm() {
@@ -67,12 +108,16 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _bracketAmountController.clear();
     _deliveryAmountController.clear();
     _deliveryNoteController.clear();
+    _descriptionController.clear();
     setState(() {
-      _acUnits
-        ..clear()
-        ..add(const AcUnit(type: 'Split AC', quantity: 1));
       _hasBracket = false;
       _hasDelivery = false;
+      _splitQty = 0;
+      _windowQty = 0;
+      _uninstallSplitQty = 0;
+      _uninstallWindowQty = 0;
+      _uninstallStandingQty = 0;
+      _dolabQty = 0;
       _selectedCompanyId = null;
       _selectedCompanyName = '';
       _selectedCompanyPrefix = '';
@@ -81,7 +126,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_acUnits.isEmpty) {
+    final quickUnits = _unitsFromQuickTemplate();
+
+    if (quickUnits.isEmpty) {
       ErrorSnackbar.show(
         context,
         message: AppLocalizations.of(context)!.addServiceFirst,
@@ -92,8 +139,19 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final user = ref.read(currentUserProvider).value;
-      if (user == null) return;
+      final asyncUser = ref.read(currentUserProvider);
+      if (!asyncUser.hasValue || asyncUser.value == null) {
+        if (mounted) {
+          ErrorSnackbar.show(
+            context,
+            message: asyncUser.isLoading
+                ? AppLocalizations.of(context)!.userDataLoading
+                : AppLocalizations.of(context)!.couldNotSubmitJob,
+          );
+        }
+        return;
+      }
+      final user = asyncUser.value!;
 
       final charges = InvoiceCharges(
         acBracket: _hasBracket,
@@ -112,8 +170,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         companyName: _selectedCompanyName,
         invoiceNumber: _buildInvoiceNumber(),
         clientName: _clientNameController.text.trim(),
-        clientContact: _clientContactController.text.trim(),
-        acUnits: List.from(_acUnits),
+        clientContact: _normalizeContact(_clientContactController.text),
+        acUnits: quickUnits,
+        expenseNote: _descriptionController.text.trim(),
         charges: charges,
         date: _selectedDate,
         submittedAt: DateTime.now(),
@@ -156,6 +215,96 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // ── AC Services (single source of truth) ──
+                  _SectionHeader(
+                    icon: Icons.ac_unit_rounded,
+                    title: l.acServices,
+                  ),
+                  const SizedBox(height: 8),
+                  ArcticCard(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.splits,
+                                value: _splitQty,
+                                onChanged: (v) => setState(() => _splitQty = v),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.windowAc,
+                                value: _windowQty,
+                                onChanged: (v) =>
+                                    setState(() => _windowQty = v),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.standing,
+                                value: _dolabQty,
+                                onChanged: (v) => setState(() => _dolabQty = v),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.uninstallSplit,
+                                value: _uninstallSplitQty,
+                                onChanged: (v) =>
+                                    setState(() => _uninstallSplitQty = v),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.uninstallWindow,
+                                value: _uninstallWindowQty,
+                                onChanged: (v) =>
+                                    setState(() => _uninstallWindowQty = v),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _QtyTile(
+                                label: l.uninstallStanding,
+                                value: _uninstallStandingQty,
+                                onChanged: (v) =>
+                                    setState(() => _uninstallStandingQty = v),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _descriptionController,
+                          textInputAction: TextInputAction.next,
+                          enableInteractiveSelection: true,
+                          decoration: InputDecoration(
+                            hintText: l.descriptionLabel,
+                            prefixIcon: Icon(
+                              Icons.notes_rounded,
+                              color: ArcticTheme.arcticTextSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 80.ms),
+                  const SizedBox(height: 20),
+
                   // ── Date Picker ──
                   _SectionHeader(icon: Icons.calendar_today, title: l.date),
                   const SizedBox(height: 8),
@@ -249,7 +398,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               ),
                         loading: () =>
                             const ArcticShimmer(height: 56, count: 1),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (e, _) => const SizedBox.shrink(),
                       )
                       .animate()
                       .fadeIn(delay: 100.ms),
@@ -271,7 +420,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         (v == null || v.trim().isEmpty) ? l.required : null,
                   ).animate().fadeIn(delay: 120.ms),
                   if (_selectedCompanyPrefix.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -281,7 +430,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                   ],
                   TextFormField(
                     controller: _clientNameController,
@@ -301,6 +450,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.done,
                     enableInteractiveSelection: true,
+                    autofillHints: const [AutofillHints.telephoneNumber],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[0-9+\-\s\(\)]'),
+                      ),
+                      LengthLimitingTextInputFormatter(15),
+                    ],
                     decoration: InputDecoration(
                       hintText: l.clientPhone,
                       prefixIcon: Icon(
@@ -308,132 +464,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         color: ArcticTheme.arcticTextSecondary,
                       ),
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? l.required : null,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return l.required;
+                      return _normalizeContact(v).isEmpty
+                          ? l.enterValidPhone
+                          : null;
+                    },
                   ).animate().fadeIn(delay: 200.ms),
-                  const SizedBox(height: 24),
-
-                  // ── AC Services ──
-                  Row(
-                    children: [
-                      _SectionHeader(
-                        icon: Icons.ac_unit_rounded,
-                        title: l.acServices,
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: _addUnit,
-                        icon: const Icon(Icons.add_circle_rounded, size: 20),
-                        label: Text(l.add),
-                      ),
-                    ],
-                  ).animate().fadeIn(delay: 250.ms),
-                  const SizedBox(height: 8),
-
-                  ...List.generate(_acUnits.length, (i) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: ArcticTheme.arcticCard,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey('ac_type_$i'),
-                              initialValue: _acUnits[i].type,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                hintText: l.serviceType,
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              items: AppConstants.acUnitTypes
-                                  .map(
-                                    (t) => DropdownMenuItem(
-                                      value: t,
-                                      child: Text(
-                                        translateCategory(t, l),
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) {
-                                if (v != null) {
-                                  setState(() {
-                                    _acUnits[i] = _acUnits[i].copyWith(type: v);
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: _acUnits[i].quantity > 1
-                                    ? () {
-                                        setState(() {
-                                          _acUnits[i] = _acUnits[i].copyWith(
-                                            quantity: _acUnits[i].quantity - 1,
-                                          );
-                                        });
-                                      }
-                                    : null,
-                                child: Icon(
-                                  Icons.remove_circle_outline,
-                                  size: 22,
-                                  color: _acUnits[i].quantity > 1
-                                      ? ArcticTheme.arcticTextSecondary
-                                      : ArcticTheme.arcticTextSecondary
-                                            .withValues(alpha: 0.3),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                child: Text(
-                                  '${_acUnits[i].quantity}',
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                              ),
-                              InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () {
-                                  setState(() {
-                                    _acUnits[i] = _acUnits[i].copyWith(
-                                      quantity: _acUnits[i].quantity + 1,
-                                    );
-                                  });
-                                },
-                                child: const Icon(
-                                  Icons.add_circle_outline,
-                                  size: 22,
-                                  color: ArcticTheme.arcticBlue,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (_acUnits.length > 1)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: ArcticTheme.arcticError,
-                                size: 20,
-                              ),
-                              onPressed: () => _removeUnit(i),
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
                   const SizedBox(height: 24),
 
                   // ── Additional Charges ──
@@ -582,6 +619,76 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(title, style: Theme.of(context).textTheme.titleLarge),
       ],
+    );
+  }
+}
+
+class _QtyTile extends StatelessWidget {
+  const _QtyTile({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? ArcticTheme.arcticCard : scheme.surface,
+        border: Border.all(
+          color: ArcticTheme.arcticBlue.withValues(alpha: isDark ? 0.18 : 0.28),
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.visible,
+              style: textTheme.bodySmall,
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: value > 0 ? () => onChanged(value - 1) : null,
+            child: Icon(
+              Icons.remove_circle_outline,
+              size: 20,
+              color: value > 0
+                  ? ArcticTheme.arcticTextSecondary
+                  : ArcticTheme.arcticTextSecondary.withValues(alpha: 0.3),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$value',
+            style: textTheme.titleSmall?.copyWith(
+              color: textTheme.titleSmall?.color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => onChanged(value + 1),
+            child: const Icon(
+              Icons.add_circle_outline,
+              size: 20,
+              color: ArcticTheme.arcticBlue,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

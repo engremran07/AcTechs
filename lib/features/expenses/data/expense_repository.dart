@@ -31,6 +31,14 @@ class ExpenseRepository {
     }
   }
 
+  Future<void> updateExpense(ExpenseModel expense) async {
+    try {
+      await _ref.doc(expense.id).update(expense.toFirestore());
+    } catch (_) {
+      throw ExpenseException.userSaveFailed();
+    }
+  }
+
   /// Real-time stream of a tech's expenses, newest first.
   Stream<List<ExpenseModel>> techExpenses(String techId) {
     return _ref

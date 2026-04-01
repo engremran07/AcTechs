@@ -40,6 +40,7 @@ abstract class InvoiceCharges with _$InvoiceCharges {
 
 @freezed
 abstract class JobModel with _$JobModel {
+  @JsonSerializable(explicitToJson: true)
   const factory JobModel({
     @Default('') String id,
     required String techId,

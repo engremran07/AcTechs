@@ -8,6 +8,7 @@ import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -104,21 +105,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   flag: '🇬🇧',
                   label: l.english,
                   selected: locale == 'en',
-                  onTap: () => _updateLanguage(user?.uid, 'en'),
+                  onTap: () => _updateLanguage('en'),
                 ),
                 const Divider(height: 1),
                 _LanguageTile(
                   flag: '🇵🇰',
                   label: l.urdu,
                   selected: locale == 'ur',
-                  onTap: () => _updateLanguage(user?.uid, 'ur'),
+                  onTap: () => _updateLanguage('ur'),
                 ),
                 const Divider(height: 1),
                 _LanguageTile(
                   flag: '🇸🇦',
                   label: l.arabic,
                   selected: locale == 'ar',
-                  onTap: () => _updateLanguage(user?.uid, 'ar'),
+                  onTap: () => _updateLanguage('ar'),
                 ),
               ],
             ),
@@ -157,26 +158,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SectionTitle(title: l.resetPassword),
           const SizedBox(height: 8),
           ArcticCard(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: _sendingReset
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lock_reset_rounded),
-              title: Text(l.resetPassword),
-              subtitle: Text(
-                user?.email ?? '',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: _sendingReset ||
-                      user?.email == null ||
-                      (user?.email.isEmpty ?? true)
-                  ? null
-                  : () => _handlePasswordReset(user!.email),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  leading: const Icon(Icons.alternate_email_rounded),
+                  title: Text(l.changeEmail),
+                  subtitle: Text(
+                    user?.email ?? '',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: user == null
+                      ? null
+                      : () => _showChangeEmailDialog(user),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  leading: const Icon(Icons.password_rounded),
+                  title: Text(l.changePassword),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: user == null ? null : _showChangePasswordDialog,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  leading: _sendingReset
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lock_reset_rounded),
+                  title: Text(l.resetPassword),
+                  subtitle: Text(
+                    user?.email ?? '',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap:
+                      _sendingReset ||
+                          user?.email == null ||
+                          (user?.email.isEmpty ?? true)
+                      ? null
+                      : () => _handlePasswordReset(user!.email),
+                ),
+              ],
             ),
           ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.03),
           const SizedBox(height: 32),
@@ -202,11 +230,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _updateLanguage(String? uid, String lang) {
+  void _updateLanguage(String lang) {
     ref.read(appLocaleProvider.notifier).setLocale(lang);
-    if (uid != null) {
-      ref.read(userRepositoryProvider).updateLanguage(uid, lang);
-    }
   }
 
   Future<void> _handlePasswordReset(String email) async {
@@ -242,10 +267,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          icon: const Icon(
-            Icons.mark_email_read_outlined,
-            size: 48,
-          ),
+          icon: const Icon(Icons.mark_email_read_outlined, size: 48),
           title: Text(l.passwordResetEmailSentTitle),
           content: Text(l.passwordResetEmailSentBody(email)),
           actions: [
@@ -307,7 +329,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   style: Theme.of(ctx).textTheme.bodySmall,
                 ),
                 subtitle: Text(
-                  'Use password reset to change email.',
+                  l.changeEmail,
                   style: Theme.of(ctx).textTheme.labelSmall,
                 ),
               ),
@@ -342,6 +364,192 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on AppException catch (e) {
       if (!context.mounted) return;
       AppFeedback.error(context, message: e.message(locale));
+    }
+  }
+
+  Future<void> _showChangeEmailDialog(UserModel user) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final emailCtrl = TextEditingController(text: user.email);
+    final currentPasswordCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.changeEmail),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.email,
+                  prefixIcon: const Icon(Icons.alternate_email_rounded),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return l.enterEmail;
+                  if (!v.contains('@')) return l.invalidEmail;
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: currentPasswordCtrl,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.currentPassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                ),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? l.enterPassword : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .updateEmail(
+            newEmail: emailCtrl.text.trim(),
+            currentPassword: currentPasswordCtrl.text,
+          );
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.emailChangeVerificationSent);
+    } on AppException catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
+    } finally {
+      emailCtrl.dispose();
+      currentPasswordCtrl.dispose();
+    }
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final currentPasswordCtrl = TextEditingController();
+    final newPasswordCtrl = TextEditingController();
+    final confirmPasswordCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.changePassword),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: currentPasswordCtrl,
+                obscureText: true,
+                textInputAction: TextInputAction.next,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.currentPassword,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                ),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? l.enterPassword : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: newPasswordCtrl,
+                obscureText: true,
+                textInputAction: TextInputAction.next,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.newPassword,
+                  prefixIcon: const Icon(Icons.password_rounded),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return l.enterPassword;
+                  if (v.length < 6) return l.minChars(6);
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: confirmPasswordCtrl,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.confirmNewPassword,
+                  prefixIcon: const Icon(Icons.verified_user_outlined),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return l.required;
+                  if (v != newPasswordCtrl.text) return l.passwordsDoNotMatch;
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .updatePassword(
+            currentPassword: currentPasswordCtrl.text,
+            newPassword: newPasswordCtrl.text,
+          );
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.passwordUpdated);
+    } on AppException catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
+    } finally {
+      currentPasswordCtrl.dispose();
+      newPasswordCtrl.dispose();
+      confirmPasswordCtrl.dispose();
     }
   }
 

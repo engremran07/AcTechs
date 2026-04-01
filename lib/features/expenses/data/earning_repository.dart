@@ -31,6 +31,14 @@ class EarningRepository {
     }
   }
 
+  Future<void> updateEarning(EarningModel earning) async {
+    try {
+      await _ref.doc(earning.id).update(earning.toFirestore());
+    } catch (_) {
+      throw ExpenseException.userSaveFailed();
+    }
+  }
+
   /// Real-time stream of a tech's earnings, newest first.
   Stream<List<EarningModel>> techEarnings(String techId) {
     return _ref

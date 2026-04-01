@@ -120,8 +120,8 @@ void main() {
   });
 
   group('AppConstants – acUnitTypes', () {
-    test('contains 5 AC unit types', () {
-      expect(AppConstants.acUnitTypes.length, 5);
+    test('contains 7 AC unit types', () {
+      expect(AppConstants.acUnitTypes.length, 7);
     });
 
     test('contains "Split AC"', () {
@@ -142,6 +142,14 @@ void main() {
 
     test('contains "Uninstallation (Old AC)"', () {
       expect(AppConstants.acUnitTypes, contains('Uninstallation (Old AC)'));
+    });
+
+    test('contains "Uninstallation Split"', () {
+      expect(AppConstants.acUnitTypes, contains('Uninstallation Split'));
+    });
+
+    test('contains "Uninstallation Window"', () {
+      expect(AppConstants.acUnitTypes, contains('Uninstallation Window'));
     });
 
     test('all AC unit type names are unique', () {

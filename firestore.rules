@@ -26,7 +26,19 @@ service cloud.firestore {
     // ─── Users ───
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin();
+      allow create: if isAdmin() ||
+        (isOwner(userId) &&
+         request.resource.data.keys().hasOnly([
+           'name',
+           'email',
+           'role',
+           'isActive',
+           'language',
+           'createdAt'
+         ]) &&
+         request.resource.data.role == 'technician' &&
+         request.resource.data.isActive == true &&
+         request.resource.data.email == request.auth.token.email);
       // Admins can update anything; technicians can update their own language or name
       allow update: if isAdmin() ||
         (isOwner(userId) &&
@@ -40,12 +52,47 @@ service cloud.firestore {
       allow read: if isAuth() &&
         (resource.data.techId == request.auth.uid || isAdmin());
 
-      allow create: if isAuth() &&
+      allow create: if (isAuth() &&
         request.resource.data.techId == request.auth.uid &&
-        request.resource.data.status == 'pending';
+        request.resource.data.status == 'pending') ||
+        (isAdmin() &&
+          request.resource.data.status in ['pending', 'approved', 'rejected']);
 
-      allow update: if isAdmin() ||
-        (isOwner(resource.data.techId) && resource.data.status == 'pending');
+      allow update: if (
+        isAdmin() &&
+        resource.data.status == 'pending' &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.status in ['approved', 'rejected'] &&
+        request.resource.data.approvedBy == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'approvedBy',
+          'reviewedAt',
+          'adminNote'
+        ])
+      ) || (
+        isOwner(resource.data.techId) &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'companyId',
+          'companyName',
+          'invoiceNumber',
+          'clientName',
+          'clientContact',
+          'acUnits',
+          'charges',
+          'date',
+          'submittedAt',
+          'expenses',
+          'expenseNote'
+        ])
+      );
 
       allow delete: if false;
     }
@@ -58,11 +105,34 @@ service cloud.firestore {
 
       // Techs create own expenses
       allow create: if isAuth() &&
-        request.resource.data.techId == request.auth.uid;
+        request.resource.data.techId == request.auth.uid &&
+        request.resource.data.keys().hasOnly([
+          'techId',
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'expenseType',
+          'date',
+          'createdAt'
+        ]);
 
-      // Techs can update/delete own; admins can update/delete any
-      allow update, delete: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (
+        isAuth() &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'expenseType',
+          'date'
+        ])
+      );
+
+      allow delete: if false;
     }
 
     // ─── Earnings ───
@@ -73,11 +143,32 @@ service cloud.firestore {
 
       // Techs create own earnings
       allow create: if isAuth() &&
-        request.resource.data.techId == request.auth.uid;
+        request.resource.data.techId == request.auth.uid &&
+        request.resource.data.keys().hasOnly([
+          'techId',
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'date',
+          'createdAt'
+        ]);
 
-      // Techs can update/delete own; admins can update/delete any
-      allow update, delete: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (
+        isAuth() &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'date'
+        ])
+      );
+
+      allow delete: if false;
     }
 
     // ─── Companies ───

@@ -160,6 +160,12 @@ abstract class AppLocalizations {
   /// **'Please enter a valid email'**
   String get enterValidEmail;
 
+  /// No description provided for @enterValidPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number'**
+  String get enterValidPhone;
+
   /// No description provided for @enterPassword.
   ///
   /// In en, this message translates to:
@@ -1222,6 +1228,24 @@ abstract class AppLocalizations {
   /// **'Uninstalls'**
   String get uninstalls;
 
+  /// No description provided for @uninstallSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall Split'**
+  String get uninstallSplit;
+
+  /// No description provided for @uninstallWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall Window'**
+  String get uninstallWindow;
+
+  /// No description provided for @uninstallStanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall Standing'**
+  String get uninstallStanding;
+
   /// No description provided for @jobStatus.
   ///
   /// In en, this message translates to:
@@ -1444,6 +1468,24 @@ abstract class AppLocalizations {
   /// **'Export to Excel'**
   String get exportToExcel;
 
+  /// No description provided for @reportPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Preset'**
+  String get reportPreset;
+
+  /// No description provided for @byTechnician.
+  ///
+  /// In en, this message translates to:
+  /// **'By Technician'**
+  String get byTechnician;
+
+  /// No description provided for @uninstallRateBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall Rate Breakdown'**
+  String get uninstallRateBreakdown;
+
   /// No description provided for @exportReady.
   ///
   /// In en, this message translates to:
@@ -1473,48 +1515,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password reset email sent to {email}'**
   String passwordResetSent(String email);
-
-  /// No description provided for @passwordResetConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset Password?'**
-  String get passwordResetConfirmTitle;
-
-  /// No description provided for @passwordResetConfirmBody.
-  ///
-  /// In en, this message translates to:
-  /// **'A reset link will be sent to {email}. Continue?'**
-  String passwordResetConfirmBody(String email);
-
-  /// No description provided for @passwordResetEmailSentTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Email Sent'**
-  String get passwordResetEmailSentTitle;
-
-  /// No description provided for @passwordResetEmailSentBody.
-  ///
-  /// In en, this message translates to:
-  /// **'A reset link has been sent to {email}. ...'**
-  String passwordResetEmailSentBody(String email);
-
-  /// No description provided for @passwordResetNetworkError.
-  ///
-  /// In en, this message translates to:
-  /// **'No internet connection. Please connect and try again.'**
-  String get passwordResetNetworkError;
-
-  /// No description provided for @passwordResetRateLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Too many reset requests. Please wait a few minutes and try again.'**
-  String get passwordResetRateLimit;
-
-  /// No description provided for @send.
-  ///
-  /// In en, this message translates to:
-  /// **'Send'**
-  String get send;
 
   /// No description provided for @confirmDeleteUser.
   ///
@@ -1641,6 +1641,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home Expenses'**
   String get homeExpenses;
+
+  /// No description provided for @importHistoryData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Historical Data'**
+  String get importHistoryData;
+
+  /// No description provided for @importHistoryDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload one or more Excel files to import previous technician installations by technician ID/email/name.'**
+  String get importHistoryDataSubtitle;
+
+  /// No description provided for @uploadExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Excel'**
+  String get uploadExcel;
+
+  /// No description provided for @deleteSourceAfterImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete source file after import (best effort)'**
+  String get deleteSourceAfterImport;
+
+  /// No description provided for @importInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing...'**
+  String get importInProgress;
+
+  /// No description provided for @importNoFileSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No file selected.'**
+  String get importNoFileSelected;
+
+  /// No description provided for @importFailedNoRows.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid rows found for import.'**
+  String get importFailedNoRows;
+
+  /// No description provided for @importCompletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} rows'**
+  String importCompletedCount(int count);
+
+  /// No description provided for @importSkippedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {count} rows'**
+  String importSkippedCount(int count);
+
+  /// No description provided for @importUnresolvedTechRows.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rows skipped: technician not found'**
+  String importUnresolvedTechRows(int count);
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger Zone'**
+  String get dangerZone;
+
+  /// No description provided for @flushDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush Database'**
+  String get flushDatabase;
+
+  /// No description provided for @flushDatabaseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all data to a clean state'**
+  String get flushDatabaseSubtitle;
+
+  /// No description provided for @flushStep1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1 of 2 — Confirm Intent'**
+  String get flushStep1Title;
+
+  /// No description provided for @flushStep2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2 of 2 — Final Confirmation'**
+  String get flushStep2Title;
+
+  /// No description provided for @flushWarningIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to permanently delete the following data:'**
+  String get flushWarningIntro;
+
+  /// No description provided for @flushItemJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'All job records'**
+  String get flushItemJobs;
+
+  /// No description provided for @flushItemExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'All expense & earning records'**
+  String get flushItemExpenses;
+
+  /// No description provided for @flushItemCompanies.
+  ///
+  /// In en, this message translates to:
+  /// **'All company records'**
+  String get flushItemCompanies;
+
+  /// No description provided for @flushItemUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'All non-admin user accounts'**
+  String get flushItemUsers;
+
+  /// No description provided for @flushAdminKept.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts will be preserved.'**
+  String get flushAdminKept;
+
+  /// No description provided for @flushProceedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed in {seconds}s'**
+  String flushProceedIn(int seconds);
+
+  /// No description provided for @flushProceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to Step 2'**
+  String get flushProceed;
+
+  /// No description provided for @flushEnterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your admin password to confirm'**
+  String get flushEnterPassword;
+
+  /// No description provided for @flushConfirmIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in {seconds}s'**
+  String flushConfirmIn(int seconds);
+
+  /// No description provided for @flushConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush Database'**
+  String get flushConfirm;
+
+  /// No description provided for @flushInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Flushing database…'**
+  String get flushInProgress;
+
+  /// No description provided for @flushSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Database flushed. Starting fresh.'**
+  String get flushSuccess;
+
+  /// No description provided for @flushFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush failed. Check connection and try again.'**
+  String get flushFailed;
+
+  /// No description provided for @flushWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password. Please try again.'**
+  String get flushWrongPassword;
 
   /// No description provided for @catSplitAc.
   ///
@@ -1834,125 +2014,257 @@ abstract class AppLocalizations {
   /// **'Other Groceries'**
   String get catOtherGroceries;
 
-  /// No description provided for @dangerZone.
+  /// No description provided for @passwordResetConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Danger Zone'**
-  String get dangerZone;
+  /// **'Reset Password?'**
+  String get passwordResetConfirmTitle;
 
-  /// No description provided for @flushDatabase.
+  /// No description provided for @passwordResetConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'Flush Database'**
-  String get flushDatabase;
+  /// **'A reset link will be sent to {email}. Continue?'**
+  String passwordResetConfirmBody(String email);
 
-  /// No description provided for @flushDatabaseSubtitle.
+  /// No description provided for @passwordResetEmailSentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Reset all data to a clean state'**
-  String get flushDatabaseSubtitle;
+  /// **'Email Sent'**
+  String get passwordResetEmailSentTitle;
 
-  /// No description provided for @flushStep1Title.
+  /// No description provided for @passwordResetEmailSentBody.
   ///
   /// In en, this message translates to:
-  /// **'Step 1 of 2 — Confirm Intent'**
-  String get flushStep1Title;
+  /// **'A reset link has been sent to {email}.\n\nPlease check your inbox. If you don\'t see it within a few minutes, check your Spam or Junk folder.\n\nThe link expires in 1 hour.'**
+  String passwordResetEmailSentBody(String email);
 
-  /// No description provided for @flushStep2Title.
+  /// No description provided for @passwordResetNetworkError.
   ///
   /// In en, this message translates to:
-  /// **'Step 2 of 2 — Final Confirmation'**
-  String get flushStep2Title;
+  /// **'No internet connection. Please connect and try again.'**
+  String get passwordResetNetworkError;
 
-  /// No description provided for @flushWarningIntro.
+  /// No description provided for @passwordResetRateLimit.
   ///
   /// In en, this message translates to:
-  /// **'You are about to permanently delete the following data:'**
-  String get flushWarningIntro;
+  /// **'Too many reset requests. Please wait a few minutes and try again.'**
+  String get passwordResetRateLimit;
 
-  /// No description provided for @flushItemJobs.
+  /// No description provided for @send.
   ///
   /// In en, this message translates to:
-  /// **'All job records'**
-  String get flushItemJobs;
+  /// **'Send'**
+  String get send;
 
-  /// No description provided for @flushItemExpenses.
+  /// No description provided for @changeEmail.
   ///
   /// In en, this message translates to:
-  /// **'All expense & earning records'**
-  String get flushItemExpenses;
+  /// **'Change Email'**
+  String get changeEmail;
 
-  /// No description provided for @flushItemCompanies.
+  /// No description provided for @changePassword.
   ///
   /// In en, this message translates to:
-  /// **'All company records'**
-  String get flushItemCompanies;
+  /// **'Change Password'**
+  String get changePassword;
 
-  /// No description provided for @flushItemUsers.
+  /// No description provided for @currentPassword.
   ///
   /// In en, this message translates to:
-  /// **'All non-admin user accounts'**
-  String get flushItemUsers;
+  /// **'Current Password'**
+  String get currentPassword;
 
-  /// No description provided for @flushAdminKept.
+  /// No description provided for @newPassword.
   ///
   /// In en, this message translates to:
-  /// **'Admin accounts will be preserved.'**
-  String get flushAdminKept;
+  /// **'New Password'**
+  String get newPassword;
 
-  /// No description provided for @flushProceedIn.
+  /// No description provided for @confirmNewPassword.
   ///
   /// In en, this message translates to:
-  /// **'Proceed in {seconds}s'**
-  String flushProceedIn(int seconds);
+  /// **'Confirm New Password'**
+  String get confirmNewPassword;
 
-  /// No description provided for @flushProceed.
+  /// No description provided for @passwordsDoNotMatch.
   ///
   /// In en, this message translates to:
-  /// **'Proceed to Step 2'**
-  String get flushProceed;
+  /// **'Passwords do not match.'**
+  String get passwordsDoNotMatch;
 
-  /// No description provided for @flushEnterPassword.
+  /// No description provided for @emailUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Enter your admin password to confirm'**
-  String get flushEnterPassword;
+  /// **'Email updated successfully.'**
+  String get emailUpdated;
 
-  /// No description provided for @flushConfirmIn.
+  /// No description provided for @emailChangeVerificationSent.
   ///
   /// In en, this message translates to:
-  /// **'Confirm in {seconds}s'**
-  String flushConfirmIn(int seconds);
+  /// **'Verification email sent. Open your inbox to confirm new email.'**
+  String get emailChangeVerificationSent;
 
-  /// No description provided for @flushConfirm.
+  /// No description provided for @passwordUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Flush Database'**
-  String get flushConfirm;
+  /// **'Password updated successfully.'**
+  String get passwordUpdated;
 
-  /// No description provided for @flushInProgress.
+  /// No description provided for @editEntry.
   ///
   /// In en, this message translates to:
-  /// **'Flushing database…'**
-  String get flushInProgress;
+  /// **'Edit Entry'**
+  String get editEntry;
 
-  /// No description provided for @flushSuccess.
+  /// No description provided for @entryUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Database flushed. Starting fresh.'**
-  String get flushSuccess;
+  /// **'Entry updated successfully.'**
+  String get entryUpdated;
 
-  /// No description provided for @flushFailed.
+  /// No description provided for @selectPdfDateRange.
   ///
   /// In en, this message translates to:
-  /// **'Flush failed. Check connection and try again.'**
-  String get flushFailed;
+  /// **'Select PDF date range'**
+  String get selectPdfDateRange;
 
-  /// No description provided for @flushWrongPassword.
+  /// No description provided for @pdfDateRangeMonthOnly.
   ///
   /// In en, this message translates to:
-  /// **'Incorrect password. Please try again.'**
-  String get flushWrongPassword;
+  /// **'Please select a date range within the selected month.'**
+  String get pdfDateRangeMonthOnly;
+
+  /// No description provided for @exportTodayCompanyInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Export today\'s company invoices'**
+  String get exportTodayCompanyInvoices;
+
+  /// No description provided for @noInvoicesToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices found for today.'**
+  String get noInvoicesToday;
+
+  /// No description provided for @couldNotOpenSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open summary screen. Please try again.'**
+  String get couldNotOpenSummary;
+
+  /// No description provided for @userDataLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait — loading your profile...'**
+  String get userDataLoading;
+
+  /// No description provided for @couldNotSubmitJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit. Please sign out and sign back in.'**
+  String get couldNotSubmitJob;
+
+  /// No description provided for @invoiceSopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice SOP Flow'**
+  String get invoiceSopTitle;
+
+  /// No description provided for @excelStyleEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel Style Entry'**
+  String get excelStyleEntry;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get descriptionLabel;
+
+  /// No description provided for @invoiceSopStep1.
+  ///
+  /// In en, this message translates to:
+  /// **'1) Select date and company'**
+  String get invoiceSopStep1;
+
+  /// No description provided for @invoiceSopStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'2) Add invoice, client and contact'**
+  String get invoiceSopStep2;
+
+  /// No description provided for @invoiceSopStep3.
+  ///
+  /// In en, this message translates to:
+  /// **'3) Add AC units and optional charges'**
+  String get invoiceSopStep3;
+
+  /// No description provided for @invoiceSopStep4.
+  ///
+  /// In en, this message translates to:
+  /// **'4) Submit for admin approval'**
+  String get invoiceSopStep4;
+
+  /// No description provided for @jobsDetailsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs Details Report'**
+  String get jobsDetailsReport;
+
+  /// No description provided for @earningsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings Report'**
+  String get earningsReport;
+
+  /// No description provided for @expensesDetailedReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses Report (Work & Home)'**
+  String get expensesDetailedReport;
+
+  /// No description provided for @exportJobsAsExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Jobs as Excel'**
+  String get exportJobsAsExcel;
+
+  /// No description provided for @exportJobsAsPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Jobs as PDF'**
+  String get exportJobsAsPdf;
+
+  /// No description provided for @exportEarningsAsExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Earnings as Excel'**
+  String get exportEarningsAsExcel;
+
+  /// No description provided for @exportEarningsAsPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Earnings as PDF'**
+  String get exportEarningsAsPdf;
+
+  /// No description provided for @exportExpensesAsExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Expenses as Excel'**
+  String get exportExpensesAsExcel;
+
+  /// No description provided for @exportExpensesAsPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Expenses as PDF'**
+  String get exportExpensesAsPdf;
+
+  /// No description provided for @selectReportType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Report Type'**
+  String get selectReportType;
 }
 
 class _AppLocalizationsDelegate

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -13,6 +14,7 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 /// Unified daily In/Out screen — techs add earnings (IN) and expenses (OUT)
 /// in a single view with a running profit/loss summary on top.
@@ -28,6 +30,9 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   bool _isIn = true;
   bool _isSaving = false;
   String _expenseType = AppConstants.expenseTypeWork;
+  bool _approvalBaselineReady = false;
+  bool _isExportingTodayPdf = false;
+  final Set<String> _approvedKnownIds = <String>{};
 
   /// Batch entry rows — each has its own category, amount, remark
   final List<_EntryRow> _entryRows = [];
@@ -59,12 +64,23 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       if (isIn) {
         _expenseType = AppConstants.expenseTypeWork;
       }
-      final defaultCat = isIn
-          ? AppConstants.earningCategories.first
-          : _expenseCategories.first;
+      // Reset rows when switching mode so entered earning amounts/remarks
+      // never bleed into expense entries (or vice versa).
       for (final row in _entryRows) {
-        row.category = defaultCat;
+        row.amountController.dispose();
+        row.remarkController.dispose();
       }
+      _entryRows
+        ..clear()
+        ..add(
+          _EntryRow(
+            category: isIn
+                ? AppConstants.earningCategories.first
+                : _expenseCategories.first,
+            amountController: TextEditingController(),
+            remarkController: TextEditingController(),
+          ),
+        );
     });
   }
 
@@ -216,17 +232,386 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     }
   }
 
+  Future<void> _updateEarning(EarningModel earning) async {
+    try {
+      await ref.read(earningRepositoryProvider).updateEarning(earning);
+      if (mounted) {
+        SuccessSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.entryUpdated,
+        );
+      }
+    } on AppException catch (e) {
+      if (mounted) {
+        final locale = Localizations.localeOf(context).languageCode;
+        ErrorSnackbar.show(context, message: e.message(locale));
+      }
+    }
+  }
+
+  Future<void> _updateExpense(ExpenseModel expense) async {
+    try {
+      await ref.read(expenseRepositoryProvider).updateExpense(expense);
+      if (mounted) {
+        SuccessSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.entryUpdated,
+        );
+      }
+    } on AppException catch (e) {
+      if (mounted) {
+        final locale = Localizations.localeOf(context).languageCode;
+        ErrorSnackbar.show(context, message: e.message(locale));
+      }
+    }
+  }
+
+  Future<void> _exportTodayInOutPdf() async {
+    final l = AppLocalizations.of(context)!;
+    setState(() => _isExportingTodayPdf = true);
+    try {
+      final earnings = ref.read(todaysEarningsProvider).value ?? [];
+      final expenses = ref.read(todaysExpensesProvider).value ?? [];
+      final jobs = ref.read(todaysJobsProvider).value ?? [];
+
+      if (earnings.isEmpty && expenses.isEmpty && jobs.isEmpty) {
+        if (mounted) {
+          ErrorSnackbar.show(context, message: l.noEntriesToday);
+        }
+        return;
+      }
+
+      final locale = Localizations.localeOf(context).languageCode;
+      final user = ref.read(currentUserProvider).value;
+      final bytes = await PdfGenerator.generateTodayInOutReport(
+        earnings: earnings,
+        expenses: expenses,
+        todaysJobs: jobs,
+        locale: locale,
+        technicianName: user?.name,
+      );
+
+      final now = DateTime.now();
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        'today_in_out_${now.year}_${now.month}_${now.day}.pdf',
+      );
+    } catch (_) {
+      if (mounted) {
+        ErrorSnackbar.show(context, message: l.couldNotExport);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExportingTodayPdf = false);
+      }
+    }
+  }
+
+  Future<void> _showEditEntryDialog(_EntryItem item) async {
+    final l = AppLocalizations.of(context)!;
+    final amountCtrl = TextEditingController(
+      text: item.amount == item.amount.roundToDouble()
+          ? item.amount.toStringAsFixed(0)
+          : item.amount.toString(),
+    );
+    final noteCtrl = TextEditingController(text: item.note);
+    final formKey = GlobalKey<FormState>();
+
+    String selectedExpenseType = item.expenseType;
+    List<String> currentCategories = item.isIn
+        ? AppConstants.earningCategories
+        : (selectedExpenseType == AppConstants.expenseTypeHome
+              ? AppConstants.homeChoreCategories
+              : AppConstants.expenseCategories);
+    String selectedCategory = currentCategories.contains(item.category)
+        ? item.category
+        : currentCategories.first;
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) => AlertDialog(
+            title: Text(l.editEntry),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!item.isIn) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _DirectionButton(
+                              label: l.workExpenses,
+                              icon: Icons.work_outline_rounded,
+                              isSelected:
+                                  selectedExpenseType ==
+                                  AppConstants.expenseTypeWork,
+                              color: ArcticTheme.arcticWarning,
+                              onTap: () {
+                                setLocalState(() {
+                                  selectedExpenseType =
+                                      AppConstants.expenseTypeWork;
+                                  currentCategories =
+                                      AppConstants.expenseCategories;
+                                  if (!currentCategories.contains(
+                                    selectedCategory,
+                                  )) {
+                                    selectedCategory = currentCategories.first;
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _DirectionButton(
+                              label: l.homeExpenses,
+                              icon: Icons.home_work_outlined,
+                              isSelected:
+                                  selectedExpenseType ==
+                                  AppConstants.expenseTypeHome,
+                              color: ArcticTheme.arcticBlue,
+                              onTap: () {
+                                setLocalState(() {
+                                  selectedExpenseType =
+                                      AppConstants.expenseTypeHome;
+                                  currentCategories =
+                                      AppConstants.homeChoreCategories;
+                                  if (!currentCategories.contains(
+                                    selectedCategory,
+                                  )) {
+                                    selectedCategory = currentCategories.first;
+                                  }
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      menuMaxHeight: 280,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        hintText: l.category,
+                        prefixIcon: Icon(
+                          item.isIn
+                              ? Icons.trending_up_rounded
+                              : Icons.trending_down_rounded,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                      items: currentCategories
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c,
+                              child: Text(translateCategory(c, l)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setLocalState(() => selectedCategory = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: amountCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.next,
+                      enableInteractiveSelection: true,
+                      decoration: InputDecoration(
+                        hintText: l.amountSar,
+                        prefixIcon: Icon(
+                          Icons.payments_outlined,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return l.enterAmount;
+                        }
+                        final parsed = double.tryParse(value.trim());
+                        if (parsed == null || parsed <= 0) {
+                          return l.enterValidAmount;
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: noteCtrl,
+                      textInputAction: TextInputAction.done,
+                      enableInteractiveSelection: true,
+                      decoration: InputDecoration(
+                        hintText: l.remarksOptional,
+                        prefixIcon: Icon(
+                          Icons.note_outlined,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() != true) return;
+                  Navigator.of(ctx).pop(true);
+                },
+                child: Text(l.save),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (shouldSave != true) {
+      amountCtrl.dispose();
+      noteCtrl.dispose();
+      return;
+    }
+
+    final amount = double.parse(amountCtrl.text.trim());
+    final note = noteCtrl.text.trim();
+
+    if (item.isIn) {
+      await _updateEarning(
+        EarningModel(
+          id: item.id,
+          techId: item.techId,
+          techName: item.techName,
+          category: selectedCategory,
+          amount: amount,
+          note: note,
+          date: item.date,
+          createdAt: item.createdAt,
+        ),
+      );
+    } else {
+      await _updateExpense(
+        ExpenseModel(
+          id: item.id,
+          techId: item.techId,
+          techName: item.techName,
+          category: selectedCategory,
+          amount: amount,
+          note: note,
+          expenseType: selectedExpenseType,
+          date: item.date,
+          createdAt: item.createdAt,
+        ),
+      );
+    }
+
+    amountCtrl.dispose();
+    noteCtrl.dispose();
+  }
+
+  Future<void> _confirmDeleteEntry(_EntryItem item) async {
+    final l = AppLocalizations.of(context)!;
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.delete),
+        content: Text(l.deleteWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: ArcticTheme.arcticError,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+    if (item.isIn) {
+      await _deleteEarning(item.id);
+    } else {
+      await _deleteExpense(item.id);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context)!;
     final earningsAsync = ref.watch(todaysEarningsProvider);
     final expensesAsync = ref.watch(todaysExpensesProvider);
+    final todaysJobsAsync = ref.watch(todaysJobsProvider);
+
+    ref.listen<AsyncValue<List<JobModel>>>(technicianJobsProvider, (
+      prev,
+      next,
+    ) {
+      next.whenData((jobs) {
+        final approvedIds = jobs
+            .where((j) => j.isApproved)
+            .map((j) => j.id)
+            .toSet();
+
+        if (!_approvalBaselineReady) {
+          _approvedKnownIds
+            ..clear()
+            ..addAll(approvedIds);
+          _approvalBaselineReady = true;
+          return;
+        }
+
+        final newlyApproved = approvedIds.difference(_approvedKnownIds);
+        if (newlyApproved.isNotEmpty && mounted) {
+          _approvedKnownIds.addAll(newlyApproved);
+          SuccessSnackbar.show(
+            context,
+            message: AppLocalizations.of(context)!.jobApproved,
+          );
+        }
+      });
+    });
 
     return Scaffold(
       appBar: AppBar(
         title: FittedBox(fit: BoxFit.scaleDown, child: Text(l.todaysInOut)),
         actions: [
+          IconButton(
+            icon: _isExportingTodayPdf
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: l.exportPdf,
+            onPressed:
+                _isExportingTodayPdf ||
+                    earningsAsync.isLoading ||
+                    expensesAsync.isLoading ||
+                    todaysJobsAsync.isLoading
+                ? null
+                : _exportTodayInOutPdf,
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             tooltip: l.monthlySummary,
@@ -652,20 +1037,26 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             _EntryItem(
               id: e.id,
               isIn: true,
+              techId: e.techId,
+              techName: e.techName,
               category: e.category,
               amount: e.amount,
               note: e.note,
               date: e.date,
+              createdAt: e.createdAt,
             ),
           for (final e in expenses)
             _EntryItem(
               id: e.id,
               isIn: false,
+              techId: e.techId,
+              techName: e.techName,
               category: e.category,
               amount: e.amount,
               note: e.note,
               expenseType: e.expenseType,
               date: e.date,
+              createdAt: e.createdAt,
             ),
         ]..sort(
           (a, b) =>
@@ -764,14 +1155,38 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                     ],
                   ),
                 ),
+                IconButton(
+                  tooltip: l.editEntry,
+                  onPressed: () => _showEditEntryDialog(item),
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    color: ArcticTheme.arcticBlue,
+                    size: 20,
+                  ),
+                ),
+                IconButton(
+                  tooltip: l.delete,
+                  onPressed: () => _confirmDeleteEntry(item),
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: ArcticTheme.arcticError,
+                    size: 20,
+                  ),
+                ),
                 // Amount
-                Text(
-                  '${item.isIn ? "+" : "-"} SAR ${item.amount.toStringAsFixed(0)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: item.isIn
-                        ? ArcticTheme.arcticSuccess
-                        : ArcticTheme.arcticError,
-                    fontWeight: FontWeight.bold,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${item.isIn ? "+" : "-"} SAR ${item.amount.toStringAsFixed(0)}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: item.isIn
+                            ? ArcticTheme.arcticSuccess
+                            : ArcticTheme.arcticError,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -801,20 +1216,26 @@ class _EntryItem {
   const _EntryItem({
     required this.id,
     required this.isIn,
+    required this.techId,
+    required this.techName,
     required this.category,
     required this.amount,
     required this.note,
     this.expenseType = AppConstants.expenseTypeWork,
     this.date,
+    this.createdAt,
   });
 
   final String id;
   final bool isIn;
+  final String techId;
+  final String techName;
   final String category;
   final double amount;
   final String note;
   final String expenseType;
   final DateTime? date;
+  final DateTime? createdAt;
 }
 
 // ── IN / OUT toggle button ──
