@@ -1,5 +1,7 @@
 ---
-applies_to: "lib/features/*/data/**"
+description: Firebase and data-layer rules for AC Techs.
+paths:
+	- lib/features/*/data/**
 ---
 
 # Firebase & Data Layer Rules — AC Techs

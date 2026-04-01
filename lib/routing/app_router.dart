@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,11 +86,22 @@ CustomTransitionPage<T> _splashHandoffPage<T>({
 final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
+  Timer? refreshDebounce;
 
-  ref.listen(authStateProvider, (_, _) => notifier.value++);
-  ref.listen(currentUserProvider, (_, _) => notifier.value++);
+  void queueRefresh() {
+    if (refreshDebounce?.isActive ?? false) return;
+    refreshDebounce = Timer(const Duration(milliseconds: 40), () {
+      notifier.value++;
+    });
+  }
 
-  ref.onDispose(() => notifier.dispose());
+  ref.listen(authStateProvider, (_, _) => queueRefresh());
+  ref.listen(currentUserProvider, (_, _) => queueRefresh());
+
+  ref.onDispose(() {
+    refreshDebounce?.cancel();
+    notifier.dispose();
+  });
 
   return GoRouter(
     navigatorKey: _routerKey,
@@ -113,7 +126,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isLoginRoute ? null : '/login';
       }
 
-      if (currentUser.isLoading || currentUser.hasError || user == null) {
+      if (currentUser.isLoading) {
+        return isSplashRoute ? null : '/splash';
+      }
+
+      if (currentUser.hasError || user == null) {
         return isLoginRoute ? null : '/login';
       }
 
@@ -138,12 +155,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         pageBuilder: (context, state) {
-          final authState = ref.read(authStateProvider);
-          final currentUser = ref.read(currentUserProvider);
-
           return MaterialPage(
             child: SplashScreen(
               onComplete: () {
+                final authState = ref.read(authStateProvider);
+                final currentUser = ref.read(currentUserProvider);
                 // Determine where to navigate after splash
                 final isLoggedIn = authState.value != null;
                 if (isLoggedIn && currentUser.value != null) {

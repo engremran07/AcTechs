@@ -8,6 +8,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userExists() {
+      return isAuth() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
     // Helper: get the caller's user document
     function userData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
@@ -15,7 +20,30 @@ service cloud.firestore {
 
     // Helper: check if caller is admin
     function isAdmin() {
-      return isAuth() && userData().role == 'admin';
+      return userExists() && userData().role == 'admin';
+    }
+
+    function validJobCreatePayload() {
+      return request.resource.data.keys().hasAll([
+        'techId',
+        'techName',
+        'invoiceNumber',
+        'clientName',
+        'acUnits',
+        'status',
+        'expenses',
+        'date',
+        'submittedAt'
+      ]) &&
+      request.resource.data.invoiceNumber is string &&
+      request.resource.data.invoiceNumber.size() > 0 &&
+      request.resource.data.clientName is string &&
+      request.resource.data.clientName.size() > 0 &&
+      request.resource.data.acUnits is list &&
+      request.resource.data.acUnits.size() > 0 &&
+      request.resource.data.expenses is number &&
+      request.resource.data.expenses >= 0 &&
+      request.resource.data.expenses <= 1000000;
     }
 
     // Helper: check if caller is the document owner
@@ -54,11 +82,16 @@ service cloud.firestore {
 
       allow create: if (isAuth() &&
         request.resource.data.techId == request.auth.uid &&
-        request.resource.data.status == 'pending') ||
+        request.resource.data.status == 'pending' &&
+        validJobCreatePayload()) ||
         (isAdmin() &&
+          validJobCreatePayload() &&
           request.resource.data.status in ['pending', 'approved', 'rejected']);
 
       allow update: if (
+        isAdmin() &&
+        request.resource.data.status in ['pending', 'approved', 'rejected']
+      ) || (
         isAdmin() &&
         resource.data.status == 'pending' &&
         request.resource.data.techId == resource.data.techId &&
@@ -115,7 +148,11 @@ service cloud.firestore {
           'expenseType',
           'date',
           'createdAt'
-        ]);
+        ]) &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 1000000 &&
+        request.resource.data.expenseType in ['work', 'home'];
 
       allow update: if isAdmin() || (
         isAuth() &&
@@ -152,7 +189,10 @@ service cloud.firestore {
           'note',
           'date',
           'createdAt'
-        ]);
+        ]) &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 1000000;
 
       allow update: if isAdmin() || (
         isAuth() &&
@@ -174,7 +214,17 @@ service cloud.firestore {
     // ─── Companies ───
     match /companies/{companyId} {
       allow read: if isAuth();
-      allow create, update: if isAdmin();
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'name',
+          'invoicePrefix',
+          'isActive',
+          'createdAt'
+        ]) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.invoicePrefix is string &&
+        request.resource.data.isActive is bool;
       allow delete: if isAdmin();
     }
   }

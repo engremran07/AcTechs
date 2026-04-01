@@ -51,7 +51,7 @@ List<JobModel> _jobsByType(List<JobModel> jobs, JobAcTypeFilter filter) {
       .toList(growable: false);
 }
 
-final technicianJobsProvider = StreamProvider.autoDispose<List<JobModel>>((
+final technicianJobsProvider = StreamProvider<List<JobModel>>((
   ref,
 ) {
   final user = ref.watch(currentUserProvider).value;
@@ -59,13 +59,13 @@ final technicianJobsProvider = StreamProvider.autoDispose<List<JobModel>>((
   return ref.watch(jobRepositoryProvider).technicianJobs(user.uid);
 });
 
-final todaysJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+final todaysJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).todaysJobs(user.uid);
 });
 
-final pendingApprovalsProvider = StreamProvider.autoDispose<List<JobModel>>((
+final pendingApprovalsProvider = StreamProvider<List<JobModel>>((
   ref,
 ) {
   final user = ref.watch(currentUserProvider).value;
@@ -73,7 +73,7 @@ final pendingApprovalsProvider = StreamProvider.autoDispose<List<JobModel>>((
   return ref.watch(jobRepositoryProvider).pendingApprovals();
 });
 
-final allJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+final allJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).allJobs();

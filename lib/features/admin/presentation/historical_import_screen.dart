@@ -237,7 +237,11 @@ class _HistoricalImportScreenState
         );
 
         preparedBatches.add(
-          _PreparedImportBatch(fileName: source.name, source: source, parsed: parsed),
+          _PreparedImportBatch(
+            fileName: source.name,
+            source: source,
+            parsed: parsed,
+          ),
         );
 
         bytes = Uint8List(0);
@@ -295,7 +299,11 @@ class _HistoricalImportScreenState
         }
       }
     } catch (e) {
-      if (mounted) {
+      if (!mounted) return;
+      if (e is AppException) {
+        final locale = Localizations.localeOf(context).languageCode;
+        ErrorSnackbar.show(context, message: e.message(locale));
+      } else {
         ErrorSnackbar.show(context, message: l.importFailedNoRows);
       }
     } finally {

@@ -18,7 +18,7 @@ void main() async {
   // Configure Firestore: enable offline persistence with a size limit
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    cacheSizeBytes: 50 * 1024 * 1024,
   );
 
   // Edge-to-edge system UI

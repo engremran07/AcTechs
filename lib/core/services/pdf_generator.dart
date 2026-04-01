@@ -233,6 +233,60 @@ class PdfGenerator {
     );
   }
 
+  /// Non-financial KPI box for count-based summaries.
+  static pw.Widget _statsBox({
+    required String firstLabel,
+    required String secondLabel,
+    required String thirdLabel,
+    required String firstValue,
+    required String secondValue,
+    required String thirdValue,
+    required pw.Font? font,
+    required pw.TextDirection dir,
+  }) {
+    final subStyle = pw.TextStyle(
+      font: font,
+      fontSize: 8,
+      color: PdfColors.grey700,
+    );
+    final valStyle = pw.TextStyle(
+      font: font,
+      fontSize: 11,
+      fontWeight: pw.FontWeight.bold,
+      color: _kBrandBlue,
+    );
+
+    pw.Widget statCell(String label, String value) {
+      return pw.Expanded(
+        child: pw.Column(
+          children: [
+            pw.Text(label, style: subStyle, textDirection: dir),
+            pw.SizedBox(height: 2),
+            pw.Text(value, style: valStyle, textDirection: dir),
+          ],
+        ),
+      );
+    }
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+        color: PdfColors.grey50,
+      ),
+      child: pw.Row(
+        children: [
+          statCell(firstLabel, firstValue),
+          pw.Container(width: 0.5, height: 32, color: PdfColors.grey300),
+          statCell(secondLabel, secondValue),
+          pw.Container(width: 0.5, height: 32, color: PdfColors.grey300),
+          statCell(thirdLabel, thirdValue),
+        ],
+      ),
+    );
+  }
+
   // ── Status helpers ──────────────────────────────────────────────────────────
 
   static Map<String, String> _statusLabels(String locale) => {
@@ -308,26 +362,17 @@ class PdfGenerator {
         : null;
 
     final totalExpenses = jobs.fold<double>(0, (s, j) => s + j.expenses);
-    final totalEarningsLabel = locale == 'ur'
-        ? 'کل آمدنی'
-        : locale == 'ar'
-        ? 'إجمالي الإيرادات'
-        : 'Total Earnings';
     final totalExpensesLabel = locale == 'ur'
         ? 'کل اخراجات'
         : locale == 'ar'
         ? 'إجمالي المصروفات'
         : 'Total Expenses';
-    final netLabel = locale == 'ur'
-        ? 'خالص منافع'
-        : locale == 'ar'
-        ? 'صافي الربح'
-        : 'Net Profit';
     final totalJobsLabel = locale == 'ur'
         ? 'کل ملازمتیں: ${jobs.length}'
         : locale == 'ar'
         ? 'إجمالي الوظائف: ${jobs.length}'
         : 'Total Jobs: ${jobs.length}';
+    final totalUnits = jobs.fold<int>(0, (sum, job) => sum + job.totalUnits);
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -353,12 +398,21 @@ class PdfGenerator {
           pw.SizedBox(height: 10),
 
           // KPI summary box
-          _kpiBox(
-            earningsLabel: totalEarningsLabel,
-            expensesLabel: totalExpensesLabel,
-            netLabel: netLabel,
-            totalEarnings: 0,
-            totalExpenses: totalExpenses,
+          _statsBox(
+            firstLabel: locale == 'ur'
+                ? 'کل جابز'
+                : locale == 'ar'
+                ? 'إجمالي الوظائف'
+                : 'Total Jobs',
+            secondLabel: locale == 'ur'
+                ? 'کل یونٹس'
+                : locale == 'ar'
+                ? 'إجمالي الوحدات'
+                : 'Total Units',
+            thirdLabel: totalExpensesLabel,
+            firstValue: '${jobs.length}',
+            secondValue: '$totalUnits',
+            thirdValue: AppFormatters.currency(totalExpenses),
             font: font,
             dir: dir,
           ),
@@ -1162,24 +1216,25 @@ class PdfGenerator {
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [
-          _kpiBox(
-            earningsLabel: locale == 'ur'
+          _statsBox(
+            firstLabel: locale == 'ur'
                 ? 'کل انوائسز'
                 : locale == 'ar'
                 ? 'إجمالي الفواتير'
                 : 'Total Invoices',
-            expensesLabel: locale == 'ur'
+            secondLabel: locale == 'ur'
                 ? 'کل یونٹس'
                 : locale == 'ar'
                 ? 'إجمالي الوحدات'
                 : 'Total Units',
-            netLabel: locale == 'ur'
+            thirdLabel: locale == 'ur'
                 ? 'کمپنیاں'
                 : locale == 'ar'
                 ? 'الشركات'
                 : 'Companies',
-            totalEarnings: totalInvoices.toDouble(),
-            totalExpenses: totalUnits.toDouble(),
+            firstValue: '$totalInvoices',
+            secondValue: '$totalUnits',
+            thirdValue: '${sortedCompanies.length}',
             font: font,
             dir: dir,
           ),

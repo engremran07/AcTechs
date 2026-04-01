@@ -36,20 +36,9 @@ class AuthRepository {
       final authEmail = credential.user!.email ?? '';
       final authDisplayName = credential.user!.displayName;
 
-      // Auto-provision a basic technician profile when account exists in Auth
-      // but profile doc is missing (e.g., created from Firebase Console).
       if (!userDoc.exists) {
-        await userDocRef.set({
-          'name': (authDisplayName != null && authDisplayName.trim().isNotEmpty)
-              ? authDisplayName.trim()
-              : 'Technician',
-          'email': authEmail,
-          'role': AppConstants.roleTechnician,
-          'isActive': true,
-          'language': AppConstants.langEnglish,
-          'createdAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        userDoc = await userDocRef.get();
+        await auth.signOut();
+        throw AuthException.accountNotProvisioned();
       } else {
         // Sync Firebase Auth changes to Firestore (e.g., email or displayName
         // changed in the Firebase Console will now reflect in the app).

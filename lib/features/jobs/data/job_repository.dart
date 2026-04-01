@@ -38,7 +38,19 @@ class JobRepository {
 
   Future<void> submitJob(JobModel job) async {
     try {
+      final normalizedInvoice = _normalizeInvoice(job.invoiceNumber);
+      final duplicateSnap = await _jobsRef
+          .where('techId', isEqualTo: job.techId)
+          .where('companyId', isEqualTo: job.companyId)
+          .where('invoiceNumber', isEqualTo: normalizedInvoice)
+          .limit(1)
+          .get();
+      if (duplicateSnap.docs.isNotEmpty) {
+        throw JobException.duplicateInvoice();
+      }
+
       final data = job.toFirestore();
+      data['invoiceNumber'] = normalizedInvoice;
       data['date'] ??= FieldValue.serverTimestamp();
       data['submittedAt'] ??= FieldValue.serverTimestamp();
       await _jobsRef.add(data);
@@ -59,6 +71,8 @@ class JobRepository {
         throw NetworkException.syncFailed();
       }
       throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
     } catch (e) {
       debugPrint('submitJob unknown error: $e');
       throw JobException.saveFailed();

@@ -1,5 +1,7 @@
 ---
-applies_to: "lib/features/*/providers/**"
+description: State management rules for provider-layer files.
+paths:
+	- lib/features/*/providers/**
 ---
 
 # State Management Rules — AC Techs (Riverpod 3.x)

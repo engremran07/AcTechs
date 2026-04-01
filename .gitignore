@@ -33,6 +33,8 @@ migrate_working_dir/
 /build/
 /coverage/
 .claude/
+.firebase/
+analyze_output.txt
 android/app/google-services.json
 lib/firebase_options.dart
 scripts/node_modules/

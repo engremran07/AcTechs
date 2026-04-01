@@ -173,6 +173,7 @@ class BulkActionBar extends StatelessWidget {
             Text(
               AppLocalizations.of(context)!.selectedCount(selectedCount),
               style: Theme.of(context).textTheme.titleSmall,
+              overflow: TextOverflow.ellipsis,
             ),
             const Spacer(),
             if (isProcessing)
@@ -182,16 +183,27 @@ class BulkActionBar extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              ...actions.map(
-                (a) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: TextButton.icon(
-                    onPressed: a.onPressed,
-                    icon: Icon(a.icon, size: 18),
-                    label: Text(a.label),
-                    style: TextButton.styleFrom(
-                      foregroundColor: a.color ?? ArcticTheme.arcticBlue,
-                    ),
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  reverse: true,
+                  child: Row(
+                    children: actions
+                        .map(
+                          (a) => Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: TextButton.icon(
+                              onPressed: a.onPressed,
+                              icon: Icon(a.icon, size: 18),
+                              label: Text(a.label),
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    a.color ?? ArcticTheme.arcticBlue,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
               ),

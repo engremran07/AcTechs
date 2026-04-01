@@ -1,7 +1,6 @@
 ---
 name: riverpod-patterns
 description: Riverpod 3.x provider patterns and best practices for AC Techs. Activate when creating or modifying providers, working with AsyncValue, or debugging state management issues.
-allowed-tools: Read, Grep
 ---
 
 # Riverpod Patterns — AC Techs (Riverpod 3.x)

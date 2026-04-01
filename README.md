@@ -14,11 +14,13 @@
 ## 🧩 Core Features
 
 ### Technician
+
 - Submit jobs with invoice normalization and multi-unit AC support
 - Track work and home expenses with daily IN/OUT summaries
 - Open job details, call/WhatsApp from cards, and navigate filtered history views
 
 ### Admin
+
 - Approve/reject pending jobs with notes
 - Manage technicians and companies
 - Run period and technician-scoped analytics

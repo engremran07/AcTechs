@@ -1,5 +1,7 @@
 ---
-applies_to: "lib/features/*/presentation/**"
+description: UI conventions for presentation-layer files.
+paths:
+	- lib/features/*/presentation/**
 ---
 
 # UI Conventions — AC Techs

@@ -1,9 +1,11 @@
 # AC Techs — AC Technician Management System
 
 ## Project Overview
+
 Multi-role mobile + web app for AC installation company in Saudi Arabia. Technicians submit daily job records (AC installations, expenses). Admins approve/reject, view analytics, manage team, export to Excel. Tri-lingual: English, Urdu (RTL), Arabic (RTL).
 
 ## Stack
+
 - **Framework**: Flutter 3.x (Android APK + Web)
 - **Backend**: Firebase (Spark/free tier only) — Auth + Firestore
 - **State**: Riverpod 3.x (AsyncNotifier, StateNotifier, StreamProvider)
@@ -19,6 +21,7 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - **Firebase Project**: actechs-d415e
 
 ## Commands
+
 - `flutter run` → run on connected device
 - `flutter run -d chrome` → run on web
 - `flutter build apk --release` → release APK
@@ -29,6 +32,7 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - `flutter test` → run tests
 
 ## Architecture
+
 - **Clean Architecture**: features/ with data/domain/presentation/providers layers
 - **Feature folders**: auth, technician, admin, settings
 - **Core**: shared theme, widgets, errors, extensions, utils, constants
@@ -38,6 +42,7 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - **Offline**: Firestore local persistence enabled, connectivity_plus for detection
 
 ## Code Style
+
 - Prefer const constructors everywhere possible
 - Use trailing commas for multi-line parameter lists
 - Riverpod providers: use code generation (@riverpod annotation) where possible
@@ -49,6 +54,7 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - Enums for roles: UserRole.technician, UserRole.admin
 
 ## Workflow
+
 - Always run `flutter analyze` after making code changes
 - Run `dart run build_runner build --delete-conflicting-outputs` after editing freezed models
 - Run `flutter gen-l10n` after editing ARB files
@@ -57,9 +63,11 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - Deploy Firestore rules/indexes after security changes: `firebase deploy --only firestore --project actechs-d415e`
 
 ## Error Philosophy
+
 Every user-facing message is custom-written, contextual, and tri-lingual. No raw exception strings, no "Error: PERMISSION_DENIED", no default SnackBars. Custom error cards with icon, title, description, action button.
 
 ## Recent Product Behaviors To Preserve
+
 - Invoice display is normalized (no forced `INV-` prefix in UI)
 - Historical import supports sheet-aware period naming and metadata notes
 - Shared AC-type filtered job list route is used by both technician and admin dashboards

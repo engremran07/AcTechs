@@ -457,12 +457,32 @@ class HistoricalJobsImportService {
   }
 
   static String _normalizeHeaderKey(String rawKey) {
-    return switch (rawKey) {
-      'delery' => 'delivery',
-      'c' => 'description',
-      'uninstalation' => 'uninstallation',
-      'uninstalation split/window' => 'uninstallation',
-      _ => rawKey,
+    final normalized = rawKey
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[_\-.]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .replaceAll(RegExp(r'[^a-z0-9 /]'), '')
+        .trim();
+
+    return switch (normalized) {
+      'inv' || 'invoice no' || 'invoice #' || 'invoice number' || 'invoice'
+          => 'invoice number',
+      'tech' || 'tech name' || 'technician' || 'technician name'
+          => 'technician name',
+      'technician email' || 'tech email' || 'email' => 'technician email',
+      'technician id' || 'tech id' || 'techid' || 'uid' => 'technician id',
+      'client' || 'customer' || 'client name' => 'client name',
+      'contact no' || 'phone' || 'mobile' || 'client contact' => 'contact',
+      'free standing' || 'freestanding' || 'standing' || 'dolab'
+          => 'freestanding',
+      'uninstall' ||
+      'uninstallation total' ||
+      'uninstalation' ||
+      'uninstalation split/window' => 'uninstallation total',
+      'delery' || 'delivery charges' || 'delivery charge' => 'delivery',
+      'c' || 'remarks' || 'description' || 'note' => 'description',
+      _ => normalized,
     };
   }
 
@@ -472,7 +492,7 @@ class HistoricalJobsImportService {
     List<String> possibleKeys,
   ) {
     for (final k in possibleKeys) {
-      final idx = headerMap[k];
+      final idx = headerMap[_normalizeHeaderKey(k)];
       if (idx == null || idx >= row.length) continue;
       final v = (row[idx]?.value?.toString() ?? '').trim();
       if (v.isNotEmpty) return v;

@@ -1,7 +1,6 @@
 ---
 name: firestore-patterns
 description: Firestore query patterns, security rules, and offline sync strategies for AC Techs. Activate when working with Firestore collections, queries, security rules, or offline behavior.
-allowed-tools: Read, Grep
 ---
 
 # Firestore Patterns — AC Techs

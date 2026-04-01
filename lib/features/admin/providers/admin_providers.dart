@@ -4,7 +4,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
-final allTechniciansProvider = StreamProvider.autoDispose<List<UserModel>>((
+final allTechniciansProvider = StreamProvider<List<UserModel>>((
   ref,
 ) {
   final user = ref.watch(currentUserProvider).value;
@@ -12,7 +12,7 @@ final allTechniciansProvider = StreamProvider.autoDispose<List<UserModel>>((
   return ref.watch(userRepositoryProvider).allTechnicians();
 });
 
-final allUsersProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
+final allUsersProvider = StreamProvider<List<UserModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(userRepositoryProvider).allUsers();
