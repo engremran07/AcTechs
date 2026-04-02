@@ -100,43 +100,7 @@ jobs:
             echo "FIREBASE_OPTIONS_DART secret not set; using repository firebase_options.dart"
           else
             echo "FIREBASE_OPTIONS_DART secret not set and repository file missing; generating CI fallback"
-            cat > lib/firebase_options.dart << 'DART_EOF'
-            // ignore_for_file: type=lint
-            import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-            import 'package:flutter/foundation.dart'
-                show defaultTargetPlatform, kIsWeb, TargetPlatform;
-
-            class DefaultFirebaseOptions {
-              static FirebaseOptions get currentPlatform {
-                if (kIsWeb) {
-                  return web;
-                }
-                switch (defaultTargetPlatform) {
-                  case TargetPlatform.android:
-                    return android;
-                  default:
-                    throw UnsupportedError('Platform not configured in CI fallback');
-                }
-              }
-
-              static const FirebaseOptions android = FirebaseOptions(
-                apiKey: 'CI_FALLBACK_API_KEY',
-                appId: '1:000000000000:android:ci-fallback',
-                messagingSenderId: '000000000000',
-                projectId: 'ci-fallback',
-                storageBucket: 'ci-fallback.appspot.com',
-              );
-
-              static const FirebaseOptions web = FirebaseOptions(
-                apiKey: 'CI_FALLBACK_WEB_API_KEY',
-                appId: '1:000000000000:web:ci-fallback',
-                messagingSenderId: '000000000000',
-                projectId: 'ci-fallback',
-                authDomain: 'ci-fallback.firebaseapp.com',
-                storageBucket: 'ci-fallback.appspot.com',
-              );
-            }
-            DART_EOF
+            echo "Ly8gaWdub3JlX2Zvcl9maWxlOiB0eXBlPWxpbnQKaW1wb3J0ICdwYWNrYWdlOmZpcmViYXNlX2NvcmUvZmlyZWJhc2VfY29yZS5kYXJ0JyBzaG93IEZpcmViYXNlT3B0aW9uczsKaW1wb3J0ICdwYWNrYWdlOmZsdXR0ZXIvZm91bmRhdGlvbi5kYXJ0JwogICAgc2hvdyBkZWZhdWx0VGFyZ2V0UGxhdGZvcm0sIGtJc1dlYiwgVGFyZ2V0UGxhdGZvcm07CgpjbGFzcyBEZWZhdWx0RmlyZWJhc2VPcHRpb25zIHsKICBzdGF0aWMgRmlyZWJhc2VPcHRpb25zIGdldCBjdXJyZW50UGxhdGZvcm0gewogICAgaWYgKGtJc1dlYikgewogICAgICByZXR1cm4gd2ViOwogICAgfQogICAgc3dpdGNoIChkZWZhdWx0VGFyZ2V0UGxhdGZvcm0pIHsKICAgICAgY2FzZSBUYXJnZXRQbGF0Zm9ybS5hbmRyb2lkOgogICAgICAgIHJldHVybiBhbmRyb2lkOwogICAgICBkZWZhdWx0OgogICAgICAgIHRocm93IFVuc3VwcG9ydGVkRXJyb3IoJ1BsYXRmb3JtIG5vdCBjb25maWd1cmVkIGluIENJIGZhbGxiYWNrJyk7CiAgICB9CiAgfQoKICBzdGF0aWMgY29uc3QgRmlyZWJhc2VPcHRpb25zIGFuZHJvaWQgPSBGaXJlYmFzZU9wdGlvbnMoCiAgICBhcGlLZXk6ICdDSV9GQUxMQkFDS19BUElfS0VZJywKICAgIGFwcElkOiAnMTowMDAwMDAwMDAwMDA6YW5kcm9pZDpjaS1mYWxsYmFjaycsCiAgICBtZXNzYWdpbmdTZW5kZXJJZDogJzAwMDAwMDAwMDAwMCcsCiAgICBwcm9qZWN0SWQ6ICdjaS1mYWxsYmFjaycsCiAgICBzdG9yYWdlQnVja2V0OiAnY2ktZmFsbGJhY2suYXBwc3BvdC5jb20nLAogICk7CgogIHN0YXRpYyBjb25zdCBGaXJlYmFzZU9wdGlvbnMgd2ViID0gRmlyZWJhc2VPcHRpb25zKAogICAgYXBpS2V5OiAnQ0lfRkFMTEJBQ0tfV0VCX0FQSV9LRVknLAogICAgYXBwSWQ6ICcxOjAwMDAwMDAwMDAwMDp3ZWI6Y2ktZmFsbGJhY2snLAogICAgbWVzc2FnaW5nU2VuZGVySWQ6ICcwMDAwMDAwMDAwMDAnLAogICAgcHJvamVjdElkOiAnY2ktZmFsbGJhY2snLAogICAgYXV0aERvbWFpbjogJ2NpLWZhbGxiYWNrLmZpcmViYXNlYXBwLmNvbScsCiAgICBzdG9yYWdlQnVja2V0OiAnY2ktZmFsbGJhY2suYXBwc3BvdC5jb20nLAogICk7Cn0K" | base64 --decode > lib/firebase_options.dart
           fi
 
           if ! grep -q "class DefaultFirebaseOptions" lib/firebase_options.dart; then
