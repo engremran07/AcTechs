@@ -43,7 +43,7 @@ dependencies:
   file_picker: ^10.3.2
   path_provider: ^2.1.5
   url_launcher: ^6.3.1
-  font_awesome_flutter: ^10.8.0
+  font_awesome_flutter: ^11.0.0
 
   # PDF Generation (RTL support)
   pdf: ^3.11.2
