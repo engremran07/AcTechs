@@ -83,7 +83,7 @@ class JobDetailsScreen extends ConsumerWidget {
                                     job.clientContact,
                                   );
                                 },
-                                icon: const Icon(
+                                icon: const FaIcon(
                                   FontAwesomeIcons.whatsapp,
                                   color: ArcticTheme.arcticSuccess,
                                   size: 16,

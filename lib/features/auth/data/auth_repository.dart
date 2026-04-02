@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -76,6 +78,18 @@ class AuthRepository {
       return user;
     } on FirebaseAuthException catch (e) {
       throw AuthException.fromFirebase(e.code);
+    } on FirebaseException catch (e) {
+      // If user profile document cannot be read (for example permission denied
+      // or doc path mismatch), force sign-out to avoid auth/profile drift.
+      await auth.signOut();
+      debugPrint('signIn Firestore error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw AuthException.accountNotProvisioned();
+      }
+      if (e.code == 'unavailable') {
+        throw NetworkException.offline();
+      }
+      throw AuthException.wrongCredentials();
     } on AuthException {
       rethrow;
     } catch (_) {
@@ -198,10 +212,29 @@ class AuthRepository {
   }
 
   Stream<UserModel?> userStream(String uid) {
-    return firestore
+    final controller = StreamController<UserModel?>();
+    final sub = firestore
         .collection(AppConstants.usersCollection)
         .doc(uid)
         .snapshots()
-        .map((doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
+        .listen(
+          (doc) {
+            controller.add(doc.exists ? UserModel.fromFirestore(doc) : null);
+          },
+          onError: (error, stackTrace) {
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              debugPrint('userStream permission denied for uid=$uid');
+              controller.add(null);
+              return;
+            }
+            controller.addError(error, stackTrace);
+          },
+        );
+
+    controller.onCancel = () async {
+      await sub.cancel();
+    };
+
+    return controller.stream;
   }
 }

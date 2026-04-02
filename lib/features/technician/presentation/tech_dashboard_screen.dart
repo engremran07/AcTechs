@@ -426,7 +426,7 @@ class _JobCard extends StatelessWidget {
                       onPressed: () async {
                         await WhatsAppLauncher.openChat(job.clientContact);
                       },
-                      icon: const Icon(
+                      icon: const FaIcon(
                         FontAwesomeIcons.whatsapp,
                         size: 16,
                         color: ArcticTheme.arcticSuccess,

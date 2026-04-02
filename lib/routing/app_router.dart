@@ -88,20 +88,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
 
+      final isAuthLoading = authState.isLoading;
       final isLoggedIn = authState.value != null;
       final user = currentUser.value;
 
-      // Allow splash route to pass through (don't redirect from it)
-      if (isSplashRoute) {
-        return null;
+      // Keep users on splash until auth + profile streams settle.
+      if (isAuthLoading || (isLoggedIn && currentUser.isLoading)) {
+        return isSplashRoute ? null : '/splash';
       }
 
       if (!isLoggedIn) {
         return isLoginRoute ? null : '/login';
-      }
-
-      if (currentUser.isLoading) {
-        return isSplashRoute ? null : '/splash';
       }
 
       if (currentUser.hasError || user == null) {
@@ -112,7 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      if (isLoginRoute) {
+      if (isSplashRoute || isLoginRoute) {
         return user.isAdmin ? '/admin' : '/tech';
       }
 
@@ -130,25 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         pageBuilder: (context, state) {
           return MaterialPage(
-            child: SplashScreen(
-              onComplete: () {
-                final authState = ref.read(authStateProvider);
-                final currentUser = ref.read(currentUserProvider);
-                // Determine where to navigate after splash
-                final isLoggedIn = authState.value != null;
-                if (isLoggedIn && currentUser.value != null) {
-                  // User is authenticated, go to dashboard
-                  if (currentUser.value!.isAdmin) {
-                    context.go('/admin');
-                  } else {
-                    context.go('/tech');
-                  }
-                } else {
-                  // User not authenticated, go to login
-                  context.go('/login');
-                }
-              },
-            ),
+            child: SplashScreen(onComplete: () {}),
           );
         },
       ),
