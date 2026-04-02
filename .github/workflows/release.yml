@@ -64,7 +64,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Set up Flutter (3.41.6)
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
@@ -98,17 +98,24 @@ jobs:
 
       # ── Decode release keystore (optional but recommended) ─────────────────
       - name: Decode release keystore
-        if: env.KEYSTORE_FILE != ''
+        continue-on-error: true
         env:
           KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
         run: |
+          if [ -z "$KEYSTORE_FILE" ]; then
+            echo "⚠️  KEYSTORE_FILE secret not set — release APK will use debug signing."
+            exit 0
+          fi
           echo "$KEYSTORE_FILE" | base64 --decode > android/app/release.keystore
+          chmod 600 android/app/release.keystore
 
       - name: Write key.properties
-        if: env.KEYSTORE_FILE != ''
-        env:
-          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+        continue-on-error: true
         run: |
+          if [ ! -f android/app/release.keystore ]; then
+            echo "⚠️  Keystore not available — skipping key.properties generation."
+            exit 0
+          fi
           cat > android/key.properties <<EOF
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
@@ -152,16 +159,25 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo '')
+          # Find the previous tag (if any)
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
           if [ -z "$PREV_TAG" ]; then
-            LOG=$(git log --pretty=format:"- %s" | head -20)
+            # No prior tags: list last 20 commits
+            LOG=$(git log --oneline --max-count=20 --pretty=format:"- %h: %s")
           else
-            LOG=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s")
+            # List commits since previous tag
+            LOG=$(git log "$PREV_TAG"..HEAD --oneline --pretty=format:"- %h: %s")
           fi
-          # Write multi-line output safely
-          echo "log<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$LOG"     >> "$GITHUB_OUTPUT"
-          echo "EOF"      >> "$GITHUB_OUTPUT"
+          # Fallback if no commits found
+          if [ -z "$LOG" ]; then
+            LOG="- Initial release or no commits found"
+          fi
+          # Write multi-line output safely to GITHUB_OUTPUT
+          {
+            echo "log<<CHANGELOG_EOF"
+            echo "$LOG"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       # ── Create GitHub Release (tag pushes OR manual with create_release=true)
       - name: Create GitHub Release
