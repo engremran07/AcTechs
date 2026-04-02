@@ -40,10 +40,7 @@ void main() {
     });
 
     test('parses createdAt from ISO string', () {
-      final json = {
-        'name': 'Dated Co',
-        'createdAt': '2023-01-01T00:00:00.000',
-      };
+      final json = {'name': 'Dated Co', 'createdAt': '2023-01-01T00:00:00.000'};
       final model = CompanyModel.fromJson(json);
       expect(model.createdAt!.year, 2023);
       expect(model.createdAt!.month, 1);

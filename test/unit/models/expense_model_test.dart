@@ -4,11 +4,11 @@ import 'package:ac_techs/core/models/expense_model.dart';
 void main() {
   group('ExpenseModel.fromJson()', () {
     Map<String, dynamic> baseExpense() => {
-          'techId': 'tech-01',
-          'techName': 'Hassan',
-          'category': 'Food',
-          'amount': 120.0,
-        };
+      'techId': 'tech-01',
+      'techName': 'Hassan',
+      'category': 'Food',
+      'amount': 120.0,
+    };
 
     test('parses required fields correctly', () {
       final model = ExpenseModel.fromJson(baseExpense());
@@ -46,10 +46,7 @@ void main() {
     });
 
     test('parses date from ISO string', () {
-      final json = {
-        ...baseExpense(),
-        'date': '2024-08-01T00:00:00.000',
-      };
+      final json = {...baseExpense(), 'date': '2024-08-01T00:00:00.000'};
       final model = ExpenseModel.fromJson(json);
       expect(model.date!.year, 2024);
       expect(model.date!.month, 8);

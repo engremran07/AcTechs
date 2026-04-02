@@ -465,8 +465,8 @@ class _HistoricalImportScreenState
                     DropdownButtonFormField<String>(
                       initialValue: _selectedTechnician?.uid,
                       isExpanded: true,
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.engineering_rounded),
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.engineering_rounded),
                       ),
                       items: _technicians.map((technician) {
                         return DropdownMenuItem<String>(

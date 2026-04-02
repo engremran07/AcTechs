@@ -315,9 +315,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                                   onSelected: (action) async {
                                     if (action == 'copy_invoice') {
                                       Clipboard.setData(
-                                        ClipboardData(
-                                          text: job.invoiceNumber,
-                                        ),
+                                        ClipboardData(text: job.invoiceNumber),
                                       );
                                       SuccessSnackbar.show(
                                         context,
@@ -385,113 +383,112 @@ class _HistoryJobCard extends StatelessWidget {
         onTap: onTap,
         child: ArcticCard(
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      job.clientName,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.clientName,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  StatusBadge(status: job.status.name),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _InfoChip(
+                    icon: Icons.ac_unit_rounded,
+                    label: AppFormatters.units(job.totalUnits),
+                  ),
+                  const SizedBox(width: 12),
+                  if (job.expenses > 0)
+                    Flexible(
+                      child: _InfoChip(
+                        icon: Icons.payments_outlined,
+                        label: AppFormatters.currency(job.expenses),
+                        color: ArcticTheme.arcticWarning,
+                      ),
+                    ),
+                ],
+              ),
+              if (job.clientContact.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.phone_outlined,
+                      size: 15,
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        job.clientContact,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        await WhatsAppLauncher.openChat(job.clientContact);
+                      },
+                      icon: const FaIcon(
+                        FontAwesomeIcons.whatsapp,
+                        color: ArcticTheme.arcticSuccess,
+                        size: 16,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minHeight: 28,
+                        minWidth: 28,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              StatusBadge(status: job.status.name),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _InfoChip(
-                icon: Icons.ac_unit_rounded,
-                label: AppFormatters.units(job.totalUnits),
-              ),
-              const SizedBox(width: 12),
-              if (job.expenses > 0)
-                Flexible(
-                  child: _InfoChip(
-                    icon: Icons.payments_outlined,
-                    label: AppFormatters.currency(job.expenses),
-                    color: ArcticTheme.arcticWarning,
+              ],
+              if (job.isRejected && job.adminNote.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ArcticTheme.arcticError.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-            ],
-          ),
-          if (job.clientContact.trim().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(
-                  Icons.phone_outlined,
-                  size: 15,
-                  color: ArcticTheme.arcticTextSecondary,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    job.clientContact,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () async {
-                    await WhatsAppLauncher.openChat(job.clientContact);
-                  },
-                  icon: const FaIcon(
-                    FontAwesomeIcons.whatsapp,
-                    color: ArcticTheme.arcticSuccess,
-                    size: 16,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minHeight: 28,
-                    minWidth: 28,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: ArcticTheme.arcticError,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          job.adminNote,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: ArcticTheme.arcticError),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-          ],
-          if (job.isRejected && job.adminNote.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: ArcticTheme.arcticError.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: ArcticTheme.arcticError,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      job.adminNote,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ArcticTheme.arcticError,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+            ],
           ),
         ),
       ),

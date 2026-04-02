@@ -7,11 +7,26 @@ void main() {
   final l = AppLocalizationsEn();
 
   group('translateCategory() — AC unit types', () {
-    test('Split AC', () => expect(translateCategory('Split AC', l), isNotEmpty));
-    test('Window AC', () => expect(translateCategory('Window AC', l), isNotEmpty));
-    test('Freestanding AC', () => expect(translateCategory('Freestanding AC', l), isNotEmpty));
-    test('Cassette AC', () => expect(translateCategory('Cassette AC', l), isNotEmpty));
-    test('Uninstallation (Old AC)', () => expect(translateCategory('Uninstallation (Old AC)', l), isNotEmpty));
+    test(
+      'Split AC',
+      () => expect(translateCategory('Split AC', l), isNotEmpty),
+    );
+    test(
+      'Window AC',
+      () => expect(translateCategory('Window AC', l), isNotEmpty),
+    );
+    test(
+      'Freestanding AC',
+      () => expect(translateCategory('Freestanding AC', l), isNotEmpty),
+    );
+    test(
+      'Cassette AC',
+      () => expect(translateCategory('Cassette AC', l), isNotEmpty),
+    );
+    test(
+      'Uninstallation (Old AC)',
+      () => expect(translateCategory('Uninstallation (Old AC)', l), isNotEmpty),
+    );
   });
 
   group('translateCategory() — expense categories', () {

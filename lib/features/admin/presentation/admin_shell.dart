@@ -13,7 +13,9 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/admin/approvals')) return 1;
     if (location.startsWith('/admin/analytics')) return 2;
     if (location.startsWith('/admin/team')) return 3;
-    if (location.startsWith('/admin/companies')) return -1; // accessed from dashboard card
+    if (location.startsWith('/admin/companies')) {
+      return -1; // accessed from dashboard card
+    }
     if (location.startsWith('/admin/settings')) return -1; // Not in bottom nav
     if (location.startsWith('/admin/flush')) return -1; // Not in bottom nav
     return 0;

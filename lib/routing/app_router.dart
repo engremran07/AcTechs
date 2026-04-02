@@ -126,9 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         pageBuilder: (context, state) {
-          return MaterialPage(
-            child: SplashScreen(onComplete: () {}),
-          );
+          return MaterialPage(child: SplashScreen(onComplete: () {}));
         },
       ),
       GoRoute(

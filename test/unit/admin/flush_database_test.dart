@@ -14,7 +14,10 @@ void main() {
 
     test('English message mentions flush or connection', () {
       final msg = AdminException.flushFailed().message('en');
-      expect(msg.toLowerCase(), anyOf(contains('flush'), contains('connection')));
+      expect(
+        msg.toLowerCase(),
+        anyOf(contains('flush'), contains('connection')),
+      );
     });
 
     test('Urdu message is non-empty', () {

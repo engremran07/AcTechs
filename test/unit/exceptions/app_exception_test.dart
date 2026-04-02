@@ -51,31 +51,19 @@ void main() {
   // ────────────────────────────────────────────────────────────
   group('AuthException', () {
     test('wrongCredentials has correct code', () {
-      expect(
-        AuthException.wrongCredentials().code,
-        'auth_wrong_credentials',
-      );
+      expect(AuthException.wrongCredentials().code, 'auth_wrong_credentials');
     });
 
     test('accountDisabled has correct code', () {
-      expect(
-        AuthException.accountDisabled().code,
-        'auth_account_disabled',
-      );
+      expect(AuthException.accountDisabled().code, 'auth_account_disabled');
     });
 
     test('tooManyAttempts has correct code', () {
-      expect(
-        AuthException.tooManyAttempts().code,
-        'auth_too_many_attempts',
-      );
+      expect(AuthException.tooManyAttempts().code, 'auth_too_many_attempts');
     });
 
     test('sessionExpired has correct code', () {
-      expect(
-        AuthException.sessionExpired().code,
-        'auth_session_expired',
-      );
+      expect(AuthException.sessionExpired().code, 'auth_session_expired');
     });
 
     group('fromFirebase()', () {
@@ -111,10 +99,7 @@ void main() {
 
       test('auth_unknown has English message', () {
         final ex = AuthException.fromFirebase('unknown');
-        expect(
-          ex.message('en'),
-          'Something went wrong. Please try again.',
-        );
+        expect(ex.message('en'), 'Something went wrong. Please try again.');
       });
     });
 
@@ -142,10 +127,7 @@ void main() {
     });
 
     test('offline English message mentions offline', () {
-      expect(
-        NetworkException.offline().message('en'),
-        contains('offline'),
-      );
+      expect(NetworkException.offline().message('en'), contains('offline'));
     });
 
     test('offline Urdu message is non-empty', () {
@@ -210,10 +192,7 @@ void main() {
     });
 
     test('rejectNoReason English message mentions reason', () {
-      expect(
-        AdminException.rejectNoReason().message('en'),
-        contains('reason'),
-      );
+      expect(AdminException.rejectNoReason().message('en'), contains('reason'));
     });
 
     test('noPermission Urdu message is non-empty', () {
@@ -233,10 +212,7 @@ void main() {
     });
 
     test('flushFailed English message mentions flush', () {
-      expect(
-        AdminException.flushFailed().message('en'),
-        contains('flush'),
-      );
+      expect(AdminException.flushFailed().message('en'), contains('flush'));
     });
 
     test('flushFailed Urdu message is non-empty', () {

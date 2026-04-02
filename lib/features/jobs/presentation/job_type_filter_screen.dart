@@ -18,7 +18,8 @@ class JobTypeFilterScreen extends ConsumerStatefulWidget {
   final bool isAdminScope;
 
   @override
-  ConsumerState<JobTypeFilterScreen> createState() => _JobTypeFilterScreenState();
+  ConsumerState<JobTypeFilterScreen> createState() =>
+      _JobTypeFilterScreenState();
 }
 
 class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
@@ -90,9 +91,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     final visibleJobs = jobs.take(_visibleCount).toList(growable: false);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_title(l)),
-      ),
+      appBar: AppBar(title: Text(_title(l))),
       body: SafeArea(
         child: jobs.isEmpty
             ? Center(
@@ -104,7 +103,9 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
             : ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
-                itemCount: visibleJobs.length + (visibleJobs.length < jobs.length ? 1 : 0),
+                itemCount:
+                    visibleJobs.length +
+                    (visibleJobs.length < jobs.length ? 1 : 0),
                 itemBuilder: (context, index) {
                   if (index >= visibleJobs.length) {
                     return const Padding(
@@ -136,17 +137,25 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: ArcticTheme.arcticBlue.withValues(alpha: 0.18),
+                                  color: ArcticTheme.arcticBlue.withValues(
+                                    alpha: 0.18,
+                                  ),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
-                                    color: ArcticTheme.arcticBlue.withValues(alpha: 0.45),
+                                    color: ArcticTheme.arcticBlue.withValues(
+                                      alpha: 0.45,
+                                    ),
                                   ),
                                 ),
                                 child: Text(
                                   'Matched: ${_matchedLabel(l)}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
                                         color: ArcticTheme.arcticBlue,
                                         fontSize: 11,
                                       ),
@@ -161,8 +170,11 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            job.companyName.isEmpty ? l.noCompany : job.companyName,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            job.companyName.isEmpty
+                                ? l.noCompany
+                                : job.companyName,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: ArcticTheme.arcticTextSecondary,
                                 ),
                           ),

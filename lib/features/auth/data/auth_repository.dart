@@ -222,7 +222,8 @@ class AuthRepository {
             controller.add(doc.exists ? UserModel.fromFirestore(doc) : null);
           },
           onError: (error, stackTrace) {
-            if (error is FirebaseException && error.code == 'permission-denied') {
+            if (error is FirebaseException &&
+                error.code == 'permission-denied') {
               debugPrint('userStream permission denied for uid=$uid');
               controller.add(null);
               return;

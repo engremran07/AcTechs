@@ -12,7 +12,9 @@ class TechShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/tech/submit')) return 1;
     if (location.startsWith('/tech/inout')) return 2;
-    if (location.startsWith('/tech/summary')) return 2; // summary is under In/Out
+    if (location.startsWith('/tech/summary')) {
+      return 2; // summary is under In/Out
+    }
     if (location.startsWith('/tech/history')) return 3;
     if (location.startsWith('/tech/settings')) return 4;
     if (location.startsWith('/tech/profile')) return 4;

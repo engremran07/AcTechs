@@ -70,11 +70,11 @@ void main() {
   // ────────────────────────────────────────────────────────────
   group('JobModel.fromJson()', () {
     Map<String, dynamic> baseJob() => {
-          'techId': 'tech-1',
-          'techName': 'Khalid',
-          'invoiceNumber': 'INV-001',
-          'clientName': 'Mr. Salem',
-        };
+      'techId': 'tech-1',
+      'techName': 'Khalid',
+      'invoiceNumber': 'INV-001',
+      'clientName': 'Mr. Salem',
+    };
 
     test('parses required fields', () {
       final model = JobModel.fromJson(baseJob());
@@ -152,10 +152,7 @@ void main() {
     });
 
     test('parses date from ISO string', () {
-      final json = {
-        ...baseJob(),
-        'date': '2024-07-20T00:00:00.000',
-      };
+      final json = {...baseJob(), 'date': '2024-07-20T00:00:00.000'};
       final model = JobModel.fromJson(json);
       expect(model.date!.year, 2024);
       expect(model.date!.month, 7);
@@ -358,12 +355,13 @@ void main() {
 
     test('values are pending, approved, rejected', () {
       expect(
-          JobStatus.values,
-          containsAll([
-            JobStatus.pending,
-            JobStatus.approved,
-            JobStatus.rejected,
-          ]));
+        JobStatus.values,
+        containsAll([
+          JobStatus.pending,
+          JobStatus.approved,
+          JobStatus.rejected,
+        ]),
+      );
     });
   });
 }

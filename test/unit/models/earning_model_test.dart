@@ -4,11 +4,11 @@ import 'package:ac_techs/core/models/earning_model.dart';
 void main() {
   group('EarningModel.fromJson()', () {
     Map<String, dynamic> baseEarning() => {
-          'techId': 'tech-02',
-          'techName': 'Bilal',
-          'category': 'Sold Old AC',
-          'amount': 500.0,
-        };
+      'techId': 'tech-02',
+      'techName': 'Bilal',
+      'category': 'Sold Old AC',
+      'amount': 500.0,
+    };
 
     test('parses required fields correctly', () {
       final model = EarningModel.fromJson(baseEarning());
@@ -37,10 +37,7 @@ void main() {
     });
 
     test('parses date from ISO string', () {
-      final json = {
-        ...baseEarning(),
-        'date': '2024-09-10T12:00:00.000',
-      };
+      final json = {...baseEarning(), 'date': '2024-09-10T12:00:00.000'};
       final model = EarningModel.fromJson(json);
       expect(model.date!.year, 2024);
       expect(model.date!.month, 9);
