@@ -847,6 +847,19 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String importRowsWithoutTechName(int count) {
+    return '$count قطاروں میں ٹیکنیشن کا نام موجود نہیں';
+  }
+
+  @override
+  String importUniqueTechNamesCount(int count) {
+    return '$count منفرد ٹیکنیشن نام ملے';
+  }
+
+  @override
+  String get importTopTechNamesLabel => 'زیادہ آنے والے ٹیکنیشن نام';
+
+  @override
   String get importTargetTechnician => 'ٹارگٹ ٹیکنیشن';
 
   @override
@@ -857,7 +870,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get importTechnicianKeyword => 'سورس ٹیکنیشن فلٹر';
 
   @override
-  String get importTechnicianKeywordHint => 'مثال: imran';
+  String get importTechnicianKeywordHint => 'مثال: نام، ای میل، یا uid';
 
   @override
   String get importTechnicianKeywordHelp =>

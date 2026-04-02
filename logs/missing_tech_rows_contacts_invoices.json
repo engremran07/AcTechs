@@ -1,0 +1,354 @@
+{
+  "sourceWorkbook": "docs/Amoudi AIO 2025.xlsx",
+  "missingTechRows": 58,
+  "rows": [
+    {
+      "sheet": "Jan",
+      "rowNumber": 42,
+      "invoiceNumber": "2401006848",
+      "contactNumber": "570103553"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 56,
+      "invoiceNumber": "2401006625",
+      "contactNumber": "555757147"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 77,
+      "invoiceNumber": "2401006831",
+      "contactNumber": "558155886"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 79,
+      "invoiceNumber": "2401006853",
+      "contactNumber": "504981171"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 80,
+      "invoiceNumber": "2401006579",
+      "contactNumber": "506493375"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 81,
+      "invoiceNumber": "2401006733",
+      "contactNumber": "557673355"
+    },
+    {
+      "sheet": "Jan",
+      "rowNumber": 82,
+      "invoiceNumber": "2403000961",
+      "contactNumber": "506768037"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 45,
+      "invoiceNumber": "2401011566",
+      "contactNumber": "599960290"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 51,
+      "invoiceNumber": "2303002107",
+      "contactNumber": "534536504"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 80,
+      "invoiceNumber": "2401011723",
+      "contactNumber": "501762801"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 101,
+      "invoiceNumber": "2401009963",
+      "contactNumber": "533036370"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 102,
+      "invoiceNumber": "2401012001",
+      "contactNumber": "533618321"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 105,
+      "invoiceNumber": "2401011837",
+      "contactNumber": "559682878"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 133,
+      "invoiceNumber": "2401012153",
+      "contactNumber": "542925994"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 150,
+      "invoiceNumber": "2401012238",
+      "contactNumber": "502965042"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 167,
+      "invoiceNumber": "2401012112",
+      "contactNumber": "507665656"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 193,
+      "invoiceNumber": "2403001821",
+      "contactNumber": "531641052"
+    },
+    {
+      "sheet": "Apr",
+      "rowNumber": 211,
+      "invoiceNumber": "2401012449",
+      "contactNumber": "591818801"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 41,
+      "invoiceNumber": "2401013160",
+      "contactNumber": "567809612"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 74,
+      "invoiceNumber": "2401013040",
+      "contactNumber": "500033881"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 83,
+      "invoiceNumber": "2401013357",
+      "contactNumber": "550003756"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 106,
+      "invoiceNumber": "2401013295",
+      "contactNumber": "535509672"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 111,
+      "invoiceNumber": "2401013435",
+      "contactNumber": "542973258"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 129,
+      "invoiceNumber": "2401013512",
+      "contactNumber": "558255438"
+    },
+    {
+      "sheet": "May",
+      "rowNumber": 135,
+      "invoiceNumber": "2401013551",
+      "contactNumber": "593436244"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 31,
+      "invoiceNumber": "2401012252",
+      "contactNumber": "566733113"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 251,
+      "invoiceNumber": "2401009232",
+      "contactNumber": "500789241"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 261,
+      "invoiceNumber": "2401014916",
+      "contactNumber": "558787633"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 291,
+      "invoiceNumber": "2401015202",
+      "contactNumber": "532018950"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 307,
+      "invoiceNumber": "2401015117",
+      "contactNumber": "530313836"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 347,
+      "invoiceNumber": "2401015171",
+      "contactNumber": "544877883"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 348,
+      "invoiceNumber": "2401015137",
+      "contactNumber": "532991445"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 389,
+      "invoiceNumber": "2401014016",
+      "contactNumber": "507763500"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 401,
+      "invoiceNumber": "2401013844",
+      "contactNumber": "501760247"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 421,
+      "invoiceNumber": "2401015543",
+      "contactNumber": "5915335169"
+    },
+    {
+      "sheet": "Jun",
+      "rowNumber": 477,
+      "invoiceNumber": "2401015131",
+      "contactNumber": "504571071"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 5,
+      "invoiceNumber": "2401016509",
+      "contactNumber": "542054219"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 217,
+      "invoiceNumber": "2401016809",
+      "contactNumber": "555658875"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 224,
+      "invoiceNumber": "2401016032",
+      "contactNumber": "558986560"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 250,
+      "invoiceNumber": "2403001670",
+      "contactNumber": "501202979"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 276,
+      "invoiceNumber": "2401017040",
+      "contactNumber": "556683523"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 361,
+      "invoiceNumber": "2401009019",
+      "contactNumber": "502379072"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 367,
+      "invoiceNumber": "2401017155",
+      "contactNumber": "544442349"
+    },
+    {
+      "sheet": "Jul",
+      "rowNumber": 486,
+      "invoiceNumber": "2401009232",
+      "contactNumber": "500789241"
+    },
+    {
+      "sheet": "Aug",
+      "rowNumber": 117,
+      "invoiceNumber": "2401018277",
+      "contactNumber": "503399634"
+    },
+    {
+      "sheet": "Aug",
+      "rowNumber": 405,
+      "invoiceNumber": "2401019214",
+      "contactNumber": "530765134"
+    },
+    {
+      "sheet": "Aug",
+      "rowNumber": 406,
+      "invoiceNumber": "2401019228",
+      "contactNumber": "509975091"
+    },
+    {
+      "sheet": "Aug",
+      "rowNumber": 432,
+      "invoiceNumber": "2401019266",
+      "contactNumber": "533888228"
+    },
+    {
+      "sheet": "Aug",
+      "rowNumber": 442,
+      "invoiceNumber": "2401019489",
+      "contactNumber": "535323278"
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 413,
+      "invoiceNumber": "2401021",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 414,
+      "invoiceNumber": "2401021",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 415,
+      "invoiceNumber": "2401021",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 416,
+      "invoiceNumber": "2401021",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 417,
+      "invoiceNumber": "",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 418,
+      "invoiceNumber": "",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 419,
+      "invoiceNumber": "",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "Sep",
+      "rowNumber": 420,
+      "invoiceNumber": "",
+      "contactNumber": ""
+    },
+    {
+      "sheet": "december",
+      "rowNumber": 101,
+      "invoiceNumber": "2407000287",
+      "contactNumber": "502351606"
+    }
+  ]
+}

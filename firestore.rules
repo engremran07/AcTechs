@@ -63,13 +63,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAdmin();
-      // Admins can update anything; technicians can update their own language or name
+      // Admins can update anything; users can update their own profile fields.
       allow update: if isAdmin() ||
         (isOwner(userId) &&
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['language', 'name']));
+           .hasOnly(['language', 'name', 'email']));
       allow delete: if isAdmin() ||
-        (isAuth() && resource.data.techId == request.auth.uid);
+        isOwner(userId);
     }
 
     // ─── Jobs ───
@@ -85,37 +85,7 @@ service cloud.firestore {
           validJobCreatePayload() &&
           request.resource.data.status in ['pending', 'approved', 'rejected']);
 
-      allow update: if (
-        isAdmin() &&
-        resource.data.status == 'pending' &&
-        request.resource.data.techId == resource.data.techId &&
-        request.resource.data.status in ['approved', 'rejected'] &&
-        request.resource.data.approvedBy == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status',
-          'approvedBy',
-          'reviewedAt',
-          'adminNote'
-        ])
-      ) || (
-        isAdmin() &&
-        request.resource.data.techId == resource.data.techId &&
-        request.resource.data.submittedAt == resource.data.submittedAt &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'techName',
-          'companyId',
-          'companyName',
-          'invoiceNumber',
-          'clientName',
-          'clientContact',
-          'acUnits',
-          'charges',
-          'date',
-          'expenses',
-          'expenseNote',
-          'adminNote'
-        ])
-      ) || (
+      allow update: if isAdmin() || (
         isOwner(resource.data.techId) &&
         resource.data.status == 'pending' &&
         request.resource.data.status == 'pending' &&

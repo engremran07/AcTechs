@@ -28,6 +28,7 @@ abstract class AcUnit with _$AcUnit {
 abstract class InvoiceCharges with _$InvoiceCharges {
   const factory InvoiceCharges({
     @Default(false) bool acBracket,
+    @Default(0) int bracketCount,
     @Default(0.0) double bracketAmount,
     @Default(false) bool deliveryCharge,
     @Default(0.0) double deliveryAmount,

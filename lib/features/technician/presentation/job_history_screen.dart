@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
@@ -13,6 +14,7 @@ import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 class JobHistoryScreen extends ConsumerStatefulWidget {
@@ -22,13 +24,36 @@ class JobHistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<JobHistoryScreen> createState() => _JobHistoryScreenState();
 }
 
-class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
+class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
   String _search = '';
   String _statusFilter = 'all';
   bool _sortNewest = true;
   bool _isExportingExcel = false;
   String _periodFilter = 'all';
   DateTimeRange? _customDateRange;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(_handleTabChanged);
+  }
+
+  void _handleTabChanged() {
+    if (!_tabController.indexIsChanging && mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController
+      ..removeListener(_handleTabChanged)
+      ..dispose();
+    super.dispose();
+  }
 
   Future<void> _pickCustomDateRange() async {
     final l = AppLocalizations.of(context)!;
@@ -128,22 +153,444 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
     return filtered;
   }
 
+  bool _inActiveRange(DateTime? date) {
+    if (date == null) return false;
+    final range = _activeRange();
+    if (range == null) return true;
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+    );
+    return !date.isBefore(start) && !date.isAfter(end);
+  }
+
+  List<_InOutDaySummary> _applyInOutFilters(
+    List<EarningModel> earnings,
+    List<ExpenseModel> expenses,
+  ) {
+    final byDay = <DateTime, _InOutAccumulator>{};
+
+    for (final earning in earnings) {
+      if (!_inActiveRange(earning.date)) continue;
+      final d = earning.date;
+      if (d == null) continue;
+      final day = DateTime(d.year, d.month, d.day);
+      final item = byDay.putIfAbsent(day, () => _InOutAccumulator(day));
+      item.earned += earning.amount;
+      item.earningDetails.add(
+        '${earning.category} (${AppFormatters.currency(earning.amount)})',
+      );
+    }
+
+    for (final expense in expenses) {
+      if (!_inActiveRange(expense.date)) continue;
+      final d = expense.date;
+      if (d == null) continue;
+      final day = DateTime(d.year, d.month, d.day);
+      final item = byDay.putIfAbsent(day, () => _InOutAccumulator(day));
+      final detail =
+          '${expense.category} (${AppFormatters.currency(expense.amount)})';
+      if (expense.expenseType == AppConstants.expenseTypeHome) {
+        item.homeExpenses += expense.amount;
+        item.homeDetails.add(detail);
+      } else {
+        item.workExpenses += expense.amount;
+        item.workDetails.add(detail);
+      }
+    }
+
+    var summary = byDay.values.map((item) => item.toSummary()).toList();
+
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      summary = summary.where((item) {
+        final haystack = [
+          AppFormatters.date(item.date),
+          item.earningDetails.join(' '),
+          item.workDetails.join(' '),
+          item.homeDetails.join(' '),
+        ].join(' ').toLowerCase();
+        return haystack.contains(q);
+      }).toList();
+    }
+
+    summary.sort(
+      (a, b) =>
+          _sortNewest ? b.date.compareTo(a.date) : a.date.compareTo(b.date),
+    );
+    return summary;
+  }
+
+  Widget _buildJobsTab(
+    AsyncValue<List<JobModel>> jobs,
+    String locale,
+    AppLocalizations l,
+    VoidCallback refresh,
+  ) {
+    return jobs.when(
+      data: (jobList) {
+        final pendingCount = jobList.where((j) => j.isPending).length;
+        final approvedCount = jobList.where((j) => j.isApproved).length;
+        final rejectedCount = jobList.where((j) => j.isRejected).length;
+        final filtered = _applyFilters(jobList);
+        final totalUnits = filtered.fold<int>(
+          0,
+          (sum, job) => sum + job.totalUnits,
+        );
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: ArcticSearchBar(
+                hint: l.searchByClientOrInvoice,
+                onChanged: (v) => setState(() => _search = v),
+                trailing: SortButton<bool>(
+                  currentValue: _sortNewest,
+                  options: [
+                    SortOption(label: l.newestFirst, value: true),
+                    SortOption(label: l.oldestFirst, value: false),
+                  ],
+                  onSelected: (v) => setState(() => _sortNewest = v),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _HistoryMetricCard(
+                      label: l.totalJobs,
+                      value: '${filtered.length}',
+                      color: ArcticTheme.arcticBlue,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HistoryMetricCard(
+                      label: l.totalUnits,
+                      value: '$totalUnits',
+                      color: ArcticTheme.arcticWarning,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HistoryMetricCard(
+                      label: l.approved,
+                      value: '$approvedCount',
+                      color: ArcticTheme.arcticSuccess,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: StatusFilterChips(
+                selected: _statusFilter,
+                onSelected: (v) => setState(() => _statusFilter = v),
+                pendingCount: pendingCount,
+                approvedCount: approvedCount,
+                rejectedCount: rejectedCount,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${l.date}: ${_periodLabel(l)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: ArcticTheme.arcticTextSecondary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            if (filtered.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.history_rounded,
+                        size: 64,
+                        color: ArcticTheme.arcticTextSecondary.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _search.isNotEmpty ? l.noMatchingJobs : l.noJobsYet,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: ArcticRefreshIndicator(
+                  onRefresh: () async => refresh(),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final job = filtered[index];
+                      return ContextMenuRegion(
+                            menuItems: [
+                              ContextMenuItem(
+                                id: 'copy_invoice',
+                                label: l.copyInvoice,
+                                icon: Icons.copy_rounded,
+                              ),
+                              ContextMenuItem(
+                                id: 'export_pdf',
+                                label: l.exportAsPdf,
+                                icon: Icons.picture_as_pdf_rounded,
+                              ),
+                            ],
+                            onSelected: (action) async {
+                              if (action == 'copy_invoice') {
+                                Clipboard.setData(
+                                  ClipboardData(text: job.invoiceNumber),
+                                );
+                                SuccessSnackbar.show(
+                                  context,
+                                  message: l.invoiceCopied,
+                                );
+                              } else if (action == 'export_pdf') {
+                                try {
+                                  await PdfGenerator.previewPdf(context, [
+                                    job,
+                                  ], locale);
+                                } catch (_) {
+                                  if (context.mounted) {
+                                    ErrorSnackbar.show(
+                                      context,
+                                      message: l.couldNotExport,
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                            child: _HistoryJobCard(
+                              job: job,
+                              onTap: () => context.push(
+                                '/tech/job/${job.id}',
+                                extra: job,
+                              ),
+                            ),
+                          )
+                          .animate(delay: (index * 80).ms)
+                          .fadeIn()
+                          .slideX(begin: 0.05);
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: ArcticShimmer(count: 5),
+      ),
+      error: (error, _) => error is AppException
+          ? Center(child: ErrorCard(exception: error))
+          : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildInOutTab(
+    AsyncValue<List<EarningModel>> earningsAsync,
+    AsyncValue<List<ExpenseModel>> expensesAsync,
+    AppLocalizations l,
+    VoidCallback refresh,
+  ) {
+    return earningsAsync.when(
+      data: (earnings) => expensesAsync.when(
+        data: (expenses) {
+          final summaries = _applyInOutFilters(earnings, expenses);
+          final totalEarned = summaries.fold<double>(
+            0,
+            (sum, item) => sum + item.earned,
+          );
+          final totalExpenses = summaries.fold<double>(
+            0,
+            (sum, item) => sum + item.totalExpenses,
+          );
+          final net = totalEarned - totalExpenses;
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: ArcticSearchBar(
+                  hint: l.search,
+                  onChanged: (v) => setState(() => _search = v),
+                  trailing: SortButton<bool>(
+                    currentValue: _sortNewest,
+                    options: [
+                      SortOption(label: l.newestFirst, value: true),
+                      SortOption(label: l.oldestFirst, value: false),
+                    ],
+                    onSelected: (v) => setState(() => _sortNewest = v),
+                  ),
+                ),
+              ).animate().fadeIn(duration: 220.ms).slideY(begin: 0.04),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _HistoryMetricCard(
+                        label: l.earningsIn,
+                        value: AppFormatters.currency(totalEarned),
+                        color: ArcticTheme.arcticSuccess,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _HistoryMetricCard(
+                        label: l.expensesOut,
+                        value: AppFormatters.currency(totalExpenses),
+                        color: ArcticTheme.arcticWarning,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _HistoryMetricCard(
+                        label: l.netProfit,
+                        value:
+                            '${net >= 0 ? '+' : '-'} ${AppFormatters.currency(net.abs())}',
+                        color: net >= 0
+                            ? ArcticTheme.arcticSuccess
+                            : ArcticTheme.arcticError,
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate(delay: 60.ms).fadeIn(duration: 240.ms).slideY(begin: 0.05),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${l.date}: ${_periodLabel(l)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
+                  ),
+                ),
+              ).animate(delay: 100.ms).fadeIn(duration: 220.ms),
+              if (summaries.isEmpty)
+                Expanded(
+                  child: Center(
+                    child:
+                        Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.timeline_rounded,
+                                  size: 56,
+                                  color: ArcticTheme.arcticTextSecondary
+                                      .withValues(alpha: 0.45),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  l.noEntriesToday,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                ),
+                              ],
+                            )
+                            .animate()
+                            .fadeIn(duration: 250.ms)
+                            .scale(begin: const Offset(0.98, 0.98)),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ArcticRefreshIndicator(
+                    onRefresh: () async => refresh(),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: summaries.length,
+                      itemBuilder: (context, index) =>
+                          _InOutHistoryCard(summary: summaries[index])
+                              .animate(delay: (index * 70).ms)
+                              .fadeIn(duration: 220.ms)
+                              .slideX(begin: 0.05),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(16),
+          child: ArcticShimmer(count: 5),
+        ),
+        error: (error, _) => error is AppException
+            ? Center(child: ErrorCard(exception: error))
+            : const SizedBox.shrink(),
+      ),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: ArcticShimmer(count: 5),
+      ),
+      error: (error, _) => error is AppException
+          ? Center(child: ErrorCard(exception: error))
+          : const SizedBox.shrink(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final jobs = ref.watch(technicianJobsProvider);
+    final earnings = ref.watch(techEarningsProvider);
+    final expenses = ref.watch(techExpensesProvider);
     final locale = ref.watch(appLocaleProvider);
     final l = AppLocalizations.of(context)!;
 
     void refresh() {
       HapticFeedback.lightImpact();
       ref.invalidate(technicianJobsProvider);
+      ref.invalidate(techEarningsProvider);
+      ref.invalidate(techExpensesProvider);
     }
 
     return AppShortcuts(
       onRefresh: refresh,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(l.jobHistory),
+          title: Text(l.history),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: l.jobs),
+              Tab(text: l.inOut),
+            ],
+          ),
           actions: [
             PopupMenuButton<String>(
               tooltip: l.selectDate,
@@ -170,197 +617,57 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen> {
                 ),
               ],
             ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-              tooltip: l.exportPdf,
-              onPressed: () async {
-                final jobList = jobs.value;
-                if (jobList == null || jobList.isEmpty) return;
-                final filtered = _applyFilters(jobList);
-                try {
-                  await PdfGenerator.previewPdf(context, filtered, locale);
-                } catch (_) {
-                  if (!context.mounted) return;
-                  ErrorSnackbar.show(context, message: l.couldNotExport);
-                }
-              },
-            ),
-            IconButton(
-              icon: _isExportingExcel
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.file_download_outlined),
-              tooltip: l.exportToExcel,
-              onPressed: _isExportingExcel
-                  ? null
-                  : () async {
-                      final jobList = jobs.value;
-                      if (jobList == null || jobList.isEmpty) return;
-                      final filtered = _applyFilters(jobList);
-                      setState(() => _isExportingExcel = true);
-                      try {
-                        await ExcelExport.exportJobsToExcel(jobs: filtered);
-                      } finally {
-                        if (mounted) {
-                          setState(() => _isExportingExcel = false);
+            if (_tabController.index == 0) ...[
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                tooltip: l.exportPdf,
+                onPressed: () async {
+                  final jobList = jobs.value;
+                  if (jobList == null || jobList.isEmpty) return;
+                  final filtered = _applyFilters(jobList);
+                  try {
+                    await PdfGenerator.previewPdf(context, filtered, locale);
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ErrorSnackbar.show(context, message: l.couldNotExport);
+                  }
+                },
+              ),
+              IconButton(
+                icon: _isExportingExcel
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.file_download_outlined),
+                tooltip: l.exportToExcel,
+                onPressed: _isExportingExcel
+                    ? null
+                    : () async {
+                        final jobList = jobs.value;
+                        if (jobList == null || jobList.isEmpty) return;
+                        final filtered = _applyFilters(jobList);
+                        setState(() => _isExportingExcel = true);
+                        try {
+                          await ExcelExport.exportJobsToExcel(jobs: filtered);
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isExportingExcel = false);
+                          }
                         }
-                      }
-                    },
-            ),
+                      },
+              ),
+            ],
           ],
         ),
         body: SafeArea(
-          child: jobs.when(
-            data: (jobList) {
-              final pendingCount = jobList.where((j) => j.isPending).length;
-              final approvedCount = jobList.where((j) => j.isApproved).length;
-              final rejectedCount = jobList.where((j) => j.isRejected).length;
-              final filtered = _applyFilters(jobList);
-
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: ArcticSearchBar(
-                      hint: l.searchByClientOrInvoice,
-                      onChanged: (v) => setState(() => _search = v),
-                      trailing: SortButton<bool>(
-                        currentValue: _sortNewest,
-                        options: [
-                          SortOption(label: l.newestFirst, value: true),
-                          SortOption(label: l.oldestFirst, value: false),
-                        ],
-                        onSelected: (v) => setState(() => _sortNewest = v),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: StatusFilterChips(
-                      selected: _statusFilter,
-                      onSelected: (v) => setState(() => _statusFilter = v),
-                      pendingCount: pendingCount,
-                      approvedCount: approvedCount,
-                      rejectedCount: rejectedCount,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${l.date}: ${_periodLabel(l)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  if (filtered.isEmpty)
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.history_rounded,
-                              size: 64,
-                              color: ArcticTheme.arcticTextSecondary.withValues(
-                                alpha: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _search.isNotEmpty
-                                  ? l.noMatchingJobs
-                                  : l.noJobsYet,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: ArcticTheme.arcticTextSecondary,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: ArcticRefreshIndicator(
-                        onRefresh: () async => refresh(),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final job = filtered[index];
-                            return ContextMenuRegion(
-                                  menuItems: [
-                                    ContextMenuItem(
-                                      id: 'copy_invoice',
-                                      label: l.copyInvoice,
-                                      icon: Icons.copy_rounded,
-                                    ),
-                                    ContextMenuItem(
-                                      id: 'export_pdf',
-                                      label: l.exportAsPdf,
-                                      icon: Icons.picture_as_pdf_rounded,
-                                    ),
-                                  ],
-                                  onSelected: (action) async {
-                                    if (action == 'copy_invoice') {
-                                      Clipboard.setData(
-                                        ClipboardData(text: job.invoiceNumber),
-                                      );
-                                      SuccessSnackbar.show(
-                                        context,
-                                        message: l.invoiceCopied,
-                                      );
-                                    } else if (action == 'export_pdf') {
-                                      try {
-                                        await PdfGenerator.previewPdf(context, [
-                                          job,
-                                        ], locale);
-                                      } catch (_) {
-                                        if (context.mounted) {
-                                          ErrorSnackbar.show(
-                                            context,
-                                            message: l.couldNotExport,
-                                          );
-                                        }
-                                      }
-                                    }
-                                  },
-                                  child: _HistoryJobCard(
-                                    job: job,
-                                    onTap: () => context.push(
-                                      '/tech/job/${job.id}',
-                                      extra: job,
-                                    ),
-                                  ),
-                                )
-                                .animate(delay: (index * 80).ms)
-                                .fadeIn()
-                                .slideX(begin: 0.05);
-                          },
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: ArcticShimmer(count: 5),
-            ),
-            error: (error, _) => error is AppException
-                ? Center(child: ErrorCard(exception: error))
-                : const SizedBox.shrink(),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildJobsTab(jobs, locale, l, refresh),
+              _buildInOutTab(earnings, expenses, l, refresh),
+            ],
           ),
         ),
       ),
@@ -516,6 +823,170 @@ class _InfoChip extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: c),
         ),
       ],
+    );
+  }
+}
+
+class _HistoryMetricCard extends StatelessWidget {
+  const _HistoryMetricCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ArcticCard(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ArcticTheme.arcticTextSecondary,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InOutAccumulator {
+  _InOutAccumulator(this.date);
+
+  final DateTime date;
+  double earned = 0;
+  double workExpenses = 0;
+  double homeExpenses = 0;
+  final List<String> earningDetails = <String>[];
+  final List<String> workDetails = <String>[];
+  final List<String> homeDetails = <String>[];
+
+  _InOutDaySummary toSummary() => _InOutDaySummary(
+    date: date,
+    earned: earned,
+    workExpenses: workExpenses,
+    homeExpenses: homeExpenses,
+    earningDetails: earningDetails,
+    workDetails: workDetails,
+    homeDetails: homeDetails,
+  );
+}
+
+class _InOutDaySummary {
+  const _InOutDaySummary({
+    required this.date,
+    required this.earned,
+    required this.workExpenses,
+    required this.homeExpenses,
+    required this.earningDetails,
+    required this.workDetails,
+    required this.homeDetails,
+  });
+
+  final DateTime date;
+  final double earned;
+  final double workExpenses;
+  final double homeExpenses;
+  final List<String> earningDetails;
+  final List<String> workDetails;
+  final List<String> homeDetails;
+
+  double get totalExpenses => workExpenses + homeExpenses;
+  double get net => earned - totalExpenses;
+}
+
+class _InOutHistoryCard extends StatelessWidget {
+  const _InOutHistoryCard({required this.summary});
+
+  final _InOutDaySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return ArcticCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AppFormatters.date(summary.date),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Text(
+                '${summary.net >= 0 ? '+' : '-'} ${AppFormatters.currency(summary.net.abs())}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: summary.net >= 0
+                      ? ArcticTheme.arcticSuccess
+                      : ArcticTheme.arcticError,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            children: [
+              _InfoChip(
+                icon: Icons.trending_up_rounded,
+                label:
+                    '${l.earningsIn}: ${AppFormatters.currency(summary.earned)}',
+                color: ArcticTheme.arcticSuccess,
+              ),
+              _InfoChip(
+                icon: Icons.work_history_outlined,
+                label:
+                    '${l.workExpenses}: ${AppFormatters.currency(summary.workExpenses)}',
+                color: ArcticTheme.arcticWarning,
+              ),
+              _InfoChip(
+                icon: Icons.home_outlined,
+                label:
+                    '${l.homeExpenses}: ${AppFormatters.currency(summary.homeExpenses)}',
+                color: ArcticTheme.arcticBlue,
+              ),
+            ],
+          ),
+          if (summary.earningDetails.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              summary.earningDetails.join(' | '),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          if (summary.homeDetails.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              summary.homeDetails.join(' | '),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ArcticTheme.arcticTextSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

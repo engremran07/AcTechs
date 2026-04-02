@@ -313,10 +313,19 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importRowsWithoutTechName": "{count} صفوف بدون اسم فني",
+  "@importRowsWithoutTechName": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importUniqueTechNamesCount": "تم العثور على {count} أسماء فنيين فريدة",
+  "@importUniqueTechNamesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importTopTechNamesLabel": "أكثر أسماء الفنيين تكراراً",
   "importTargetTechnician": "الفني المستهدف",
   "importTargetTechnicianRequired": "اختر الفني الذي يجب أن تُنسب إليه البيانات التاريخية المستوردة.",
   "importTechnicianKeyword": "مرشح الفني المصدر",
-  "importTechnicianKeywordHint": "مثال: imran",
+  "importTechnicianKeywordHint": "مثال: الاسم أو البريد الإلكتروني أو uid",
   "importTechnicianKeywordHelp": "سيتم استيراد الصفوف التي يطابق فيها اسم الفني أو بريده أو معرّفه هذا النص فقط.",
   "importKeywordRequired": "يرجى تصفية كلمة مفتاح الفني لمنع التحميل الضخم العرضي.",
   "importBundledTemplates": "استيراد القوالب التاريخية المضمنة",

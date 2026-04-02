@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -32,6 +31,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   String _expenseType = AppConstants.expenseTypeWork;
   bool _approvalBaselineReady = false;
   bool _isExportingTodayPdf = false;
+  late DateTime _selectedExportMonth;
   final Set<String> _approvedKnownIds = <String>{};
 
   /// Batch entry rows — each has its own category, amount, remark
@@ -40,6 +40,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedExportMonth = DateTime(now.year, now.month);
     _entryRows.add(
       _EntryRow(
         category: AppConstants.earningCategories.first,
@@ -47,6 +49,22 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         remarkController: TextEditingController(),
       ),
     );
+  }
+
+  bool _sameMonth(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month;
+
+  DateTime _effectiveExportMonth(List<DateTime> monthsWithData) {
+    if (monthsWithData.isEmpty) {
+      final now = DateTime.now();
+      return DateTime(now.year, now.month);
+    }
+    for (final month in monthsWithData) {
+      if (_sameMonth(month, _selectedExportMonth)) {
+        return month;
+      }
+    }
+    return monthsWithData.first;
   }
 
   @override
@@ -269,27 +287,36 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   List<DateTime> _availableReportMonths({
     required List<EarningModel> earnings,
     required List<ExpenseModel> expenses,
-    required List<JobModel> jobs,
   }) {
     final months = <DateTime>{};
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+    const minSupportedYear = 2000;
+
+    void addIfValid(DateTime? rawDate) {
+      if (rawDate == null) return;
+      if (rawDate.year < minSupportedYear) return;
+      final normalized = DateTime(rawDate.year, rawDate.month);
+      if (normalized.isAfter(currentMonth)) return;
+      months.add(normalized);
+    }
 
     for (final e in earnings) {
-      if (e.date != null) {
-        months.add(DateTime(e.date!.year, e.date!.month));
-      }
+      addIfValid(e.date);
     }
     for (final e in expenses) {
-      if (e.date != null) {
-        months.add(DateTime(e.date!.year, e.date!.month));
-      }
-    }
-    for (final j in jobs) {
-      if (j.date != null) {
-        months.add(DateTime(j.date!.year, j.date!.month));
-      }
+      addIfValid(e.date);
     }
 
-    final sorted = months.toList()
+    if (months.isEmpty) return const [];
+
+    // UX rule: when current-year data exists, only show current year months.
+    final currentYearMonths = months.where((m) => m.year == now.year).toList();
+    final candidateMonths = currentYearMonths.isNotEmpty
+        ? currentYearMonths
+        : months.toList();
+
+    final sorted = candidateMonths
       ..sort((a, b) {
         final y = b.year.compareTo(a.year);
         return y != 0 ? y : b.month.compareTo(a.month);
@@ -297,76 +324,144 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     return sorted;
   }
 
-  Future<DateTime?> _pickReportMonth(List<DateTime> months) {
-    final l = AppLocalizations.of(context)!;
-    final localizations = MaterialLocalizations.of(context);
-
-    return showModalBottomSheet<DateTime>(
+  Future<void> _pickExportMonthFromCalendar(
+    List<DateTime> monthsWithData,
+  ) async {
+    if (monthsWithData.isEmpty) return;
+    final current = _effectiveExportMonth(monthsWithData);
+    final first = monthsWithData.last;
+    final now = DateTime.now();
+    final picked = await showDatePicker(
       context: context,
-      showDragHandle: true,
+      initialDate: current,
+      firstDate: DateTime(first.year, first.month, 1),
+      lastDate: DateTime(now.year, now.month, now.day),
+      initialDatePickerMode: DatePickerMode.year,
+    );
+    if (picked == null) return;
+    setState(() {
+      _selectedExportMonth = DateTime(picked.year, picked.month);
+    });
+  }
+
+  String _monthLabel(AppLocalizations l, DateTime month) {
+    final names = <String>[
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
+    ];
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  Future<({DateTime month, String locale})?> _pickReportOptions(
+    List<DateTime> monthsWithData,
+  ) async {
+    if (monthsWithData.isEmpty) return null;
+    final l = AppLocalizations.of(context)!;
+    final currentLocale = Localizations.localeOf(context).languageCode;
+
+    DateTime selectedMonth = _effectiveExportMonth(monthsWithData);
+    String selectedLocale = currentLocale;
+
+    final result = await showDialog<({DateTime month, String locale})>(
+      context: context,
       builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_month_rounded,
-                      color: ArcticTheme.arcticBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        l.monthlySummary,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) => AlertDialog(
+            title: Text(l.exportPdf),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.language),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedLocale,
+                  decoration: const InputDecoration(isDense: true),
+                  items: [
+                    DropdownMenuItem(value: 'en', child: Text(l.english)),
+                    DropdownMenuItem(value: 'ur', child: Text(l.urdu)),
+                    DropdownMenuItem(value: 'ar', child: Text(l.arabic)),
                   ],
-                ),
-              ),
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: months.length,
-                  separatorBuilder: (_, index) => const Divider(height: 1),
-                  itemBuilder: (_, index) {
-                    final month = months[index];
-                    return ListTile(
-                      leading: const Icon(Icons.picture_as_pdf_outlined),
-                      title: Text(localizations.formatMonthYear(month)),
-                      onTap: () => Navigator.of(ctx).pop(month),
-                    );
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setLocalState(() => selectedLocale = value);
                   },
                 ),
+                const SizedBox(height: 12),
+                Text(l.selectDate),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<DateTime>(
+                  initialValue: selectedMonth,
+                  decoration: const InputDecoration(isDense: true),
+                  items: monthsWithData
+                      .map(
+                        (m) => DropdownMenuItem<DateTime>(
+                          value: m,
+                          child: Text(_monthLabel(l, m)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setLocalState(() => selectedMonth = value);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(
+                  ctx,
+                ).pop((month: selectedMonth, locale: selectedLocale)),
+                child: Text(l.exportPdf),
               ),
             ],
           ),
         );
       },
     );
+
+    return result;
   }
 
-  Future<void> _exportTodayInOutPdf(List<DateTime> monthsWithData) async {
+  Future<void> _exportTodayInOutPdf({
+    required DateTime month,
+    required String reportLocale,
+    required List<EarningModel> allEarnings,
+    required List<ExpenseModel> allExpenses,
+  }) async {
     final l = AppLocalizations.of(context)!;
-    if (monthsWithData.isEmpty) {
-      ErrorSnackbar.show(context, message: l.noEntriesToday);
-      return;
-    }
-
-    final selectedMonth = await _pickReportMonth(monthsWithData);
-    if (selectedMonth == null) return;
 
     setState(() => _isExportingTodayPdf = true);
     try {
-      final month = DateTime(selectedMonth.year, selectedMonth.month);
-      final earnings = await ref.read(monthlyEarningsProvider(month).future);
-      final expenses = await ref.read(monthlyExpensesProvider(month).future);
-      final jobs = await ref.read(monthlyJobsProvider(month).future);
-
-      if (earnings.isEmpty && expenses.isEmpty && jobs.isEmpty) {
+      final normalizedMonth = DateTime(month.year, month.month);
+      final earnings = allEarnings.where((item) {
+        final d = item.date;
+        return d != null &&
+            d.year == normalizedMonth.year &&
+            d.month == normalizedMonth.month;
+      }).toList();
+      final expenses = allExpenses.where((item) {
+        final d = item.date;
+        return d != null &&
+            d.year == normalizedMonth.year &&
+            d.month == normalizedMonth.month;
+      }).toList();
+      if (earnings.isEmpty && expenses.isEmpty) {
         if (mounted) {
           ErrorSnackbar.show(context, message: l.noEntriesToday);
         }
@@ -374,21 +469,19 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       }
 
       if (!mounted) return;
-      final locale = Localizations.localeOf(context).languageCode;
       final user = ref.read(currentUserProvider).value;
       final bytes = await PdfGenerator.generateTodayInOutReport(
         earnings: earnings,
         expenses: expenses,
-        todaysJobs: jobs,
-        locale: locale,
+        locale: reportLocale,
         technicianName: user?.name,
-        reportDate: month,
+        reportDate: normalizedMonth,
         monthlyMode: true,
       );
 
       await PdfGenerator.sharePdfBytes(
         bytes,
-        'in_out_${month.year}_${month.month.toString().padLeft(2, '0')}.pdf',
+        'in_out_${normalizedMonth.year}_${normalizedMonth.month.toString().padLeft(2, '0')}.pdf',
       );
     } catch (_) {
       if (mounted) {
@@ -654,13 +747,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     final l = AppLocalizations.of(context)!;
     final allEarningsAsync = ref.watch(techEarningsProvider);
     final allExpensesAsync = ref.watch(techExpensesProvider);
-    final allJobsAsync = ref.watch(technicianJobsProvider);
     final earningsAsync = ref.watch(todaysEarningsProvider);
     final expensesAsync = ref.watch(todaysExpensesProvider);
+    final allEarnings = allEarningsAsync.value ?? const <EarningModel>[];
+    final allExpenses = allExpensesAsync.value ?? const <ExpenseModel>[];
     final monthsWithData = _availableReportMonths(
-      earnings: allEarningsAsync.value ?? const [],
-      expenses: allExpensesAsync.value ?? const [],
-      jobs: allJobsAsync.value ?? const [],
+      earnings: allEarnings,
+      expenses: allExpenses,
     );
 
     ref.listen<AsyncValue<List<JobModel>>>(technicianJobsProvider, (
@@ -708,16 +801,26 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             onPressed:
                 _isExportingTodayPdf ||
                     allEarningsAsync.isLoading ||
-                    allExpensesAsync.isLoading ||
-                    allJobsAsync.isLoading ||
-                    monthsWithData.isEmpty
+                    allExpensesAsync.isLoading
                 ? null
-                : () => _exportTodayInOutPdf(monthsWithData),
+                : () async {
+                    final picked = await _pickReportOptions(monthsWithData);
+                    if (picked == null) return;
+                    if (!mounted) return;
+                    await _exportTodayInOutPdf(
+                      month: picked.month,
+                      reportLocale: picked.locale,
+                      allEarnings: allEarnings,
+                      allExpenses: allExpenses,
+                    );
+                  },
           ),
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
             tooltip: l.monthlySummary,
-            onPressed: () => context.push('/tech/summary'),
+            onPressed: monthsWithData.isEmpty
+                ? null
+                : () => _pickExportMonthFromCalendar(monthsWithData),
           ),
         ],
       ),

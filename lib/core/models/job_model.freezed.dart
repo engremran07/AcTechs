@@ -281,7 +281,7 @@ as int,
 /// @nodoc
 mixin _$InvoiceCharges {
 
- bool get acBracket; double get bracketAmount; bool get deliveryCharge; double get deliveryAmount; String get deliveryNote;
+ bool get acBracket; int get bracketCount; double get bracketAmount; bool get deliveryCharge; double get deliveryAmount; String get deliveryNote;
 /// Create a copy of InvoiceCharges
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -294,16 +294,16 @@ $InvoiceChargesCopyWith<InvoiceCharges> get copyWith => _$InvoiceChargesCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvoiceCharges&&(identical(other.acBracket, acBracket) || other.acBracket == acBracket)&&(identical(other.bracketAmount, bracketAmount) || other.bracketAmount == bracketAmount)&&(identical(other.deliveryCharge, deliveryCharge) || other.deliveryCharge == deliveryCharge)&&(identical(other.deliveryAmount, deliveryAmount) || other.deliveryAmount == deliveryAmount)&&(identical(other.deliveryNote, deliveryNote) || other.deliveryNote == deliveryNote));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvoiceCharges&&(identical(other.acBracket, acBracket) || other.acBracket == acBracket)&&(identical(other.bracketCount, bracketCount) || other.bracketCount == bracketCount)&&(identical(other.bracketAmount, bracketAmount) || other.bracketAmount == bracketAmount)&&(identical(other.deliveryCharge, deliveryCharge) || other.deliveryCharge == deliveryCharge)&&(identical(other.deliveryAmount, deliveryAmount) || other.deliveryAmount == deliveryAmount)&&(identical(other.deliveryNote, deliveryNote) || other.deliveryNote == deliveryNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,acBracket,bracketAmount,deliveryCharge,deliveryAmount,deliveryNote);
+int get hashCode => Object.hash(runtimeType,acBracket,bracketCount,bracketAmount,deliveryCharge,deliveryAmount,deliveryNote);
 
 @override
 String toString() {
-  return 'InvoiceCharges(acBracket: $acBracket, bracketAmount: $bracketAmount, deliveryCharge: $deliveryCharge, deliveryAmount: $deliveryAmount, deliveryNote: $deliveryNote)';
+  return 'InvoiceCharges(acBracket: $acBracket, bracketCount: $bracketCount, bracketAmount: $bracketAmount, deliveryCharge: $deliveryCharge, deliveryAmount: $deliveryAmount, deliveryNote: $deliveryNote)';
 }
 
 
@@ -314,7 +314,7 @@ abstract mixin class $InvoiceChargesCopyWith<$Res>  {
   factory $InvoiceChargesCopyWith(InvoiceCharges value, $Res Function(InvoiceCharges) _then) = _$InvoiceChargesCopyWithImpl;
 @useResult
 $Res call({
- bool acBracket, double bracketAmount, bool deliveryCharge, double deliveryAmount, String deliveryNote
+ bool acBracket, int bracketCount, double bracketAmount, bool deliveryCharge, double deliveryAmount, String deliveryNote
 });
 
 
@@ -331,10 +331,11 @@ class _$InvoiceChargesCopyWithImpl<$Res>
 
 /// Create a copy of InvoiceCharges
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? acBracket = null,Object? bracketAmount = null,Object? deliveryCharge = null,Object? deliveryAmount = null,Object? deliveryNote = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? acBracket = null,Object? bracketCount = null,Object? bracketAmount = null,Object? deliveryCharge = null,Object? deliveryAmount = null,Object? deliveryNote = null,}) {
   return _then(_self.copyWith(
 acBracket: null == acBracket ? _self.acBracket : acBracket // ignore: cast_nullable_to_non_nullable
-as bool,bracketAmount: null == bracketAmount ? _self.bracketAmount : bracketAmount // ignore: cast_nullable_to_non_nullable
+as bool,bracketCount: null == bracketCount ? _self.bracketCount : bracketCount // ignore: cast_nullable_to_non_nullable
+as int,bracketAmount: null == bracketAmount ? _self.bracketAmount : bracketAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryCharge: null == deliveryCharge ? _self.deliveryCharge : deliveryCharge // ignore: cast_nullable_to_non_nullable
 as bool,deliveryAmount: null == deliveryAmount ? _self.deliveryAmount : deliveryAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryNote: null == deliveryNote ? _self.deliveryNote : deliveryNote // ignore: cast_nullable_to_non_nullable
@@ -423,10 +424,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool acBracket,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool acBracket,  int bracketCount,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _InvoiceCharges() when $default != null:
-return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
+return $default(_that.acBracket,_that.bracketCount,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
   return orElse();
 
 }
@@ -444,10 +445,10 @@ return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.d
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool acBracket,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool acBracket,  int bracketCount,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)  $default,) {final _that = this;
 switch (_that) {
 case _InvoiceCharges():
-return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
+return $default(_that.acBracket,_that.bracketCount,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -464,10 +465,10 @@ return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.d
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool acBracket,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool acBracket,  int bracketCount,  double bracketAmount,  bool deliveryCharge,  double deliveryAmount,  String deliveryNote)?  $default,) {final _that = this;
 switch (_that) {
 case _InvoiceCharges() when $default != null:
-return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
+return $default(_that.acBracket,_that.bracketCount,_that.bracketAmount,_that.deliveryCharge,_that.deliveryAmount,_that.deliveryNote);case _:
   return null;
 
 }
@@ -479,10 +480,11 @@ return $default(_that.acBracket,_that.bracketAmount,_that.deliveryCharge,_that.d
 @JsonSerializable()
 
 class _InvoiceCharges implements InvoiceCharges {
-  const _InvoiceCharges({this.acBracket = false, this.bracketAmount = 0.0, this.deliveryCharge = false, this.deliveryAmount = 0.0, this.deliveryNote = ''});
+  const _InvoiceCharges({this.acBracket = false, this.bracketCount = 0, this.bracketAmount = 0.0, this.deliveryCharge = false, this.deliveryAmount = 0.0, this.deliveryNote = ''});
   factory _InvoiceCharges.fromJson(Map<String, dynamic> json) => _$InvoiceChargesFromJson(json);
 
 @override@JsonKey() final  bool acBracket;
+@override@JsonKey() final  int bracketCount;
 @override@JsonKey() final  double bracketAmount;
 @override@JsonKey() final  bool deliveryCharge;
 @override@JsonKey() final  double deliveryAmount;
@@ -501,16 +503,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _InvoiceCharges&&(identical(other.acBracket, acBracket) || other.acBracket == acBracket)&&(identical(other.bracketAmount, bracketAmount) || other.bracketAmount == bracketAmount)&&(identical(other.deliveryCharge, deliveryCharge) || other.deliveryCharge == deliveryCharge)&&(identical(other.deliveryAmount, deliveryAmount) || other.deliveryAmount == deliveryAmount)&&(identical(other.deliveryNote, deliveryNote) || other.deliveryNote == deliveryNote));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _InvoiceCharges&&(identical(other.acBracket, acBracket) || other.acBracket == acBracket)&&(identical(other.bracketCount, bracketCount) || other.bracketCount == bracketCount)&&(identical(other.bracketAmount, bracketAmount) || other.bracketAmount == bracketAmount)&&(identical(other.deliveryCharge, deliveryCharge) || other.deliveryCharge == deliveryCharge)&&(identical(other.deliveryAmount, deliveryAmount) || other.deliveryAmount == deliveryAmount)&&(identical(other.deliveryNote, deliveryNote) || other.deliveryNote == deliveryNote));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,acBracket,bracketAmount,deliveryCharge,deliveryAmount,deliveryNote);
+int get hashCode => Object.hash(runtimeType,acBracket,bracketCount,bracketAmount,deliveryCharge,deliveryAmount,deliveryNote);
 
 @override
 String toString() {
-  return 'InvoiceCharges(acBracket: $acBracket, bracketAmount: $bracketAmount, deliveryCharge: $deliveryCharge, deliveryAmount: $deliveryAmount, deliveryNote: $deliveryNote)';
+  return 'InvoiceCharges(acBracket: $acBracket, bracketCount: $bracketCount, bracketAmount: $bracketAmount, deliveryCharge: $deliveryCharge, deliveryAmount: $deliveryAmount, deliveryNote: $deliveryNote)';
 }
 
 
@@ -521,7 +523,7 @@ abstract mixin class _$InvoiceChargesCopyWith<$Res> implements $InvoiceChargesCo
   factory _$InvoiceChargesCopyWith(_InvoiceCharges value, $Res Function(_InvoiceCharges) _then) = __$InvoiceChargesCopyWithImpl;
 @override @useResult
 $Res call({
- bool acBracket, double bracketAmount, bool deliveryCharge, double deliveryAmount, String deliveryNote
+ bool acBracket, int bracketCount, double bracketAmount, bool deliveryCharge, double deliveryAmount, String deliveryNote
 });
 
 
@@ -538,10 +540,11 @@ class __$InvoiceChargesCopyWithImpl<$Res>
 
 /// Create a copy of InvoiceCharges
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? acBracket = null,Object? bracketAmount = null,Object? deliveryCharge = null,Object? deliveryAmount = null,Object? deliveryNote = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? acBracket = null,Object? bracketCount = null,Object? bracketAmount = null,Object? deliveryCharge = null,Object? deliveryAmount = null,Object? deliveryNote = null,}) {
   return _then(_InvoiceCharges(
 acBracket: null == acBracket ? _self.acBracket : acBracket // ignore: cast_nullable_to_non_nullable
-as bool,bracketAmount: null == bracketAmount ? _self.bracketAmount : bracketAmount // ignore: cast_nullable_to_non_nullable
+as bool,bracketCount: null == bracketCount ? _self.bracketCount : bracketCount // ignore: cast_nullable_to_non_nullable
+as int,bracketAmount: null == bracketAmount ? _self.bracketAmount : bracketAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryCharge: null == deliveryCharge ? _self.deliveryCharge : deliveryCharge // ignore: cast_nullable_to_non_nullable
 as bool,deliveryAmount: null == deliveryAmount ? _self.deliveryAmount : deliveryAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryNote: null == deliveryNote ? _self.deliveryNote : deliveryNote // ignore: cast_nullable_to_non_nullable

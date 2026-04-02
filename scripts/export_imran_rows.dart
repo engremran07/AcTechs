@@ -2,16 +2,23 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:excel/excel.dart' as excel_pkg;
 
-void main() {
-  final source = File('docs/Amoudi AIO 2025.xlsx');
+void main(List<String> args) {
+  final workbookPath = args.isNotEmpty
+      ? args.first
+      : 'docs/Amoudi AIO 2025.xlsx';
+  final technicianFilter = args.length > 1 ? _normalizeLookup(args[1]) : '';
+
+  final source = File(workbookPath);
   if (!source.existsSync()) {
-    stderr.writeln('Workbook not found: docs/Amoudi AIO 2025.xlsx');
+    stderr.writeln('Workbook not found: $workbookPath');
     exitCode = 1;
     return;
   }
 
   final workbook = excel_pkg.Excel.decodeBytes(source.readAsBytesSync());
   final rows = <Map<String, dynamic>>[];
+  var rowsWithoutTechnicianName = 0;
+  final technicianNameCounts = <String, int>{};
 
   for (final entry in workbook.tables.entries) {
     final sheetName = entry.key;
@@ -42,7 +49,15 @@ void main() {
       }
 
       final techValue = _normalizedCellValue(row, techIndex);
-      if (!_normalizeLookup(techValue).contains('imran')) {
+      final normalizedTech = _normalizeLookup(techValue);
+      if (normalizedTech.isEmpty) {
+        rowsWithoutTechnicianName++;
+      } else {
+        _incrementTechnicianCount(technicianNameCounts, techValue);
+      }
+
+      if (technicianFilter.isNotEmpty &&
+          !normalizedTech.contains(technicianFilter)) {
         continue;
       }
 
@@ -61,12 +76,18 @@ void main() {
     }
   }
 
-  final outputPath = 'logs/imran_rows_full.json';
+  final outputPath = technicianFilter.isEmpty
+      ? 'logs/technician_rows_full.json'
+      : 'logs/technician_rows_${_sanitizeForFileName(technicianFilter)}.json';
   File(outputPath)
     ..createSync(recursive: true)
     ..writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert({
-        'source': 'docs/Amoudi AIO 2025.xlsx',
+        'source': workbookPath,
+        'technicianFilter': technicianFilter,
+        'rowsWithoutTechnicianName': rowsWithoutTechnicianName,
+        'uniqueTechnicianNameCount': technicianNameCounts.length,
+        'technicianNameCounts': technicianNameCounts,
         'matchedRows': rows.length,
         'rows': rows,
       }),
@@ -111,6 +132,28 @@ String _normalizedCellValue(List<excel_pkg.Data?> row, int index) {
 
 String _normalizeLookup(String raw) {
   return _normalizedCellText(raw).toLowerCase();
+}
+
+void _incrementTechnicianCount(Map<String, int> counts, String rawName) {
+  final name = _normalizedCellText(rawName);
+  if (name.isEmpty) {
+    return;
+  }
+
+  final normalized = _normalizeLookup(name);
+  final existingKey = counts.keys.firstWhere(
+    (key) => _normalizeLookup(key) == normalized,
+    orElse: () => '',
+  );
+
+  final targetKey = existingKey.isEmpty ? name : existingKey;
+  counts[targetKey] = (counts[targetKey] ?? 0) + 1;
+}
+
+String _sanitizeForFileName(String value) {
+  return value
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'_+'), '_');
 }
 
 String _normalizedCellText(String raw) {

@@ -1,10 +1,15 @@
 import 'dart:io';
 import 'package:excel/excel.dart' as excel_pkg;
 
-void main() {
-  final file = File('docs/Amoudi AIO 2025.xlsx');
+void main(List<String> args) {
+  final workbookPath = args.isNotEmpty
+      ? args.first
+      : 'docs/Amoudi AIO 2025.xlsx';
+  final technicianFilter = args.length > 1 ? _normalizeLookup(args[1]) : '';
+
+  final file = File(workbookPath);
   if (!file.existsSync()) {
-    stderr.writeln('Workbook not found: docs/Amoudi AIO 2025.xlsx');
+    stderr.writeln('Workbook not found: $workbookPath');
     exitCode = 1;
     return;
   }
@@ -12,13 +17,19 @@ void main() {
   final bytes = file.readAsBytesSync();
   final workbook = excel_pkg.Excel.decodeBytes(bytes);
 
-  final target = _normalizeLookup('imran');
   var totalRows = 0;
   var matchedRows = 0;
+  var rowsWithoutTechnicianName = 0;
   var rowsWithLeadingOrTrailing = 0;
   var rowsWithHiddenWhitespace = 0;
+  final technicianCounts = <String, int>{};
 
-  print('Workbook: docs/Amoudi AIO 2025.xlsx');
+  print('Workbook: $workbookPath');
+  print(
+    technicianFilter.isEmpty
+        ? 'Technician filter: (none, all rows considered)'
+        : 'Technician filter: "$technicianFilter"',
+  );
   print('Sheets: ${workbook.tables.length}');
   print('');
 
@@ -43,6 +54,7 @@ void main() {
     final dateIndex = _findFirstIndex(headerMap, const ['date']);
 
     var sheetMatched = 0;
+    var sheetNoTechName = 0;
     var sheetLeadTrail = 0;
     var sheetHiddenWhitespace = 0;
 
@@ -66,7 +78,9 @@ void main() {
         if (raw != raw.trim()) {
           hasLeadTrail = true;
         }
-        if (RegExp(r'[\u00A0\u2007\u202F\u200B\u200C\u200D\uFEFF]').hasMatch(raw)) {
+        if (RegExp(
+          r'[\u00A0\u2007\u202F\u200B\u200C\u200D\uFEFF]',
+        ).hasMatch(raw)) {
           hasHiddenWhitespace = true;
         }
       }
@@ -82,7 +96,15 @@ void main() {
 
       final techRaw = _indexValue(row, techIndex);
       final techNormalized = _normalizeLookup(techRaw);
-      if (!techNormalized.contains(target)) {
+      if (techNormalized.isEmpty) {
+        rowsWithoutTechnicianName++;
+        sheetNoTechName++;
+      } else {
+        _incrementTechnicianCount(technicianCounts, techRaw);
+      }
+
+      if (technicianFilter.isNotEmpty &&
+          !techNormalized.contains(technicianFilter)) {
         continue;
       }
 
@@ -96,9 +118,12 @@ void main() {
       );
     }
 
-    if (sheetMatched > 0 || sheetLeadTrail > 0 || sheetHiddenWhitespace > 0) {
+    if (sheetMatched > 0 ||
+        sheetNoTechName > 0 ||
+        sheetLeadTrail > 0 ||
+        sheetHiddenWhitespace > 0) {
       print(
-        '[SHEET] "$sheetName" matches=$sheetMatched lead/trail-space-rows=$sheetLeadTrail hidden-whitespace-rows=$sheetHiddenWhitespace',
+        '[SHEET] "$sheetName" matches=$sheetMatched no-tech-name-rows=$sheetNoTechName lead/trail-space-rows=$sheetLeadTrail hidden-whitespace-rows=$sheetHiddenWhitespace',
       );
     }
   }
@@ -106,9 +131,35 @@ void main() {
   print('');
   print('Summary:');
   print('  Total non-empty data rows: $totalRows');
-  print('  Rows matching "imran": $matchedRows');
+  print('  Rows matched by filter: $matchedRows');
+  print('  Rows with no technician name: $rowsWithoutTechnicianName');
   print('  Rows with leading/trailing spaces: $rowsWithLeadingOrTrailing');
   print('  Rows with hidden unicode whitespace: $rowsWithHiddenWhitespace');
+  print('  Unique technician names found: ${technicianCounts.length}');
+  if (technicianCounts.isNotEmpty) {
+    print('  Technician counts:');
+    final sorted = technicianCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    for (final entry in sorted) {
+      print('    ${entry.key}: ${entry.value}');
+    }
+  }
+}
+
+void _incrementTechnicianCount(Map<String, int> counts, String rawName) {
+  final name = _normalizeCellText(rawName);
+  if (name.isEmpty) {
+    return;
+  }
+
+  final normalized = _normalizeLookup(name);
+  final existingKey = counts.keys.firstWhere(
+    (key) => _normalizeLookup(key) == normalized,
+    orElse: () => '',
+  );
+
+  final targetKey = existingKey.isEmpty ? name : existingKey;
+  counts[targetKey] = (counts[targetKey] ?? 0) + 1;
 }
 
 bool _rowIsEmpty(List<excel_pkg.Data?> row) {
@@ -157,10 +208,15 @@ String _normalizeHeaderKey(String raw) {
       .trim();
 
   return switch (value) {
-    'invoice no' || 'invoice #' || 'inv' || 'invoice' || 'invoice number' =>
-      'invoice number',
-    'tech name' || 'technician name' || 'tech' || 'technician' =>
-      'technician name',
+    'invoice no' ||
+    'invoice #' ||
+    'inv' ||
+    'invoice' ||
+    'invoice number' => 'invoice number',
+    'tech name' ||
+    'technician name' ||
+    'tech' ||
+    'technician' => 'technician name',
     _ => value,
   };
 }

@@ -23,15 +23,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   final _invoiceController = TextEditingController();
   final _clientNameController = TextEditingController();
   final _clientContactController = TextEditingController();
-  final _bracketAmountController = TextEditingController();
   final _deliveryAmountController = TextEditingController();
   final _deliveryNoteController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
   bool _isSubmitting = false;
-  bool _hasBracket = false;
-  bool _hasDelivery = false;
+  int _bracketQty = 0;
   int _splitQty = 0;
   int _windowQty = 0;
   int _uninstallSplitQty = 0;
@@ -47,7 +45,6 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _invoiceController.dispose();
     _clientNameController.dispose();
     _clientContactController.dispose();
-    _bracketAmountController.dispose();
     _deliveryAmountController.dispose();
     _deliveryNoteController.dispose();
     _descriptionController.dispose();
@@ -105,13 +102,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _invoiceController.clear();
     _clientNameController.clear();
     _clientContactController.clear();
-    _bracketAmountController.clear();
     _deliveryAmountController.clear();
     _deliveryNoteController.clear();
     _descriptionController.clear();
     setState(() {
-      _hasBracket = false;
-      _hasDelivery = false;
+      _bracketQty = 0;
       _splitQty = 0;
       _windowQty = 0;
       _uninstallSplitQty = 0;
@@ -154,12 +149,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       final user = asyncUser.value!;
 
       final charges = InvoiceCharges(
-        acBracket: _hasBracket,
-        bracketAmount:
-            double.tryParse(_bracketAmountController.text.trim()) ?? 0,
-        deliveryCharge: _hasDelivery,
+        acBracket: _bracketQty > 0,
+        bracketCount: _bracketQty,
+        bracketAmount: 0,
         deliveryAmount:
             double.tryParse(_deliveryAmountController.text.trim()) ?? 0,
+        deliveryCharge:
+            (double.tryParse(_deliveryAmountController.text.trim()) ?? 0) > 0,
         deliveryNote: _deliveryNoteController.text.trim(),
       );
 
@@ -262,10 +258,10 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: _QtyTile(
-                                  label: l.uninstallSplit,
-                                  value: _uninstallSplitQty,
+                                  label: l.acOutdoorBracket,
+                                  value: _bracketQty,
                                   onChanged: (v) =>
-                                      setState(() => _uninstallSplitQty = v),
+                                      setState(() => _bracketQty = v),
                                 ),
                               ),
                             ],
@@ -275,13 +271,26 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             children: [
                               Expanded(
                                 child: _QtyTile(
+                                  label: l.uninstallSplit,
+                                  value: _uninstallSplitQty,
+                                  onChanged: (v) =>
+                                      setState(() => _uninstallSplitQty = v),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _QtyTile(
                                   label: l.uninstallWindow,
                                   value: _uninstallWindowQty,
                                   onChanged: (v) =>
                                       setState(() => _uninstallWindowQty = v),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
                               Expanded(
                                 child: _QtyTile(
                                   label: l.uninstallStanding,
@@ -290,6 +299,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                       setState(() => _uninstallStandingQty = v),
                                 ),
                               ),
+                              const Spacer(),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -490,85 +500,46 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     ArcticCard(
                       child: Column(
                         children: [
-                          // AC Bracket
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l.acOutdoorBracket),
-                            subtitle: Text(l.bracketSubtitle),
-                            secondary: const Icon(
-                              Icons.handyman_outlined,
-                              color: ArcticTheme.arcticBlue,
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              l.deliverySubtitle,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: ArcticTheme.arcticTextSecondary,
+                              ),
                             ),
-                            value: _hasBracket,
-                            onChanged: (v) => setState(() => _hasBracket = v),
                           ),
-                          if (_hasBracket) ...[
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _bracketAmountController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              textInputAction: TextInputAction.done,
-                              enableInteractiveSelection: true,
-                              decoration: InputDecoration(
-                                hintText: l.bracketCharge,
-                                prefixIcon: const Icon(
-                                  Icons.payments_outlined,
-                                  color: ArcticTheme.arcticTextSecondary,
-                                ),
-                                isDense: true,
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _deliveryAmountController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            textInputAction: TextInputAction.next,
+                            enableInteractiveSelection: true,
+                            decoration: InputDecoration(
+                              hintText: l.deliveryChargeAmount,
+                              prefixIcon: const Icon(
+                                Icons.payments_outlined,
+                                color: ArcticTheme.arcticTextSecondary,
                               ),
+                              isDense: true,
                             ),
-                          ],
-                          const Divider(height: 24),
-                          // Delivery Charge
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l.deliveryCharge),
-                            subtitle: Text(l.deliverySubtitle),
-                            secondary: const Icon(
-                              Icons.local_shipping_outlined,
-                              color: ArcticTheme.arcticBlue,
-                            ),
-                            value: _hasDelivery,
-                            onChanged: (v) => setState(() => _hasDelivery = v),
                           ),
-                          if (_hasDelivery) ...[
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _deliveryAmountController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              textInputAction: TextInputAction.next,
-                              enableInteractiveSelection: true,
-                              decoration: InputDecoration(
-                                hintText: l.deliveryChargeAmount,
-                                prefixIcon: const Icon(
-                                  Icons.payments_outlined,
-                                  color: ArcticTheme.arcticTextSecondary,
-                                ),
-                                isDense: true,
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _deliveryNoteController,
+                            textInputAction: TextInputAction.done,
+                            enableInteractiveSelection: true,
+                            decoration: InputDecoration(
+                              hintText: l.locationNote,
+                              prefixIcon: const Icon(
+                                Icons.location_on_outlined,
+                                color: ArcticTheme.arcticTextSecondary,
                               ),
+                              isDense: true,
                             ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _deliveryNoteController,
-                              textInputAction: TextInputAction.done,
-                              enableInteractiveSelection: true,
-                              decoration: InputDecoration(
-                                hintText: l.locationNote,
-                                prefixIcon: const Icon(
-                                  Icons.location_on_outlined,
-                                  color: ArcticTheme.arcticTextSecondary,
-                                ),
-                                isDense: true,
-                              ),
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ).animate().fadeIn(delay: 350.ms),

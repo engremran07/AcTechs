@@ -112,7 +112,7 @@
   "serviceType": "Service type",
   "add": "Add",
   "additionalCharges": "Additional Charges",
-  "acOutdoorBracket": "AC Outdoor Bracket",
+  "acOutdoorBracket": "Outdoor Bracket",
   "bracketSubtitle": "Bracket for outdoor unit mounting",
   "bracketCharge": "Bracket charge (SAR)",
   "deliveryCharge": "Delivery Charge",
@@ -313,10 +313,19 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importRowsWithoutTechName": "{count} rows have no technician name",
+  "@importRowsWithoutTechName": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importUniqueTechNamesCount": "{count} unique technician names found",
+  "@importUniqueTechNamesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importTopTechNamesLabel": "Top technician names",
   "importTargetTechnician": "Target technician",
   "importTargetTechnicianRequired": "Select the technician who should receive the imported history.",
   "importTechnicianKeyword": "Source technician filter",
-  "importTechnicianKeywordHint": "Example: imran",
+  "importTechnicianKeywordHint": "Example: name, email, or uid",
   "importTechnicianKeywordHelp": "Only rows whose technician name, email, or ID matches this text will be imported.",
   "importKeywordRequired": "Please filter by technician keyword to prevent accidental bulk upload.",
   "importBundledTemplates": "Import bundled history templates",

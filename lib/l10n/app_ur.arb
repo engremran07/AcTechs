@@ -313,10 +313,19 @@
   "@importUnresolvedTechRows": {
     "placeholders": { "count": { "type": "int" } }
   },
+  "importRowsWithoutTechName": "{count} قطاروں میں ٹیکنیشن کا نام موجود نہیں",
+  "@importRowsWithoutTechName": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importUniqueTechNamesCount": "{count} منفرد ٹیکنیشن نام ملے",
+  "@importUniqueTechNamesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importTopTechNamesLabel": "زیادہ آنے والے ٹیکنیشن نام",
   "importTargetTechnician": "ٹارگٹ ٹیکنیشن",
   "importTargetTechnicianRequired": "وہ ٹیکنیشن منتخب کریں جس کے اکاؤنٹ میں یہ تاریخی ڈیٹا ڈالنا ہے۔",
   "importTechnicianKeyword": "سورس ٹیکنیشن فلٹر",
-  "importTechnicianKeywordHint": "مثال: imran",
+  "importTechnicianKeywordHint": "مثال: نام، ای میل، یا uid",
   "importTechnicianKeywordHelp": "صرف وہ قطاریں امپورٹ ہوں گی جن میں ٹیکنیشن کا نام، ای میل، یا آئی ڈی اس متن سے میچ کرے۔",
   "importKeywordRequired": "غلطی سے بڑی درآمد سے بچنے کے لیے برائے کرم ٹیکنیشن کی طرف سے فلٹر کریں۔",
   "importBundledTemplates": "بنڈل شدہ تاریخی ٹیمپلیٹس امپورٹ کریں",

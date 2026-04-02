@@ -103,6 +103,9 @@ const AC_TYPES = [
   'Freestanding AC',
   'Cassette AC',
   'Uninstallation (Old AC)',
+  'Uninstallation Split',
+  'Uninstallation Window',
+  'Uninstallation Freestanding',
 ];
 
 const CLIENT_NAMES = [
@@ -114,6 +117,12 @@ const CLIENT_NAMES = [
   'Nasser Al-Dosari',
   'Ibrahim Al-Mutairi',
   'Yousuf Bin Rashid',
+  'عمر بن خالد',
+  'محمد علي',
+  'احمد فهد',
+  'فیصل خان',
+  'محمد نعیم',
+  'احمد رضا',
 ];
 
 const EXPENSE_CATEGORIES = [
@@ -152,17 +161,52 @@ async function buildJobs(techs, adminUser, companyIds) {
     const companyRow = COMPANY_ROWS[companyIds.indexOf(companyId)] ?? COMPANY_ROWS[0];
     const invoiceNum = `${companyRow.invoicePrefix}-${String(1000 + i).padStart(4, '0')}`;
 
-    const acUnits = Array.from({ length: rand(1, 3) }, () => ({
-      type: pick(AC_TYPES),
-      quantity: rand(1, 2),
-    }));
+    const splitQty = rand(0, 4);
+    const windowQty = rand(0, 3);
+    const freestandingQty = rand(0, 3);
+    const cassetteQty = rand(0, 2);
+    const uninstallOldQty = rand(0, 2);
+    const uninstallSplitQty = rand(0, 3);
+    const uninstallWindowQty = rand(0, 2);
+    const uninstallFreestandingQty = rand(0, 2);
+
+    const acUnits = [];
+    if (splitQty > 0) acUnits.push({ type: 'Split AC', quantity: splitQty });
+    if (windowQty > 0) acUnits.push({ type: 'Window AC', quantity: windowQty });
+    if (freestandingQty > 0) {
+      acUnits.push({ type: 'Freestanding AC', quantity: freestandingQty });
+    }
+    if (cassetteQty > 0) acUnits.push({ type: 'Cassette AC', quantity: cassetteQty });
+    if (uninstallOldQty > 0) {
+      acUnits.push({ type: 'Uninstallation (Old AC)', quantity: uninstallOldQty });
+    }
+    if (uninstallSplitQty > 0) {
+      acUnits.push({ type: 'Uninstallation Split', quantity: uninstallSplitQty });
+    }
+    if (uninstallWindowQty > 0) {
+      acUnits.push({ type: 'Uninstallation Window', quantity: uninstallWindowQty });
+    }
+    if (uninstallFreestandingQty > 0) {
+      acUnits.push({ type: 'Uninstallation Freestanding', quantity: uninstallFreestandingQty });
+    }
+    if (!acUnits.length) {
+      acUnits.push({ type: 'Split AC', quantity: 1 });
+    }
+
+    const bracketBase = splitQty + freestandingQty;
+    const bracketCount = Math.max(0, bracketBase + rand(-1, 1));
+    const deliveryAmount = Math.random() > 0.45 ? rand(20, 150) : 0;
+    const deliveryNote = deliveryAmount > 0
+      ? pick(['remote location', 'roof access', 'cash paid by customer', 'urgent transport'])
+      : '';
 
     const charges = {
-      acBracket: Math.random() > 0.5,
-      bracketAmount: rand(50, 150),
-      deliveryCharge: Math.random() > 0.6,
-      deliveryAmount: rand(30, 100),
-      deliveryNote: Math.random() > 0.5 ? 'remote location' : '',
+      acBracket: bracketCount > 0,
+      bracketCount,
+      bracketAmount: 0,
+      deliveryCharge: deliveryAmount > 0,
+      deliveryAmount,
+      deliveryNote,
     };
 
     docs.push({
@@ -177,7 +221,7 @@ async function buildJobs(techs, adminUser, companyIds) {
         acUnits,
         status,
         expenses: rand(0, 300),
-        expenseNote: Math.random() > 0.5 ? 'petrol + tools' : '',
+        expenseNote: Math.random() > 0.5 ? pick(['petrol + tools', 'client requested duct fix', 'extra pipe work']) : '',
         adminNote: status === 'rejected' ? 'Incomplete information' : status === 'approved' ? 'Verified OK' : '',
         approvedBy: status !== 'pending' && adminUser ? adminUser.name : '',
         charges,

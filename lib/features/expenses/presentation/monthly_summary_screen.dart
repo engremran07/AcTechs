@@ -27,6 +27,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   DateTimeRange? _pdfDateRange;
   bool _isExporting = false;
   bool _isExportingPdf = false;
+  static const int _minSupportedYear = 2000;
 
   @override
   void initState() {
@@ -43,20 +44,141 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   }
 
   void _prevMonth() {
-    setState(() {
-      _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
-      _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
-    });
+    final previous = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+    _setSelectedMonth(previous);
   }
 
   void _nextMonth() {
     final now = DateTime.now();
     final next = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
-    if (next.isAfter(DateTime(now.year, now.month + 1))) return;
+    if (next.isAfter(DateTime(now.year, now.month))) return;
+    _setSelectedMonth(next);
+  }
+
+  void _setSelectedMonth(DateTime month) {
     setState(() {
-      _selectedMonth = next;
+      _selectedMonth = DateTime(month.year, month.month);
       _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
     });
+  }
+
+  List<DateTime> _availableSummaryMonths({
+    required List<JobModel> jobs,
+    required List<ExpenseModel> expenses,
+    required List<EarningModel> earnings,
+  }) {
+    final months = <DateTime>{};
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    void addIfValid(DateTime? rawDate) {
+      if (rawDate == null) return;
+      if (rawDate.year < _minSupportedYear) return;
+      final normalized = DateTime(rawDate.year, rawDate.month);
+      if (normalized.isAfter(currentMonth)) return;
+      months.add(normalized);
+    }
+
+    for (final item in jobs) {
+      addIfValid(item.date);
+    }
+    for (final item in expenses) {
+      addIfValid(item.date);
+    }
+    for (final item in earnings) {
+      addIfValid(item.date);
+    }
+
+    final sorted = months.toList()
+      ..sort((a, b) {
+        final y = b.year.compareTo(a.year);
+        return y != 0 ? y : b.month.compareTo(a.month);
+      });
+    return sorted;
+  }
+
+  Future<void> _pickSummaryMonth(List<DateTime> months) async {
+    final localizations = MaterialLocalizations.of(context);
+    final years = months.map((m) => m.year).toSet().toList()
+      ..sort((a, b) => b.compareTo(a));
+    var selectedYear = _selectedMonth.year;
+    if (!years.contains(selectedYear) && years.isNotEmpty) {
+      selectedYear = years.first;
+    }
+
+    final selected = await showModalBottomSheet<DateTime>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final selectedYearMonths = months
+                .where((m) => m.year == selectedYear)
+                .toList()
+              ..sort((a, b) => b.month.compareTo(a.month));
+
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      AppLocalizations.of(context)!.monthlySummary,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 48,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: years.length,
+                      separatorBuilder: (_, i) => const SizedBox(width: 8),
+                      itemBuilder: (_, index) {
+                        final year = years[index];
+                        return ChoiceChip(
+                          label: Text(year.toString()),
+                          selected: year == selectedYear,
+                          onSelected: (_) {
+                            setSheetState(() {
+                              selectedYear = year;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: selectedYearMonths.length,
+                      separatorBuilder: (_, i) => const Divider(height: 1),
+                      itemBuilder: (_, index) {
+                        final month = selectedYearMonths[index];
+                        return ListTile(
+                          leading: const Icon(
+                            Icons.circle,
+                            size: 12,
+                            color: ArcticTheme.arcticSuccess,
+                          ),
+                          title: Text(localizations.formatMonthYear(month)),
+                          onTap: () => Navigator.of(ctx).pop(month),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selected == null) return;
+    _setSelectedMonth(selected);
   }
 
   Future<void> _pickPdfDateRange() async {
@@ -366,6 +488,30 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final allJobs = ref.watch(technicianJobsProvider).value ?? const <JobModel>[];
+    final allExpenses =
+        ref.watch(techExpensesProvider).value ?? const <ExpenseModel>[];
+    final allEarnings =
+        ref.watch(techEarningsProvider).value ?? const <EarningModel>[];
+    final availableMonths = _availableSummaryMonths(
+      jobs: allJobs,
+      expenses: allExpenses,
+      earnings: allEarnings,
+    );
+
+    if (availableMonths.isNotEmpty) {
+      final selectedKey = DateTime(_selectedMonth.year, _selectedMonth.month);
+      final hasSelected = availableMonths.any(
+        (m) => m.year == selectedKey.year && m.month == selectedKey.month,
+      );
+      if (!hasSelected) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _setSelectedMonth(availableMonths.first);
+        });
+      }
+    }
+
     final jobsAsync = ref.watch(monthlyJobsProvider(_selectedMonth));
     final expensesAsync = ref.watch(monthlyExpensesProvider(_selectedMonth));
     final earningsAsync = ref.watch(monthlyEarningsProvider(_selectedMonth));
@@ -466,7 +612,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               // Month Selector
-              _buildMonthSelector(context),
+              _buildMonthSelector(context, availableMonths),
               if (_pdfDateRange != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -510,23 +656,43 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     );
   }
 
-  Widget _buildMonthSelector(BuildContext context) {
+  Widget _buildMonthSelector(BuildContext context, List<DateTime> availableMonths) {
+    final canPickFromData = availableMonths.isNotEmpty;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          onPressed: _prevMonth,
+          onPressed: canPickFromData ? _prevMonth : null,
           icon: const Icon(Icons.chevron_left_rounded),
           style: IconButton.styleFrom(
             backgroundColor: ArcticTheme.arcticSurface,
           ),
         ),
-        Text(
-          _monthLabel(),
-          style: Theme.of(context).textTheme.titleLarge,
-        ).animate(key: ValueKey(_selectedMonth)).fadeIn().slideX(begin: 0.05),
+        InkWell(
+          onTap: canPickFromData ? () => _pickSummaryMonth(availableMonths) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _monthLabel(),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ).animate(key: ValueKey(_selectedMonth)).fadeIn().slideX(begin: 0.05),
+                if (canPickFromData) ...[
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    color: ArcticTheme.arcticTextSecondary,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
         IconButton(
-          onPressed: _nextMonth,
+          onPressed: canPickFromData ? _nextMonth : null,
           icon: const Icon(Icons.chevron_right_rounded),
           style: IconButton.styleFrom(
             backgroundColor: ArcticTheme.arcticSurface,

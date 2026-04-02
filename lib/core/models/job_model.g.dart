@@ -19,6 +19,7 @@ Map<String, dynamic> _$AcUnitToJson(_AcUnit instance) => <String, dynamic>{
 _InvoiceCharges _$InvoiceChargesFromJson(Map<String, dynamic> json) =>
     _InvoiceCharges(
       acBracket: json['acBracket'] as bool? ?? false,
+      bracketCount: (json['bracketCount'] as num?)?.toInt() ?? 0,
       bracketAmount: (json['bracketAmount'] as num?)?.toDouble() ?? 0.0,
       deliveryCharge: json['deliveryCharge'] as bool? ?? false,
       deliveryAmount: (json['deliveryAmount'] as num?)?.toDouble() ?? 0.0,
@@ -28,6 +29,7 @@ _InvoiceCharges _$InvoiceChargesFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$InvoiceChargesToJson(_InvoiceCharges instance) =>
     <String, dynamic>{
       'acBracket': instance.acBracket,
+      'bracketCount': instance.bracketCount,
       'bracketAmount': instance.bracketAmount,
       'deliveryCharge': instance.deliveryCharge,
       'deliveryAmount': instance.deliveryAmount,

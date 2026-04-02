@@ -846,6 +846,19 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String importRowsWithoutTechName(int count) {
+    return '$count صفوف بدون اسم فني';
+  }
+
+  @override
+  String importUniqueTechNamesCount(int count) {
+    return 'تم العثور على $count أسماء فنيين فريدة';
+  }
+
+  @override
+  String get importTopTechNamesLabel => 'أكثر أسماء الفنيين تكراراً';
+
+  @override
   String get importTargetTechnician => 'الفني المستهدف';
 
   @override
@@ -856,7 +869,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get importTechnicianKeyword => 'مرشح الفني المصدر';
 
   @override
-  String get importTechnicianKeywordHint => 'مثال: imran';
+  String get importTechnicianKeywordHint =>
+      'مثال: الاسم أو البريد الإلكتروني أو uid';
 
   @override
   String get importTechnicianKeywordHelp =>

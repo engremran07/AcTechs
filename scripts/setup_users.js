@@ -57,6 +57,13 @@ const users = [
     role: 'technician',
     language: 'en',
   },
+  {
+    email: 'tech3@actechs.pk',
+    password: 'Tech3@123',
+    displayName: 'Omar Al-Farouq',
+    role: 'technician',
+    language: 'ar',
+  },
 ];
 
 async function createUser(userData) {
@@ -116,6 +123,7 @@ async function main() {
   console.log('  Admin:  admin@actechs.pk / Admin@123');
   console.log('  Tech 1: tech1@actechs.pk / Tech1@123');
   console.log('  Tech 2: tech2@actechs.pk / Tech2@123');
+  console.log('  Tech 3: tech3@actechs.pk / Tech3@123');
   console.log('');
 
   process.exit(0);

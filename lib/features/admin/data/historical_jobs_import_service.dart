@@ -9,6 +9,8 @@ class HistoricalImportResult {
     required this.jobs,
     required this.skippedRows,
     required this.unresolvedTechnicians,
+    required this.rowsWithoutTechnicianName,
+    required this.technicianNameCounts,
     required this.sheetSummaries,
   });
 
@@ -22,6 +24,9 @@ class HistoricalImportResult {
       skippedRows: (json['skippedRows'] as num?)?.toInt() ?? 0,
       unresolvedTechnicians:
           (json['unresolvedTechnicians'] as num?)?.toInt() ?? 0,
+      rowsWithoutTechnicianName:
+          (json['rowsWithoutTechnicianName'] as num?)?.toInt() ?? 0,
+      technicianNameCounts: _stringIntMapFromJson(json['technicianNameCounts']),
       sheetSummaries:
           (json['sheetSummaries'] as List<dynamic>? ?? const <dynamic>[])
               .map(
@@ -36,6 +41,8 @@ class HistoricalImportResult {
   final List<JobModel> jobs;
   final int skippedRows;
   final int unresolvedTechnicians;
+  final int rowsWithoutTechnicianName;
+  final Map<String, int> technicianNameCounts;
   final List<HistoricalImportSheetSummary> sheetSummaries;
 
   Map<String, dynamic> toJson() {
@@ -43,6 +50,8 @@ class HistoricalImportResult {
       'jobs': jobs.map((job) => job.toJson()).toList(),
       'skippedRows': skippedRows,
       'unresolvedTechnicians': unresolvedTechnicians,
+      'rowsWithoutTechnicianName': rowsWithoutTechnicianName,
+      'technicianNameCounts': technicianNameCounts,
       'sheetSummaries': sheetSummaries.map((s) => s.toJson()).toList(),
     };
   }
@@ -54,6 +63,8 @@ class HistoricalImportSheetSummary {
     required this.importedRows,
     required this.skippedRows,
     required this.unresolvedTechnicians,
+    required this.rowsWithoutTechnicianName,
+    required this.technicianNameCounts,
     required this.installedSplit,
     required this.installedWindow,
     required this.installedFreestanding,
@@ -71,6 +82,9 @@ class HistoricalImportSheetSummary {
       skippedRows: (json['skippedRows'] as num?)?.toInt() ?? 0,
       unresolvedTechnicians:
           (json['unresolvedTechnicians'] as num?)?.toInt() ?? 0,
+      rowsWithoutTechnicianName:
+          (json['rowsWithoutTechnicianName'] as num?)?.toInt() ?? 0,
+      technicianNameCounts: _stringIntMapFromJson(json['technicianNameCounts']),
       installedSplit: (json['installedSplit'] as num?)?.toInt() ?? 0,
       installedWindow: (json['installedWindow'] as num?)?.toInt() ?? 0,
       installedFreestanding:
@@ -88,6 +102,8 @@ class HistoricalImportSheetSummary {
   final int importedRows;
   final int skippedRows;
   final int unresolvedTechnicians;
+  final int rowsWithoutTechnicianName;
+  final Map<String, int> technicianNameCounts;
   final int installedSplit;
   final int installedWindow;
   final int installedFreestanding;
@@ -103,6 +119,8 @@ class HistoricalImportSheetSummary {
       'importedRows': importedRows,
       'skippedRows': skippedRows,
       'unresolvedTechnicians': unresolvedTechnicians,
+      'rowsWithoutTechnicianName': rowsWithoutTechnicianName,
+      'technicianNameCounts': technicianNameCounts,
       'installedSplit': installedSplit,
       'installedWindow': installedWindow,
       'installedFreestanding': installedFreestanding,
@@ -113,6 +131,22 @@ class HistoricalImportSheetSummary {
       'note': note,
     };
   }
+}
+
+Map<String, int> _stringIntMapFromJson(dynamic raw) {
+  if (raw is! Map) {
+    return const <String, int>{};
+  }
+
+  final map = <String, int>{};
+  for (final entry in raw.entries) {
+    final key = entry.key?.toString() ?? '';
+    if (key.isEmpty) {
+      continue;
+    }
+    map[key] = (entry.value as num?)?.toInt() ?? 0;
+  }
+  return map;
 }
 
 Map<String, dynamic> parseHistoricalImportInIsolate(
@@ -227,6 +261,8 @@ class HistoricalJobsImportService {
         jobs: [],
         skippedRows: 0,
         unresolvedTechnicians: 0,
+        rowsWithoutTechnicianName: 0,
+        technicianNameCounts: <String, int>{},
         sheetSummaries: [],
       );
     }
@@ -242,8 +278,10 @@ class HistoricalJobsImportService {
 
     final jobsByInvoice = <String, JobModel>{};
     final sheetSummaries = <HistoricalImportSheetSummary>[];
+    final globalTechnicianNameCounts = <String, int>{};
     var skipped = 0;
     var unresolvedTech = 0;
+    var rowsWithoutTechnicianName = 0;
     final normalizedKeyword = _normalizeLookup(technicianKeyword ?? '');
 
     for (final entry in workbook.tables.entries) {
@@ -261,6 +299,8 @@ class HistoricalJobsImportService {
       var sheetImportedRows = 0;
       var sheetSkippedRows = 0;
       var sheetUnresolvedTechnicians = 0;
+      var sheetRowsWithoutTechnicianName = 0;
+      final sheetTechnicianNameCounts = <String, int>{};
       var sheetInstalledSplit = 0;
       var sheetInstalledWindow = 0;
       var sheetInstalledFreestanding = 0;
@@ -282,6 +322,18 @@ class HistoricalJobsImportService {
         final row = rows[i];
         if (_rowIsEmpty(row)) continue;
 
+        final sourceTechName = _value(row, headerMap, [
+          'tech name',
+          'technician name',
+        ]);
+        if (sourceTechName.isEmpty) {
+          rowsWithoutTechnicianName++;
+          sheetRowsWithoutTechnicianName++;
+        } else {
+          _incrementTechnicianCount(globalTechnicianNameCounts, sourceTechName);
+          _incrementTechnicianCount(sheetTechnicianNameCounts, sourceTechName);
+        }
+
         final rawInvoice = _value(row, headerMap, [
           'invoice number',
           'invoice',
@@ -299,11 +351,6 @@ class HistoricalJobsImportService {
           sheetSkippedRows++;
           continue;
         }
-
-        final sourceTechName = _value(row, headerMap, [
-          'tech name',
-          'technician name',
-        ]);
 
         final tech =
             targetUser ?? _resolveUser(row, headerMap, byUid, byEmail, byName);
@@ -491,6 +538,8 @@ class HistoricalJobsImportService {
           importedRows: sheetImportedRows,
           skippedRows: sheetSkippedRows,
           unresolvedTechnicians: sheetUnresolvedTechnicians,
+          rowsWithoutTechnicianName: sheetRowsWithoutTechnicianName,
+          technicianNameCounts: sheetTechnicianNameCounts,
           installedSplit: sheetInstalledSplit,
           installedWindow: sheetInstalledWindow,
           installedFreestanding: sheetInstalledFreestanding,
@@ -507,6 +556,8 @@ class HistoricalJobsImportService {
       jobs: jobsByInvoice.values.toList(),
       skippedRows: skipped,
       unresolvedTechnicians: unresolvedTech,
+      rowsWithoutTechnicianName: rowsWithoutTechnicianName,
+      technicianNameCounts: globalTechnicianNameCounts,
       sheetSummaries: sheetSummaries,
     );
   }
@@ -582,8 +633,19 @@ class HistoricalJobsImportService {
             candidateIndex < headerRow.length) {
           final candidateHeader =
               (headerRow[candidateIndex]?.value?.toString() ?? '').trim();
-          if (candidateHeader.isEmpty) {
+          if (candidateHeader.isEmpty && candidateIndex > contactIndex) {
             map['split'] = candidateIndex;
+          }
+        }
+      }
+      if (!map.containsKey('split') && windowIndex != null && windowIndex > 1) {
+        for (var checkIdx = 0; checkIdx < windowIndex; checkIdx++) {
+          final header = (headerRow[checkIdx]?.value?.toString() ?? '').trim();
+          if (header.isEmpty &&
+              (contactIndex == null || checkIdx > contactIndex) &&
+              !map.containsValue(checkIdx)) {
+            map['split'] = checkIdx;
+            break;
           }
         }
       }
@@ -630,6 +692,32 @@ class HistoricalJobsImportService {
     };
   }
 
+  static String _normalizeCellText(String raw) {
+    return raw
+        .replaceAll(RegExp(r'[\u00A0\u2007\u202F]'), ' ')
+        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+  }
+
+  static String _normalizeLookup(String raw) {
+    return _normalizeCellText(raw).toLowerCase();
+  }
+
+  static String _normalizeNumericText(String raw) {
+    final normalized = _normalizeCellText(raw).replaceAll(',', '');
+    final direct = normalized.replaceAll(RegExp(r'[^0-9.\-+]'), '');
+    if (direct.isNotEmpty) {
+      return direct;
+    }
+
+    final match = RegExp(r'[-+]?\d+(?:\.\d+)?').firstMatch(normalized);
+    return match?.group(0) ?? '';
+  }
+
   static String _value(
     List<excel_pkg.Data?> row,
     Map<String, int> headerMap,
@@ -653,7 +741,9 @@ class HistoricalJobsImportService {
     if (raw.isEmpty) return 0;
 
     final normalized = _normalizeNumericText(raw);
-    return int.tryParse(normalized) ?? double.tryParse(normalized)?.round() ?? 0;
+    return int.tryParse(normalized) ??
+        double.tryParse(normalized)?.round() ??
+        0;
   }
 
   static double _doubleValue(
@@ -852,7 +942,9 @@ class HistoricalJobsImportService {
 
     if (name.isNotEmpty) {
       final matches = byName.entries
-          .where((entry) => entry.key.contains(name) || name.contains(entry.key))
+          .where(
+            (entry) => entry.key.contains(name) || name.contains(entry.key),
+          )
           .map((entry) => entry.value)
           .toSet()
           .toList();
@@ -864,30 +956,23 @@ class HistoricalJobsImportService {
     return null;
   }
 
-  static String _normalizeCellText(String raw) {
-    return raw
-        .replaceAll(RegExp(r'[\u00A0\u2007\u202F]'), ' ')
-        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF]'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim()
-        .split(' ')
-        .where((part) => part.isNotEmpty)
-        .join(' ');
-  }
-
-  static String _normalizeLookup(String raw) {
-    return _normalizeCellText(raw).toLowerCase();
-  }
-
-  static String _normalizeNumericText(String raw) {
-    final normalized = _normalizeCellText(raw).replaceAll(',', '');
-    final direct = normalized.replaceAll(RegExp(r'[^0-9.\-+]'), '');
-    if (direct.isNotEmpty) {
-      return direct;
+  static void _incrementTechnicianCount(
+    Map<String, int> counts,
+    String rawName,
+  ) {
+    final name = _normalizeCellText(rawName);
+    if (name.isEmpty) {
+      return;
     }
 
-    final match = RegExp(r'[-+]?\d+(?:\.\d+)?').firstMatch(normalized);
-    return match?.group(0) ?? '';
+    final normalized = _normalizeLookup(name);
+    final existingKey = counts.keys.firstWhere(
+      (key) => _normalizeLookup(key) == normalized,
+      orElse: () => '',
+    );
+
+    final targetKey = existingKey.isEmpty ? name : existingKey;
+    counts[targetKey] = (counts[targetKey] ?? 0) + 1;
   }
 }
 

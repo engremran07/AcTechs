@@ -320,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get additionalCharges => 'Additional Charges';
 
   @override
-  String get acOutdoorBracket => 'AC Outdoor Bracket';
+  String get acOutdoorBracket => 'Outdoor Bracket';
 
   @override
   String get bracketSubtitle => 'Bracket for outdoor unit mounting';
@@ -849,6 +849,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String importRowsWithoutTechName(int count) {
+    return '$count rows have no technician name';
+  }
+
+  @override
+  String importUniqueTechNamesCount(int count) {
+    return '$count unique technician names found';
+  }
+
+  @override
+  String get importTopTechNamesLabel => 'Top technician names';
+
+  @override
   String get importTargetTechnician => 'Target technician';
 
   @override
@@ -859,7 +872,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importTechnicianKeyword => 'Source technician filter';
 
   @override
-  String get importTechnicianKeywordHint => 'Example: imran';
+  String get importTechnicianKeywordHint => 'Example: name, email, or uid';
 
   @override
   String get importTechnicianKeywordHelp =>

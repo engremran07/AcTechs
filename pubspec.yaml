@@ -47,6 +47,8 @@ dependencies:
   pdf: ^3.11.2
   printing: ^5.13.5
   shared_preferences: ^2.5.5
+  arabic_reshaper: ^0.0.1
+  bidi: ^2.0.13
 
 dev_dependencies:
   flutter_test:

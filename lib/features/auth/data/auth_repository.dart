@@ -20,9 +20,44 @@ class AuthRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
-  Stream<User?> get authStateChanges => auth.authStateChanges();
+  Stream<User?> get authStateChanges => auth.userChanges().asyncMap((user) async {
+    if (user != null) {
+      await _syncProfileFromAuth(user);
+    }
+    return user;
+  });
 
   User? get currentUser => auth.currentUser;
+
+  Future<void> _syncProfileFromAuth(User user) async {
+    try {
+      final userDocRef = firestore
+          .collection(AppConstants.usersCollection)
+          .doc(user.uid);
+      final userDoc = await userDocRef.get();
+      if (!userDoc.exists) return;
+
+      final data = userDoc.data() ?? {};
+      final updates = <String, dynamic>{};
+      final authEmail = (user.email ?? '').trim();
+      final authDisplayName = (user.displayName ?? '').trim();
+
+      if (authEmail.isNotEmpty && data['email'] != authEmail) {
+        updates['email'] = authEmail;
+      }
+      if (authDisplayName.isNotEmpty && data['name'] != authDisplayName) {
+        updates['name'] = authDisplayName;
+      }
+
+      if (updates.isNotEmpty) {
+        await userDocRef.update(updates);
+      }
+    } on FirebaseException catch (e) {
+      debugPrint('profile sync Firestore error: ${e.code} — ${e.message}');
+    } catch (e) {
+      debugPrint('profile sync unknown error: $e');
+    }
+  }
 
   Future<UserModel> signIn(String email, String password) async {
     try {
@@ -42,6 +77,8 @@ class AuthRepository {
         await auth.signOut();
         throw AuthException.accountNotProvisioned();
       } else {
+        await _syncProfileFromAuth(credential.user!);
+        userDoc = await userDocRef.get();
         // Sync Firebase Auth changes to Firestore (e.g., email or displayName
         // changed in the Firebase Console will now reflect in the app).
         final data = userDoc.data() ?? {};

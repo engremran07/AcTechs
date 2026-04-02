@@ -55,6 +55,18 @@ class _HistoricalImportScreenState
       0,
       (sum, b) => sum + b.parsed.unresolvedTechnicians,
     );
+    final totalRowsWithoutTechName = preparedBatches.fold<int>(
+      0,
+      (sum, b) => sum + b.parsed.rowsWithoutTechnicianName,
+    );
+    final mergedTechnicianCounts = <String, int>{};
+    for (final batch in preparedBatches) {
+      _mergeTechnicianCounts(
+        mergedTechnicianCounts,
+        batch.parsed.technicianNameCounts,
+      );
+    }
+    final topTechnicians = _topTechnicianEntries(mergedTechnicianCounts);
 
     final shouldProceed = await showDialog<bool>(
       context: context,
@@ -83,6 +95,21 @@ class _HistoricalImportScreenState
                     Text(l.importCompletedCount(totalImportedRows)),
                     Text(l.importSkippedCount(totalSkippedRows)),
                     Text(l.importUnresolvedTechRows(totalUnresolvedRows)),
+                    Text(l.importRowsWithoutTechName(totalRowsWithoutTechName)),
+                    Text(
+                      l.importUniqueTechNamesCount(mergedTechnicianCounts.length),
+                    ),
+                    if (topTechnicians.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l.importTopTechNamesLabel,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      ...topTechnicians.map(
+                        (entry) => Text('${entry.key}: ${entry.value}'),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     ...preparedBatches.map((batch) {
                       return Padding(
@@ -104,10 +131,15 @@ class _HistoricalImportScreenState
                               ),
                               const SizedBox(height: 6),
                               ...batch.parsed.sheetSummaries.map((sheet) {
+                                final sheetTopTechnicians = _topTechnicianEntries(
+                                  sheet.technicianNameCounts,
+                                );
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Text(
                                     '${sheet.sheetName} • ${l.importCompletedCount(sheet.importedRows)} • ${l.importSkippedCount(sheet.skippedRows)} • ${l.importUnresolvedTechRows(sheet.unresolvedTechnicians)}\n'
+                                    '${l.importRowsWithoutTechName(sheet.rowsWithoutTechnicianName)} • ${l.importUniqueTechNamesCount(sheet.technicianNameCounts.length)}\n'
+                                    '${sheetTopTechnicians.isNotEmpty ? '${l.importTopTechNamesLabel}: ${_formatTechnicianEntries(sheetTopTechnicians)}\n' : ''}'
                                     'S/W/F: ${sheet.installedSplit}/${sheet.installedWindow}/${sheet.installedFreestanding} • U S/W/F/O: ${sheet.uninstallSplit}/${sheet.uninstallWindow}/${sheet.uninstallFreestanding}/${sheet.uninstallOld}'
                                     '${sheet.note.isNotEmpty ? '\n${sheet.note}' : ''}',
                                   ),
@@ -188,6 +220,30 @@ class _HistoricalImportScreenState
       }
     }
     return null;
+  }
+
+  void _mergeTechnicianCounts(
+    Map<String, int> target,
+    Map<String, int> source,
+  ) {
+    for (final entry in source.entries) {
+      target[entry.key] = (target[entry.key] ?? 0) + entry.value;
+    }
+  }
+
+  List<MapEntry<String, int>> _topTechnicianEntries(
+    Map<String, int> counts,
+  ) {
+    final entries = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    if (entries.length > 5) {
+      return entries.sublist(0, 5);
+    }
+    return entries;
+  }
+
+  String _formatTechnicianEntries(List<MapEntry<String, int>> entries) {
+    return entries.map((entry) => '${entry.key} (${entry.value})').join(', ');
   }
 
   Future<void> _importFiles() async {

@@ -703,7 +703,7 @@ abstract class AppLocalizations {
   /// No description provided for @acOutdoorBracket.
   ///
   /// In en, this message translates to:
-  /// **'AC Outdoor Bracket'**
+  /// **'Outdoor Bracket'**
   String get acOutdoorBracket;
 
   /// No description provided for @bracketSubtitle.
@@ -1708,6 +1708,24 @@ abstract class AppLocalizations {
   /// **'{count} rows skipped: technician not found'**
   String importUnresolvedTechRows(int count);
 
+  /// No description provided for @importRowsWithoutTechName.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rows have no technician name'**
+  String importRowsWithoutTechName(int count);
+
+  /// No description provided for @importUniqueTechNamesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unique technician names found'**
+  String importUniqueTechNamesCount(int count);
+
+  /// No description provided for @importTopTechNamesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Top technician names'**
+  String get importTopTechNamesLabel;
+
   /// No description provided for @importTargetTechnician.
   ///
   /// In en, this message translates to:
@@ -1729,7 +1747,7 @@ abstract class AppLocalizations {
   /// No description provided for @importTechnicianKeywordHint.
   ///
   /// In en, this message translates to:
-  /// **'Example: imran'**
+  /// **'Example: name, email, or uid'**
   String get importTechnicianKeywordHint;
 
   /// No description provided for @importTechnicianKeywordHelp.

@@ -174,9 +174,17 @@ class UserRepository {
     required String uid,
     required String name,
     required String email,
+    String? role,
   }) async {
     try {
-      await _usersRef.doc(uid).update({'name': name, 'email': email});
+      final updates = <String, dynamic>{'name': name, 'email': email};
+      if (role != null) {
+        updates['role'] =
+            role.trim().toLowerCase() == AppConstants.roleAdmin
+            ? AppConstants.roleAdmin
+            : AppConstants.roleTechnician;
+      }
+      await _usersRef.doc(uid).update(updates);
     } on FirebaseException catch (e) {
       debugPrint('updateUser error code: ${e.code}');
       if (e.code == 'permission-denied') {

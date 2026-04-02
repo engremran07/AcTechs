@@ -211,6 +211,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final nameCtrl = TextEditingController(text: user.name);
     final emailCtrl = TextEditingController(text: user.email);
     final formKey = GlobalKey<FormState>();
+    String selectedRole = user.isAdmin
+        ? AppConstants.roleAdmin
+        : AppConstants.roleTechnician;
 
     final result = await showDialog<bool>(
       context: context,
@@ -250,6 +253,28 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedRole,
+                  decoration: InputDecoration(
+                    hintText: l.role,
+                    prefixIcon: const Icon(Icons.security_rounded),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: AppConstants.roleTechnician,
+                      child: Text(l.technician),
+                    ),
+                    DropdownMenuItem(
+                      value: AppConstants.roleAdmin,
+                      child: Text(l.admin),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    selectedRole = value;
+                  },
+                ),
               ],
             ),
           ),
@@ -282,6 +307,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             uid: user.uid,
             name: nameCtrl.text.trim(),
             email: emailCtrl.text.trim(),
+            role: selectedRole,
           );
       if (!mounted) return;
       // Invalidate provider to refresh the list if needed
