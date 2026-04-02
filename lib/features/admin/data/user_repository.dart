@@ -149,7 +149,7 @@ class UserRepository {
 
       if (e is FirebaseAuthException) {
         if (e.code == 'email-already-in-use') {
-          throw const JobException(
+          throw const AdminException(
             'user_exists',
             'A user with this email already exists.',
             'اس ای میل سے پہلے سے ایک صارف موجود ہے۔',
@@ -157,7 +157,7 @@ class UserRepository {
           );
         }
         if (e.code == 'weak-password') {
-          throw const JobException(
+          throw const AdminException(
             'weak_password',
             'Password must be at least 6 characters.',
             'پاس ورڈ کم از کم ۶ حروف کا ہونا چاہیے۔',
@@ -165,7 +165,7 @@ class UserRepository {
           );
         }
       }
-      throw JobException.saveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 
