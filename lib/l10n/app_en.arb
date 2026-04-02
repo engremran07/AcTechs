@@ -318,6 +318,7 @@
   "importTechnicianKeyword": "Source technician filter",
   "importTechnicianKeywordHint": "Example: imran",
   "importTechnicianKeywordHelp": "Only rows whose technician name, email, or ID matches this text will be imported.",
+  "importKeywordRequired": "Please filter by technician keyword to prevent accidental bulk upload.",
   "importBundledTemplates": "Import bundled history templates",
   "importBundledTemplatesMissing": "No bundled history templates were found in the app package.",
 

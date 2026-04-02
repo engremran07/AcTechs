@@ -318,6 +318,7 @@
   "importTechnicianKeyword": "سورس ٹیکنیشن فلٹر",
   "importTechnicianKeywordHint": "مثال: imran",
   "importTechnicianKeywordHelp": "صرف وہ قطاریں امپورٹ ہوں گی جن میں ٹیکنیشن کا نام، ای میل، یا آئی ڈی اس متن سے میچ کرے۔",
+  "importKeywordRequired": "غلطی سے بڑی درآمد سے بچنے کے لیے برائے کرم ٹیکنیشن کی طرف سے فلٹر کریں۔",
   "importBundledTemplates": "بنڈل شدہ تاریخی ٹیمپلیٹس امپورٹ کریں",
   "importBundledTemplatesMissing": "ایپ پیکیج میں کوئی بنڈل شدہ تاریخی ٹیمپلیٹ نہیں ملا۔",
 

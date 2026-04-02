@@ -227,13 +227,25 @@ class _HistoricalImportScreenState
     }
 
     setState(() => _isImporting = true);
+    
+    final keyword = _technicianKeywordController.text.trim();
+    if (keyword.isEmpty) {
+      setState(() => _isImporting = false);
+      if (mounted) {
+        ErrorSnackbar.show(
+          context,
+          message: l.importKeywordRequired,
+        );
+      }
+      return;
+    }
+
     var importedCount = 0;
     var skippedRows = 0;
     var unresolvedTechs = 0;
 
     try {
       final users = _technicians; // Already loaded in initState
-      final keyword = _technicianKeywordController.text.trim();
       final preparedBatches = <_PreparedImportBatch>[];
 
       for (final source in sources) {

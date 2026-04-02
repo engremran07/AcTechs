@@ -866,6 +866,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only rows whose technician name, email, or ID matches this text will be imported.';
 
   @override
+  String get importKeywordRequired =>
+      'Please filter by technician keyword to prevent accidental bulk upload.';
+
+  @override
   String get importBundledTemplates => 'Import bundled history templates';
 
   @override

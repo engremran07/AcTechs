@@ -349,7 +349,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       icon: Icons.receipt_long_rounded,
                       title: l.invoiceDetails,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     companiesAsync
                         .when(
                           data: (companies) => companies.isEmpty
@@ -407,7 +407,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         )
                         .animate()
                         .fadeIn(delay: 100.ms),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _invoiceController,
                       textInputAction: TextInputAction.next,
@@ -416,6 +416,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         hintText: _selectedCompanyPrefix.isEmpty
                             ? l.invoiceNumber
                             : l.invoiceSuffix,
+                        labelText: l.invoiceNumber,
                         prefixIcon: const Icon(
                           Icons.receipt_outlined,
                           color: ArcticTheme.arcticTextSecondary,
@@ -425,7 +426,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                           (v == null || v.trim().isEmpty) ? l.required : null,
                     ).animate().fadeIn(delay: 120.ms),
                     if (_selectedCompanyPrefix.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -435,21 +436,23 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                     ],
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _clientNameController,
                       textInputAction: TextInputAction.next,
                       enableInteractiveSelection: true,
                       decoration: InputDecoration(
                         hintText: l.clientNameOptional,
+                        labelText: l.clientName,
                         prefixIcon: const Icon(
                           Icons.person_outline,
                           color: ArcticTheme.arcticTextSecondary,
                         ),
                       ),
                     ).animate().fadeIn(delay: 150.ms),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _clientContactController,
                       keyboardType: TextInputType.phone,
@@ -476,7 +479,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             : null;
                       },
                     ).animate().fadeIn(delay: 200.ms),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
 
                     // ── Additional Charges ──
                     _SectionHeader(

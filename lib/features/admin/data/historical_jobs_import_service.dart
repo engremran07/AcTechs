@@ -235,16 +235,16 @@ class HistoricalJobsImportService {
     final byEmail = <String, UserModel>{};
     final byName = <String, UserModel>{};
     for (final u in users) {
-      byUid[u.uid.trim().toLowerCase()] = u;
-      byEmail[u.email.trim().toLowerCase()] = u;
-      byName[u.name.trim().toLowerCase()] = u;
+      byUid[_normalizeLookup(u.uid)] = u;
+      byEmail[_normalizeLookup(u.email)] = u;
+      byName[_normalizeLookup(u.name)] = u;
     }
 
     final jobsByInvoice = <String, JobModel>{};
     final sheetSummaries = <HistoricalImportSheetSummary>[];
     var skipped = 0;
     var unresolvedTech = 0;
-    final normalizedKeyword = technicianKeyword?.trim().toLowerCase() ?? '';
+    final normalizedKeyword = _normalizeLookup(technicianKeyword ?? '');
 
     for (final entry in workbook.tables.entries) {
       final sheetName = entry.key;
@@ -558,7 +558,8 @@ class HistoricalJobsImportService {
 
   static bool _rowIsEmpty(List<excel_pkg.Data?> row) {
     for (final cell in row) {
-      if ((cell?.value?.toString() ?? '').trim().isNotEmpty) return false;
+      final text = _normalizeCellText(cell?.value?.toString() ?? '');
+      if (text.isNotEmpty) return false;
     }
     return true;
   }
@@ -637,7 +638,7 @@ class HistoricalJobsImportService {
     for (final k in possibleKeys) {
       final idx = headerMap[_normalizeHeaderKey(k)];
       if (idx == null || idx >= row.length) continue;
-      final v = (row[idx]?.value?.toString() ?? '').trim();
+      final v = _normalizeCellText(row[idx]?.value?.toString() ?? '');
       if (v.isNotEmpty) return v;
     }
     return '';
@@ -650,7 +651,9 @@ class HistoricalJobsImportService {
   ) {
     final raw = _value(row, headerMap, keys);
     if (raw.isEmpty) return 0;
-    return int.tryParse(raw) ?? double.tryParse(raw)?.round() ?? 0;
+
+    final normalized = _normalizeNumericText(raw);
+    return int.tryParse(normalized) ?? double.tryParse(normalized)?.round() ?? 0;
   }
 
   static double _doubleValue(
@@ -660,7 +663,9 @@ class HistoricalJobsImportService {
   ) {
     final raw = _value(row, headerMap, keys);
     if (raw.isEmpty) return 0;
-    return double.tryParse(raw) ?? 0;
+
+    final normalized = _normalizeNumericText(raw);
+    return double.tryParse(normalized) ?? 0;
   }
 
   static DateTime? _dateValue(
@@ -767,7 +772,7 @@ class HistoricalJobsImportService {
     ];
 
     for (final candidate in candidates) {
-      if (candidate.toLowerCase().contains(keyword)) {
+      if (_normalizeLookup(candidate).contains(keyword)) {
         return true;
       }
     }
@@ -830,28 +835,59 @@ class HistoricalJobsImportService {
     Map<String, UserModel> byEmail,
     Map<String, UserModel> byName,
   ) {
-    final uid = _value(row, headerMap, [
-      'technician id',
-      'tech id',
-      'techid',
-      'uid',
-    ]).toLowerCase();
+    final uid = _normalizeLookup(
+      _value(row, headerMap, ['technician id', 'tech id', 'techid', 'uid']),
+    );
     if (uid.isNotEmpty && byUid.containsKey(uid)) return byUid[uid];
 
-    final email = _value(row, headerMap, [
-      'technician email',
-      'tech email',
-      'email',
-    ]).toLowerCase();
+    final email = _normalizeLookup(
+      _value(row, headerMap, ['technician email', 'tech email', 'email']),
+    );
     if (email.isNotEmpty && byEmail.containsKey(email)) return byEmail[email];
 
-    final name = _value(row, headerMap, [
-      'tech name',
-      'technician name',
-    ]).toLowerCase();
+    final name = _normalizeLookup(
+      _value(row, headerMap, ['tech name', 'technician name']),
+    );
     if (name.isNotEmpty && byName.containsKey(name)) return byName[name];
 
+    if (name.isNotEmpty) {
+      final matches = byName.entries
+          .where((entry) => entry.key.contains(name) || name.contains(entry.key))
+          .map((entry) => entry.value)
+          .toSet()
+          .toList();
+      if (matches.length == 1) {
+        return matches.first;
+      }
+    }
+
     return null;
+  }
+
+  static String _normalizeCellText(String raw) {
+    return raw
+        .replaceAll(RegExp(r'[\u00A0\u2007\u202F]'), ' ')
+        .replaceAll(RegExp(r'[\u200B\u200C\u200D\uFEFF]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+  }
+
+  static String _normalizeLookup(String raw) {
+    return _normalizeCellText(raw).toLowerCase();
+  }
+
+  static String _normalizeNumericText(String raw) {
+    final normalized = _normalizeCellText(raw).replaceAll(',', '');
+    final direct = normalized.replaceAll(RegExp(r'[^0-9.\-+]'), '');
+    if (direct.isNotEmpty) {
+      return direct;
+    }
+
+    final match = RegExp(r'[-+]?\d+(?:\.\d+)?').firstMatch(normalized);
+    return match?.group(0) ?? '';
   }
 }
 

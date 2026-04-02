@@ -318,6 +318,7 @@
   "importTechnicianKeyword": "مرشح الفني المصدر",
   "importTechnicianKeywordHint": "مثال: imran",
   "importTechnicianKeywordHelp": "سيتم استيراد الصفوف التي يطابق فيها اسم الفني أو بريده أو معرّفه هذا النص فقط.",
+  "importKeywordRequired": "يرجى تصفية كلمة مفتاح الفني لمنع التحميل الضخم العرضي.",
   "importBundledTemplates": "استيراد القوالب التاريخية المضمنة",
   "importBundledTemplatesMissing": "لم يتم العثور على قوالب تاريخية مضمنة داخل حزمة التطبيق.",
 

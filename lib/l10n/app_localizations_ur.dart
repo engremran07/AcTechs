@@ -864,6 +864,10 @@ class AppLocalizationsUr extends AppLocalizations {
       'صرف وہ قطاریں امپورٹ ہوں گی جن میں ٹیکنیشن کا نام، ای میل، یا آئی ڈی اس متن سے میچ کرے۔';
 
   @override
+  String get importKeywordRequired =>
+      'غلطی سے بڑی درآمد سے بچنے کے لیے برائے کرم ٹیکنیشن کی طرف سے فلٹر کریں۔';
+
+  @override
   String get importBundledTemplates => 'بنڈل شدہ تاریخی ٹیمپلیٹس امپورٹ کریں';
 
   @override

@@ -1738,6 +1738,12 @@ abstract class AppLocalizations {
   /// **'Only rows whose technician name, email, or ID matches this text will be imported.'**
   String get importTechnicianKeywordHelp;
 
+  /// No description provided for @importKeywordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please filter by technician keyword to prevent accidental bulk upload.'**
+  String get importKeywordRequired;
+
   /// No description provided for @importBundledTemplates.
   ///
   /// In en, this message translates to:

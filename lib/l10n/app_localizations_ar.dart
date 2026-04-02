@@ -863,6 +863,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيتم استيراد الصفوف التي يطابق فيها اسم الفني أو بريده أو معرّفه هذا النص فقط.';
 
   @override
+  String get importKeywordRequired =>
+      'يرجى تصفية كلمة مفتاح الفني لمنع التحميل الضخم العرضي.';
+
+  @override
   String get importBundledTemplates => 'استيراد القوالب التاريخية المضمنة';
 
   @override
