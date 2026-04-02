@@ -1,26 +1,14 @@
-import 'package:excel/excel.dart' as excel_pkg;
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:ac_techs/core/models/models.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
 import 'dart:io';
+import 'package:excel/excel.dart' as excel_pkg;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/app_formatters.dart';
 
 /// Helper service for generating Excel exports of jobs, earnings, and expenses.
 class ExcelExport {
   ExcelExport._();
-
-  static String _safeText(String? value) {
-    if (value == null) return '';
-    return value.replaceAll('\n', ' ').trim();
-  }
-
-  static bool _isCustomerCashPaid(String? note) {
-    final normalized = _safeText(note).toLowerCase();
-    if (normalized.isEmpty) return false;
-    return normalized.contains('cash') ||
-        normalized.contains('customer paid') ||
-        normalized.contains('paid by customer');
-  }
 
   /// Export jobs to Excel with bracket/delivery details.
   static Future<void> exportJobsToExcel({
@@ -125,12 +113,14 @@ class ExcelExport {
       final deliveryAmount =
           job.charges != null &&
               job.charges!.deliveryCharge &&
-              !_isCustomerCashPaid(job.charges!.deliveryNote)
+              !AppFormatters.isCustomerCashPaid(job.charges!.deliveryNote)
           ? job.charges!.deliveryAmount
           : 0;
       final baseDescription = job.expenseNote.isNotEmpty
-          ? _safeText(job.expenseNote)
-          : (job.charges != null ? _safeText(job.charges!.deliveryNote) : '');
+          ? AppFormatters.safeText(job.expenseNote)
+          : (job.charges != null
+                ? AppFormatters.safeText(job.charges!.deliveryNote)
+                : '');
       final description = [baseDescription, uninstallDetail]
           .where((p) => p.isNotEmpty)
           .join(
@@ -145,8 +135,8 @@ class ExcelExport {
               ? '${job.date!.day.toString().padLeft(2, '0')}/${job.date!.month.toString().padLeft(2, '0')}/${job.date!.year}'
               : '',
         ),
-        excel_pkg.TextCellValue(_safeText(job.invoiceNumber)),
-        excel_pkg.TextCellValue(_safeText(job.clientContact)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.clientContact)),
         excel_pkg.IntCellValue(splitQty),
         excel_pkg.IntCellValue(windowQty),
         excel_pkg.IntCellValue(dolabQty),
@@ -158,7 +148,7 @@ class ExcelExport {
           excel_pkg.DoubleCellValue(deliveryAmount.toDouble())
         else
           excel_pkg.TextCellValue(''),
-        excel_pkg.TextCellValue(_safeText(job.techName)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.techName)),
         excel_pkg.TextCellValue(description),
         excel_pkg.IntCellValue(uninstallTotal),
         excel_pkg.IntCellValue(uninstallSplitQty),

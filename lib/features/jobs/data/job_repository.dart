@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/core/utils/invoice_utils.dart';
 
 final jobRepositoryProvider = Provider<JobRepository>((ref) {
   return JobRepository(firestore: FirebaseFirestore.instance);
@@ -16,21 +17,8 @@ class JobRepository {
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
 
-  String _normalizeInvoice(String invoice) {
-    final trimmed = invoice.trim();
-    if (trimmed.isEmpty) return '';
-    final upper = trimmed.toUpperCase();
-    if (upper.startsWith('INV-')) {
-      return trimmed.substring(4).trim();
-    }
-    if (upper.startsWith('INV ')) {
-      return trimmed.substring(4).trim();
-    }
-    return trimmed;
-  }
-
   String _safeImportDocId(JobModel job) {
-    final invoice = _normalizeInvoice(job.invoiceNumber).toLowerCase();
+    final invoice = InvoiceUtils.normalize(job.invoiceNumber).toLowerCase();
     final safe = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
     final scoped =
         'inv_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
@@ -39,7 +27,7 @@ class JobRepository {
 
   Future<void> submitJob(JobModel job) async {
     try {
-      final normalizedInvoice = _normalizeInvoice(job.invoiceNumber);
+      final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
       final duplicateSnap = await _jobsRef
           .where('techId', isEqualTo: job.techId)
           .where('companyId', isEqualTo: job.companyId)
@@ -237,7 +225,7 @@ class JobRepository {
       for (final chunk in chunks) {
         final batch = firestore.batch();
         for (final job in chunk) {
-          final normalizedInvoice = _normalizeInvoice(job.invoiceNumber);
+          final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
           final ref = _jobsRef.doc(_safeImportDocId(job));
           final data = job
               .copyWith(invoiceNumber: normalizedInvoice)

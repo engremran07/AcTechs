@@ -44,7 +44,7 @@ class CompanyRepository {
       });
     } on FirebaseException catch (e) {
       debugPrint('createCompany error: ${e.code} — ${e.message}');
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -57,7 +57,7 @@ class CompanyRepository {
       await _ref.doc(id).update({'name': name, 'invoicePrefix': invoicePrefix});
     } on FirebaseException catch (e) {
       debugPrint('updateCompany error: ${e.code} — ${e.message}');
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -66,7 +66,7 @@ class CompanyRepository {
       await _ref.doc(id).update({'isActive': isActive});
     } on FirebaseException catch (e) {
       debugPrint('toggleCompanyActive error: ${e.code} — ${e.message}');
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 }

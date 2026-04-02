@@ -209,383 +209,391 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       child: Scaffold(
         appBar: AppBar(title: Text(l.submitInvoice)),
         body: SafeArea(
-          child: FormFocusTraversal(
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // ── AC Services (single source of truth) ──
-                  _SectionHeader(
-                    icon: Icons.ac_unit_rounded,
-                    title: l.acServices,
-                  ),
-                  const SizedBox(height: 8),
-                  ArcticCard(
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.splits,
-                                value: _splitQty,
-                                onChanged: (v) => setState(() => _splitQty = v),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.windowAc,
-                                value: _windowQty,
-                                onChanged: (v) =>
-                                    setState(() => _windowQty = v),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.standing,
-                                value: _dolabQty,
-                                onChanged: (v) => setState(() => _dolabQty = v),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.uninstallSplit,
-                                value: _uninstallSplitQty,
-                                onChanged: (v) =>
-                                    setState(() => _uninstallSplitQty = v),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.uninstallWindow,
-                                value: _uninstallWindowQty,
-                                onChanged: (v) =>
-                                    setState(() => _uninstallWindowQty = v),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _QtyTile(
-                                label: l.uninstallStanding,
-                                value: _uninstallStandingQty,
-                                onChanged: (v) =>
-                                    setState(() => _uninstallStandingQty = v),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _descriptionController,
-                          textInputAction: TextInputAction.next,
-                          enableInteractiveSelection: true,
-                          decoration: InputDecoration(
-                            hintText: l.descriptionLabel,
-                            prefixIcon: const Icon(
-                              Icons.notes_rounded,
-                              color: ArcticTheme.arcticTextSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: FormFocusTraversal(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    // ── AC Services (single source of truth) ──
+                    _SectionHeader(
+                      icon: Icons.ac_unit_rounded,
+                      title: l.acServices,
                     ),
-                  ).animate().fadeIn(delay: 80.ms),
-                  const SizedBox(height: 20),
-
-                  // ── Date Picker ──
-                  _SectionHeader(icon: Icons.calendar_today, title: l.date),
-                  const SizedBox(height: 8),
-                  ArcticCard(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate,
-                        firstDate: DateTime.now().subtract(
-                          const Duration(days: 30),
-                        ),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) setState(() => _selectedDate = date);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_rounded,
-                          color: ArcticTheme.arcticBlue,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const Spacer(),
-                        Text(l.tapToChange, style: theme.textTheme.bodySmall),
-                      ],
-                    ),
-                  ).animate().fadeIn(duration: 300.ms),
-                  const SizedBox(height: 20),
-
-                  // ── Invoice Details ──
-                  _SectionHeader(
-                    icon: Icons.receipt_long_rounded,
-                    title: l.invoiceDetails,
-                  ),
-                  const SizedBox(height: 8),
-                  companiesAsync
-                      .when(
-                        data: (companies) => companies.isEmpty
-                            ? const SizedBox.shrink()
-                            : DropdownButtonFormField<String>(
-                                initialValue: _selectedCompanyId,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  hintText: l.selectCompany,
-                                  prefixIcon: const Icon(
-                                    Icons.apartment_rounded,
-                                    color: ArcticTheme.arcticTextSecondary,
-                                  ),
+                    const SizedBox(height: 8),
+                    ArcticCard(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.splits,
+                                  value: _splitQty,
+                                  onChanged: (v) =>
+                                      setState(() => _splitQty = v),
                                 ),
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: '',
-                                    child: Text(
-                                      l.noCompany,
-                                      style: const TextStyle(
-                                        color: ArcticTheme.arcticTextSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  ...companies.map(
-                                    (company) => DropdownMenuItem(
-                                      value: company.id,
-                                      child: Text(company.name),
-                                    ),
-                                  ),
-                                ],
-                                onChanged: (value) {
-                                  CompanyModel? selectedCompany;
-                                  for (final company in companies) {
-                                    if (company.id == value) {
-                                      selectedCompany = company;
-                                      break;
-                                    }
-                                  }
-                                  setState(() {
-                                    _selectedCompanyId = value?.isEmpty ?? true
-                                        ? null
-                                        : value;
-                                    _selectedCompanyName =
-                                        selectedCompany?.name ?? '';
-                                    _selectedCompanyPrefix =
-                                        selectedCompany?.invoicePrefix ?? '';
-                                  });
-                                },
-                                // Company selection is optional
                               ),
-                        loading: () =>
-                            const ArcticShimmer(height: 56, count: 1),
-                        error: (e, _) => const SizedBox.shrink(),
-                      )
-                      .animate()
-                      .fadeIn(delay: 100.ms),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _invoiceController,
-                    textInputAction: TextInputAction.next,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: _selectedCompanyPrefix.isEmpty
-                          ? l.invoiceNumber
-                          : l.invoiceSuffix,
-                      prefixIcon: const Icon(
-                        Icons.receipt_outlined,
-                        color: ArcticTheme.arcticTextSecondary,
-                      ),
-                    ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? l.required : null,
-                  ).animate().fadeIn(delay: 120.ms),
-                  if (_selectedCompanyPrefix.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${l.invoicePrefix}: $_selectedCompanyPrefix',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: ArcticTheme.arcticBlue,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextFormField(
-                    controller: _clientNameController,
-                    textInputAction: TextInputAction.next,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: l.clientNameOptional,
-                      prefixIcon: const Icon(
-                        Icons.person_outline,
-                        color: ArcticTheme.arcticTextSecondary,
-                      ),
-                    ),
-                  ).animate().fadeIn(delay: 150.ms),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _clientContactController,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.done,
-                    enableInteractiveSelection: true,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[0-9+\-\s\(\)]'),
-                      ),
-                      LengthLimitingTextInputFormatter(15),
-                    ],
-                    decoration: InputDecoration(
-                      hintText: l.clientPhone,
-                      prefixIcon: const Icon(
-                        Icons.phone_outlined,
-                        color: ArcticTheme.arcticTextSecondary,
-                      ),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return l.required;
-                      return _normalizeContact(v).isEmpty
-                          ? l.enterValidPhone
-                          : null;
-                    },
-                  ).animate().fadeIn(delay: 200.ms),
-                  const SizedBox(height: 24),
-
-                  // ── Additional Charges ──
-                  _SectionHeader(
-                    icon: Icons.attach_money_rounded,
-                    title: l.additionalCharges,
-                  ),
-                  const SizedBox(height: 8),
-                  ArcticCard(
-                    child: Column(
-                      children: [
-                        // AC Bracket
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(l.acOutdoorBracket),
-                          subtitle: Text(l.bracketSubtitle),
-                          secondary: const Icon(
-                            Icons.handyman_outlined,
-                            color: ArcticTheme.arcticBlue,
-                          ),
-                          value: _hasBracket,
-                          onChanged: (v) => setState(() => _hasBracket = v),
-                        ),
-                        if (_hasBracket) ...[
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _bracketAmountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            textInputAction: TextInputAction.done,
-                            enableInteractiveSelection: true,
-                            decoration: InputDecoration(
-                              hintText: l.bracketCharge,
-                              prefixIcon: const Icon(
-                                Icons.payments_outlined,
-                                color: ArcticTheme.arcticTextSecondary,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.windowAc,
+                                  value: _windowQty,
+                                  onChanged: (v) =>
+                                      setState(() => _windowQty = v),
+                                ),
                               ),
-                              isDense: true,
-                            ),
+                            ],
                           ),
-                        ],
-                        const Divider(height: 24),
-                        // Delivery Charge
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(l.deliveryCharge),
-                          subtitle: Text(l.deliverySubtitle),
-                          secondary: const Icon(
-                            Icons.local_shipping_outlined,
-                            color: ArcticTheme.arcticBlue,
-                          ),
-                          value: _hasDelivery,
-                          onChanged: (v) => setState(() => _hasDelivery = v),
-                        ),
-                        if (_hasDelivery) ...[
                           const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.standing,
+                                  value: _dolabQty,
+                                  onChanged: (v) =>
+                                      setState(() => _dolabQty = v),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.uninstallSplit,
+                                  value: _uninstallSplitQty,
+                                  onChanged: (v) =>
+                                      setState(() => _uninstallSplitQty = v),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.uninstallWindow,
+                                  value: _uninstallWindowQty,
+                                  onChanged: (v) =>
+                                      setState(() => _uninstallWindowQty = v),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _QtyTile(
+                                  label: l.uninstallStanding,
+                                  value: _uninstallStandingQty,
+                                  onChanged: (v) =>
+                                      setState(() => _uninstallStandingQty = v),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           TextFormField(
-                            controller: _deliveryAmountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
+                            controller: _descriptionController,
                             textInputAction: TextInputAction.next,
                             enableInteractiveSelection: true,
                             decoration: InputDecoration(
-                              hintText: l.deliveryChargeAmount,
+                              hintText: l.descriptionLabel,
                               prefixIcon: const Icon(
-                                Icons.payments_outlined,
+                                Icons.notes_rounded,
                                 color: ArcticTheme.arcticTextSecondary,
                               ),
-                              isDense: true,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _deliveryNoteController,
-                            textInputAction: TextInputAction.done,
-                            enableInteractiveSelection: true,
-                            decoration: InputDecoration(
-                              hintText: l.locationNote,
-                              prefixIcon: const Icon(
-                                Icons.location_on_outlined,
-                                color: ArcticTheme.arcticTextSecondary,
-                              ),
-                              isDense: true,
                             ),
                           ),
                         ],
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 350.ms),
-                  const SizedBox(height: 32),
-
-                  // ── Submit ──
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: _isSubmitting ? null : _submit,
-                      icon: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: ArcticTheme.arcticDarkBg,
-                              ),
-                            )
-                          : const Icon(Icons.send_rounded),
-                      label: Text(
-                        _isSubmitting ? l.submitting : l.submitForApproval,
                       ),
+                    ).animate().fadeIn(delay: 80.ms),
+                    const SizedBox(height: 20),
+
+                    // ── Date Picker ──
+                    _SectionHeader(icon: Icons.calendar_today, title: l.date),
+                    const SizedBox(height: 8),
+                    ArcticCard(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime.now().subtract(
+                            const Duration(days: 30),
+                          ),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) setState(() => _selectedDate = date);
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            color: ArcticTheme.arcticBlue,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const Spacer(),
+                          Text(l.tapToChange, style: theme.textTheme.bodySmall),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 300.ms),
+                    const SizedBox(height: 20),
+
+                    // ── Invoice Details ──
+                    _SectionHeader(
+                      icon: Icons.receipt_long_rounded,
+                      title: l.invoiceDetails,
                     ),
-                  ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 8),
+                    companiesAsync
+                        .when(
+                          data: (companies) => companies.isEmpty
+                              ? const SizedBox.shrink()
+                              : DropdownButtonFormField<String>(
+                                  initialValue: _selectedCompanyId,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    hintText: l.selectCompany,
+                                    prefixIcon: const Icon(
+                                      Icons.apartment_rounded,
+                                      color: ArcticTheme.arcticTextSecondary,
+                                    ),
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<String>(
+                                      value: '',
+                                      child: Text(
+                                        l.noCompany,
+                                        style: const TextStyle(
+                                          color:
+                                              ArcticTheme.arcticTextSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                    ...companies.map(
+                                      (company) => DropdownMenuItem(
+                                        value: company.id,
+                                        child: Text(company.name),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (value) {
+                                    CompanyModel? selectedCompany;
+                                    for (final company in companies) {
+                                      if (company.id == value) {
+                                        selectedCompany = company;
+                                        break;
+                                      }
+                                    }
+                                    setState(() {
+                                      _selectedCompanyId =
+                                          value?.isEmpty ?? true ? null : value;
+                                      _selectedCompanyName =
+                                          selectedCompany?.name ?? '';
+                                      _selectedCompanyPrefix =
+                                          selectedCompany?.invoicePrefix ?? '';
+                                    });
+                                  },
+                                  // Company selection is optional
+                                ),
+                          loading: () =>
+                              const ArcticShimmer(height: 56, count: 1),
+                          error: (e, _) => const SizedBox.shrink(),
+                        )
+                        .animate()
+                        .fadeIn(delay: 100.ms),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _invoiceController,
+                      textInputAction: TextInputAction.next,
+                      enableInteractiveSelection: true,
+                      decoration: InputDecoration(
+                        hintText: _selectedCompanyPrefix.isEmpty
+                            ? l.invoiceNumber
+                            : l.invoiceSuffix,
+                        prefixIcon: const Icon(
+                          Icons.receipt_outlined,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? l.required : null,
+                    ).animate().fadeIn(delay: 120.ms),
+                    if (_selectedCompanyPrefix.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${l.invoicePrefix}: $_selectedCompanyPrefix',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: ArcticTheme.arcticBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: _clientNameController,
+                      textInputAction: TextInputAction.next,
+                      enableInteractiveSelection: true,
+                      decoration: InputDecoration(
+                        hintText: l.clientNameOptional,
+                        prefixIcon: const Icon(
+                          Icons.person_outline,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 150.ms),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _clientContactController,
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.done,
+                      enableInteractiveSelection: true,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[0-9+\-\s\(\)]'),
+                        ),
+                        LengthLimitingTextInputFormatter(15),
+                      ],
+                      decoration: InputDecoration(
+                        hintText: l.clientPhone,
+                        prefixIcon: const Icon(
+                          Icons.phone_outlined,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return l.required;
+                        return _normalizeContact(v).isEmpty
+                            ? l.enterValidPhone
+                            : null;
+                      },
+                    ).animate().fadeIn(delay: 200.ms),
+                    const SizedBox(height: 24),
+
+                    // ── Additional Charges ──
+                    _SectionHeader(
+                      icon: Icons.attach_money_rounded,
+                      title: l.additionalCharges,
+                    ),
+                    const SizedBox(height: 8),
+                    ArcticCard(
+                      child: Column(
+                        children: [
+                          // AC Bracket
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l.acOutdoorBracket),
+                            subtitle: Text(l.bracketSubtitle),
+                            secondary: const Icon(
+                              Icons.handyman_outlined,
+                              color: ArcticTheme.arcticBlue,
+                            ),
+                            value: _hasBracket,
+                            onChanged: (v) => setState(() => _hasBracket = v),
+                          ),
+                          if (_hasBracket) ...[
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _bracketAmountController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              textInputAction: TextInputAction.done,
+                              enableInteractiveSelection: true,
+                              decoration: InputDecoration(
+                                hintText: l.bracketCharge,
+                                prefixIcon: const Icon(
+                                  Icons.payments_outlined,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ],
+                          const Divider(height: 24),
+                          // Delivery Charge
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l.deliveryCharge),
+                            subtitle: Text(l.deliverySubtitle),
+                            secondary: const Icon(
+                              Icons.local_shipping_outlined,
+                              color: ArcticTheme.arcticBlue,
+                            ),
+                            value: _hasDelivery,
+                            onChanged: (v) => setState(() => _hasDelivery = v),
+                          ),
+                          if (_hasDelivery) ...[
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _deliveryAmountController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              textInputAction: TextInputAction.next,
+                              enableInteractiveSelection: true,
+                              decoration: InputDecoration(
+                                hintText: l.deliveryChargeAmount,
+                                prefixIcon: const Icon(
+                                  Icons.payments_outlined,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _deliveryNoteController,
+                              textInputAction: TextInputAction.done,
+                              enableInteractiveSelection: true,
+                              decoration: InputDecoration(
+                                hintText: l.locationNote,
+                                prefixIcon: const Icon(
+                                  Icons.location_on_outlined,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 350.ms),
+                    const SizedBox(height: 32),
+
+                    // ── Submit ──
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSubmitting ? null : _submit,
+                        icon: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: ArcticTheme.arcticDarkBg,
+                                ),
+                              )
+                            : const Icon(Icons.send_rounded),
+                        label: Text(
+                          _isSubmitting ? l.submitting : l.submitForApproval,
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
           ),

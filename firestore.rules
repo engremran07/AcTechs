@@ -20,9 +20,16 @@ service cloud.firestore {
 
     // Helper: check if caller is admin
     function isAdmin() {
-        return userExists() &&
-          userData().role is string &&
-          userData().role.lower() in ['admin', 'administrator'];
+      return userExists() &&
+        userData().role is string &&
+        userData().role in [
+          'admin',
+          'administrator',
+          'Admin',
+          'Administrator',
+          'ADMIN',
+          'ADMINISTRATOR'
+        ];
     }
 
     function validJobCreatePayload() {
@@ -61,7 +68,8 @@ service cloud.firestore {
         (isOwner(userId) &&
          request.resource.data.diff(resource.data).affectedKeys()
            .hasOnly(['language', 'name']));
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.techId == request.auth.uid);
     }
 
     // ─── Jobs ───
@@ -131,7 +139,8 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.techId == request.auth.uid);
     }
 
     // ─── Expenses ───
@@ -174,7 +183,8 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.techId == request.auth.uid);
     }
 
     // ─── Earnings ───
@@ -214,7 +224,8 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.techId == request.auth.uid);
     }
 
     // ─── Companies ───

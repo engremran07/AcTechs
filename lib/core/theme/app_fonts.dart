@@ -143,11 +143,11 @@ class AppFonts {
   }
 
   /// Font family for PDF generation (picks bundled .ttf path).
-  static String pdfFontAsset(String locale) {
+  static String? pdfFontAsset(String locale) {
     return switch (locale) {
       'ur' => 'assets/fonts/NotoNastaliqUrdu.ttf',
       'ar' => 'assets/fonts/NotoNaskhArabic.ttf',
-      _ => '', // Use pdf package's built-in latin fonts
+      _ => null, // Use pdf package's built-in latin fonts
     };
   }
 }

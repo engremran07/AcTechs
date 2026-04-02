@@ -71,23 +71,10 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
 class PdfGenerator {
   PdfGenerator._();
 
-  static String _safeText(String? value) {
-    if (value == null) return '';
-    return value.replaceAll('\n', ' ').trim();
-  }
-
   static String _safeTableCellText(String? value, {int maxLength = 120}) {
-    final cleaned = _safeText(value);
+    final cleaned = AppFormatters.safeText(value);
     if (cleaned.length <= maxLength) return cleaned;
     return '${cleaned.substring(0, maxLength - 3)}...';
-  }
-
-  static bool _isCustomerCashPaid(String? note) {
-    final normalized = _safeText(note).toLowerCase();
-    if (normalized.isEmpty) return false;
-    return normalized.contains('cash') ||
-        normalized.contains('customer paid') ||
-        normalized.contains('paid by customer');
   }
 
   // ── Font cache ──────────────────────────────────────────────────────────────
@@ -96,15 +83,15 @@ class PdfGenerator {
 
   static Future<pw.Font?> _getLocaleFont(String locale) async {
     if (locale == 'ur') {
-      _cachedUrduFont ??= pw.Font.ttf(
-        await rootBundle.load(AppFonts.pdfFontAsset('ur')),
-      );
+      final asset = AppFonts.pdfFontAsset('ur');
+      if (asset == null) return null;
+      _cachedUrduFont ??= pw.Font.ttf(await rootBundle.load(asset));
       return _cachedUrduFont;
     }
     if (locale == 'ar') {
-      _cachedArabicFont ??= pw.Font.ttf(
-        await rootBundle.load(AppFonts.pdfFontAsset('ar')),
-      );
+      final asset = AppFonts.pdfFontAsset('ar');
+      if (asset == null) return null;
+      _cachedArabicFont ??= pw.Font.ttf(await rootBundle.load(asset));
       return _cachedArabicFont;
     }
     return null; // pdf package's built-in Latin font
@@ -1491,13 +1478,13 @@ class PdfGenerator {
               final deliveryText =
                   j.charges != null &&
                       j.charges!.deliveryCharge &&
-                      !_isCustomerCashPaid(j.charges!.deliveryNote)
+                      !AppFormatters.isCustomerCashPaid(j.charges!.deliveryNote)
                   ? AppFormatters.currency(j.charges!.deliveryAmount)
                   : '—';
               final baseDescription = j.expenseNote.isNotEmpty
-                  ? _safeText(j.expenseNote)
+                  ? AppFormatters.safeText(j.expenseNote)
                   : (j.charges != null
-                        ? _safeText(j.charges!.deliveryNote)
+                        ? AppFormatters.safeText(j.charges!.deliveryNote)
                         : '');
               final description = [baseDescription, uninstallDetail]
                   .where((p) => p.isNotEmpty)
@@ -1591,11 +1578,13 @@ class PdfGenerator {
     required List<JobModel> todaysJobs,
     String locale = 'en',
     String? technicianName,
+    DateTime? reportDate,
+    bool monthlyMode = false,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
 
-    final today = DateTime.now();
+    final periodDate = reportDate ?? DateTime.now();
     final workExpenses = expenses
         .where((e) => e.expenseType == AppConstants.expenseTypeWork)
         .toList();
@@ -1620,7 +1609,7 @@ class PdfGenerator {
         (s, j) =>
             s +
             j.acUnits
-                .where((u) => u.type == 'Split AC')
+                .where((u) => u.type == AppConstants.unitTypeSplitAc)
                 .fold<int>(0, (x, u) => x + u.quantity),
       );
       final window = todaysJobs.fold<int>(
@@ -1628,7 +1617,7 @@ class PdfGenerator {
         (s, j) =>
             s +
             j.acUnits
-                .where((u) => u.type == 'Window AC')
+                .where((u) => u.type == AppConstants.unitTypeWindowAc)
                 .fold<int>(0, (x, u) => x + u.quantity),
       );
       final freeStanding = todaysJobs.fold<int>(
@@ -1636,7 +1625,7 @@ class PdfGenerator {
         (s, j) =>
             s +
             j.acUnits
-                .where((u) => u.type == 'Freestanding AC')
+                .where((u) => u.type == AppConstants.unitTypeFreestandingAc)
                 .fold<int>(0, (x, u) => x + u.quantity),
       );
       final uninstallOld = todaysJobs.fold<int>(
@@ -1721,32 +1710,32 @@ class PdfGenerator {
         ? [
             'تاریخ',
             'کمائی کی تفصیل',
-            'آج کی کمائی',
+            monthlyMode ? 'ماہ کی کمائی' : 'آج کی کمائی',
             'اخراجات',
             'گھر کے اخراجات کی تفصیل',
             'گھر کے اخراجات',
-            'آج کے کل اخراجات',
+            monthlyMode ? 'ماہ کے کل اخراجات' : 'آج کے کل اخراجات',
             'خالص منافع/نقصان',
           ]
         : locale == 'ar'
         ? [
             'التاريخ',
             'تفاصيل الأرباح',
-            'أرباح اليوم',
+            monthlyMode ? 'أرباح الشهر' : 'أرباح اليوم',
             'المصروفات',
             'تفاصيل مصروفات المنزل',
             'مبلغ مصروفات المنزل',
-            'إجمالي مصروفات اليوم',
+            monthlyMode ? 'إجمالي مصروفات الشهر' : 'إجمالي مصروفات اليوم',
             'صافي الربح/الخسارة',
           ]
         : [
             'Date',
             'Earning Detail',
-            'Earned Today',
+            monthlyMode ? 'Earned This Month' : 'Earned Today',
             'Expenses',
             'Home Expenses Details',
             'Home Expenses Amount',
-            'Total Expenses Today',
+            monthlyMode ? 'Total Expenses This Month' : 'Total Expenses Today',
             'Net Profit/Loss',
           ];
 
@@ -1786,14 +1775,22 @@ class PdfGenerator {
         textDirection: dir,
         header: (ctx) => _pageHeader(
           ctx,
-          reportTitle: locale == 'ur'
-              ? 'آج کی ان/آؤٹ رپورٹ'
-              : locale == 'ar'
-              ? 'تقرير اليوم للدخول/الخروج'
-              : 'Today In/Out Report',
+          reportTitle: monthlyMode
+              ? (locale == 'ur'
+                    ? 'ماہانہ ان/آؤٹ رپورٹ'
+                    : locale == 'ar'
+                    ? 'تقرير شهري للدخول/الخروج'
+                    : 'Monthly In/Out Report')
+              : (locale == 'ur'
+                    ? 'آج کی ان/آؤٹ رپورٹ'
+                    : locale == 'ar'
+                    ? 'تقرير اليوم للدخول/الخروج'
+                    : 'Today In/Out Report'),
           font: font,
           dir: dir,
-          dateRange: AppFormatters.date(today),
+          dateRange: monthlyMode
+              ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
+              : AppFormatters.date(periodDate),
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [
@@ -1806,7 +1803,9 @@ class PdfGenerator {
             headers: headers,
             data: [
               [
-                AppFormatters.date(today),
+                monthlyMode
+                    ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
+                    : AppFormatters.date(periodDate),
                 summarizeEarnings(),
                 AppFormatters.currency(earnedToday),
                 summarizeWorkExpenses(),
@@ -1838,10 +1837,12 @@ class PdfGenerator {
             pw.SizedBox(height: 12),
             _sectionBanner(
               locale == 'ur'
-                  ? 'آج کی ملازمت کی تفصیل'
+                  ? (monthlyMode
+                        ? 'ماہ کی ملازمت کی تفصیل'
+                        : 'آج کی ملازمت کی تفصیل')
                   : locale == 'ar'
-                  ? 'تفاصيل وظائف اليوم'
-                  : 'Today Jobs Details',
+                  ? (monthlyMode ? 'تفاصيل وظائف الشهر' : 'تفاصيل وظائف اليوم')
+                  : (monthlyMode ? 'Month Jobs Details' : 'Today Jobs Details'),
               font,
               pw.TextStyle(
                 font: font,

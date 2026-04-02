@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/invoice_utils.dart';
 
 class HistoricalImportResult {
   const HistoricalImportResult({
@@ -285,7 +286,7 @@ class HistoricalJobsImportService {
           'invoice number',
           'invoice',
         ]);
-        final invoice = _normalizeInvoice(rawInvoice);
+        final invoice = InvoiceUtils.normalize(rawInvoice);
         if (invoice.isEmpty) {
           skipped++;
           sheetSkippedRows++;
@@ -341,13 +342,22 @@ class HistoricalJobsImportService {
 
         final units = <AcUnit>[];
         if (splitQty > 0) {
-          units.add(AcUnit(type: 'Split AC', quantity: splitQty));
+          units.add(
+            AcUnit(type: AppConstants.unitTypeSplitAc, quantity: splitQty),
+          );
         }
         if (windowQty > 0) {
-          units.add(AcUnit(type: 'Window AC', quantity: windowQty));
+          units.add(
+            AcUnit(type: AppConstants.unitTypeWindowAc, quantity: windowQty),
+          );
         }
         if (standingQty > 0) {
-          units.add(AcUnit(type: 'Freestanding AC', quantity: standingQty));
+          units.add(
+            AcUnit(
+              type: AppConstants.unitTypeFreestandingAc,
+              quantity: standingQty,
+            ),
+          );
         }
         if (uninstallDistribution.old > 0) {
           units.add(
@@ -499,19 +509,6 @@ class HistoricalJobsImportService {
       unresolvedTechnicians: unresolvedTech,
       sheetSummaries: sheetSummaries,
     );
-  }
-
-  static String _normalizeInvoice(String invoice) {
-    final trimmed = invoice.trim();
-    if (trimmed.isEmpty) return '';
-    final upper = trimmed.toUpperCase();
-    if (upper.startsWith('INV-')) {
-      return trimmed.substring(4).trim();
-    }
-    if (upper.startsWith('INV ')) {
-      return trimmed.substring(4).trim();
-    }
-    return trimmed;
   }
 
   static List<AcUnit> _mergeUnits(List<AcUnit> first, List<AcUnit> second) {

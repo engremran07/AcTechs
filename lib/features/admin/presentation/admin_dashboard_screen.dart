@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -13,24 +13,53 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..forward();
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  void refresh() {
+    ref.invalidate(allJobsProvider);
+    ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(allTechniciansProvider);
+    ref.invalidate(allCompaniesProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider).value;
     final allJobs = ref.watch(allJobsProvider);
     final pending = ref.watch(pendingApprovalsProvider);
     final technicians = ref.watch(allTechniciansProvider);
     final companies = ref.watch(allCompaniesProvider);
-
-    void refresh() {
-      ref.invalidate(allJobsProvider);
-      ref.invalidate(pendingApprovalsProvider);
-      ref.invalidate(allTechniciansProvider);
-      ref.invalidate(allCompaniesProvider);
-    }
 
     return AppShortcuts(
       onRefresh: refresh,
@@ -52,344 +81,350 @@ class AdminDashboardScreen extends ConsumerWidget {
           ],
         ),
         body: SafeArea(
-          child: ArcticRefreshIndicator(
-            onRefresh: () async => refresh(),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  l.welcomeBack,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ).animate().fadeIn(),
-                Text(
-                  user?.name ?? l.admin,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ).animate().fadeIn(delay: 100.ms),
-                const SizedBox(height: 24),
-
-                // Summary Cards
-                allJobs.when(
-                  data: (jobs) {
-                    final pendingCount = jobs.where((j) => j.isPending).length;
-                    final approvedCount = jobs
-                        .where((j) => j.isApproved)
-                        .length;
-                    final splitCount = jobs.fold<int>(
-                      0,
-                      (sum, job) =>
-                          sum +
-                          job.acUnits
-                              .where((u) => u.type == 'Split AC')
-                              .fold<int>(0, (s, u) => s + u.quantity),
-                    );
-                    final windowCount = jobs.fold<int>(
-                      0,
-                      (sum, job) =>
-                          sum +
-                          job.acUnits
-                              .where((u) => u.type == 'Window AC')
-                              .fold<int>(0, (s, u) => s + u.quantity),
-                    );
-                    final freeStandingCount = jobs.fold<int>(
-                      0,
-                      (sum, job) =>
-                          sum +
-                          job.acUnits
-                              .where((u) => u.type == 'Freestanding AC')
-                              .fold<int>(0, (s, u) => s + u.quantity),
-                    );
-                    final totalExpenses = jobs.fold<double>(
-                      0,
-                      (s, j) => s + j.expenses,
-                    );
-
-                    return Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DashCard(
-                                title: l.totalJobs,
-                                value: '${jobs.length}',
-                                icon: Icons.work_outline,
-                                color: ArcticTheme.arcticBlue,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DashCard(
-                                title: l.pending,
-                                value: '$pendingCount',
-                                icon: Icons.pending_outlined,
-                                color: ArcticTheme.arcticPending,
-                                onTap: () => context.go('/admin/approvals'),
-                              ),
-                            ),
-                          ],
-                        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DashCard(
-                                title: l.approved,
-                                value: '$approvedCount',
-                                icon: Icons.check_circle_outline,
-                                color: ArcticTheme.arcticSuccess,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DashCard(
-                                title: l.expenses,
-                                value: AppFormatters.currency(totalExpenses),
-                                icon: Icons.payments_outlined,
-                                color: ArcticTheme.arcticWarning,
-                              ),
-                            ),
-                          ],
-                        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DashCard(
-                                title: l.splits,
-                                value: '$splitCount',
-                                icon: Icons.ac_unit_rounded,
-                                color: ArcticTheme.arcticBlue,
-                                onTap: () => context.push(
-                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.split)}',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DashCard(
-                                title: l.windowAc,
-                                value: '$windowCount',
-                                icon: Icons.window_rounded,
-                                color: ArcticTheme.arcticSuccess,
-                                onTap: () => context.push(
-                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.window)}',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DashCard(
-                                title: l.standing,
-                                value: '$freeStandingCount',
-                                icon: Icons.kitchen_rounded,
-                                color: ArcticTheme.arcticWarning,
-                                onTap: () => context.push(
-                                  '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.freestanding)}',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1),
-                      ],
-                    );
-                  },
-                  loading: () => const ArcticShimmer(height: 90, count: 2),
-                  error: (e, _) => const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 24),
-
-                // Team Summary
-                technicians.when(
-                  data: (techs) {
-                    final active = techs.where((t) => t.isActive).length;
-                    return Column(
-                      children: [
-                        _DashCard(
-                          title: l.team,
-                          value: l.activeOfTotal(active, techs.length),
-                          icon: Icons.people_outline,
-                          color: ArcticTheme.arcticBlue,
-                          onTap: () => context.go('/admin/team'),
-                        ).animate().fadeIn(delay: 400.ms),
-                        const SizedBox(height: 12),
-                        companies.when(
-                          data: (items) => _DashCard(
-                            title: l.companies,
-                            value: '${items.where((c) => c.isActive).length}',
-                            icon: Icons.apartment_rounded,
-                            color: ArcticTheme.arcticWarning,
-                            onTap: () => context.go('/admin/companies'),
-                          ),
-                          loading: () =>
-                              const ArcticShimmer(height: 70, count: 1),
-                          error: (e, _) => const SizedBox.shrink(),
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const ArcticShimmer(height: 70, count: 1),
-                  error: (e, _) => const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 24),
-
-                ArcticCard(
-                  onTap: () => context.go('/admin/import'),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.upload_file_rounded,
-                          color: ArcticTheme.arcticBlue,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l.importHistoryData,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            Text(
-                              l.importHistoryDataSubtitle,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: ArcticTheme.arcticTextSecondary,
-                      ),
-                    ],
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ArcticRefreshIndicator(
+              onRefresh: () async => refresh(),
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(
+                    l.welcomeBack,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ).animate().fadeIn(delay: 580.ms),
-                const SizedBox(height: 16),
-
-                // Danger Zone
-                Text(
-                  l.dangerZone,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: ArcticTheme.arcticError,
+                  Text(
+                    user?.name ?? l.admin,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                ).animate().fadeIn(delay: 600.ms),
-                const SizedBox(height: 12),
-                ArcticCard(
-                  onTap: () => context.go('/admin/flush'),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: ArcticTheme.arcticError.withValues(
-                            alpha: 0.15,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.delete_forever_rounded,
-                          color: ArcticTheme.arcticError,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l.flushDatabase,
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(color: ArcticTheme.arcticError),
-                            ),
-                            Text(
-                              l.flushDatabaseSubtitle,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: ArcticTheme.arcticTextSecondary,
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 650.ms),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // Recent Pending
-                Text(
-                  l.recentPending,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ).animate().fadeIn(delay: 700.ms),
-                const SizedBox(height: 12),
-                pending.when(
-                  data: (jobs) {
-                    if (jobs.isEmpty) {
-                      return ArcticCard(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Center(
-                            child: Text(
-                              l.noApprovals,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
-                        ),
+                  // Summary Cards
+                  allJobs.when(
+                    data: (jobs) {
+                      final pendingCount = jobs
+                          .where((j) => j.isPending)
+                          .length;
+                      final approvedCount = jobs
+                          .where((j) => j.isApproved)
+                          .length;
+                      final splitCount = jobs.fold<int>(
+                        0,
+                        (sum, job) =>
+                            sum +
+                            job.acUnits
+                                .where(
+                                  (u) => u.type == AppConstants.unitTypeSplitAc,
+                                )
+                                .fold<int>(0, (s, u) => s + u.quantity),
                       );
-                    }
-                    return Column(
-                      children: jobs
-                          .take(5)
-                          .map(
-                            (job) => ArcticCard(
-                              onTap: () => context.go('/admin/approvals'),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          job.clientName,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleSmall,
-                                        ),
-                                        Text(
-                                          '${job.techName} • ${job.invoiceNumber}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                        ),
-                                      ],
-                                    ),
+                      final windowCount = jobs.fold<int>(
+                        0,
+                        (sum, job) =>
+                            sum +
+                            job.acUnits
+                                .where((u) => u.type == 'Window AC')
+                                .fold<int>(0, (s, u) => s + u.quantity),
+                      );
+                      final freeStandingCount = jobs.fold<int>(
+                        0,
+                        (sum, job) =>
+                            sum +
+                            job.acUnits
+                                .where((u) => u.type == 'Freestanding AC')
+                                .fold<int>(0, (s, u) => s + u.quantity),
+                      );
+                      final totalExpenses = jobs.fold<double>(
+                        0,
+                        (s, j) => s + j.expenses,
+                      );
+
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.totalJobs,
+                                  value: '${jobs.length}',
+                                  icon: Icons.work_outline,
+                                  color: ArcticTheme.arcticBlue,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.pending,
+                                  value: '$pendingCount',
+                                  icon: Icons.pending_outlined,
+                                  color: ArcticTheme.arcticPending,
+                                  onTap: () => context.go('/admin/approvals'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.approved,
+                                  value: '$approvedCount',
+                                  icon: Icons.check_circle_outline,
+                                  color: ArcticTheme.arcticSuccess,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.expenses,
+                                  value: AppFormatters.currency(totalExpenses),
+                                  icon: Icons.payments_outlined,
+                                  color: ArcticTheme.arcticWarning,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.splits,
+                                  value: '$splitCount',
+                                  icon: Icons.ac_unit_rounded,
+                                  color: ArcticTheme.arcticBlue,
+                                  onTap: () => context.push(
+                                    '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.split)}',
                                   ),
-                                  const StatusBadge(status: 'pending'),
-                                ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.windowAc,
+                                  value: '$windowCount',
+                                  icon: Icons.window_rounded,
+                                  color: ArcticTheme.arcticSuccess,
+                                  onTap: () => context.push(
+                                    '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.window)}',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.standing,
+                                  value: '$freeStandingCount',
+                                  icon: Icons.kitchen_rounded,
+                                  color: ArcticTheme.arcticWarning,
+                                  onTap: () => context.push(
+                                    '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.freestanding)}',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const ArcticShimmer(height: 90, count: 2),
+                    error: (e, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Team Summary
+                  technicians.when(
+                    data: (techs) {
+                      final active = techs.where((t) => t.isActive).length;
+                      return Column(
+                        children: [
+                          _DashCard(
+                            title: l.team,
+                            value: l.activeOfTotal(active, techs.length),
+                            icon: Icons.people_outline,
+                            color: ArcticTheme.arcticBlue,
+                            onTap: () => context.go('/admin/team'),
+                          ),
+                          const SizedBox(height: 12),
+                          companies.when(
+                            data: (items) => _DashCard(
+                              title: l.companies,
+                              value: '${items.where((c) => c.isActive).length}',
+                              icon: Icons.apartment_rounded,
+                              color: ArcticTheme.arcticWarning,
+                              onTap: () => context.go('/admin/companies'),
+                            ),
+                            loading: () =>
+                                const ArcticShimmer(height: 70, count: 1),
+                            error: (e, _) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const ArcticShimmer(height: 70, count: 1),
+                    error: (e, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  ArcticCard(
+                    onTap: () => context.go('/admin/import'),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticBlue.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.upload_file_rounded,
+                            color: ArcticTheme.arcticBlue,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.importHistoryData,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              Text(
+                                l.importHistoryDataSubtitle,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Danger Zone
+                  Text(
+                    l.dangerZone,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: ArcticTheme.arcticError,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ArcticCard(
+                    onTap: () => context.go('/admin/flush'),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticError.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.delete_forever_rounded,
+                            color: ArcticTheme.arcticError,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.flushDatabase,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(color: ArcticTheme.arcticError),
+                              ),
+                              Text(
+                                l.flushDatabaseSubtitle,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Recent Pending
+                  Text(
+                    l.recentPending,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  pending.when(
+                    data: (jobs) {
+                      if (jobs.isEmpty) {
+                        return ArcticCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(
+                              child: Text(
+                                l.noApprovals,
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
-                          )
-                          .toList()
-                          .animate(interval: 80.ms)
-                          .fadeIn()
-                          .slideX(begin: 0.05),
-                    );
-                  },
-                  loading: () => const ArcticShimmer(count: 3),
-                  error: (e, _) => const SizedBox.shrink(),
-                ),
-              ],
+                          ),
+                        );
+                      }
+                      return Column(
+                        children: jobs
+                            .take(5)
+                            .map(
+                              (job) => ArcticCard(
+                                onTap: () => context.go('/admin/approvals'),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            job.clientName,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleSmall,
+                                          ),
+                                          Text(
+                                            '${job.techName} • ${job.invoiceNumber}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const StatusBadge(status: 'pending'),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                    loading: () => const ArcticShimmer(count: 3),
+                    error: (e, _) => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -449,13 +484,14 @@ class _DashCard extends StatelessWidget {
                       child: Text(
                         value,
                         maxLines: 1,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: color,
-                          fontSize: Responsive.scaledFontSize(
-                            context,
-                            isCompact ? 15 : 16,
-                          ),
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: color,
+                              fontSize: Responsive.scaledFontSize(
+                                context,
+                                isCompact ? 15 : 16,
+                              ),
+                            ),
                       ),
                     ),
                     const SizedBox(height: 2),

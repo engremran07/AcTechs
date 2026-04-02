@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
@@ -22,46 +23,66 @@ final todaysExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
   return ref.watch(expenseRepositoryProvider).todaysExpenses(user.uid);
 });
 
+/// Today's work expenses — derived from todaysExpensesProvider (no extra Firestore listener).
 final todaysWorkExpensesProvider =
-    StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user == null) return Stream.value([]);
-      return ref.watch(expenseRepositoryProvider).todaysWorkExpenses(user.uid);
+    Provider.autoDispose<AsyncValue<List<ExpenseModel>>>((ref) {
+      return ref
+          .watch(todaysExpensesProvider)
+          .whenData(
+            (list) => list
+                .where((e) => e.expenseType != AppConstants.expenseTypeHome)
+                .toList(),
+          );
     });
 
+/// Today's home expenses — derived from todaysExpensesProvider (no extra Firestore listener).
 final todaysHomeExpensesProvider =
-    StreamProvider.autoDispose<List<ExpenseModel>>((ref) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user == null) return Stream.value([]);
-      return ref.watch(expenseRepositoryProvider).todaysHomeExpenses(user.uid);
+    Provider.autoDispose<AsyncValue<List<ExpenseModel>>>((ref) {
+      return ref
+          .watch(todaysExpensesProvider)
+          .whenData(
+            (list) => list
+                .where((e) => e.expenseType == AppConstants.expenseTypeHome)
+                .toList(),
+          );
     });
 
 /// Monthly expenses for the logged-in tech.
+/// DateTime key is normalised to the first of the month to prevent duplicate listeners.
 final monthlyExpensesProvider = StreamProvider.autoDispose
     .family<List<ExpenseModel>, DateTime>((ref, month) {
+      final normalized = DateTime(month.year, month.month);
       final user = ref.watch(currentUserProvider).value;
       if (user == null) return Stream.value([]);
       return ref
           .watch(expenseRepositoryProvider)
-          .monthlyExpenses(user.uid, month);
+          .monthlyExpenses(user.uid, normalized);
     });
 
-final monthlyWorkExpensesProvider = StreamProvider.autoDispose
-    .family<List<ExpenseModel>, DateTime>((ref, month) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user == null) return Stream.value([]);
+/// Monthly work expenses — derived from monthlyExpensesProvider (no extra Firestore listener).
+final monthlyWorkExpensesProvider = Provider.autoDispose
+    .family<AsyncValue<List<ExpenseModel>>, DateTime>((ref, month) {
+      final normalized = DateTime(month.year, month.month);
       return ref
-          .watch(expenseRepositoryProvider)
-          .monthlyWorkExpenses(user.uid, month);
+          .watch(monthlyExpensesProvider(normalized))
+          .whenData(
+            (list) => list
+                .where((e) => e.expenseType != AppConstants.expenseTypeHome)
+                .toList(),
+          );
     });
 
-final monthlyHomeExpensesProvider = StreamProvider.autoDispose
-    .family<List<ExpenseModel>, DateTime>((ref, month) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user == null) return Stream.value([]);
+/// Monthly home expenses — derived from monthlyExpensesProvider (no extra Firestore listener).
+final monthlyHomeExpensesProvider = Provider.autoDispose
+    .family<AsyncValue<List<ExpenseModel>>, DateTime>((ref, month) {
+      final normalized = DateTime(month.year, month.month);
       return ref
-          .watch(expenseRepositoryProvider)
-          .monthlyHomeExpenses(user.uid, month);
+          .watch(monthlyExpensesProvider(normalized))
+          .whenData(
+            (list) => list
+                .where((e) => e.expenseType == AppConstants.expenseTypeHome)
+                .toList(),
+          );
     });
 
 /// All earnings for the logged-in tech (newest first).

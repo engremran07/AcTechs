@@ -10,11 +10,11 @@ import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 
-final authStateProvider = StreamProvider.autoDispose<User?>((ref) {
+final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-final currentUserProvider = StreamProvider.autoDispose<UserModel?>((ref) {
+final currentUserProvider = StreamProvider<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.when(
     data: (user) {

@@ -266,13 +266,105 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     }
   }
 
-  Future<void> _exportTodayInOutPdf() async {
+  List<DateTime> _availableReportMonths({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+    required List<JobModel> jobs,
+  }) {
+    final months = <DateTime>{};
+
+    for (final e in earnings) {
+      if (e.date != null) {
+        months.add(DateTime(e.date!.year, e.date!.month));
+      }
+    }
+    for (final e in expenses) {
+      if (e.date != null) {
+        months.add(DateTime(e.date!.year, e.date!.month));
+      }
+    }
+    for (final j in jobs) {
+      if (j.date != null) {
+        months.add(DateTime(j.date!.year, j.date!.month));
+      }
+    }
+
+    final sorted = months.toList()
+      ..sort((a, b) {
+        final y = b.year.compareTo(a.year);
+        return y != 0 ? y : b.month.compareTo(a.month);
+      });
+    return sorted;
+  }
+
+  Future<DateTime?> _pickReportMonth(List<DateTime> months) {
     final l = AppLocalizations.of(context)!;
+    final localizations = MaterialLocalizations.of(context);
+
+    return showModalBottomSheet<DateTime>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_month_rounded,
+                      color: ArcticTheme.arcticBlue,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l.monthlySummary,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: months.length,
+                  separatorBuilder: (_, index) => const Divider(height: 1),
+                  itemBuilder: (_, index) {
+                    final month = months[index];
+                    return ListTile(
+                      leading: const Icon(Icons.picture_as_pdf_outlined),
+                      title: Text(localizations.formatMonthYear(month)),
+                      onTap: () => Navigator.of(ctx).pop(month),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportTodayInOutPdf(List<DateTime> monthsWithData) async {
+    final l = AppLocalizations.of(context)!;
+    if (monthsWithData.isEmpty) {
+      ErrorSnackbar.show(context, message: l.noEntriesToday);
+      return;
+    }
+
+    final selectedMonth = await _pickReportMonth(monthsWithData);
+    if (selectedMonth == null) return;
+
     setState(() => _isExportingTodayPdf = true);
     try {
-      final earnings = ref.read(todaysEarningsProvider).value ?? [];
-      final expenses = ref.read(todaysExpensesProvider).value ?? [];
-      final jobs = ref.read(todaysJobsProvider).value ?? [];
+      final month = DateTime(selectedMonth.year, selectedMonth.month);
+      final earnings = await ref.read(monthlyEarningsProvider(month).future);
+      final expenses = await ref.read(monthlyExpensesProvider(month).future);
+      final jobs = await ref.read(monthlyJobsProvider(month).future);
 
       if (earnings.isEmpty && expenses.isEmpty && jobs.isEmpty) {
         if (mounted) {
@@ -281,6 +373,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         return;
       }
 
+      if (!mounted) return;
       final locale = Localizations.localeOf(context).languageCode;
       final user = ref.read(currentUserProvider).value;
       final bytes = await PdfGenerator.generateTodayInOutReport(
@@ -289,12 +382,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         todaysJobs: jobs,
         locale: locale,
         technicianName: user?.name,
+        reportDate: month,
+        monthlyMode: true,
       );
 
-      final now = DateTime.now();
       await PdfGenerator.sharePdfBytes(
         bytes,
-        'today_in_out_${now.year}_${now.month}_${now.day}.pdf',
+        'in_out_${month.year}_${month.month.toString().padLeft(2, '0')}.pdf',
       );
     } catch (_) {
       if (mounted) {
@@ -558,9 +652,16 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context)!;
+    final allEarningsAsync = ref.watch(techEarningsProvider);
+    final allExpensesAsync = ref.watch(techExpensesProvider);
+    final allJobsAsync = ref.watch(technicianJobsProvider);
     final earningsAsync = ref.watch(todaysEarningsProvider);
     final expensesAsync = ref.watch(todaysExpensesProvider);
-    final todaysJobsAsync = ref.watch(todaysJobsProvider);
+    final monthsWithData = _availableReportMonths(
+      earnings: allEarningsAsync.value ?? const [],
+      expenses: allExpensesAsync.value ?? const [],
+      jobs: allJobsAsync.value ?? const [],
+    );
 
     ref.listen<AsyncValue<List<JobModel>>>(technicianJobsProvider, (
       prev,
@@ -606,11 +707,12 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             tooltip: l.exportPdf,
             onPressed:
                 _isExportingTodayPdf ||
-                    earningsAsync.isLoading ||
-                    expensesAsync.isLoading ||
-                    todaysJobsAsync.isLoading
+                    allEarningsAsync.isLoading ||
+                    allExpensesAsync.isLoading ||
+                    allJobsAsync.isLoading ||
+                    monthsWithData.isEmpty
                 ? null
-                : _exportTodayInOutPdf,
+                : () => _exportTodayInOutPdf(monthsWithData),
           ),
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),
@@ -620,33 +722,37 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // ── Summary Card ──
-            _buildSummaryCard(theme, earningsAsync, expensesAsync),
-            const SizedBox(height: 20),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ── Summary Card ──
+              _buildSummaryCard(theme, earningsAsync, expensesAsync),
+              const SizedBox(height: 20),
 
-            // ── Add Entry Form ──
-            _buildAddForm(theme),
-            const SizedBox(height: 24),
+              // ── Add Entry Form ──
+              _buildAddForm(theme),
+              const SizedBox(height: 24),
 
-            // ── Today's Entries ──
-            Row(
-              children: [
-                const Icon(
-                  Icons.list_alt_rounded,
-                  color: ArcticTheme.arcticBlue,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(l.todaysEntries, style: theme.textTheme.titleLarge),
-              ],
-            ),
-            const SizedBox(height: 12),
+              // ── Today's Entries ──
+              Row(
+                children: [
+                  const Icon(
+                    Icons.list_alt_rounded,
+                    color: ArcticTheme.arcticBlue,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(l.todaysEntries, style: theme.textTheme.titleLarge),
+                ],
+              ),
+              const SizedBox(height: 12),
 
-            _buildEntryList(theme, earningsAsync, expensesAsync),
-          ],
+              _buildEntryList(theme, earningsAsync, expensesAsync),
+            ],
+          ),
         ),
       ),
     );
