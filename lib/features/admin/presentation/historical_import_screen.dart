@@ -31,6 +31,7 @@ class _HistoricalImportScreenState
   CompanyModel? _selectedCompany;
   final TextEditingController _technicianKeywordController =
       TextEditingController();
+  final ValueNotifier<String> _importProgress = ValueNotifier('');
 
   Future<bool> _showImportPreviewDialog(
     List<_PreparedImportBatch> preparedBatches,
@@ -40,6 +41,12 @@ class _HistoricalImportScreenState
       0,
       (sum, b) => sum + b.parsed.jobs.length,
     );
+
+    // Early return if no valid rows (1.6)
+    if (totalImportedRows == 0) {
+      return false;
+    }
+
     final totalSkippedRows = preparedBatches.fold<int>(
       0,
       (sum, b) => sum + b.parsed.skippedRows,
@@ -53,15 +60,20 @@ class _HistoricalImportScreenState
       context: context,
       builder: (dialogContext) {
         final maxDialogHeight = MediaQuery.of(dialogContext).size.height * 0.68;
+        final isRtl =
+            Localizations.localeOf(dialogContext).languageCode != 'en';
+
         return AlertDialog(
-          title: Text(l.importHistoryData),
+          title: Text(l.confirm),
           content: SizedBox(
             width: 560,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxHeight: maxDialogHeight),
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: isRtl
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     Text(
                       l.importHistoryData,
@@ -82,7 +94,9 @@ class _HistoricalImportScreenState
                             border: Border.all(color: Colors.white24),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: isRtl
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
                             children: [
                               Text(
                                 batch.fileName,
@@ -94,7 +108,8 @@ class _HistoricalImportScreenState
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Text(
                                     '${sheet.sheetName} • ${l.importCompletedCount(sheet.importedRows)} • ${l.importSkippedCount(sheet.skippedRows)} • ${l.importUnresolvedTechRows(sheet.unresolvedTechnicians)}\n'
-                                    'S/W/F: ${sheet.installedSplit}/${sheet.installedWindow}/${sheet.installedFreestanding} • U S/W/F/O: ${sheet.uninstallSplit}/${sheet.uninstallWindow}/${sheet.uninstallFreestanding}/${sheet.uninstallOld}',
+                                    'S/W/F: ${sheet.installedSplit}/${sheet.installedWindow}/${sheet.installedFreestanding} • U S/W/F/O: ${sheet.uninstallSplit}/${sheet.uninstallWindow}/${sheet.uninstallFreestanding}/${sheet.uninstallOld}'
+                                    '${sheet.note.isNotEmpty ? '\n${sheet.note}' : ''}',
                                   ),
                                 );
                               }),
@@ -134,6 +149,7 @@ class _HistoricalImportScreenState
   @override
   void dispose() {
     _technicianKeywordController.dispose();
+    _importProgress.dispose();
     super.dispose();
   }
 
@@ -178,7 +194,7 @@ class _HistoricalImportScreenState
     final l = AppLocalizations.of(context)!;
     final picked = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      withData: true,
+      withData: kIsWeb,
       type: FileType.custom,
       allowedExtensions: const ['xlsx', 'xls'],
     );
@@ -216,7 +232,7 @@ class _HistoricalImportScreenState
     var unresolvedTechs = 0;
 
     try {
-      final users = await ref.read(userRepositoryProvider).usersForImport();
+      final users = _technicians; // Already loaded in initState
       final keyword = _technicianKeywordController.text.trim();
       final preparedBatches = <_PreparedImportBatch>[];
 
@@ -227,14 +243,43 @@ class _HistoricalImportScreenState
         }
         if (bytes == null || bytes.isEmpty) continue;
 
-        final parsed = HistoricalJobsImportService.parseExcel(
-          bytes: bytes,
-          users: users,
-          adminUid: currentUser.uid,
-          targetUser: targetTechnician,
-          targetCompany: targetCompany,
-          technicianKeyword: keyword,
-        );
+        final parsedMap =
+            await compute<Map<String, dynamic>, Map<String, dynamic>>(
+              parseHistoricalImportInIsolate,
+              {
+                'bytes': bytes,
+                'users': users
+                    .map(
+                      (u) => {
+                        'uid': u.uid,
+                        'name': u.name,
+                        'email': u.email,
+                        'role': u.role,
+                        'isActive': u.isActive,
+                        'language': u.language,
+                      },
+                    )
+                    .toList(),
+                'adminUid': currentUser.uid,
+                'targetUser': {
+                  'uid': targetTechnician.uid,
+                  'name': targetTechnician.name,
+                  'email': targetTechnician.email,
+                  'role': targetTechnician.role,
+                  'isActive': targetTechnician.isActive,
+                  'language': targetTechnician.language,
+                },
+                'targetCompany': {
+                  'id': targetCompany.id,
+                  'name': targetCompany.name,
+                  'invoicePrefix': targetCompany.invoicePrefix,
+                  'isActive': targetCompany.isActive,
+                },
+                'technicianKeyword': keyword,
+              },
+            );
+
+        final parsed = HistoricalImportResult.fromJson(parsedMap);
 
         preparedBatches.add(
           _PreparedImportBatch(
@@ -259,8 +304,13 @@ class _HistoricalImportScreenState
         return;
       }
 
-      for (final prepared in preparedBatches) {
+      for (var i = 0; i < preparedBatches.length; i++) {
+        final prepared = preparedBatches[i];
         final parsed = prepared.parsed;
+
+        // Update progress (3.5)
+        _importProgress.value =
+            'Importing ${i + 1}/${preparedBatches.length}: ${prepared.fileName}';
 
         if (parsed.jobs.isNotEmpty) {
           importedCount += await ref
@@ -452,6 +502,20 @@ class _HistoricalImportScreenState
                       ),
                     ),
                   ),
+                  if (_isImporting)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: ValueListenableBuilder<String>(
+                        valueListenable: _importProgress,
+                        builder: (context, progress, _) {
+                          return Text(
+                            progress,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.white70),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -54,6 +54,8 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   expenses: (json['expenses'] as num?)?.toDouble() ?? 0.0,
   expenseNote: json['expenseNote'] as String? ?? '',
   adminNote: json['adminNote'] as String? ?? '',
+  importMeta:
+      json['importMeta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
   approvedBy: json['approvedBy'] as String? ?? '',
   charges: json['charges'] == null
       ? null
@@ -77,6 +79,7 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'expenses': instance.expenses,
   'expenseNote': instance.expenseNote,
   'adminNote': instance.adminNote,
+  'importMeta': instance.importMeta,
   'approvedBy': instance.approvedBy,
   'charges': instance.charges?.toJson(),
   'date': _timestampToJson(instance.date),

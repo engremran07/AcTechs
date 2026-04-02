@@ -256,7 +256,7 @@ class ArcticTheme {
         shadowColor: Colors.black26,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: lightDivider),
+          side: const BorderSide(color: lightDivider),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -299,11 +299,11 @@ class ArcticTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: lightDivider),
+          borderSide: const BorderSide(color: lightDivider),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: lightDivider),
+          borderSide: const BorderSide(color: lightDivider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

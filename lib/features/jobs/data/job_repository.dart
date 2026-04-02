@@ -32,7 +32,8 @@ class JobRepository {
   String _safeImportDocId(JobModel job) {
     final invoice = _normalizeInvoice(job.invoiceNumber).toLowerCase();
     final safe = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
-    final scoped = 'inv_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
+    final scoped =
+        'inv_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
     return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
   }
 
@@ -243,7 +244,7 @@ class JobRepository {
               .toFirestore();
           data['date'] ??= FieldValue.serverTimestamp();
           data['submittedAt'] ??= FieldValue.serverTimestamp();
-          batch.set(ref, data, SetOptions(merge: true));
+          batch.set(ref, data);
           imported++;
         }
         await batch.commit();
@@ -251,14 +252,14 @@ class JobRepository {
       return imported;
     } on FirebaseException catch (e) {
       debugPrint('importJobs FirebaseException: ${e.code} — ${e.message}');
-        if (e.code == 'permission-denied') {
-          throw const JobException(
-            'job_import_permission_denied',
-            'You do not have permission to import jobs. Contact your admin.',
-            'آپ کو jobs درآمد کرنے کی اجازت نہیں۔ اپنے ایڈمن سے رابطہ کریں۔',
-            'ليس لديك إذن لاستيراد الوظائف. تواصل مع المسؤول.',
-          );
-        }
+      if (e.code == 'permission-denied') {
+        throw const JobException(
+          'job_import_permission_denied',
+          'You do not have permission to import jobs. Contact your admin.',
+          'آپ کو jobs درآمد کرنے کی اجازت نہیں۔ اپنے ایڈمن سے رابطہ کریں۔',
+          'ليس لديك إذن لاستيراد الوظائف. تواصل مع المسؤول.',
+        );
+      }
       if (e.code == 'failed-precondition') {
         throw const JobException(
           'job_backend_sync_in_progress',

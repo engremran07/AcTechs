@@ -17,11 +17,7 @@ void main() {
     });
 
     test('applies default role "technician" when absent', () {
-      final json = {
-        'uid': 'u1',
-        'name': 'Ali',
-        'email': 'ali@example.com',
-      };
+      final json = {'uid': 'u1', 'name': 'Ali', 'email': 'ali@example.com'};
       expect(UserModel.fromJson(json).role, 'technician');
     });
 
@@ -36,11 +32,7 @@ void main() {
     });
 
     test('applies default isActive true when absent', () {
-      final json = {
-        'uid': 'u3',
-        'name': 'Tech',
-        'email': 'tech@example.com',
-      };
+      final json = {'uid': 'u3', 'name': 'Tech', 'email': 'tech@example.com'};
       expect(UserModel.fromJson(json).isActive, isTrue);
     });
 
@@ -99,7 +91,7 @@ void main() {
 
   group('UserModel.toJson()', () {
     test('serialises all fields', () {
-      final model = UserModel(
+      const model = UserModel(
         uid: 'u-serial',
         name: 'Serialised',
         email: 'serial@example.com',
@@ -121,22 +113,14 @@ void main() {
 
   group('UserModel – equality', () {
     test('two models with same data are equal', () {
-      final a = UserModel(
-        uid: 'same',
-        name: 'Name',
-        email: 'e@e.com',
-      );
-      final b = UserModel(
-        uid: 'same',
-        name: 'Name',
-        email: 'e@e.com',
-      );
+      const a = UserModel(uid: 'same', name: 'Name', email: 'e@e.com');
+      const b = UserModel(uid: 'same', name: 'Name', email: 'e@e.com');
       expect(a, b);
     });
 
     test('two models with different uids are not equal', () {
-      final a = UserModel(uid: 'a', name: 'N', email: 'e@e.com');
-      final b = UserModel(uid: 'b', name: 'N', email: 'e@e.com');
+      const a = UserModel(uid: 'a', name: 'N', email: 'e@e.com');
+      const b = UserModel(uid: 'b', name: 'N', email: 'e@e.com');
       expect(a, isNot(b));
     });
   });
@@ -158,34 +142,62 @@ void main() {
 
   group('UserModelX extensions', () {
     test('isAdmin returns true for role "admin"', () {
-      final admin = UserModel(uid: 'a', name: 'A', email: 'a@a.com', role: 'admin');
+      const admin = UserModel(
+        uid: 'a',
+        name: 'A',
+        email: 'a@a.com',
+        role: 'admin',
+      );
       expect(admin.isAdmin, isTrue);
     });
 
     test('isAdmin returns false for role "technician"', () {
-      final tech = UserModel(uid: 't', name: 'T', email: 't@t.com', role: 'technician');
+      const tech = UserModel(
+        uid: 't',
+        name: 'T',
+        email: 't@t.com',
+        role: 'technician',
+      );
       expect(tech.isAdmin, isFalse);
     });
 
     test('isTechnician returns true for role "technician"', () {
-      final tech = UserModel(uid: 't', name: 'T', email: 't@t.com');
+      const tech = UserModel(uid: 't', name: 'T', email: 't@t.com');
       expect(tech.isTechnician, isTrue);
     });
 
     test('isTechnician returns false for role "admin"', () {
-      final admin = UserModel(uid: 'a', name: 'A', email: 'a@a.com', role: 'admin');
+      const admin = UserModel(
+        uid: 'a',
+        name: 'A',
+        email: 'a@a.com',
+        role: 'admin',
+      );
       expect(admin.isTechnician, isFalse);
     });
 
-    test('isAdmin and isTechnician are mutually exclusive for standard roles', () {
-      final admin = UserModel(uid: 'a', name: 'A', email: 'a@a.com', role: 'admin');
-      final tech = UserModel(uid: 't', name: 'T', email: 't@t.com', role: 'technician');
-      expect(admin.isAdmin && admin.isTechnician, isFalse);
-      expect(tech.isAdmin && tech.isTechnician, isFalse);
-    });
+    test(
+      'isAdmin and isTechnician are mutually exclusive for standard roles',
+      () {
+        const admin = UserModel(
+          uid: 'a',
+          name: 'A',
+          email: 'a@a.com',
+          role: 'admin',
+        );
+        const tech = UserModel(
+          uid: 't',
+          name: 'T',
+          email: 't@t.com',
+          role: 'technician',
+        );
+        expect(admin.isAdmin && admin.isTechnician, isFalse);
+        expect(tech.isAdmin && tech.isTechnician, isFalse);
+      },
+    );
 
     test('toFirestore() excludes uid key', () {
-      final model = UserModel(
+      const model = UserModel(
         uid: 'should-not-appear',
         name: 'Firestore User',
         email: 'fs@example.com',
@@ -195,7 +207,7 @@ void main() {
     });
 
     test('toFirestore() includes name and email', () {
-      final model = UserModel(
+      const model = UserModel(
         uid: 'fs-uid',
         name: 'Stored Name',
         email: 'stored@example.com',

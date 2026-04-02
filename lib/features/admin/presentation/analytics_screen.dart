@@ -465,45 +465,47 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: PieChart(
-                                PieChartData(
-                                  sectionsSpace: 3,
-                                  centerSpaceRadius: 40,
-                                  sections: [
-                                    PieChartSectionData(
-                                      value: approved.toDouble(),
-                                      color: ArcticTheme.arcticSuccess,
-                                      title: '$approved',
-                                      titleStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                              child: RepaintBoundary(
+                                child: PieChart(
+                                  PieChartData(
+                                    sectionsSpace: 3,
+                                    centerSpaceRadius: 40,
+                                    sections: [
+                                      PieChartSectionData(
+                                        value: approved.toDouble(),
+                                        color: ArcticTheme.arcticSuccess,
+                                        title: '$approved',
+                                        titleStyle: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        radius: 50,
                                       ),
-                                      radius: 50,
-                                    ),
-                                    PieChartSectionData(
-                                      value: pending.toDouble(),
-                                      color: ArcticTheme.arcticPending,
-                                      title: '$pending',
-                                      titleStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                      PieChartSectionData(
+                                        value: pending.toDouble(),
+                                        color: ArcticTheme.arcticPending,
+                                        title: '$pending',
+                                        titleStyle: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        radius: 50,
                                       ),
-                                      radius: 50,
-                                    ),
-                                    PieChartSectionData(
-                                      value: rejected.toDouble(),
-                                      color: ArcticTheme.arcticError,
-                                      title: '$rejected',
-                                      titleStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                      PieChartSectionData(
+                                        value: rejected.toDouble(),
+                                        color: ArcticTheme.arcticError,
+                                        title: '$rejected',
+                                        titleStyle: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        radius: 50,
                                       ),
-                                      radius: 50,
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -547,72 +549,77 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       const SizedBox(height: 16),
                       SizedBox(
                         height: 200,
-                        child: BarChart(
-                          BarChartData(
-                            barGroups: techJobs.entries
-                                .toList()
-                                .asMap()
-                                .entries
-                                .map(
-                                  (e) => BarChartGroupData(
-                                    x: e.key,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: e.value.value.toDouble(),
-                                        color: ArcticTheme.arcticBlue,
-                                        width: 20,
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(6),
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .toList(),
-                            titlesData: FlTitlesData(
-                              leftTitles: const AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
-                                ),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    final names = techJobs.keys.toList();
-                                    if (value.toInt() < names.length) {
-                                      final name = names[value.toInt()];
-                                      return Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          name.length > 6
-                                              ? '${name.substring(0, 6)}..'
-                                              : name,
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color:
-                                                ArcticTheme.arcticTextSecondary,
-                                          ),
+                        child: RepaintBoundary(
+                          child: BarChart(
+                            BarChartData(
+                              barGroups: techJobs.entries
+                                  .toList()
+                                  .asMap()
+                                  .entries
+                                  .map(
+                                    (e) => BarChartGroupData(
+                                      x: e.key,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: e.value.value.toDouble(),
+                                          color: ArcticTheme.arcticBlue,
+                                          width: 20,
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                                top: Radius.circular(6),
+                                              ),
                                         ),
-                                      );
-                                    }
-                                    return const SizedBox.shrink();
-                                  },
+                                      ],
+                                    ),
+                                  )
+                                  .toList(),
+                              titlesData: FlTitlesData(
+                                leftTitles: const AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 30,
+                                  ),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      final names = techJobs.keys.toList();
+                                      if (value.toInt() < names.length) {
+                                        final name = names[value.toInt()];
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 8,
+                                          ),
+                                          child: Text(
+                                            name.length > 6
+                                                ? '${name.substring(0, 6)}..'
+                                                : name,
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: ArcticTheme
+                                                  .arcticTextSecondary,
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        return const SizedBox.shrink();
+                                      }
+                                    },
+                                  ),
+                                ),
+                                topTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                rightTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
                                 ),
                               ),
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
+                              borderData: FlBorderData(show: false),
+                              gridData: const FlGridData(
+                                show: true,
+                                drawVerticalLine: false,
                               ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                            ),
-                            borderData: FlBorderData(show: false),
-                            gridData: const FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
                             ),
                           ),
                         ),

@@ -124,7 +124,7 @@ class AuthException extends AppException {
       'invalid-credential' => AuthException.wrongCredentials(),
       'user-disabled' => AuthException.accountDisabled(),
       'too-many-requests' => AuthException.tooManyAttempts(),
-      _ => AuthException(
+      _ => const AuthException(
         'auth_unknown',
         'Something went wrong. Please try again.',
         'کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔',

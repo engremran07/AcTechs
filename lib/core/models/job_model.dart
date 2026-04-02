@@ -55,6 +55,7 @@ abstract class JobModel with _$JobModel {
     @Default(0.0) double expenses,
     @Default('') String expenseNote,
     @Default('') String adminNote,
+    @Default(<String, dynamic>{}) Map<String, dynamic> importMeta,
     @Default('') String approvedBy,
 
     /// Additional invoice charges (bracket, delivery).

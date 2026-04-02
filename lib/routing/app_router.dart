@@ -57,32 +57,6 @@ CustomTransitionPage<T> _slideFadePage<T>({
   );
 }
 
-CustomTransitionPage<T> _splashHandoffPage<T>({
-  required LocalKey pageKey,
-  required Widget child,
-}) {
-  return CustomTransitionPage<T>(
-    key: pageKey,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 420),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      final fade = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      );
-      final slide = Tween<Offset>(
-        begin: const Offset(0, 0.06),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-      return FadeTransition(
-        opacity: fade,
-        child: SlideTransition(position: slide, child: child),
-      );
-    },
-  );
-}
-
 final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
@@ -180,10 +154,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) => _splashHandoffPage(
-          pageKey: state.pageKey,
-          child: const LoginScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            _slideFadePage(pageKey: state.pageKey, child: const LoginScreen()),
       ),
       ShellRoute(
         builder: (context, state, child) => TechShell(child: child),
@@ -240,7 +212,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/tech/jobs/filter/:type',
             pageBuilder: (context, state) {
               final typeRaw = state.pathParameters['type'] ?? '';
-              final filter = jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
+              final filter =
+                  jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
               return _slideFadePage(
                 pageKey: state.pageKey,
                 child: JobTypeFilterScreen(filter: filter, isAdminScope: false),
@@ -326,7 +299,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/admin/jobs/filter/:type',
             pageBuilder: (context, state) {
               final typeRaw = state.pathParameters['type'] ?? '';
-              final filter = jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
+              final filter =
+                  jobAcTypeFilterFromPath(typeRaw) ?? JobAcTypeFilter.split;
               return _slideFadePage(
                 pageKey: state.pageKey,
                 child: JobTypeFilterScreen(filter: filter, isAdminScope: true),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
@@ -14,6 +15,54 @@ const _kBrandDark = PdfColor.fromInt(0xFF0D1117); // near-black
 const _kGreen = PdfColor.fromInt(0xFF00C853);
 const _kRed = PdfColor.fromInt(0xFFD50000);
 const _kAmber = PdfColor.fromInt(0xFFFFB300);
+
+// ─── Isolate PDF generation (to avoid UI freeze on large reports) ───────────
+/// Parameters passed to isolate PDF generation function.
+class _PdfGenerationParams {
+  final List<JobModel> jobs;
+  final String title;
+  final String locale;
+  final String? technicianName;
+  final DateTime? fromDate;
+  final DateTime? toDate;
+  final bool useDetails;
+  final int maxPages;
+
+  _PdfGenerationParams({
+    required this.jobs,
+    required this.title,
+    required this.locale,
+    this.technicianName, // ignore: unused_element_parameter — reserved for future filter by technician feature
+    this.fromDate, // ignore: unused_element_parameter — reserved for future date range feature
+    this.toDate, // ignore: unused_element_parameter — reserved for future date range feature
+    this.useDetails = false,
+    this.maxPages = 2000,
+  });
+}
+
+/// Top-level function for isolate PDF generation (called via compute()).
+Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
+  if (params.useDetails) {
+    return PdfGenerator.generateJobsDetailsReport(
+      jobs: params.jobs,
+      title: params.title,
+      locale: params.locale,
+      technicianName: params.technicianName,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      maxPages: params.maxPages,
+    );
+  } else {
+    return PdfGenerator.generateJobsReport(
+      jobs: params.jobs,
+      title: params.title,
+      locale: params.locale,
+      technicianName: params.technicianName,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+    );
+  }
+}
 
 /// Unified PDF report generator with RTL font support for all 3 locales.
 ///
@@ -1413,7 +1462,7 @@ class PdfGenerator {
               final dolabQty = j.acUnits
                   .where((u) => u.type == 'Freestanding AC')
                   .fold<int>(0, (s, u) => s + u.quantity);
-                final uninstallDetail = () {
+              final uninstallDetail = () {
                 final splitPart = uninstallSplitQty > 0
                     ? 'S:$uninstallSplitQty'
                     : '';
@@ -1702,14 +1751,7 @@ class PdfGenerator {
           ];
 
     final jobsHeaders = locale == 'ur'
-        ? [
-            'انوائس',
-            'کمپنی',
-            'کلائنٹ',
-            'رابطہ',
-            'یونٹس/تفصیل',
-            'ٹیکنیشن',
-          ]
+        ? ['انوائس', 'کمپنی', 'کلائنٹ', 'رابطہ', 'یونٹس/تفصیل', 'ٹیکنیشن']
         : locale == 'ar'
         ? [
             'الفاتورة',
@@ -2414,11 +2456,14 @@ class PdfGenerator {
   }
 
   /// Show an interactive print/share preview for a jobs report.
+  /// For large reports (>20 jobs), PDF generation happens in an isolate to prevent UI freeze.
   static Future<void> previewPdf(
     BuildContext context,
     List<JobModel> jobs,
     String locale,
   ) async {
+    if (!context.mounted) return;
+
     final reportTitle = locale == 'ur'
         ? 'ملازمتوں کی رپورٹ'
         : locale == 'ar'
@@ -2426,21 +2471,67 @@ class PdfGenerator {
         : 'Jobs Report';
 
     Uint8List bytes;
+
     try {
-      bytes = await generateJobsDetailsReport(
-        jobs: jobs,
-        maxPages: 2000,
-        title: reportTitle,
-        locale: locale,
-      );
+      if (jobs.length > 20) {
+        // Use isolate for large reports to avoid UI freeze
+        bytes = await _generatePdfInIsolate(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+          useDetails: true,
+          maxPages: 2000,
+        );
+      } else {
+        // Small reports can be generated on main thread
+        bytes = await generateJobsDetailsReport(
+          jobs: jobs,
+          maxPages: 2000,
+          title: reportTitle,
+          locale: locale,
+        );
+      }
     } catch (_) {
-      bytes = await generateJobsReport(
-        jobs: jobs,
-        title: reportTitle,
-        locale: locale,
-      );
+      if (jobs.length > 20) {
+        // Fallback to simpler report in isolate
+        bytes = await _generatePdfInIsolate(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+          useDetails: false,
+        );
+      } else {
+        // Fallback for small reports
+        bytes = await generateJobsReport(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+        );
+      }
     }
 
-    await Printing.layoutPdf(onLayout: (_) => bytes);
+    if (context.mounted) {
+      await Printing.layoutPdf(onLayout: (_) => bytes);
+    }
+  }
+
+  /// Generate PDF in isolate for large reports.
+  static Future<Uint8List> _generatePdfInIsolate({
+    required List<JobModel> jobs,
+    required String title,
+    required String locale,
+    required bool useDetails,
+    int maxPages = 2000,
+  }) async {
+    return compute(
+      _isolatePdfGeneration,
+      _PdfGenerationParams(
+        jobs: jobs,
+        title: title,
+        locale: locale,
+        useDetails: useDetails,
+        maxPages: maxPages,
+      ),
+    );
   }
 }

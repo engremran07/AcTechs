@@ -556,7 +556,7 @@ as String,
 /// @nodoc
 mixin _$JobModel {
 
- String get id; String get techId; String get techName; String get companyId; String get companyName; String get invoiceNumber; String get clientName; String get clientContact; List<AcUnit> get acUnits; JobStatus get status; double get expenses; String get expenseNote; String get adminNote; String get approvedBy;/// Additional invoice charges (bracket, delivery).
+ String get id; String get techId; String get techName; String get companyId; String get companyName; String get invoiceNumber; String get clientName; String get clientContact; List<AcUnit> get acUnits; JobStatus get status; double get expenses; String get expenseNote; String get adminNote; Map<String, dynamic> get importMeta; String get approvedBy;/// Additional invoice charges (bracket, delivery).
  InvoiceCharges? get charges;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get date;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get submittedAt;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get reviewedAt;
 /// Create a copy of JobModel
 /// with the given fields replaced by the non-null parameter values.
@@ -570,16 +570,16 @@ $JobModelCopyWith<JobModel> get copyWith => _$JobModelCopyWithImpl<JobModel>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is JobModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.companyId, companyId) || other.companyId == companyId)&&(identical(other.companyName, companyName) || other.companyName == companyName)&&(identical(other.invoiceNumber, invoiceNumber) || other.invoiceNumber == invoiceNumber)&&(identical(other.clientName, clientName) || other.clientName == clientName)&&(identical(other.clientContact, clientContact) || other.clientContact == clientContact)&&const DeepCollectionEquality().equals(other.acUnits, acUnits)&&(identical(other.status, status) || other.status == status)&&(identical(other.expenses, expenses) || other.expenses == expenses)&&(identical(other.expenseNote, expenseNote) || other.expenseNote == expenseNote)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.charges, charges) || other.charges == charges)&&(identical(other.date, date) || other.date == date)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is JobModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.companyId, companyId) || other.companyId == companyId)&&(identical(other.companyName, companyName) || other.companyName == companyName)&&(identical(other.invoiceNumber, invoiceNumber) || other.invoiceNumber == invoiceNumber)&&(identical(other.clientName, clientName) || other.clientName == clientName)&&(identical(other.clientContact, clientContact) || other.clientContact == clientContact)&&const DeepCollectionEquality().equals(other.acUnits, acUnits)&&(identical(other.status, status) || other.status == status)&&(identical(other.expenses, expenses) || other.expenses == expenses)&&(identical(other.expenseNote, expenseNote) || other.expenseNote == expenseNote)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&const DeepCollectionEquality().equals(other.importMeta, importMeta)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.charges, charges) || other.charges == charges)&&(identical(other.date, date) || other.date == date)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,companyId,companyName,invoiceNumber,clientName,clientContact,const DeepCollectionEquality().hash(acUnits),status,expenses,expenseNote,adminNote,approvedBy,charges,date,submittedAt,reviewedAt);
+int get hashCode => Object.hashAll([runtimeType,id,techId,techName,companyId,companyName,invoiceNumber,clientName,clientContact,const DeepCollectionEquality().hash(acUnits),status,expenses,expenseNote,adminNote,const DeepCollectionEquality().hash(importMeta),approvedBy,charges,date,submittedAt,reviewedAt]);
 
 @override
 String toString() {
-  return 'JobModel(id: $id, techId: $techId, techName: $techName, companyId: $companyId, companyName: $companyName, invoiceNumber: $invoiceNumber, clientName: $clientName, clientContact: $clientContact, acUnits: $acUnits, status: $status, expenses: $expenses, expenseNote: $expenseNote, adminNote: $adminNote, approvedBy: $approvedBy, charges: $charges, date: $date, submittedAt: $submittedAt, reviewedAt: $reviewedAt)';
+  return 'JobModel(id: $id, techId: $techId, techName: $techName, companyId: $companyId, companyName: $companyName, invoiceNumber: $invoiceNumber, clientName: $clientName, clientContact: $clientContact, acUnits: $acUnits, status: $status, expenses: $expenses, expenseNote: $expenseNote, adminNote: $adminNote, importMeta: $importMeta, approvedBy: $approvedBy, charges: $charges, date: $date, submittedAt: $submittedAt, reviewedAt: $reviewedAt)';
 }
 
 
@@ -590,7 +590,7 @@ abstract mixin class $JobModelCopyWith<$Res>  {
   factory $JobModelCopyWith(JobModel value, $Res Function(JobModel) _then) = _$JobModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String techId, String techName, String companyId, String companyName, String invoiceNumber, String clientName, String clientContact, List<AcUnit> acUnits, JobStatus status, double expenses, String expenseNote, String adminNote, String approvedBy, InvoiceCharges? charges,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? submittedAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
+ String id, String techId, String techName, String companyId, String companyName, String invoiceNumber, String clientName, String clientContact, List<AcUnit> acUnits, JobStatus status, double expenses, String expenseNote, String adminNote, Map<String, dynamic> importMeta, String approvedBy, InvoiceCharges? charges,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? submittedAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
 });
 
 
@@ -607,7 +607,7 @@ class _$JobModelCopyWithImpl<$Res>
 
 /// Create a copy of JobModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? companyId = null,Object? companyName = null,Object? invoiceNumber = null,Object? clientName = null,Object? clientContact = null,Object? acUnits = null,Object? status = null,Object? expenses = null,Object? expenseNote = null,Object? adminNote = null,Object? approvedBy = null,Object? charges = freezed,Object? date = freezed,Object? submittedAt = freezed,Object? reviewedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? companyId = null,Object? companyName = null,Object? invoiceNumber = null,Object? clientName = null,Object? clientContact = null,Object? acUnits = null,Object? status = null,Object? expenses = null,Object? expenseNote = null,Object? adminNote = null,Object? importMeta = null,Object? approvedBy = null,Object? charges = freezed,Object? date = freezed,Object? submittedAt = freezed,Object? reviewedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -622,7 +622,8 @@ as List<AcUnit>,status: null == status ? _self.status : status // ignore: cast_n
 as JobStatus,expenses: null == expenses ? _self.expenses : expenses // ignore: cast_nullable_to_non_nullable
 as double,expenseNote: null == expenseNote ? _self.expenseNote : expenseNote // ignore: cast_nullable_to_non_nullable
 as String,adminNote: null == adminNote ? _self.adminNote : adminNote // ignore: cast_nullable_to_non_nullable
-as String,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
+as String,importMeta: null == importMeta ? _self.importMeta : importMeta // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
 as String,charges: freezed == charges ? _self.charges : charges // ignore: cast_nullable_to_non_nullable
 as InvoiceCharges?,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,submittedAt: freezed == submittedAt ? _self.submittedAt : submittedAt // ignore: cast_nullable_to_non_nullable
@@ -724,10 +725,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  Map<String, dynamic> importMeta,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _JobModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.importMeta,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
   return orElse();
 
 }
@@ -745,10 +746,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.compa
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  Map<String, dynamic> importMeta,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)  $default,) {final _that = this;
 switch (_that) {
 case _JobModel():
-return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.importMeta,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -765,10 +766,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.compa
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String companyId,  String companyName,  String invoiceNumber,  String clientName,  String clientContact,  List<AcUnit> acUnits,  JobStatus status,  double expenses,  String expenseNote,  String adminNote,  Map<String, dynamic> importMeta,  String approvedBy,  InvoiceCharges? charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _JobModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.companyName,_that.invoiceNumber,_that.clientName,_that.clientContact,_that.acUnits,_that.status,_that.expenses,_that.expenseNote,_that.adminNote,_that.importMeta,_that.approvedBy,_that.charges,_that.date,_that.submittedAt,_that.reviewedAt);case _:
   return null;
 
 }
@@ -780,7 +781,7 @@ return $default(_that.id,_that.techId,_that.techName,_that.companyId,_that.compa
 
 @JsonSerializable(explicitToJson: true)
 class _JobModel implements JobModel {
-  const _JobModel({this.id = '', required this.techId, required this.techName, this.companyId = '', this.companyName = '', required this.invoiceNumber, required this.clientName, this.clientContact = '', final  List<AcUnit> acUnits = const <AcUnit>[], this.status = JobStatus.pending, this.expenses = 0.0, this.expenseNote = '', this.adminNote = '', this.approvedBy = '', this.charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt}): _acUnits = acUnits;
+  const _JobModel({this.id = '', required this.techId, required this.techName, this.companyId = '', this.companyName = '', required this.invoiceNumber, required this.clientName, this.clientContact = '', final  List<AcUnit> acUnits = const <AcUnit>[], this.status = JobStatus.pending, this.expenses = 0.0, this.expenseNote = '', this.adminNote = '', final  Map<String, dynamic> importMeta = const <String, dynamic>{}, this.approvedBy = '', this.charges, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.submittedAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt}): _acUnits = acUnits,_importMeta = importMeta;
   factory _JobModel.fromJson(Map<String, dynamic> json) => _$JobModelFromJson(json);
 
 @override@JsonKey() final  String id;
@@ -802,6 +803,13 @@ class _JobModel implements JobModel {
 @override@JsonKey() final  double expenses;
 @override@JsonKey() final  String expenseNote;
 @override@JsonKey() final  String adminNote;
+ final  Map<String, dynamic> _importMeta;
+@override@JsonKey() Map<String, dynamic> get importMeta {
+  if (_importMeta is EqualUnmodifiableMapView) return _importMeta;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_importMeta);
+}
+
 @override@JsonKey() final  String approvedBy;
 /// Additional invoice charges (bracket, delivery).
 @override final  InvoiceCharges? charges;
@@ -822,16 +830,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JobModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.companyId, companyId) || other.companyId == companyId)&&(identical(other.companyName, companyName) || other.companyName == companyName)&&(identical(other.invoiceNumber, invoiceNumber) || other.invoiceNumber == invoiceNumber)&&(identical(other.clientName, clientName) || other.clientName == clientName)&&(identical(other.clientContact, clientContact) || other.clientContact == clientContact)&&const DeepCollectionEquality().equals(other._acUnits, _acUnits)&&(identical(other.status, status) || other.status == status)&&(identical(other.expenses, expenses) || other.expenses == expenses)&&(identical(other.expenseNote, expenseNote) || other.expenseNote == expenseNote)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.charges, charges) || other.charges == charges)&&(identical(other.date, date) || other.date == date)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _JobModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.companyId, companyId) || other.companyId == companyId)&&(identical(other.companyName, companyName) || other.companyName == companyName)&&(identical(other.invoiceNumber, invoiceNumber) || other.invoiceNumber == invoiceNumber)&&(identical(other.clientName, clientName) || other.clientName == clientName)&&(identical(other.clientContact, clientContact) || other.clientContact == clientContact)&&const DeepCollectionEquality().equals(other._acUnits, _acUnits)&&(identical(other.status, status) || other.status == status)&&(identical(other.expenses, expenses) || other.expenses == expenses)&&(identical(other.expenseNote, expenseNote) || other.expenseNote == expenseNote)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&const DeepCollectionEquality().equals(other._importMeta, _importMeta)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.charges, charges) || other.charges == charges)&&(identical(other.date, date) || other.date == date)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,companyId,companyName,invoiceNumber,clientName,clientContact,const DeepCollectionEquality().hash(_acUnits),status,expenses,expenseNote,adminNote,approvedBy,charges,date,submittedAt,reviewedAt);
+int get hashCode => Object.hashAll([runtimeType,id,techId,techName,companyId,companyName,invoiceNumber,clientName,clientContact,const DeepCollectionEquality().hash(_acUnits),status,expenses,expenseNote,adminNote,const DeepCollectionEquality().hash(_importMeta),approvedBy,charges,date,submittedAt,reviewedAt]);
 
 @override
 String toString() {
-  return 'JobModel(id: $id, techId: $techId, techName: $techName, companyId: $companyId, companyName: $companyName, invoiceNumber: $invoiceNumber, clientName: $clientName, clientContact: $clientContact, acUnits: $acUnits, status: $status, expenses: $expenses, expenseNote: $expenseNote, adminNote: $adminNote, approvedBy: $approvedBy, charges: $charges, date: $date, submittedAt: $submittedAt, reviewedAt: $reviewedAt)';
+  return 'JobModel(id: $id, techId: $techId, techName: $techName, companyId: $companyId, companyName: $companyName, invoiceNumber: $invoiceNumber, clientName: $clientName, clientContact: $clientContact, acUnits: $acUnits, status: $status, expenses: $expenses, expenseNote: $expenseNote, adminNote: $adminNote, importMeta: $importMeta, approvedBy: $approvedBy, charges: $charges, date: $date, submittedAt: $submittedAt, reviewedAt: $reviewedAt)';
 }
 
 
@@ -842,7 +850,7 @@ abstract mixin class _$JobModelCopyWith<$Res> implements $JobModelCopyWith<$Res>
   factory _$JobModelCopyWith(_JobModel value, $Res Function(_JobModel) _then) = __$JobModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String techId, String techName, String companyId, String companyName, String invoiceNumber, String clientName, String clientContact, List<AcUnit> acUnits, JobStatus status, double expenses, String expenseNote, String adminNote, String approvedBy, InvoiceCharges? charges,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? submittedAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
+ String id, String techId, String techName, String companyId, String companyName, String invoiceNumber, String clientName, String clientContact, List<AcUnit> acUnits, JobStatus status, double expenses, String expenseNote, String adminNote, Map<String, dynamic> importMeta, String approvedBy, InvoiceCharges? charges,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? submittedAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
 });
 
 
@@ -859,7 +867,7 @@ class __$JobModelCopyWithImpl<$Res>
 
 /// Create a copy of JobModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? companyId = null,Object? companyName = null,Object? invoiceNumber = null,Object? clientName = null,Object? clientContact = null,Object? acUnits = null,Object? status = null,Object? expenses = null,Object? expenseNote = null,Object? adminNote = null,Object? approvedBy = null,Object? charges = freezed,Object? date = freezed,Object? submittedAt = freezed,Object? reviewedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? companyId = null,Object? companyName = null,Object? invoiceNumber = null,Object? clientName = null,Object? clientContact = null,Object? acUnits = null,Object? status = null,Object? expenses = null,Object? expenseNote = null,Object? adminNote = null,Object? importMeta = null,Object? approvedBy = null,Object? charges = freezed,Object? date = freezed,Object? submittedAt = freezed,Object? reviewedAt = freezed,}) {
   return _then(_JobModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -874,7 +882,8 @@ as List<AcUnit>,status: null == status ? _self.status : status // ignore: cast_n
 as JobStatus,expenses: null == expenses ? _self.expenses : expenses // ignore: cast_nullable_to_non_nullable
 as double,expenseNote: null == expenseNote ? _self.expenseNote : expenseNote // ignore: cast_nullable_to_non_nullable
 as String,adminNote: null == adminNote ? _self.adminNote : adminNote // ignore: cast_nullable_to_non_nullable
-as String,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
+as String,importMeta: null == importMeta ? _self._importMeta : importMeta // ignore: cast_nullable_to_non_nullable
+as Map<String, dynamic>,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
 as String,charges: freezed == charges ? _self.charges : charges // ignore: cast_nullable_to_non_nullable
 as InvoiceCharges?,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,submittedAt: freezed == submittedAt ? _self.submittedAt : submittedAt // ignore: cast_nullable_to_non_nullable

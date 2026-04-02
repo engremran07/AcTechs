@@ -120,8 +120,8 @@ void main() {
   });
 
   group('AppConstants – acUnitTypes', () {
-    test('contains 7 AC unit types', () {
-      expect(AppConstants.acUnitTypes.length, 7);
+    test('contains 8 AC unit types', () {
+      expect(AppConstants.acUnitTypes.length, 8);
     });
 
     test('contains "Split AC"', () {
@@ -153,7 +153,7 @@ void main() {
     });
 
     test('all AC unit type names are unique', () {
-      final types = AppConstants.acUnitTypes;
+      const types = AppConstants.acUnitTypes;
       expect(types.toSet().length, types.length);
     });
   });
@@ -176,7 +176,7 @@ void main() {
     });
 
     test('all expense category names are unique', () {
-      final cats = AppConstants.expenseCategories;
+      const cats = AppConstants.expenseCategories;
       expect(cats.toSet().length, cats.length);
     });
   });
@@ -203,7 +203,7 @@ void main() {
     });
 
     test('all earning category names are unique', () {
-      final cats = AppConstants.earningCategories;
+      const cats = AppConstants.earningCategories;
       expect(cats.toSet().length, cats.length);
     });
   });
@@ -226,7 +226,7 @@ void main() {
     });
 
     test('all home chore category names are unique', () {
-      final cats = AppConstants.homeChoreCategories;
+      const cats = AppConstants.homeChoreCategories;
       expect(cats.toSet().length, cats.length);
     });
   });

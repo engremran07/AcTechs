@@ -429,7 +429,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                       enableInteractiveSelection: true,
                       decoration: InputDecoration(
                         hintText: l.amountSar,
-                        prefixIcon: Icon(
+                        prefixIcon: const Icon(
                           Icons.payments_outlined,
                           color: ArcticTheme.arcticTextSecondary,
                         ),
@@ -452,7 +452,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                       enableInteractiveSelection: true,
                       decoration: InputDecoration(
                         hintText: l.remarksOptional,
-                        prefixIcon: Icon(
+                        prefixIcon: const Icon(
                           Icons.note_outlined,
                           color: ArcticTheme.arcticTextSecondary,
                         ),
@@ -902,7 +902,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                     enableInteractiveSelection: true,
                     decoration: InputDecoration(
                       hintText: l.amountSar,
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.payments_outlined,
                         color: ArcticTheme.arcticTextSecondary,
                       ),
@@ -917,7 +917,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                     enableInteractiveSelection: true,
                     decoration: InputDecoration(
                       hintText: l.remarksOptional,
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.note_outlined,
                         color: ArcticTheme.arcticTextSecondary,
                       ),
@@ -1004,7 +1004,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.receipt_long_rounded,
                   color: ArcticTheme.arcticTextSecondary,
                   size: 48,
@@ -1286,7 +1286,9 @@ class _DirectionButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     color: isSelected ? color : ArcticTheme.arcticTextSecondary,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     fontSize: 13,
                   ),
                 ),

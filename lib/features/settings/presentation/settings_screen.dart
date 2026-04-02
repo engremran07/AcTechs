@@ -660,7 +660,7 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
           if (onEditTap != null)
-            Icon(
+            const Icon(
               Icons.edit_rounded,
               size: 18,
               color: ArcticTheme.arcticTextSecondary,

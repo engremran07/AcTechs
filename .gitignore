@@ -30,6 +30,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+lib/**/*.freezed.dart
+lib/**/*.g.dart
 /build/
 /coverage/
 .claude/

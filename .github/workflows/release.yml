@@ -67,7 +67,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.x'
+          flutter-version: '3.41.6'
           channel: 'stable'
           cache: true
 
@@ -98,14 +98,16 @@ jobs:
 
       # ── Decode release keystore (optional but recommended) ─────────────────
       - name: Decode release keystore
-        if: ${{ secrets.KEYSTORE_FILE != '' }}
+        if: env.KEYSTORE_FILE != ''
         env:
           KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
         run: |
           echo "$KEYSTORE_FILE" | base64 --decode > android/app/release.keystore
 
       - name: Write key.properties
-        if: ${{ secrets.KEYSTORE_FILE != '' }}
+        if: env.KEYSTORE_FILE != ''
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
         run: |
           cat > android/key.properties <<EOF
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
@@ -183,7 +185,7 @@ jobs:
             ${{ steps.changelog.outputs.log }}
 
             ---
-            Built with Flutter 3.32 · Firebase · Riverpod
+            Built with Flutter 3.41.6 · Firebase · Riverpod
           files: |
             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk

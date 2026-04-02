@@ -11,10 +11,40 @@ class HistoricalImportResult {
     required this.sheetSummaries,
   });
 
+  factory HistoricalImportResult.fromJson(Map<String, dynamic> json) {
+    return HistoricalImportResult(
+      jobs: (json['jobs'] as List<dynamic>? ?? const <dynamic>[])
+          .map(
+            (item) => JobModel.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList(),
+      skippedRows: (json['skippedRows'] as num?)?.toInt() ?? 0,
+      unresolvedTechnicians:
+          (json['unresolvedTechnicians'] as num?)?.toInt() ?? 0,
+      sheetSummaries:
+          (json['sheetSummaries'] as List<dynamic>? ?? const <dynamic>[])
+              .map(
+                (item) => HistoricalImportSheetSummary.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ),
+              )
+              .toList(),
+    );
+  }
+
   final List<JobModel> jobs;
   final int skippedRows;
   final int unresolvedTechnicians;
   final List<HistoricalImportSheetSummary> sheetSummaries;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'jobs': jobs.map((job) => job.toJson()).toList(),
+      'skippedRows': skippedRows,
+      'unresolvedTechnicians': unresolvedTechnicians,
+      'sheetSummaries': sheetSummaries.map((s) => s.toJson()).toList(),
+    };
+  }
 }
 
 class HistoricalImportSheetSummary {
@@ -30,7 +60,28 @@ class HistoricalImportSheetSummary {
     required this.uninstallWindow,
     required this.uninstallFreestanding,
     required this.uninstallOld,
+    this.note = '',
   });
+
+  factory HistoricalImportSheetSummary.fromJson(Map<String, dynamic> json) {
+    return HistoricalImportSheetSummary(
+      sheetName: json['sheetName'] as String? ?? '',
+      importedRows: (json['importedRows'] as num?)?.toInt() ?? 0,
+      skippedRows: (json['skippedRows'] as num?)?.toInt() ?? 0,
+      unresolvedTechnicians:
+          (json['unresolvedTechnicians'] as num?)?.toInt() ?? 0,
+      installedSplit: (json['installedSplit'] as num?)?.toInt() ?? 0,
+      installedWindow: (json['installedWindow'] as num?)?.toInt() ?? 0,
+      installedFreestanding:
+          (json['installedFreestanding'] as num?)?.toInt() ?? 0,
+      uninstallSplit: (json['uninstallSplit'] as num?)?.toInt() ?? 0,
+      uninstallWindow: (json['uninstallWindow'] as num?)?.toInt() ?? 0,
+      uninstallFreestanding:
+          (json['uninstallFreestanding'] as num?)?.toInt() ?? 0,
+      uninstallOld: (json['uninstallOld'] as num?)?.toInt() ?? 0,
+      note: json['note'] as String? ?? '',
+    );
+  }
 
   final String sheetName;
   final int importedRows;
@@ -43,10 +94,81 @@ class HistoricalImportSheetSummary {
   final int uninstallWindow;
   final int uninstallFreestanding;
   final int uninstallOld;
+  final String note;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'sheetName': sheetName,
+      'importedRows': importedRows,
+      'skippedRows': skippedRows,
+      'unresolvedTechnicians': unresolvedTechnicians,
+      'installedSplit': installedSplit,
+      'installedWindow': installedWindow,
+      'installedFreestanding': installedFreestanding,
+      'uninstallSplit': uninstallSplit,
+      'uninstallWindow': uninstallWindow,
+      'uninstallFreestanding': uninstallFreestanding,
+      'uninstallOld': uninstallOld,
+      'note': note,
+    };
+  }
+}
+
+Map<String, dynamic> parseHistoricalImportInIsolate(
+  Map<String, dynamic> payload,
+) {
+  final usersRaw = payload['users'] as List<dynamic>? ?? const <dynamic>[];
+  final users = usersRaw
+      .map(
+        (item) => UserModel(
+          uid: (item as Map)['uid'] as String? ?? '',
+          name: item['name'] as String? ?? '',
+          email: item['email'] as String? ?? '',
+          role: item['role'] as String? ?? 'technician',
+          isActive: item['isActive'] as bool? ?? true,
+          language: item['language'] as String? ?? 'en',
+        ),
+      )
+      .toList();
+
+  final targetUserMap = payload['targetUser'] as Map<String, dynamic>?;
+  final targetUser = targetUserMap == null
+      ? null
+      : UserModel(
+          uid: targetUserMap['uid'] as String? ?? '',
+          name: targetUserMap['name'] as String? ?? '',
+          email: targetUserMap['email'] as String? ?? '',
+          role: targetUserMap['role'] as String? ?? 'technician',
+          isActive: targetUserMap['isActive'] as bool? ?? true,
+          language: targetUserMap['language'] as String? ?? 'en',
+        );
+
+  final targetCompanyMap = payload['targetCompany'] as Map<String, dynamic>?;
+  final targetCompany = targetCompanyMap == null
+      ? null
+      : CompanyModel(
+          id: targetCompanyMap['id'] as String? ?? '',
+          name: targetCompanyMap['name'] as String? ?? '',
+          invoicePrefix: targetCompanyMap['invoicePrefix'] as String? ?? '',
+          isActive: targetCompanyMap['isActive'] as bool? ?? true,
+        );
+
+  final result = HistoricalJobsImportService.parseExcel(
+    bytes: payload['bytes'] as Uint8List,
+    users: users,
+    adminUid: payload['adminUid'] as String,
+    targetUser: targetUser,
+    targetCompany: targetCompany,
+    technicianKeyword: payload['technicianKeyword'] as String?,
+  );
+
+  return result.toJson();
 }
 
 class HistoricalJobsImportService {
   HistoricalJobsImportService._();
+
+  static const int _maxDataRowsPerSheet = 5000;
 
   static const Map<String, int> _monthTokens = {
     'jan': 1,
@@ -145,9 +267,17 @@ class HistoricalJobsImportService {
       var sheetUninstallWindow = 0;
       var sheetUninstallFreestanding = 0;
       var sheetUninstallOld = 0;
+      var sheetNote = '';
       final sheetUniqueInvoices = <String>{};
 
-      for (var i = 1; i < rows.length; i++) {
+      final maxRowIndex = rows.length > _maxDataRowsPerSheet + 1
+          ? _maxDataRowsPerSheet
+          : rows.length - 1;
+      if (rows.length > _maxDataRowsPerSheet + 1) {
+        sheetNote = 'Row limit exceeded; only first 5000 rows were processed.';
+      }
+
+      for (var i = 1; i <= maxRowIndex; i++) {
         final row = rows[i];
         if (_rowIsEmpty(row)) continue;
 
@@ -297,12 +427,13 @@ class HistoricalJobsImportService {
             status: JobStatus.approved,
             expenses: 0,
             expenseNote: description,
-            adminNote: _buildAdminImportNote(
-              sourceTechName,
-              targetUser,
-              sheetName: sheetName,
-              periodLabel: sheetPeriodLabel,
-            ),
+            adminNote: _buildAdminImportNote(),
+            importMeta: {
+              'sourceSheet': sheetName,
+              'sourcePeriod': sheetPeriodLabel,
+              'sourceTechnician': sourceTechName,
+              'importedBy': adminUid,
+            },
             approvedBy: adminUid,
             charges: InvoiceCharges(
               acBracket: bracket > 0,
@@ -357,6 +488,7 @@ class HistoricalJobsImportService {
           uninstallWindow: sheetUninstallWindow,
           uninstallFreestanding: sheetUninstallFreestanding,
           uninstallOld: sheetUninstallOld,
+          note: sheetNote,
         ),
       );
     }
@@ -472,22 +604,30 @@ class HistoricalJobsImportService {
         .trim();
 
     return switch (normalized) {
-      'inv' || 'invoice no' || 'invoice #' || 'invoice number' || 'invoice'
-          => 'invoice number',
-      'tech' || 'tech name' || 'technician' || 'technician name'
-          => 'technician name',
+      'inv' ||
+      'invoice no' ||
+      'invoice #' ||
+      'invoice number' ||
+      'invoice' => 'invoice number',
+      'tech' ||
+      'tech name' ||
+      'technician' ||
+      'technician name' => 'technician name',
       'technician email' || 'tech email' || 'email' => 'technician email',
       'technician id' || 'tech id' || 'techid' || 'uid' => 'technician id',
       'client' || 'customer' || 'client name' => 'client name',
       'contact no' || 'phone' || 'mobile' || 'client contact' => 'contact',
-      'free standing' || 'freestanding' || 'standing' || 'dolab'
-          => 'freestanding',
+      'free standing' ||
+      'freestanding' ||
+      'standing' ||
+      'dolab' => 'freestanding',
       'uninstall' ||
       'uninstallation total' ||
       'uninstalation' ||
       'uninstalation split/window' => 'uninstallation total',
       'delery' || 'delivery charges' || 'delivery charge' => 'delivery',
       'c' || 'remarks' || 'description' || 'note' => 'description',
+      'company' || 'company name' || 'co' || 'co name' => 'company',
       _ => normalized,
     };
   }
@@ -638,25 +778,8 @@ class HistoricalJobsImportService {
     return false;
   }
 
-  static String _buildAdminImportNote(
-    String sourceTechName,
-    UserModel? targetUser, {
-    required String sheetName,
-    required String periodLabel,
-  }) {
-    final sourceScope = 'Source: $sheetName • Period: $periodLabel';
-
-    if (targetUser == null || sourceTechName.trim().isEmpty) {
-      return 'Imported historical record • $sourceScope';
-    }
-
-    final normalizedSource = sourceTechName.trim().toLowerCase();
-    final normalizedTarget = targetUser.name.trim().toLowerCase();
-    if (normalizedSource == normalizedTarget) {
-      return 'Imported historical record • $sourceScope';
-    }
-
-    return 'Imported historical record from $sourceTechName • $sourceScope';
+  static String _buildAdminImportNote() {
+    return 'Imported historical record';
   }
 
   static DateTime? _sheetPeriodDate(String sheetName) {

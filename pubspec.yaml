@@ -37,7 +37,6 @@ dependencies:
 
   # Utilities
   intl: ^0.20.2
-  connectivity_plus: ^7.1.0
   share_plus: ^12.0.2
   excel: ^4.0.6
   file_picker: ^10.3.2

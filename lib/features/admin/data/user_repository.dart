@@ -44,7 +44,7 @@ class UserRepository {
       return _dedupeUsers(snap.docs);
     } on FirebaseException catch (e) {
       debugPrint('usersForImport error code: ${e.code}');
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.noPermission();
     }
   }
 

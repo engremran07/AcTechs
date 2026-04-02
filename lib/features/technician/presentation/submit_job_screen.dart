@@ -294,7 +294,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                           enableInteractiveSelection: true,
                           decoration: InputDecoration(
                             hintText: l.descriptionLabel,
-                            prefixIcon: Icon(
+                            prefixIcon: const Icon(
                               Icons.notes_rounded,
                               color: ArcticTheme.arcticTextSecondary,
                             ),
@@ -354,7 +354,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   hintText: l.selectCompany,
-                                  prefixIcon: Icon(
+                                  prefixIcon: const Icon(
                                     Icons.apartment_rounded,
                                     color: ArcticTheme.arcticTextSecondary,
                                   ),
@@ -364,7 +364,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                     value: '',
                                     child: Text(
                                       l.noCompany,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: ArcticTheme.arcticTextSecondary,
                                       ),
                                     ),
@@ -411,7 +411,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       hintText: _selectedCompanyPrefix.isEmpty
                           ? l.invoiceNumber
                           : l.invoiceSuffix,
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.receipt_outlined,
                         color: ArcticTheme.arcticTextSecondary,
                       ),
@@ -438,7 +438,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     enableInteractiveSelection: true,
                     decoration: InputDecoration(
                       hintText: l.clientNameOptional,
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.person_outline,
                         color: ArcticTheme.arcticTextSecondary,
                       ),
@@ -459,7 +459,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     ],
                     decoration: InputDecoration(
                       hintText: l.clientPhone,
-                      prefixIcon: Icon(
+                      prefixIcon: const Icon(
                         Icons.phone_outlined,
                         color: ArcticTheme.arcticTextSecondary,
                       ),
@@ -505,7 +505,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             enableInteractiveSelection: true,
                             decoration: InputDecoration(
                               hintText: l.bracketCharge,
-                              prefixIcon: Icon(
+                              prefixIcon: const Icon(
                                 Icons.payments_outlined,
                                 color: ArcticTheme.arcticTextSecondary,
                               ),
@@ -537,7 +537,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             enableInteractiveSelection: true,
                             decoration: InputDecoration(
                               hintText: l.deliveryChargeAmount,
-                              prefixIcon: Icon(
+                              prefixIcon: const Icon(
                                 Icons.payments_outlined,
                                 color: ArcticTheme.arcticTextSecondary,
                               ),
@@ -551,7 +551,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             enableInteractiveSelection: true,
                             decoration: InputDecoration(
                               hintText: l.locationNote,
-                              prefixIcon: Icon(
+                              prefixIcon: const Icon(
                                 Icons.location_on_outlined,
                                 color: ArcticTheme.arcticTextSecondary,
                               ),

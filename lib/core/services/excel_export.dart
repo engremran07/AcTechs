@@ -28,6 +28,7 @@ class ExcelExport {
     String? technicianName,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
+    excelFile.delete('Sheet1'); // Remove default Sheet1
     final sheet = excelFile['Jobs'];
 
     // Headers
@@ -141,7 +142,7 @@ class ExcelExport {
       sheet.appendRow([
         excel_pkg.TextCellValue(
           job.date != null
-              ? '${job.date!.day}/${job.date!.month}/${job.date!.year}'
+              ? '${job.date!.day.toString().padLeft(2, '0')}/${job.date!.month.toString().padLeft(2, '0')}/${job.date!.year}'
               : '',
         ),
         excel_pkg.TextCellValue(_safeText(job.invoiceNumber)),
@@ -199,6 +200,7 @@ class ExcelExport {
     String? technicianName,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
+    excelFile.delete('Sheet1'); // Remove default Sheet1
     final sheet = excelFile['Earnings'];
 
     // Headers
@@ -216,7 +218,7 @@ class ExcelExport {
         excel_pkg.DoubleCellValue(earning.amount),
         excel_pkg.TextCellValue(
           earning.date != null
-              ? '${earning.date!.day}/${earning.date!.month}/${earning.date!.year}'
+              ? '${earning.date!.day.toString().padLeft(2, '0')}/${earning.date!.month.toString().padLeft(2, '0')}/${earning.date!.year}'
               : '',
         ),
         excel_pkg.TextCellValue(earning.note),
@@ -241,6 +243,7 @@ class ExcelExport {
     String? technicianName,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
+    excelFile.delete('Sheet1'); // Remove default Sheet1
 
     // Work sheet
     final workSheet = excelFile['Work Expenses'];
@@ -260,7 +263,7 @@ class ExcelExport {
         excel_pkg.DoubleCellValue(expense.amount),
         excel_pkg.TextCellValue(
           expense.date != null
-              ? '${expense.date!.day}/${expense.date!.month}/${expense.date!.year}'
+              ? '${expense.date!.day.toString().padLeft(2, '0')}/${expense.date!.month.toString().padLeft(2, '0')}/${expense.date!.year}'
               : '',
         ),
         excel_pkg.TextCellValue(expense.note),
@@ -293,7 +296,7 @@ class ExcelExport {
         excel_pkg.DoubleCellValue(expense.amount),
         excel_pkg.TextCellValue(
           expense.date != null
-              ? '${expense.date!.day}/${expense.date!.month}/${expense.date!.year}'
+              ? '${expense.date!.day.toString().padLeft(2, '0')}/${expense.date!.month.toString().padLeft(2, '0')}/${expense.date!.year}'
               : '',
         ),
         excel_pkg.TextCellValue(expense.note),
@@ -368,6 +371,16 @@ class ExcelExport {
     final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
 
-    await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    try {
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    } finally {
+      try {
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {
+        // Best effort cleanup only.
+      }
+    }
   }
 }

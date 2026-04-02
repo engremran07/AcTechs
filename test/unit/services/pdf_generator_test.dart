@@ -77,41 +77,44 @@ void main() {
       expect(job.totalCharges, 0.0);
     });
 
-    test('isApproved / isPending / isRejected flags are mutually exclusive', () {
-      const pending = JobModel(
-        techId: 't',
-        techName: 'T',
-        invoiceNumber: 'I1',
-        clientName: 'C',
-        status: JobStatus.pending,
-      );
-      const approved = JobModel(
-        techId: 't',
-        techName: 'T',
-        invoiceNumber: 'I2',
-        clientName: 'C',
-        status: JobStatus.approved,
-      );
-      const rejected = JobModel(
-        techId: 't',
-        techName: 'T',
-        invoiceNumber: 'I3',
-        clientName: 'C',
-        status: JobStatus.rejected,
-      );
+    test(
+      'isApproved / isPending / isRejected flags are mutually exclusive',
+      () {
+        const pending = JobModel(
+          techId: 't',
+          techName: 'T',
+          invoiceNumber: 'I1',
+          clientName: 'C',
+          status: JobStatus.pending,
+        );
+        const approved = JobModel(
+          techId: 't',
+          techName: 'T',
+          invoiceNumber: 'I2',
+          clientName: 'C',
+          status: JobStatus.approved,
+        );
+        const rejected = JobModel(
+          techId: 't',
+          techName: 'T',
+          invoiceNumber: 'I3',
+          clientName: 'C',
+          status: JobStatus.rejected,
+        );
 
-      expect(pending.isPending, isTrue);
-      expect(pending.isApproved, isFalse);
-      expect(pending.isRejected, isFalse);
+        expect(pending.isPending, isTrue);
+        expect(pending.isApproved, isFalse);
+        expect(pending.isRejected, isFalse);
 
-      expect(approved.isApproved, isTrue);
-      expect(approved.isPending, isFalse);
-      expect(approved.isRejected, isFalse);
+        expect(approved.isApproved, isTrue);
+        expect(approved.isPending, isFalse);
+        expect(approved.isRejected, isFalse);
 
-      expect(rejected.isRejected, isTrue);
-      expect(rejected.isPending, isFalse);
-      expect(rejected.isApproved, isFalse);
-    });
+        expect(rejected.isRejected, isTrue);
+        expect(rejected.isPending, isFalse);
+        expect(rejected.isApproved, isFalse);
+      },
+    );
   });
 
   // ── EarningModel helpers ──────────────────────────────────────────────────
@@ -133,7 +136,7 @@ void main() {
     });
 
     test('note defaults to empty string', () {
-      final e = EarningModel(
+      const e = EarningModel(
         techId: 'tid',
         techName: 'Ali',
         category: 'Other',
@@ -163,7 +166,7 @@ void main() {
     });
 
     test('expenseType defaults to work', () {
-      final e = ExpenseModel(
+      const e = ExpenseModel(
         techId: 'tid',
         techName: 'Ali',
         category: 'Food',
@@ -173,7 +176,7 @@ void main() {
     });
 
     test('note defaults to empty string', () {
-      final e = ExpenseModel(
+      const e = ExpenseModel(
         techId: 'tid',
         techName: 'Ali',
         category: 'Food',
@@ -186,27 +189,54 @@ void main() {
   // ── Net profit calculation logic (mirrors generateExpensesReport) ──────────
   group('Net profit calculation', () {
     test('positive net when earnings exceed expenses', () {
-      final earnings = [
-        EarningModel(techId: 't', techName: 'T', category: 'Other', amount: 1000),
-        EarningModel(techId: 't', techName: 'T', category: 'Other', amount: 500),
+      const earnings = [
+        EarningModel(
+          techId: 't',
+          techName: 'T',
+          category: 'Other',
+          amount: 1000,
+        ),
+        EarningModel(
+          techId: 't',
+          techName: 'T',
+          category: 'Other',
+          amount: 500,
+        ),
       ];
-      final expenses = [
-        ExpenseModel(techId: 't', techName: 'T', category: 'Petrol', amount: 200),
+      const expenses = [
+        ExpenseModel(
+          techId: 't',
+          techName: 'T',
+          category: 'Petrol',
+          amount: 200,
+        ),
       ];
-      final net = earnings.fold<double>(0, (s, e) => s + e.amount) -
+      final net =
+          earnings.fold<double>(0, (s, e) => s + e.amount) -
           expenses.fold<double>(0, (s, e) => s + e.amount);
       expect(net, 1300.0);
       expect(net >= 0, isTrue);
     });
 
     test('negative net when expenses exceed earnings', () {
-      final earnings = [
-        EarningModel(techId: 't', techName: 'T', category: 'Other', amount: 100),
+      const earnings = [
+        EarningModel(
+          techId: 't',
+          techName: 'T',
+          category: 'Other',
+          amount: 100,
+        ),
       ];
-      final expenses = [
-        ExpenseModel(techId: 't', techName: 'T', category: 'Tools', amount: 500),
+      const expenses = [
+        ExpenseModel(
+          techId: 't',
+          techName: 'T',
+          category: 'Tools',
+          amount: 500,
+        ),
       ];
-      final net = earnings.fold<double>(0, (s, e) => s + e.amount) -
+      final net =
+          earnings.fold<double>(0, (s, e) => s + e.amount) -
           expenses.fold<double>(0, (s, e) => s + e.amount);
       expect(net, -400.0);
       expect(net < 0, isTrue);
@@ -215,7 +245,8 @@ void main() {
     test('zero net when both are empty', () {
       final earnings = <EarningModel>[];
       final expenses = <ExpenseModel>[];
-      final net = earnings.fold<double>(0, (s, e) => s + e.amount) -
+      final net =
+          earnings.fold<double>(0, (s, e) => s + e.amount) -
           expenses.fold<double>(0, (s, e) => s + e.amount);
       expect(net, 0.0);
     });
