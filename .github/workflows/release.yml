@@ -1,6 +1,7 @@
 # AC Techs — Release Build & Publish
 #
-# Triggered when a version tag of the form `v*.*.*` is pushed (e.g. v1.2.0).
+# Triggered when a version tag of the form `v*.*.*` is pushed (e.g. v1.2.0),
+# or manually via workflow_dispatch (for pre-release testing).
 # Builds both debug and release APKs, then creates a GitHub Release and
 # attaches both APKs as downloadable assets.
 #
@@ -23,6 +24,21 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version name (e.g. v1.0.0-beta)'
+        required: true
+        default: 'v1.0.0-test'
+        type: string
+      create_release:
+        description: 'Create a GitHub Release'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: write   # needed to create GitHub Releases
@@ -32,6 +48,10 @@ jobs:
   release:
     name: Build & Publish Release
     runs-on: ubuntu-latest
+
+    env:
+      # Use tag name for tag-triggered runs, or the manually-provided version
+      RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version_name || github.ref_name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +70,16 @@ jobs:
           flutter-version: '3.32.x'
           channel: 'stable'
           cache: true
+
+      # ── Gradle cache ────────────────────────────────────────────────────────
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/*.kts') }}
+          restore-keys: ${{ runner.os }}-gradle-
 
       # ── Decode Firebase config secrets ──────────────────────────────────────
       - name: Decode google-services.json
@@ -98,7 +128,7 @@ jobs:
       - name: Rename debug APK
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ github.ref_name }}-debug.apk
+             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk
 
       - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
@@ -106,7 +136,15 @@ jobs:
       - name: Rename release APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ github.ref_name }}-release.apk
+             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
+
+      # ── Upload APKs as artifacts (available even without a GitHub Release) ──
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ac-techs-${{ env.RELEASE_VERSION }}-apks
+          path: build/app/outputs/flutter-apk/ac-techs-*.apk
+          retention-days: 30
 
       # ── Generate changelog from commits since last tag ─────────────────────
       - name: Generate changelog
@@ -123,22 +161,23 @@ jobs:
           echo "$LOG"     >> "$GITHUB_OUTPUT"
           echo "EOF"      >> "$GITHUB_OUTPUT"
 
-      # ── Create GitHub Release ──────────────────────────────────────────────
+      # ── Create GitHub Release (tag pushes OR manual with create_release=true)
       - name: Create GitHub Release
+        if: github.event_name == 'push' || inputs.create_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: AC Techs ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: AC Techs ${{ env.RELEASE_VERSION }}
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(env.RELEASE_VERSION, '-') }}
           body: |
-            ## AC Techs ${{ github.ref_name }}
+            ## AC Techs ${{ env.RELEASE_VERSION }}
 
             ### 📥 Downloads
             | File | Description |
             |------|-------------|
-            | `ac-techs-${{ github.ref_name }}-release.apk` | Production build (minified + R8) |
-            | `ac-techs-${{ github.ref_name }}-debug.apk`   | Debug build (for testing) |
+            | `ac-techs-${{ env.RELEASE_VERSION }}-release.apk` | Production build (minified + R8) |
+            | `ac-techs-${{ env.RELEASE_VERSION }}-debug.apk`   | Debug build (for testing) |
 
             ### 📝 Changes
             ${{ steps.changelog.outputs.log }}
@@ -146,5 +185,5 @@ jobs:
             ---
             Built with Flutter 3.32 · Firebase · Riverpod
           files: |
-            build/app/outputs/flutter-apk/ac-techs-${{ github.ref_name }}-release.apk
-            build/app/outputs/flutter-apk/ac-techs-${{ github.ref_name }}-debug.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk
