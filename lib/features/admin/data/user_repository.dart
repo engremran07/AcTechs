@@ -244,7 +244,7 @@ class UserRepository {
       final settings = ActionCodeSettings(
         url: 'https://actechs-d415e.web.app',
         handleCodeInApp: false,
-        androidPackageName: 'com.actechs.ac_techs',
+        androidPackageName: 'com.actechs.pk',
         androidInstallApp: false,
         // Match app minimum supported Android API level.
         androidMinimumVersion: '29',

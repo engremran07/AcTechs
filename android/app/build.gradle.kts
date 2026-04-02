@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.actechs.ac_techs"
+    namespace = "com.actechs.pk"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.actechs.ac_techs"
+        applicationId = "com.actechs.pk"
         minSdk = 29          // Android 10
         targetSdk = 35       // Android 15 (Vanilla Ice Cream) — forward-compatible to 16
         versionCode = flutter.versionCode
