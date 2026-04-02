@@ -133,6 +133,12 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
+          APP_ID=$(grep -m1 'applicationId = "' android/app/build.gradle.kts | sed -E 's/.*applicationId = "([^"]+)".*/\1/')
+          if [ -z "$APP_ID" ]; then
+            echo "Unable to determine applicationId from android/app/build.gradle.kts"
+            exit 1
+          fi
+
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
             echo "Using google-services.json from secret"
@@ -140,7 +146,12 @@ jobs:
             echo "Secret not set; using repository google-services.json"
           else
             echo "Secret not set and file missing; using CI fallback google-services.json"
-            echo "eyJwcm9qZWN0X2luZm8iOnsicHJvamVjdF9udW1iZXIiOiIwMDAwMDAwMDAwMDAiLCJwcm9qZWN0X2lkIjoiY2ktZmFsbGJhY2siLCJzdG9yYWdlX2J1Y2tldCI6ImNpLWZhbGxiYWNrLmFwcHNwb3QuY29tIn0sImNsaWVudCI6W3siY2xpZW50X2luZm8iOnsibW9iaWxlc2RrX2FwcF9pZCI6IjE6MDAwMDAwMDAwMDAwOmFuZHJvaWQ6Y2ktZmFsbGJhY2siLCJhbmRyb2lkX2NsaWVudF9pbmZvIjp7InBhY2thZ2VfbmFtZSI6ImNvbS5hY3RlY2hzLnBrIn19LCJvYXV0aF9jbGllbnQiOltdLCJhcGlfa2V5IjpbeyJjdXJyZW50X2tleSI6IkNJX0ZBTExCQUNLX0FQSV9LRVkifV0sInNlcnZpY2VzIjp7ImFwcGludml0ZV9zZXJ2aWNlIjp7Im90aGVyX3BsYXRmb3JtX29hdXRoX2NsaWVudCI6W119fX1dLCJjb25maWd1cmF0aW9uX3ZlcnNpb24iOiIxIn0=" | base64 --decode > android/app/google-services.json
+            printf '%s' "{\"project_info\":{\"project_number\":\"000000000000\",\"project_id\":\"ci-fallback\",\"storage_bucket\":\"ci-fallback.appspot.com\"},\"client\":[{\"client_info\":{\"mobilesdk_app_id\":\"1:000000000000:android:ci-fallback\",\"android_client_info\":{\"package_name\":\"$APP_ID\"}},\"oauth_client\":[],\"api_key\":[{\"current_key\":\"CI_FALLBACK_API_KEY\"}],\"services\":{\"appinvite_service\":{\"other_platform_oauth_client\":[]}}}],\"configuration_version\":\"1\"}" > android/app/google-services.json
+          fi
+
+          if ! grep -q "\"package_name\":\"$APP_ID\"" android/app/google-services.json; then
+            echo "google-services.json is invalid or does not match applicationId $APP_ID"
+            exit 1
           fi
 
       - name: Resolve firebase_options.dart
