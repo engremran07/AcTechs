@@ -159,8 +159,48 @@ jobs:
         run: |
           if [ -n "$FIREBASE_OPTIONS_DART" ]; then
             echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
-          else
+            echo "Using firebase_options.dart from FIREBASE_OPTIONS_DART secret"
+          elif [ -f lib/firebase_options.dart ]; then
             echo "FIREBASE_OPTIONS_DART secret not set; using repository firebase_options.dart"
+          else
+            echo "FIREBASE_OPTIONS_DART secret not set and repository file missing; generating CI fallback"
+            cat > lib/firebase_options.dart << 'DART_EOF'
+            // ignore_for_file: type=lint
+            import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+            import 'package:flutter/foundation.dart'
+                show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+            class DefaultFirebaseOptions {
+              static FirebaseOptions get currentPlatform {
+                if (kIsWeb) {
+                  return web;
+                }
+                switch (defaultTargetPlatform) {
+                  case TargetPlatform.android:
+                    return android;
+                  default:
+                    throw UnsupportedError('Platform not configured in CI fallback');
+                }
+              }
+
+              static const FirebaseOptions android = FirebaseOptions(
+                apiKey: 'CI_FALLBACK_API_KEY',
+                appId: '1:000000000000:android:ci-fallback',
+                messagingSenderId: '000000000000',
+                projectId: 'ci-fallback',
+                storageBucket: 'ci-fallback.appspot.com',
+              );
+
+              static const FirebaseOptions web = FirebaseOptions(
+                apiKey: 'CI_FALLBACK_WEB_API_KEY',
+                appId: '1:000000000000:web:ci-fallback',
+                messagingSenderId: '000000000000',
+                projectId: 'ci-fallback',
+                authDomain: 'ci-fallback.firebaseapp.com',
+                storageBucket: 'ci-fallback.appspot.com',
+              );
+            }
+            DART_EOF
           fi
 
           if ! grep -q "class DefaultFirebaseOptions" lib/firebase_options.dart; then
