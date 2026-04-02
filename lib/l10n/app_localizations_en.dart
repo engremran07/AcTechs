@@ -351,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirm => 'Confirm';
 
   @override
+  String get confirmImport => 'Confirm import';
+
+  @override
   String get save => 'Save';
 
   @override

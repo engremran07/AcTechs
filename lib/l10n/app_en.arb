@@ -122,6 +122,7 @@
   "addServiceFirst": "Add at least one AC service before submitting.",
   "cancel": "Cancel",
   "confirm": "Confirm",
+  "confirmImport": "Confirm import",
   "save": "Save",
   "delete": "Delete",
   "search": "Search",

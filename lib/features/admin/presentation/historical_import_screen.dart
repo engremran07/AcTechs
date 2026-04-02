@@ -64,7 +64,7 @@ class _HistoricalImportScreenState
             Localizations.localeOf(dialogContext).languageCode != 'en';
 
         return AlertDialog(
-          title: Text(l.confirm),
+          title: Text(l.confirmImport),
           content: SizedBox(
             width: 560,
             child: ConstrainedBox(
@@ -365,6 +365,7 @@ class _HistoricalImportScreenState
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final companiesAsync = ref.watch(activeCompaniesProvider);
+    final isRtl = Localizations.localeOf(context).languageCode != 'en';
 
     CompanyModel? findCompany(String? id, List<CompanyModel> companies) {
       if (id == null) return null;
@@ -384,7 +385,9 @@ class _HistoricalImportScreenState
           children: [
             ArcticCard(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: isRtl
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
                 children: [
                   Text(
                     l.importHistoryData,
@@ -442,12 +445,28 @@ class _HistoricalImportScreenState
                       error: (_, _) => const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l.importTargetTechnician,
+                            style: Theme.of(context).textTheme.titleSmall,
+                            textAlign: isRtl ? TextAlign.end : TextAlign.start,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: (_isImporting || _isLoadingTechnicians)
+                              ? null
+                              : _loadTechnicians,
+                          icon: const Icon(Icons.refresh_rounded),
+                        ),
+                      ],
+                    ),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedTechnician?.uid,
                       isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: l.importTargetTechnician,
-                        prefixIcon: const Icon(Icons.engineering_rounded),
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.engineering_rounded),
                       ),
                       items: _technicians.map((technician) {
                         return DropdownMenuItem<String>(

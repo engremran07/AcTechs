@@ -78,7 +78,10 @@ class UserRepository {
       }
     } on FirebaseException catch (e) {
       debugPrint('toggleUserActive error code: ${e.code}');
-      throw ExpenseException.userSaveFailed();
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
+      }
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -87,7 +90,10 @@ class UserRepository {
       await _usersRef.doc(uid).update({'language': language});
     } on FirebaseException catch (e) {
       debugPrint('updateLanguage error code: ${e.code}');
-      throw ExpenseException.userSaveFailed();
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
+      }
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -181,7 +187,7 @@ class UserRepository {
           'لا يوجد إذن. هل أنت لا تزال مسجل دخولاً كمسؤول؟',
         );
       }
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -191,7 +197,7 @@ class UserRepository {
       await _usersRef.doc(uid).update({'name': name});
     } on FirebaseException catch (e) {
       debugPrint('updateSelfName error code: ${e.code}');
-      throw ExpenseException.userSaveFailed();
+      throw AuthException.updateFailed();
     }
   }
 
@@ -221,7 +227,10 @@ class UserRepository {
       await batch.commit();
     } on FirebaseException catch (e) {
       debugPrint('bulkToggleActive error code: ${e.code}');
-      throw ExpenseException.userSaveFailed();
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
+      }
+      throw AdminException.userSaveFailed();
     }
   }
 
@@ -274,7 +283,7 @@ class UserRepository {
           'لا يوجد إذن. هل أنت لا تزال مسجل دخولاً كمسؤول؟',
         );
       }
-      throw ExpenseException.userSaveFailed();
+      throw AdminException.userSaveFailed();
     }
   }
 

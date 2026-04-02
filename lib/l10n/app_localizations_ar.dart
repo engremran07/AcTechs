@@ -348,6 +348,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirm => 'تأكيد';
 
   @override
+  String get confirmImport => 'تأكيد الاستيراد';
+
+  @override
   String get save => 'حفظ';
 
   @override

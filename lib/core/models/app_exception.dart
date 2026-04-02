@@ -229,6 +229,13 @@ class AdminException extends AppException {
     'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔',
     'كلمة المرور غير صحيحة. حاول مرة أخرى.',
   );
+
+  factory AdminException.userSaveFailed() => const AdminException(
+    'admin_user_save_failed',
+    "Couldn't save user changes. Please try again.",
+    'صارف کی تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
+    'تعذر حفظ تغييرات المستخدم. حاول مرة أخرى.',
+  );
 }
 
 class ExpenseException extends AppException {

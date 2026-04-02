@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized, locale-aware font resolver.
 /// Returns the correct font family based on locale:
 /// - 'ur' → NotoNastaliqUrdu (bundled Nastaleeq, offline)
 /// - 'ar' → NotoNaskhArabic (bundled Naskh, offline)
-/// - else → Google Fonts Syne / DM Sans (with offline cache)
+/// - else → bundled Syne / DM Sans fonts (offline)
 class AppFonts {
   AppFonts._();
 
+  static const String syneFamily = 'Syne';
+  static const String dmSansFamily = 'DMSans';
   static const String urduFamily = 'NotoNastaliqUrdu';
   static const String arabicFamily = 'NotoNaskhArabic';
 
@@ -34,7 +35,8 @@ class AppFonts {
         color: color,
         height: 1.5,
       ),
-      _ => GoogleFonts.syne(
+      _ => TextStyle(
+        fontFamily: syneFamily,
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
@@ -64,7 +66,8 @@ class AppFonts {
         color: color,
         height: 1.5,
       ),
-      _ => GoogleFonts.dmSans(
+      _ => TextStyle(
+        fontFamily: dmSansFamily,
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,

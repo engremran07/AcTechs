@@ -41,11 +41,16 @@ class AcTechsApp extends ConsumerWidget {
     final locale = ref.watch(appLocaleProvider);
     final themeMode = ref.watch(appThemeModeProvider);
     final goRouter = ref.watch(routerProvider);
+    final systemBrightness = MediaQuery.platformBrightnessOf(context);
 
     return MaterialApp.router(
       title: 'AC Techs',
       debugShowCheckedModeBanner: false,
-      theme: ArcticTheme.themeForMode(themeMode, locale),
+      theme: ArcticTheme.themeForMode(
+        themeMode,
+        locale,
+        systemBrightness: systemBrightness,
+      ),
       locale: Locale(locale),
       routerConfig: goRouter,
       localizationsDelegates: const [

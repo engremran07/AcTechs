@@ -350,6 +350,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get confirm => 'تصدیق';
 
   @override
+  String get confirmImport => 'امپورٹ کی تصدیق';
+
+  @override
   String get save => 'محفوظ کریں';
 
   @override

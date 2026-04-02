@@ -29,7 +29,6 @@ dependencies:
   json_annotation: ^4.11.0
 
   # UI
-  google_fonts: ^8.0.2
   flutter_animate: ^4.5.2
   shimmer: ^3.0.0
   fl_chart: ^1.2.0
@@ -66,6 +65,12 @@ flutter:
     - assets/fonts/
 
   fonts:
+    - family: Syne
+      fonts:
+        - asset: assets/fonts/Syne-Variable.ttf
+    - family: DMSans
+      fonts:
+        - asset: assets/fonts/DMSans-Variable.ttf
     - family: NotoNastaliqUrdu
       fonts:
         - asset: assets/fonts/NotoNastaliqUrdu.ttf

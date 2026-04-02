@@ -122,6 +122,7 @@
   "addServiceFirst": "أضف خدمة تكييف واحدة على الأقل قبل الإرسال.",
   "cancel": "إلغاء",
   "confirm": "تأكيد",
+  "confirmImport": "تأكيد الاستيراد",
   "save": "حفظ",
   "delete": "حذف",
   "search": "بحث",

@@ -760,6 +760,12 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirm;
 
+  /// No description provided for @confirmImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm import'**
+  String get confirmImport;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:
