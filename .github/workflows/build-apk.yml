@@ -80,12 +80,19 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle-
 
       # ── Firebase secrets ─────────────────────────────────────────────────
-      - name: Decode google-services.json
+      - name: Resolve google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          echo "$GOOGLE_SERVICES_JSON" | base64 --decode \
-            > android/app/google-services.json
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+            echo "Using google-services.json from secret"
+          elif [ -f android/app/google-services.json ]; then
+            echo "Secret not set; using repository google-services.json"
+          else
+            echo "Secret not set and file missing; using CI fallback google-services.json"
+            echo "eyJwcm9qZWN0X2luZm8iOnsicHJvamVjdF9udW1iZXIiOiIwMDAwMDAwMDAwMDAiLCJwcm9qZWN0X2lkIjoiY2ktZmFsbGJhY2siLCJzdG9yYWdlX2J1Y2tldCI6ImNpLWZhbGxiYWNrLmFwcHNwb3QuY29tIn0sImNsaWVudCI6W3siY2xpZW50X2luZm8iOnsibW9iaWxlc2RrX2FwcF9pZCI6IjE6MDAwMDAwMDAwMDAwOmFuZHJvaWQ6Y2ktZmFsbGJhY2siLCJhbmRyb2lkX2NsaWVudF9pbmZvIjp7InBhY2thZ2VfbmFtZSI6ImNvbS5hY3RlY2hzLnBrIn19LCJvYXV0aF9jbGllbnQiOltdLCJhcGlfa2V5IjpbeyJjdXJyZW50X2tleSI6IkNJX0ZBTExCQUNLX0FQSV9LRVkifV0sInNlcnZpY2VzIjp7ImFwcGludml0ZV9zZXJ2aWNlIjp7Im90aGVyX3BsYXRmb3JtX29hdXRoX2NsaWVudCI6W119fX1dLCJjb25maWd1cmF0aW9uX3ZlcnNpb24iOiIxIn0=" | base64 --decode > android/app/google-services.json
+          fi
 
       - name: Resolve firebase_options.dart
         env:
