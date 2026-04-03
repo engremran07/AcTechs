@@ -108,7 +108,7 @@ extension JobModelX on JobModel {
   int unitsForType(String type) {
     return acUnits
         .where((unit) => unit.type == type)
-      .fold(0, (total, unit) => total + unit.quantity);
+        .fold(0, (total, unit) => total + unit.quantity);
   }
 
   int get sharedInstallUnitsTotal =>
