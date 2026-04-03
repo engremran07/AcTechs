@@ -75,6 +75,9 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
       (json['sharedDeliveryTeamCount'] as num?)?.toInt() ?? 0,
   sharedInvoiceDeliveryAmount:
       (json['sharedInvoiceDeliveryAmount'] as num?)?.toDouble() ?? 0.0,
+  techSplitShare: (json['techSplitShare'] as num?)?.toInt() ?? 0,
+  techWindowShare: (json['techWindowShare'] as num?)?.toInt() ?? 0,
+  techFreestandingShare: (json['techFreestandingShare'] as num?)?.toInt() ?? 0,
   charges: json['charges'] == null
       ? null
       : InvoiceCharges.fromJson(json['charges'] as Map<String, dynamic>),
@@ -108,6 +111,9 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'sharedInvoiceFreestandingUnits': instance.sharedInvoiceFreestandingUnits,
   'sharedDeliveryTeamCount': instance.sharedDeliveryTeamCount,
   'sharedInvoiceDeliveryAmount': instance.sharedInvoiceDeliveryAmount,
+  'techSplitShare': instance.techSplitShare,
+  'techWindowShare': instance.techWindowShare,
+  'techFreestandingShare': instance.techFreestandingShare,
   'charges': instance.charges?.toJson(),
   'date': _timestampToJson(instance.date),
   'submittedAt': _timestampToJson(instance.submittedAt),

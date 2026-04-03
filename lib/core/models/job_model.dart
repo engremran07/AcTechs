@@ -68,6 +68,11 @@ abstract class JobModel with _$JobModel {
     @Default(0) int sharedDeliveryTeamCount,
     @Default(0.0) double sharedInvoiceDeliveryAmount,
 
+    // Tech's personal installation share (how many of the invoice ACs they personally installed).
+    @Default(0) int techSplitShare,
+    @Default(0) int techWindowShare,
+    @Default(0) int techFreestandingShare,
+
     /// Additional invoice charges (bracket, delivery).
     InvoiceCharges? charges,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)

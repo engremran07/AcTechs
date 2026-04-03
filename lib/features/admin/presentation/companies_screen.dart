@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -23,56 +25,138 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       text: company?.invoicePrefix ?? '',
     );
     final formKey = GlobalKey<FormState>();
+    // logoBase64 held in dialog-local state via StatefulBuilder
+    String pendingLogo = company?.logoBase64 ?? '';
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(company == null ? l.addCompany : l.editCompany),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: nameCtrl,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.companyName,
-                  prefixIcon: const Icon(Icons.apartment_rounded),
-                ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? l.required : null,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(company == null ? l.addCompany : l.editCompany),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Logo picker ──
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                        withData: true,
+                      );
+                      if (result == null) return;
+                      final bytes = result.files.first.bytes;
+                      if (bytes == null) return;
+                      setDialogState(
+                        () => pendingLogo = base64Encode(bytes),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: ArcticTheme.arcticCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: pendingLogo.isEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  color: ArcticTheme.arcticBlue,
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l.tapToUploadLogo,
+                                  style: Theme.of(ctx).textTheme.bodySmall,
+                                ),
+                              ],
+                            )
+                          : Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(11),
+                                  child: Image.memory(
+                                    base64Decode(pendingLogo),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => setDialogState(
+                                      () => pendingLogo = '',
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: ArcticTheme.arcticError,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: nameCtrl,
+                    textInputAction: TextInputAction.next,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.companyName,
+                      prefixIcon: const Icon(Icons.apartment_rounded),
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().isEmpty ? l.required : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: prefixCtrl,
+                    textInputAction: TextInputAction.done,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.invoicePrefix,
+                      prefixIcon: const Icon(Icons.tag_rounded),
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().isEmpty ? l.required : null,
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: prefixCtrl,
-                textInputAction: TextInputAction.done,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.invoicePrefix,
-                  prefixIcon: const Icon(Icons.tag_rounded),
-                ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? l.required : null,
-              ),
-            ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: Text(l.save),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx, true);
-              }
-            },
-            child: Text(l.save),
-          ),
-        ],
       ),
     );
 
@@ -86,6 +170,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             .createCompany(
               name: nameCtrl.text.trim(),
               invoicePrefix: prefixCtrl.text.trim(),
+              logoBase64: pendingLogo,
             );
         if (!mounted) return;
         AppFeedback.success(context, message: l.companyCreated);
@@ -96,6 +181,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               id: company.id,
               name: nameCtrl.text.trim(),
               invoicePrefix: prefixCtrl.text.trim(),
+              logoBase64: pendingLogo,
             );
         if (!mounted) return;
         AppFeedback.success(context, message: l.companyUpdated);
@@ -169,10 +255,16 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.apartment_rounded,
-                            color: ArcticTheme.arcticBlue,
-                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: company.logoBase64.isNotEmpty
+                              ? Image.memory(
+                                  base64Decode(company.logoBase64),
+                                  fit: BoxFit.contain,
+                                )
+                              : const Icon(
+                                  Icons.apartment_rounded,
+                                  color: ArcticTheme.arcticBlue,
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

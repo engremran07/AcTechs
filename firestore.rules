@@ -169,6 +169,9 @@ service cloud.firestore {
           'sharedInvoiceFreestandingUnits',
           'sharedDeliveryTeamCount',
           'sharedInvoiceDeliveryAmount',
+          'techSplitShare',
+          'techWindowShare',
+          'techFreestandingShare',
           'charges',
           'date',
           'submittedAt',
@@ -374,22 +377,26 @@ service cloud.firestore {
           'name',
           'invoicePrefix',
           'isActive',
+          'logoBase64',
           'createdAt'
         ]) &&
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
         request.resource.data.invoicePrefix is string &&
-        request.resource.data.isActive is bool;
+        request.resource.data.isActive is bool &&
+        request.resource.data.logoBase64 is string;
       allow update: if isAdmin() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name',
           'invoicePrefix',
-          'isActive'
+          'isActive',
+          'logoBase64'
         ]) &&
         request.resource.data.name is string &&
         request.resource.data.name.size() > 0 &&
         request.resource.data.invoicePrefix is string &&
-        request.resource.data.isActive is bool;
+        request.resource.data.isActive is bool &&
+        request.resource.data.logoBase64 is string;
       allow delete: if isAdmin();
     }
 

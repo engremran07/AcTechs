@@ -13,6 +13,7 @@ abstract class CompanyModel with _$CompanyModel {
     required String name,
     @Default('') String invoicePrefix,
     @Default(true) bool isActive,
+    @Default('') String logoBase64,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? createdAt,
   }) = _CompanyModel;

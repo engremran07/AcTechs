@@ -527,5 +527,8 @@
   },
   "shareMustNotExceedTotal": "My share cannot exceed total on invoice.",
   "enterAtLeastOneUnit": "Enter at least one AC unit quantity.",
-  "acInstallNote": "Note (optional)"
+  "acInstallNote": "Note (optional)",
+  "companyLogo": "Company Logo",
+  "tapToUploadLogo": "Tap to upload logo",
+  "removeLogo": "Remove Logo"
 }

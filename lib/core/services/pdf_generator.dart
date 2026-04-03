@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -212,7 +213,18 @@ class PdfGenerator {
     required pw.TextDirection dir,
     String? dateRange,
     String? brandName,
+    String? logoBase64,
   }) {
+    // Decode logo once; fall back to text brand if decoding fails
+    pw.MemoryImage? logoImage;
+    if (logoBase64 != null && logoBase64.isNotEmpty) {
+      try {
+        logoImage = pw.MemoryImage(base64Decode(logoBase64));
+      } catch (_) {
+        logoImage = null;
+      }
+    }
+
     return pw.Column(
       children: [
         pw.Container(
@@ -222,16 +234,18 @@ class PdfGenerator {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(
-                brandName ?? 'AC TECHS',
-                style: pw.TextStyle(
-                  font: font,
-                  fontSize: 16,
-                  fontWeight: pw.FontWeight.bold,
-                  color: _kBrandDark,
-                ),
-                textDirection: dir,
-              ),
+              logoImage != null
+                  ? pw.Image(logoImage, width: 40, height: 40, fit: pw.BoxFit.contain)
+                  : pw.Text(
+                      brandName ?? 'AC TECHS',
+                      style: pw.TextStyle(
+                        font: font,
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _kBrandDark,
+                      ),
+                      textDirection: dir,
+                    ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
@@ -1295,6 +1309,7 @@ class PdfGenerator {
     String locale = 'en',
     String? reportTitle,
     String? periodLabel,
+    String companyLogoBase64 = '',
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -1361,6 +1376,7 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: periodLabel ?? AppFormatters.date(today),
+          logoBase64: companyLogoBase64.isNotEmpty ? companyLogoBase64 : null,
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [

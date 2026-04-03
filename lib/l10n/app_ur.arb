@@ -528,5 +528,8 @@
   },
   "shareMustNotExceedTotal": "میرا حصہ انوائس کے کل سے زیادہ نہیں ہو سکتا۔",
   "enterAtLeastOneUnit": "کم از کم ایک اے سی یونٹ کی تعداد درج کریں۔",
-  "acInstallNote": "نوٹ (اختیاری)"
+  "acInstallNote": "نوٹ (اختیاری)",
+  "companyLogo": "کمپنی لوگو",
+  "tapToUploadLogo": "لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں",
+  "removeLogo": "لوگو ہٹائیں"
 }

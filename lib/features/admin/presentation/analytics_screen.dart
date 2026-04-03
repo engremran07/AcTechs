@@ -13,6 +13,7 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 
 enum _AdminInOutPeriodType { month, range }
 
@@ -757,11 +758,20 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
       final periodLabel = AppFormatters.monthLabel(l, month);
 
+      // Look up the company logo if a specific company is selected
+      String companyLogoBase64 = '';
+      if (companyKey != '__all__' && companyKey != '__no_company__') {
+        final companies = ref.read(allCompaniesProvider).value ?? const [];
+        final match = companies.where((c) => c.id == companyKey).firstOrNull;
+        companyLogoBase64 = match?.logoBase64 ?? '';
+      }
+
       final bytes = await PdfGenerator.generateTodayCompanyInvoicesReport(
         jobs: scopedJobs,
         locale: locale,
         reportTitle: reportTitle,
         periodLabel: periodLabel,
+        companyLogoBase64: companyLogoBase64,
       );
 
       final companyToken = AppFormatters.slugify(

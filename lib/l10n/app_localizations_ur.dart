@@ -1424,4 +1424,13 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get acInstallNote => 'نوٹ (اختیاری)';
+
+  @override
+  String get companyLogo => 'کمپنی لوگو';
+
+  @override
+  String get tapToUploadLogo => 'لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں';
+
+  @override
+  String get removeLogo => 'لوگو ہٹائیں';
 }

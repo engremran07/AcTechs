@@ -1420,4 +1420,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get acInstallNote => 'ملاحظة (اختياري)';
+
+  @override
+  String get companyLogo => 'شعار الشركة';
+
+  @override
+  String get tapToUploadLogo => 'اضغط لتحميل الشعار';
+
+  @override
+  String get removeLogo => 'إزالة الشعار';
 }

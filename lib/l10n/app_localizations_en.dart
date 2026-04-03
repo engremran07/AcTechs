@@ -1422,4 +1422,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get acInstallNote => 'Note (optional)';
+
+  @override
+  String get companyLogo => 'Company Logo';
+
+  @override
+  String get tapToUploadLogo => 'Tap to upload logo';
+
+  @override
+  String get removeLogo => 'Remove Logo';
 }

@@ -2781,6 +2781,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Note (optional)'**
   String get acInstallNote;
+
+  /// No description provided for @companyLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Logo'**
+  String get companyLogo;
+
+  /// No description provided for @tapToUploadLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to upload logo'**
+  String get tapToUploadLogo;
+
+  /// No description provided for @removeLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Logo'**
+  String get removeLogo;
 }
 
 class _AppLocalizationsDelegate

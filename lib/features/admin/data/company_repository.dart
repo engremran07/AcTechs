@@ -34,12 +34,14 @@ class CompanyRepository {
   Future<void> createCompany({
     required String name,
     required String invoicePrefix,
+    String logoBase64 = '',
   }) async {
     try {
       await _ref.add({
         'name': name,
         'invoicePrefix': invoicePrefix,
         'isActive': true,
+        'logoBase64': logoBase64,
         'createdAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {
@@ -52,9 +54,14 @@ class CompanyRepository {
     required String id,
     required String name,
     required String invoicePrefix,
+    String logoBase64 = '',
   }) async {
     try {
-      await _ref.doc(id).update({'name': name, 'invoicePrefix': invoicePrefix});
+      await _ref.doc(id).update({
+        'name': name,
+        'invoicePrefix': invoicePrefix,
+        'logoBase64': logoBase64,
+      });
     } on FirebaseException catch (e) {
       debugPrint('updateCompany error: ${e.code} — ${e.message}');
       throw AdminException.userSaveFailed();

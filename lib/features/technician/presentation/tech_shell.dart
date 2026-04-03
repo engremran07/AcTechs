@@ -12,12 +12,11 @@ class TechShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/tech/submit')) return 1;
     if (location.startsWith('/tech/inout')) return 2;
-    if (location.startsWith('/tech/summary')) {
-      return 2; // summary is under In/Out
-    }
-    if (location.startsWith('/tech/history')) return 3;
-    if (location.startsWith('/tech/settings')) return 4;
-    if (location.startsWith('/tech/profile')) return 4;
+    if (location.startsWith('/tech/summary')) return 2;
+    if (location.startsWith('/tech/installs')) return 3;
+    if (location.startsWith('/tech/history')) return 4;
+    if (location.startsWith('/tech/settings')) return 5;
+    if (location.startsWith('/tech/profile')) return 5;
     return 0;
   }
 
@@ -58,8 +57,10 @@ class TechShell extends StatelessWidget {
               case 2:
                 context.go('/tech/inout');
               case 3:
-                context.go('/tech/history');
+                context.go('/tech/installs');
               case 4:
+                context.go('/tech/history');
+              case 5:
                 context.go('/tech/settings');
             }
           },
@@ -75,6 +76,10 @@ class TechShell extends StatelessWidget {
             BottomNavigationBarItem(
               icon: const Icon(Icons.swap_vert_rounded),
               label: AppLocalizations.of(context)!.inOut,
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.air_outlined),
+              label: AppLocalizations.of(context)!.acInstallations,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.history_rounded),

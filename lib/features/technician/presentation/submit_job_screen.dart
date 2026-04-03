@@ -38,6 +38,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   int _uninstallStandingQty = 0;
   int _dolabQty = 0;
   bool _isSharedInstall = false;
+  int _techSplitShare = 0;
+  int _techWindowShare = 0;
+  int _techFreestandingShare = 0;
   final _sharedSplitUnitsController = TextEditingController();
   final _sharedWindowUnitsController = TextEditingController();
   final _sharedFreestandingUnitsController = TextEditingController();
@@ -128,6 +131,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       _uninstallStandingQty = 0;
       _dolabQty = 0;
       _isSharedInstall = false;
+      _techSplitShare = 0;
+      _techWindowShare = 0;
+      _techFreestandingShare = 0;
       _selectedCompanyId = null;
       _selectedCompanyName = '';
       _selectedCompanyPrefix = '';
@@ -233,6 +239,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
             : 0,
         sharedDeliveryTeamCount: _isSharedInstall ? sharedTeamSize : 0,
         sharedInvoiceDeliveryAmount: _isSharedInstall ? rawDeliveryAmount : 0,
+        techSplitShare: _techSplitShare,
+        techWindowShare: _techWindowShare,
+        techFreestandingShare: _techFreestandingShare,
         charges: charges,
         date: _selectedDate,
         submittedAt: DateTime.now(),
@@ -481,6 +490,53 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         ],
                       ),
                     ).animate().fadeIn(delay: 80.ms),
+
+                    // ── My Installation Share ──
+                    if (_splitQty + _windowQty + _dolabQty > 0) ...[
+                      const SizedBox(height: 20),
+                      _SectionHeader(
+                        icon: Icons.person_pin_circle_rounded,
+                        title: l.myShare,
+                      ),
+                      const SizedBox(height: 8),
+                      ArcticCard(
+                        child: Column(
+                          children: [
+                            if (_splitQty > 0)
+                              _QtyTile(
+                                label: l.splits,
+                                value: _techSplitShare,
+                                onChanged: (v) => setState(
+                                  () => _techSplitShare = v.clamp(0, _splitQty),
+                                ),
+                              ),
+                            if (_splitQty > 0 &&
+                                (_windowQty > 0 || _dolabQty > 0))
+                              const SizedBox(height: 8),
+                            if (_windowQty > 0)
+                              _QtyTile(
+                                label: l.windowAc,
+                                value: _techWindowShare,
+                                onChanged: (v) => setState(
+                                  () =>
+                                      _techWindowShare = v.clamp(0, _windowQty),
+                                ),
+                              ),
+                            if (_windowQty > 0 && _dolabQty > 0)
+                              const SizedBox(height: 8),
+                            if (_dolabQty > 0)
+                              _QtyTile(
+                                label: l.standing,
+                                value: _techFreestandingShare,
+                                onChanged: (v) => setState(
+                                  () => _techFreestandingShare =
+                                      v.clamp(0, _dolabQty),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 90.ms),
+                    ],
                     const SizedBox(height: 20),
 
                     // ── Date Picker ──

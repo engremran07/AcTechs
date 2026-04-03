@@ -528,5 +528,8 @@
   },
   "shareMustNotExceedTotal": "لا يمكن أن تتجاوز حصتي إجمالي الفاتورة.",
   "enterAtLeastOneUnit": "أدخل كمية وحدة مكيف واحدة على الأقل.",
-  "acInstallNote": "ملاحظة (اختياري)"
+  "acInstallNote": "ملاحظة (اختياري)",
+  "companyLogo": "شعار الشركة",
+  "tapToUploadLogo": "اضغط لتحميل الشعار",
+  "removeLogo": "إزالة الشعار"
 }
