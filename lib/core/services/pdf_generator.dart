@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:arabic_reshaper/arabic_reshaper.dart' as reshaper;
 import 'package:bidi/bidi.dart' as bidi;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -71,6 +72,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
 /// Fonts are loaded lazily and cached for the lifetime of the process.
 class PdfGenerator {
   PdfGenerator._();
+  static final reshaper.ArabicReshaper _reshaper = reshaper.ArabicReshaper();
   static final RegExp _arabicScriptRegex = RegExp(
     r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]',
     unicode: true,
@@ -79,7 +81,8 @@ class PdfGenerator {
   static String _shapeRtlForPdf(String locale, String text) {
     if (locale != 'ur' && locale != 'ar') return text;
     if (text.isEmpty || !_arabicScriptRegex.hasMatch(text)) return text;
-    final visual = String.fromCharCodes(bidi.logicalToVisual(text));
+    final reshaped = _reshaper.reshape(text);
+    final visual = String.fromCharCodes(bidi.logicalToVisual(reshaped));
     return visual;
   }
 

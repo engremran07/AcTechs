@@ -40,6 +40,7 @@ analyze_output.txt
 android/app/google-services.json
 lib/firebase_options.dart
 scripts/node_modules/
+logs/
 
 # Symbolication related
 app.*.symbols

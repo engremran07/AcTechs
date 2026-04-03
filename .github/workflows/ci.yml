@@ -56,6 +56,9 @@ jobs:
       - name: Create firebase_options stub (for static analysis)
         run: echo "Ly8gaWdub3JlX2Zvcl9maWxlOiBsaW5lc19sb25nZXJfdGhhbl84MF9jaGFycywgYXZvaWRfY2xhc3Nlc193aXRoX29ubHlfc3RhdGljX21lbWJlcnMKLy8gQ0kgc3R1YiAtIG5vdCB1c2VkIGF0IHJ1bnRpbWUuCmltcG9ydCAncGFja2FnZTpmaXJlYmFzZV9jb3JlL2ZpcmViYXNlX2NvcmUuZGFydCcgc2hvdyBGaXJlYmFzZU9wdGlvbnM7CgpjbGFzcyBEZWZhdWx0RmlyZWJhc2VPcHRpb25zIHsKICBzdGF0aWMgRmlyZWJhc2VPcHRpb25zIGdldCBjdXJyZW50UGxhdGZvcm0gPT4KICAgICAgdGhyb3cgVW5zdXBwb3J0ZWRFcnJvcignQ0kgc3R1YiBvbmx5LicpOwp9Cg==" | base64 --decode > lib/firebase_options.dart
 
+      - name: Generate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Dart format check
         run: dart format --output=none --set-exit-if-changed lib/ test/
 

@@ -20,12 +20,13 @@ class AuthRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
-  Stream<User?> get authStateChanges => auth.userChanges().asyncMap((user) async {
-    if (user != null) {
-      await _syncProfileFromAuth(user);
-    }
-    return user;
-  });
+  Stream<User?> get authStateChanges =>
+      auth.userChanges().asyncMap((user) async {
+        if (user != null) {
+          await _syncProfileFromAuth(user);
+        }
+        return user;
+      });
 
   User? get currentUser => auth.currentUser;
 

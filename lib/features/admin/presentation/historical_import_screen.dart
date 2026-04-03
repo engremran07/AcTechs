@@ -97,7 +97,9 @@ class _HistoricalImportScreenState
                     Text(l.importUnresolvedTechRows(totalUnresolvedRows)),
                     Text(l.importRowsWithoutTechName(totalRowsWithoutTechName)),
                     Text(
-                      l.importUniqueTechNamesCount(mergedTechnicianCounts.length),
+                      l.importUniqueTechNamesCount(
+                        mergedTechnicianCounts.length,
+                      ),
                     ),
                     if (topTechnicians.isNotEmpty) ...[
                       const SizedBox(height: 8),
@@ -131,9 +133,10 @@ class _HistoricalImportScreenState
                               ),
                               const SizedBox(height: 6),
                               ...batch.parsed.sheetSummaries.map((sheet) {
-                                final sheetTopTechnicians = _topTechnicianEntries(
-                                  sheet.technicianNameCounts,
-                                );
+                                final sheetTopTechnicians =
+                                    _topTechnicianEntries(
+                                      sheet.technicianNameCounts,
+                                    );
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
                                   child: Text(
@@ -231,9 +234,7 @@ class _HistoricalImportScreenState
     }
   }
 
-  List<MapEntry<String, int>> _topTechnicianEntries(
-    Map<String, int> counts,
-  ) {
+  List<MapEntry<String, int>> _topTechnicianEntries(Map<String, int> counts) {
     final entries = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     if (entries.length > 5) {
@@ -283,15 +284,12 @@ class _HistoricalImportScreenState
     }
 
     setState(() => _isImporting = true);
-    
+
     final keyword = _technicianKeywordController.text.trim();
     if (keyword.isEmpty) {
       setState(() => _isImporting = false);
       if (mounted) {
-        ErrorSnackbar.show(
-          context,
-          message: l.importKeywordRequired,
-        );
+        ErrorSnackbar.show(context, message: l.importKeywordRequired);
       }
       return;
     }

@@ -112,10 +112,9 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
-            final selectedYearMonths = months
-                .where((m) => m.year == selectedYear)
-                .toList()
-              ..sort((a, b) => b.month.compareTo(a.month));
+            final selectedYearMonths =
+                months.where((m) => m.year == selectedYear).toList()
+                  ..sort((a, b) => b.month.compareTo(a.month));
 
             return SafeArea(
               child: Column(
@@ -488,7 +487,8 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allJobs = ref.watch(technicianJobsProvider).value ?? const <JobModel>[];
+    final allJobs =
+        ref.watch(technicianJobsProvider).value ?? const <JobModel>[];
     final allExpenses =
         ref.watch(techExpensesProvider).value ?? const <ExpenseModel>[];
     final allEarnings =
@@ -656,7 +656,10 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     );
   }
 
-  Widget _buildMonthSelector(BuildContext context, List<DateTime> availableMonths) {
+  Widget _buildMonthSelector(
+    BuildContext context,
+    List<DateTime> availableMonths,
+  ) {
     final canPickFromData = availableMonths.isNotEmpty;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -669,7 +672,9 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
           ),
         ),
         InkWell(
-          onTap: canPickFromData ? () => _pickSummaryMonth(availableMonths) : null,
+          onTap: canPickFromData
+              ? () => _pickSummaryMonth(availableMonths)
+              : null,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -677,9 +682,12 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _monthLabel(),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ).animate(key: ValueKey(_selectedMonth)).fadeIn().slideX(begin: 0.05),
+                      _monthLabel(),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    )
+                    .animate(key: ValueKey(_selectedMonth))
+                    .fadeIn()
+                    .slideX(begin: 0.05),
                 if (canPickFromData) ...[
                   const SizedBox(width: 6),
                   const Icon(

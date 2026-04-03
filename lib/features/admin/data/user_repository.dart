@@ -179,8 +179,7 @@ class UserRepository {
     try {
       final updates = <String, dynamic>{'name': name, 'email': email};
       if (role != null) {
-        updates['role'] =
-            role.trim().toLowerCase() == AppConstants.roleAdmin
+        updates['role'] = role.trim().toLowerCase() == AppConstants.roleAdmin
             ? AppConstants.roleAdmin
             : AppConstants.roleTechnician;
       }
