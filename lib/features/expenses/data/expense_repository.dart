@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -18,7 +19,11 @@ class ExpenseRepository {
   Future<void> addExpense(ExpenseModel expense) async {
     try {
       await _ref.add(expense.toFirestore());
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('addExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.saveFailed();
+    } catch (e) {
+      debugPrint('addExpense unknown: $e');
       throw ExpenseException.saveFailed();
     }
   }
@@ -26,7 +31,11 @@ class ExpenseRepository {
   Future<void> deleteExpense(String id) async {
     try {
       await _ref.doc(id).delete();
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('deleteExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.deleteFailed();
+    } catch (e) {
+      debugPrint('deleteExpense unknown: $e');
       throw ExpenseException.deleteFailed();
     }
   }
@@ -34,7 +43,11 @@ class ExpenseRepository {
   Future<void> updateExpense(ExpenseModel expense) async {
     try {
       await _ref.doc(expense.id).update(expense.toFirestore());
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('updateExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.userSaveFailed();
+    } catch (e) {
+      debugPrint('updateExpense unknown: $e');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -42,11 +55,15 @@ class ExpenseRepository {
   Future<void> approveExpense(String id, String adminUid) async {
     try {
       await _ref.doc(id).update({
-        'status': AppConstants.statusApproved,
+        'status': 'approved',
         'approvedBy': adminUid,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('approveExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.userSaveFailed();
+    } catch (e) {
+      debugPrint('approveExpense unknown: $e');
       throw ExpenseException.userSaveFailed();
     }
   }
@@ -54,19 +71,23 @@ class ExpenseRepository {
   Future<void> rejectExpense(String id, String adminUid, String reason) async {
     try {
       await _ref.doc(id).update({
-        'status': AppConstants.statusRejected,
+        'status': 'rejected',
         'approvedBy': adminUid,
         'adminNote': reason,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
+    } on FirebaseException catch (e) {
+      debugPrint('rejectExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.userSaveFailed();
+    } catch (e) {
+      debugPrint('rejectExpense unknown: $e');
       throw ExpenseException.userSaveFailed();
     }
   }
 
   Stream<List<ExpenseModel>> pendingExpenses() {
     return _ref
-        .where('status', isEqualTo: AppConstants.statusPending)
+        .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: false)
         .snapshots()
         .map(

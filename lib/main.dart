@@ -15,7 +15,13 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+    // Firestore will still work in offline mode via cached data;
+    // auth will fail gracefully when user tries to sign in.
+  }
 
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     await FirebaseAppCheck.instance.activate(

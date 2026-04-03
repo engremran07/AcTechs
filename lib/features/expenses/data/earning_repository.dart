@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -18,55 +19,75 @@ class EarningRepository {
   Future<void> addEarning(EarningModel earning) async {
     try {
       await _ref.add(earning.toFirestore());
-    } catch (_) {
-      throw ExpenseException.saveFailed();
+    } on FirebaseException catch (e) {
+      debugPrint('addEarning error: ${e.code} — ${e.message}');
+      throw EarningException.saveFailed();
+    } catch (e) {
+      debugPrint('addEarning unknown: $e');
+      throw EarningException.saveFailed();
     }
   }
 
   Future<void> deleteEarning(String id) async {
     try {
       await _ref.doc(id).delete();
-    } catch (_) {
-      throw ExpenseException.deleteFailed();
+    } on FirebaseException catch (e) {
+      debugPrint('deleteEarning error: ${e.code} — ${e.message}');
+      throw EarningException.deleteFailed();
+    } catch (e) {
+      debugPrint('deleteEarning unknown: $e');
+      throw EarningException.deleteFailed();
     }
   }
 
   Future<void> updateEarning(EarningModel earning) async {
     try {
       await _ref.doc(earning.id).update(earning.toFirestore());
-    } catch (_) {
-      throw ExpenseException.userSaveFailed();
+    } on FirebaseException catch (e) {
+      debugPrint('updateEarning error: ${e.code} — ${e.message}');
+      throw EarningException.updateFailed();
+    } catch (e) {
+      debugPrint('updateEarning unknown: $e');
+      throw EarningException.updateFailed();
     }
   }
 
   Future<void> approveEarning(String id, String adminUid) async {
     try {
       await _ref.doc(id).update({
-        'status': AppConstants.statusApproved,
+        'status': 'approved',
         'approvedBy': adminUid,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
-      throw ExpenseException.userSaveFailed();
+    } on FirebaseException catch (e) {
+      debugPrint('approveEarning error: ${e.code} — ${e.message}');
+      throw EarningException.updateFailed();
+    } catch (e) {
+      debugPrint('approveEarning unknown: $e');
+      throw EarningException.updateFailed();
     }
   }
 
   Future<void> rejectEarning(String id, String adminUid, String reason) async {
     try {
       await _ref.doc(id).update({
-        'status': AppConstants.statusRejected,
+        'status': 'rejected',
         'approvedBy': adminUid,
         'adminNote': reason,
         'reviewedAt': FieldValue.serverTimestamp(),
       });
-    } catch (_) {
-      throw ExpenseException.userSaveFailed();
+    } on FirebaseException catch (e) {
+      debugPrint('rejectEarning error: ${e.code} — ${e.message}');
+      throw EarningException.updateFailed();
+    } catch (e) {
+      debugPrint('rejectEarning unknown: $e');
+      throw EarningException.updateFailed();
     }
   }
 
   Stream<List<EarningModel>> pendingEarnings() {
     return _ref
-        .where('status', isEqualTo: AppConstants.statusPending)
+        .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: false)
         .snapshots()
         .map(

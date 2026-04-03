@@ -2499,6 +2499,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Report Type'**
   String get selectReportType;
+
+  /// No description provided for @jobsReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs Report'**
+  String get jobsReportTitle;
+
+  /// No description provided for @earningsReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Earnings Report'**
+  String get earningsReportTitle;
+
+  /// No description provided for @expensesReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses Report'**
+  String get expensesReportTitle;
+
+  /// No description provided for @todayEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Earnings'**
+  String get todayEarned;
+
+  /// No description provided for @monthEarned.
+  ///
+  /// In en, this message translates to:
+  /// **'Month\'s Earnings'**
+  String get monthEarned;
+
+  /// No description provided for @todayWorkExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Work Expenses'**
+  String get todayWorkExpenses;
+
+  /// No description provided for @todayHomeExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Home Expenses'**
+  String get todayHomeExpenses;
+
+  /// No description provided for @todayTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Total Expenses'**
+  String get todayTotalExpenses;
+
+  /// No description provided for @monthWorkExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Month\'s Work Expenses'**
+  String get monthWorkExpenses;
+
+  /// No description provided for @monthHomeExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Month\'s Home Expenses'**
+  String get monthHomeExpenses;
+
+  /// No description provided for @monthTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Month\'s Total Expenses'**
+  String get monthTotalExpenses;
+
+  /// No description provided for @workExpensesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Expenses'**
+  String get workExpensesLabel;
+
+  /// No description provided for @homeExpensesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Expenses'**
+  String get homeExpensesLabel;
+
+  /// No description provided for @bracketLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bracket'**
+  String get bracketLabel;
+
+  /// No description provided for @deliveryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery'**
+  String get deliveryLabel;
+
+  /// No description provided for @acUnitsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'AC Units'**
+  String get acUnitsLabel;
+
+  /// No description provided for @unitQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get unitQty;
+
+  /// No description provided for @dateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get dateLabel;
+
+  /// No description provided for @invoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get invoiceLabel;
+
+  /// No description provided for @technicianLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Technician'**
+  String get technicianLabel;
+
+  /// No description provided for @contactLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contactLabel;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get statusLabel;
+
+  /// No description provided for @notesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notesLabel;
+
+  /// No description provided for @amountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amountLabel;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @itemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item'**
+  String get itemLabel;
+
+  /// No description provided for @totalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalLabel;
+
+  /// No description provided for @noEarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'No earnings'**
+  String get noEarnings;
+
+  /// No description provided for @noWorkExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No work expenses'**
+  String get noWorkExpenses;
+
+  /// No description provided for @noHomeExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No home expenses'**
+  String get noHomeExpenses;
+
+  /// No description provided for @generateReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Reports'**
+  String get generateReports;
 }
 
 class _AppLocalizationsDelegate

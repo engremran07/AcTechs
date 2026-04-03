@@ -58,7 +58,7 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   adminNote: json['adminNote'] as String? ?? '',
   importMeta:
       json['importMeta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
-  approvedBy: json['approvedBy'] as String? ?? '',
+  approvedBy: json['approvedBy'] as String?,
   isSharedInstall: json['isSharedInstall'] as bool? ?? false,
   sharedInstallGroupKey: json['sharedInstallGroupKey'] as String? ?? '',
   sharedInvoiceTotalUnits:

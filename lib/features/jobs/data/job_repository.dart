@@ -182,10 +182,23 @@ class JobRepository {
 
   Future<void> approveJob(String jobId, String adminUid) async {
     try {
-      await _jobsRef.doc(jobId).update({
-        'status': 'approved',
-        'approvedBy': adminUid,
-        'reviewedAt': FieldValue.serverTimestamp(),
+      await firestore.runTransaction((tx) async {
+        final snap = await tx.get(_jobsRef.doc(jobId));
+        final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        tx.update(_jobsRef.doc(jobId), {
+          'status': 'approved',
+          'approvedBy': adminUid,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+        tx.set(
+          _jobsRef.doc(jobId).collection('history').doc(),
+          {
+            'changedBy': adminUid,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': prevStatus,
+            'newStatus': 'approved',
+          },
+        );
       });
     } on FirebaseException catch (e) {
       debugPrint('approveJob error: ${e.code} — ${e.message}');
@@ -198,11 +211,24 @@ class JobRepository {
 
   Future<void> rejectJob(String jobId, String adminUid, String reason) async {
     try {
-      await _jobsRef.doc(jobId).update({
-        'status': 'rejected',
-        'approvedBy': adminUid,
-        'adminNote': reason,
-        'reviewedAt': FieldValue.serverTimestamp(),
+      await firestore.runTransaction((tx) async {
+        final snap = await tx.get(_jobsRef.doc(jobId));
+        final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        tx.update(_jobsRef.doc(jobId), {
+          'status': 'rejected',
+          'approvedBy': adminUid,
+          'adminNote': reason,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+        tx.set(
+          _jobsRef.doc(jobId).collection('history').doc(),
+          {
+            'changedBy': adminUid,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': prevStatus,
+            'newStatus': 'rejected',
+          },
+        );
       });
     } on FirebaseException catch (e) {
       debugPrint('rejectJob error: ${e.code} — ${e.message}');
@@ -225,7 +251,7 @@ class JobRepository {
         final batch = firestore.batch();
         for (final id in chunk) {
           batch.update(_jobsRef.doc(id), {
-            'status': AppConstants.statusApproved,
+            'status': 'approved',
             'approvedBy': adminUid,
             'reviewedAt': FieldValue.serverTimestamp(),
           });

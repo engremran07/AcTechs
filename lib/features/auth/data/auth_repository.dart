@@ -78,8 +78,6 @@ class AuthRepository {
         await auth.signOut();
         throw AuthException.accountNotProvisioned();
       } else {
-        await _syncProfileFromAuth(credential.user!);
-        userDoc = await userDocRef.get();
         // Sync Firebase Auth changes to Firestore (e.g., email or displayName
         // changed in the Firebase Console will now reflect in the app).
         final data = userDoc.data() ?? {};

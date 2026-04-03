@@ -50,32 +50,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   String _technicianFilter = 'all';
   DateTimeRange? _customDateRange;
 
-  String _slugify(String input) {
-    final lower = input.toLowerCase().trim();
-    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-    return sanitized
-        .replaceAll(RegExp(r'-{2,}'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
-  }
-
-  String _monthToken(DateTime month) {
-    const names = <String>[
-      'january',
-      'february',
-      'march',
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-    ];
-    return '${names[month.month - 1]}-${month.year}';
-  }
-
   List<DateTime> _invoiceReportMonths(List<JobModel> jobs) {
     final months = <DateTime>{};
     final now = DateTime.now();
@@ -95,72 +69,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       return y != 0 ? y : b.month.compareTo(a.month);
     });
     return list;
-  }
-
-  String _monthLabel(AppLocalizations l, DateTime month) {
-    final names = <String>[
-      l.january,
-      l.february,
-      l.march,
-      l.april,
-      l.may,
-      l.june,
-      l.july,
-      l.august,
-      l.september,
-      l.october,
-      l.november,
-      l.december,
-    ];
-    return '${names[month.month - 1]} ${month.year}';
-  }
-
-  String _monthLabelForLocale(String locale, DateTime month) {
-    final names = switch (locale) {
-      'ur' => const <String>[
-        'جنوری',
-        'فروری',
-        'مارچ',
-        'اپریل',
-        'مئی',
-        'جون',
-        'جولائی',
-        'اگست',
-        'ستمبر',
-        'اکتوبر',
-        'نومبر',
-        'دسمبر',
-      ],
-      'ar' => const <String>[
-        'يناير',
-        'فبراير',
-        'مارس',
-        'أبريل',
-        'مايو',
-        'يونيو',
-        'يوليو',
-        'أغسطس',
-        'سبتمبر',
-        'أكتوبر',
-        'نوفمبر',
-        'ديسمبر',
-      ],
-      _ => const <String>[
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ],
-    };
-    return '${names[month.month - 1]} ${month.year}';
   }
 
   List<DateTime> _inOutMonthsForTech({
@@ -359,7 +267,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                           .map(
                             (m) => DropdownMenuItem<DateTime>(
                               value: m,
-                              child: Text(_monthLabel(l, m)),
+                              child: Text(AppFormatters.monthLabel(l, m)),
                             ),
                           )
                           .toList(),
@@ -498,7 +406,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       };
       final periodLabel = normalizedRange != null
           ? '${AppFormatters.date(normalizedRange.start)} - ${AppFormatters.date(normalizedRange.end)}'
-          : _monthLabelForLocale(options.locale, normalizedMonth);
+          : AppFormatters.monthLabelForLocale(options.locale, normalizedMonth);
       final reportTitle = switch (options.locale) {
         'ur' => '${options.techName} کی رپورٹ ($languageLabel)',
         'ar' => 'تقرير ${options.techName} ($languageLabel)',
@@ -516,12 +424,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         monthlyMode: true,
       );
 
-      final techToken = _slugify(options.techName).isEmpty
+      final techToken = AppFormatters.slugify(options.techName).isEmpty
           ? 'technician'
-          : _slugify(options.techName);
+          : AppFormatters.slugify(options.techName);
       final periodToken = normalizedRange != null
           ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
-          : _monthToken(normalizedMonth);
+          : AppFormatters.monthToken(normalizedMonth);
 
       await PdfGenerator.sharePdfBytes(
         bytes,
@@ -607,7 +515,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                             .map(
                               (m) => DropdownMenuItem<DateTime>(
                                 value: m,
-                                child: Text(_monthLabel(l, m)),
+                                child: Text(AppFormatters.monthLabel(l, m)),
                               ),
                             )
                             .toList(),
@@ -847,7 +755,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         _ => 'Company Invoice Report ($companyName)',
       };
 
-      final periodLabel = _monthLabel(l, month);
+      final periodLabel = AppFormatters.monthLabel(l, month);
 
       final bytes = await PdfGenerator.generateTodayCompanyInvoicesReport(
         jobs: scopedJobs,
@@ -856,11 +764,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         periodLabel: periodLabel,
       );
 
-      final companyToken = _slugify(
+      final companyToken = AppFormatters.slugify(
         companyName.isEmpty ? l.noCompany : companyName,
       );
       final fileName =
-          '${companyToken.isEmpty ? 'company' : companyToken}-${_monthToken(month)}-invoice-report.pdf';
+          '${companyToken.isEmpty ? 'company' : companyToken}-${AppFormatters.monthToken(month)}-invoice-report.pdf';
 
       await PdfGenerator.sharePdfBytes(bytes, fileName);
     } catch (_) {
@@ -1189,33 +1097,39 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                         value: approved.toDouble(),
                                         color: ArcticTheme.arcticSuccess,
                                         title: '$approved',
-                                        titleStyle: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
+                                        titleStyle: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                         radius: 50,
                                       ),
                                       PieChartSectionData(
                                         value: pending.toDouble(),
                                         color: ArcticTheme.arcticPending,
                                         title: '$pending',
-                                        titleStyle: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
+                                        titleStyle: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                         radius: 50,
                                       ),
                                       PieChartSectionData(
                                         value: rejected.toDouble(),
                                         color: ArcticTheme.arcticError,
                                         title: '$rejected',
-                                        titleStyle: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
+                                        titleStyle: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                         radius: 50,
                                       ),
                                     ],
@@ -1309,11 +1223,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                             name.length > 6
                                                 ? '${name.substring(0, 6)}..'
                                                 : name,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              color: ArcticTheme
-                                                  .arcticTextSecondary,
-                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  fontSize: 10,
+                                                  color: ArcticTheme
+                                                      .arcticTextSecondary,
+                                                ),
                                           ),
                                         );
                                       } else {

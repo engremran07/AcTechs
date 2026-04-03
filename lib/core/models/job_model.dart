@@ -57,7 +57,7 @@ abstract class JobModel with _$JobModel {
     @Default('') String expenseNote,
     @Default('') String adminNote,
     @Default(<String, dynamic>{}) Map<String, dynamic> importMeta,
-    @Default('') String approvedBy,
+    String? approvedBy,
     @Default(false) bool isSharedInstall,
     @Default('') String sharedInstallGroupKey,
     @Default(0) int sharedInvoiceTotalUnits,

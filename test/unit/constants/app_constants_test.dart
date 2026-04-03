@@ -73,29 +73,6 @@ void main() {
     });
   });
 
-  group('AppConstants – status strings', () {
-    test('statusPending is "pending"', () {
-      expect(AppConstants.statusPending, 'pending');
-    });
-
-    test('statusApproved is "approved"', () {
-      expect(AppConstants.statusApproved, 'approved');
-    });
-
-    test('statusRejected is "rejected"', () {
-      expect(AppConstants.statusRejected, 'rejected');
-    });
-
-    test('all three status strings are unique', () {
-      final statuses = [
-        AppConstants.statusPending,
-        AppConstants.statusApproved,
-        AppConstants.statusRejected,
-      ];
-      expect(statuses.toSet().length, statuses.length);
-    });
-  });
-
   group('AppConstants – language codes', () {
     test('langEnglish is "en"', () {
       expect(AppConstants.langEnglish, 'en');

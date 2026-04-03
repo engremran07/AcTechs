@@ -66,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   Timer? refreshDebounce;
 
   void queueRefresh() {
-    if (refreshDebounce?.isActive ?? false) return;
+    refreshDebounce?.cancel();
     refreshDebounce = Timer(const Duration(milliseconds: 40), () {
       notifier.value++;
     });

@@ -883,7 +883,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                         (u) => Chip(
                           label: Text(
                             '${translateCategory(u.type, AppLocalizations.of(context)!)} × ${u.quantity}',
-                            style: const TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.labelSmall,
                           ),
                           backgroundColor: chipBg,
                           side: BorderSide(color: dividerColor),

@@ -77,11 +77,6 @@ class AppConstants {
     'Other Groceries',
   ];
 
-  // Job Status
-  static const String statusPending = 'pending';
-  static const String statusApproved = 'approved';
-  static const String statusRejected = 'rejected';
-
   // Roles
   static const String roleAdmin = 'admin';
   static const String roleTechnician = 'technician';

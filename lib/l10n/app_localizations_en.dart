@@ -1276,4 +1276,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectReportType => 'Select Report Type';
+
+  @override
+  String get jobsReportTitle => 'Jobs Report';
+
+  @override
+  String get earningsReportTitle => 'Earnings Report';
+
+  @override
+  String get expensesReportTitle => 'Expenses Report';
+
+  @override
+  String get todayEarned => 'Today\'s Earnings';
+
+  @override
+  String get monthEarned => 'Month\'s Earnings';
+
+  @override
+  String get todayWorkExpenses => 'Today\'s Work Expenses';
+
+  @override
+  String get todayHomeExpenses => 'Today\'s Home Expenses';
+
+  @override
+  String get todayTotalExpenses => 'Today\'s Total Expenses';
+
+  @override
+  String get monthWorkExpenses => 'Month\'s Work Expenses';
+
+  @override
+  String get monthHomeExpenses => 'Month\'s Home Expenses';
+
+  @override
+  String get monthTotalExpenses => 'Month\'s Total Expenses';
+
+  @override
+  String get workExpensesLabel => 'Work Expenses';
+
+  @override
+  String get homeExpensesLabel => 'Home Expenses';
+
+  @override
+  String get bracketLabel => 'Bracket';
+
+  @override
+  String get deliveryLabel => 'Delivery';
+
+  @override
+  String get acUnitsLabel => 'AC Units';
+
+  @override
+  String get unitQty => 'Qty';
+
+  @override
+  String get dateLabel => 'Date';
+
+  @override
+  String get invoiceLabel => 'Invoice';
+
+  @override
+  String get technicianLabel => 'Technician';
+
+  @override
+  String get contactLabel => 'Contact';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get notesLabel => 'Notes';
+
+  @override
+  String get amountLabel => 'Amount';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get itemLabel => 'Item';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get noEarnings => 'No earnings';
+
+  @override
+  String get noWorkExpenses => 'No work expenses';
+
+  @override
+  String get noHomeExpenses => 'No home expenses';
+
+  @override
+  String get generateReports => 'Generate Reports';
 }

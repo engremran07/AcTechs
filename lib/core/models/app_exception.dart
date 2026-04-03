@@ -292,3 +292,33 @@ class ExpenseException extends AppException {
     'تعذر حفظ التغييرات. حاول مرة أخرى.',
   );
 }
+
+class EarningException extends AppException {
+  const EarningException(
+    super.code,
+    super.messageEn,
+    super.messageUr,
+    super.messageAr,
+  );
+
+  factory EarningException.saveFailed() => const EarningException(
+    'earning_save_failed',
+    "Couldn't save your earning. Please check your connection and try again.",
+    'آپ کی آمدنی محفوظ نہیں ہو سکی۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+    'تعذر حفظ الإيراد. تحقق من اتصالك وحاول مرة أخرى.',
+  );
+
+  factory EarningException.deleteFailed() => const EarningException(
+    'earning_delete_failed',
+    "Couldn't delete the earning. Please try again.",
+    'آمدنی حذف نہیں ہو سکی۔ دوبارہ کوشش کریں۔',
+    'تعذر حذف الإيراد. حاول مرة أخرى.',
+  );
+
+  factory EarningException.updateFailed() => const EarningException(
+    'earning_update_failed',
+    "Couldn't save changes to the earning. Please try again.",
+    'آمدنی میں تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
+    'تعذر حفظ تغييرات الإيراد. حاول مرة أخرى.',
+  );
+}

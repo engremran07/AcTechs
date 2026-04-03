@@ -1,3 +1,5 @@
+import 'package:ac_techs/l10n/app_localizations.dart';
+
 /// Centralized date/time formatting that respects locale.
 class AppFormatters {
   AppFormatters._();
@@ -70,5 +72,125 @@ class AppFormatters {
   static String shortName(String name, [int max = 8]) {
     if (name.length <= max) return name;
     return '${name.substring(0, max)}..';
+  }
+
+  // ── Filename / export utilities ─────────────────────────────────────────────
+
+  /// Converts a string to a lowercase kebab-case slug safe for file names.
+  /// e.g. "Ahmed Shah" → "ahmed-shah", "INV-001/A" → "inv-001-a"
+  static String slugify(String input) {
+    final lower = input.toLowerCase().trim();
+    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return sanitized
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+  }
+
+  /// Returns a lowercase month-year token for file names, e.g. "january-2025".
+  static String monthToken(DateTime month) {
+    const monthNames = <String>[
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+    return '${monthNames[month.month - 1]}-${month.year}';
+  }
+
+  /// Returns just the lowercase month name token, e.g. "january".
+  static String monthNameToken(DateTime month) {
+    const monthNames = <String>[
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+    return monthNames[month.month - 1];
+  }
+
+  /// Returns a localized "Month YYYY" label using ARB-sourced month names.
+  /// Use this in widget contexts where [AppLocalizations] is available.
+  static String monthLabel(AppLocalizations l, DateTime month) {
+    final names = <String>[
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
+    ];
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  /// Returns a localized "Month YYYY" label using inline locale strings.
+  /// Use this in non-widget contexts (PDF, Excel, export filenames).
+  static String monthLabelForLocale(String locale, DateTime month) {
+    final names = switch (locale) {
+      'ur' => const <String>[
+        'جنوری',
+        'فروری',
+        'مارچ',
+        'اپریل',
+        'مئی',
+        'جون',
+        'جولائی',
+        'اگست',
+        'ستمبر',
+        'اکتوبر',
+        'نومبر',
+        'دسمبر',
+      ],
+      'ar' => const <String>[
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
+      ],
+      _ => const <String>[
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ],
+    };
+    return '${names[month.month - 1]} ${month.year}';
   }
 }

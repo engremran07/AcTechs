@@ -1274,4 +1274,97 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get selectReportType => 'اختر نوع التقرير';
+
+  @override
+  String get jobsReportTitle => 'تقرير الوظائف';
+
+  @override
+  String get earningsReportTitle => 'تقرير الأرباح';
+
+  @override
+  String get expensesReportTitle => 'تقرير النفقات';
+
+  @override
+  String get todayEarned => 'أرباح اليوم';
+
+  @override
+  String get monthEarned => 'أرباح الشهر';
+
+  @override
+  String get todayWorkExpenses => 'نفقات العمل اليوم';
+
+  @override
+  String get todayHomeExpenses => 'نفقات المنزل اليوم';
+
+  @override
+  String get todayTotalExpenses => 'إجمالي النفقات اليوم';
+
+  @override
+  String get monthWorkExpenses => 'نفقات العمل الشهرية';
+
+  @override
+  String get monthHomeExpenses => 'نفقات المنزل الشهرية';
+
+  @override
+  String get monthTotalExpenses => 'إجمالي النفقات الشهرية';
+
+  @override
+  String get workExpensesLabel => 'نفقات العمل';
+
+  @override
+  String get homeExpensesLabel => 'نفقات المنزل';
+
+  @override
+  String get bracketLabel => 'الحامل';
+
+  @override
+  String get deliveryLabel => 'التوصيل';
+
+  @override
+  String get acUnitsLabel => 'وحدات التكييف';
+
+  @override
+  String get unitQty => 'الكمية';
+
+  @override
+  String get dateLabel => 'التاريخ';
+
+  @override
+  String get invoiceLabel => 'الفاتورة';
+
+  @override
+  String get technicianLabel => 'الفني';
+
+  @override
+  String get contactLabel => 'الاتصال';
+
+  @override
+  String get statusLabel => 'الحالة';
+
+  @override
+  String get notesLabel => 'الملاحظات';
+
+  @override
+  String get amountLabel => 'المبلغ';
+
+  @override
+  String get categoryLabel => 'الفئة';
+
+  @override
+  String get itemLabel => 'البند';
+
+  @override
+  String get totalLabel => 'الإجمالي';
+
+  @override
+  String get noEarnings => 'لا توجد أرباح';
+
+  @override
+  String get noWorkExpenses => 'لا توجد نفقات عمل';
+
+  @override
+  String get noHomeExpenses => 'لا توجد نفقات منزل';
+
+  @override
+  String get generateReports => 'إنشاء التقارير';
 }

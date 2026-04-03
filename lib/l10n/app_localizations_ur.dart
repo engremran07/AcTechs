@@ -1277,4 +1277,97 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get selectReportType => 'رپورٹ کی قسم منتخب کریں';
+
+  @override
+  String get jobsReportTitle => 'ملازمتوں کی رپورٹ';
+
+  @override
+  String get earningsReportTitle => 'کمائی کی رپورٹ';
+
+  @override
+  String get expensesReportTitle => 'اخراجات کی رپورٹ';
+
+  @override
+  String get todayEarned => 'آج کی کمائی';
+
+  @override
+  String get monthEarned => 'ماہ کی کمائی';
+
+  @override
+  String get todayWorkExpenses => 'آج کے کام کے اخراجات';
+
+  @override
+  String get todayHomeExpenses => 'آج کے گھر کے اخراجات';
+
+  @override
+  String get todayTotalExpenses => 'آج کے کل اخراجات';
+
+  @override
+  String get monthWorkExpenses => 'ماہ کے کام کے اخراجات';
+
+  @override
+  String get monthHomeExpenses => 'ماہ کے گھر کے اخراجات';
+
+  @override
+  String get monthTotalExpenses => 'ماہ کے کل اخراجات';
+
+  @override
+  String get workExpensesLabel => 'کام کے اخراجات';
+
+  @override
+  String get homeExpensesLabel => 'گھر کے اخراجات';
+
+  @override
+  String get bracketLabel => 'بریکٹ';
+
+  @override
+  String get deliveryLabel => 'ڈیلیوری';
+
+  @override
+  String get acUnitsLabel => 'AC یونٹس';
+
+  @override
+  String get unitQty => 'تعداد';
+
+  @override
+  String get dateLabel => 'تاریخ';
+
+  @override
+  String get invoiceLabel => 'انوائس';
+
+  @override
+  String get technicianLabel => 'ٹیکنیشن';
+
+  @override
+  String get contactLabel => 'رابطہ';
+
+  @override
+  String get statusLabel => 'حالت';
+
+  @override
+  String get notesLabel => 'نوٹس';
+
+  @override
+  String get amountLabel => 'رقم';
+
+  @override
+  String get categoryLabel => 'زمرہ';
+
+  @override
+  String get itemLabel => 'سامان';
+
+  @override
+  String get totalLabel => 'کل';
+
+  @override
+  String get noEarnings => 'کوئی کمائی نہیں';
+
+  @override
+  String get noWorkExpenses => 'کوئی کام کے اخراجات نہیں';
+
+  @override
+  String get noHomeExpenses => 'کوئی گھر کے اخراجات نہیں';
+
+  @override
+  String get generateReports => 'رپورٹیں تیار کریں';
 }

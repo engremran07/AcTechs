@@ -2,6 +2,53 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
+/// Inline colour constants for [AcSplashPainter].
+/// Private to this file — animation-only colours not in AppColors.
+class _C {
+  _C._();
+
+  // — Technician vest (safety-orange gradient) —
+  static const vestAmber  = Color(0xFFFF9800);
+  static const vestOrange = Color(0xFFF57C00);
+  static const vestBurnt  = Color(0xFFE65100);
+
+  // — Reflective stripe glow —
+  static const stripeEdge = Color(0x00FFE082);
+  static const stripeGlow = Color(0xCCFFE082);
+
+  // — Skin tone —
+  static const skin       = Color(0xFFDEB887);
+
+  // — Safety helmet (red gradient) —
+  static const helmetRed  = Color(0xFFEF5350);
+  static const helmetMid  = Color(0xFFD32F2F);
+  static const helmetDark = Color(0xFF8B0000);
+
+  // — Trousers & boots —
+  static const trouserBlue  = Color(0xFF1A237E);
+  static const trouserNavy  = Color(0xFF1A2744);
+  static const darkBrown    = Color(0xFF3E2723);
+
+  // — Tool belt & pouches —
+  static const beltBrown  = Color(0xFF5D4037);
+  static const pouchBrown = Color(0xFF4E342E);
+
+  // — Metal / tools —
+  static const silver     = Color(0xFFBDBDBD);
+  static const metalMid   = Color(0xFF757575);
+  static const metalDark  = Color(0xFF616161);
+  static const metalDeep  = Color(0xFF424242);
+
+  // — Sparks & arcs —
+  static const sparkYellow = Color(0xFFFFFF00);
+  static const sparkHot    = Color(0xFFFF6D00);
+  static const sparkGlow   = Color(0xFFFFAB00);
+
+  // — LED diagnostics —
+  static const ledOrange = Color(0xFFFF5722);
+  static const ledGreen  = Color(0xFF4CAF50);
+}
+
 /// Peak-level custom-painted splash animation for AC Techs.
 ///
 /// 6 phases over normalised [progress] 0→1 (mapped to ~5 seconds of scene
@@ -616,9 +663,9 @@ class AcSplashPainter extends CustomPainter {
         Offset(-w / 2, -h * 0.45),
         Offset(w / 2, -h * 0.15),
         [
-          const Color(0xFFFF9800),
-          const Color(0xFFF57C00),
-          const Color(0xFFE65100),
+          _C.vestAmber,
+          _C.vestOrange,
+          _C.vestBurnt,
         ],
         [0.0, 0.5, 1.0],
       );
@@ -643,9 +690,9 @@ class AcSplashPainter extends CustomPainter {
             Offset(-w * 0.4, sy),
             Offset(w * 0.4, sy),
             [
-              const Color(0x00FFE082),
-              const Color(0xCCFFE082),
-              const Color(0x00FFE082),
+              _C.stripeEdge,
+              _C.stripeGlow,
+              _C.stripeEdge,
             ],
             [0.0, 0.5, 1.0],
           ),
@@ -655,14 +702,14 @@ class AcSplashPainter extends CustomPainter {
     // ── tool belt ────────────────────────────────────────────
     canvas.drawRect(
       Rect.fromCenter(center: Offset(0, -h * 0.17), width: w * 1.05, height: 4),
-      Paint()..color = const Color(0xFF5D4037),
+      Paint()..color = _C.beltBrown,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(0, -h * 0.17), width: 6, height: 5),
         const Radius.circular(1),
       ),
-      Paint()..color = const Color(0xFFBDBDBD),
+      Paint()..color = _C.silver,
     );
     for (final px in [-w * 0.35, w * 0.35]) {
       canvas.drawRRect(
@@ -674,7 +721,7 @@ class AcSplashPainter extends CustomPainter {
           ),
           const Radius.circular(2),
         ),
-        Paint()..color = const Color(0xFF4E342E),
+        Paint()..color = _C.pouchBrown,
       );
     }
 
@@ -693,7 +740,7 @@ class AcSplashPainter extends CustomPainter {
         width: w * 0.22,
         height: h * 0.06,
       ),
-      Paint()..color = const Color(0xFFDEB887),
+      Paint()..color = _C.skin,
     );
 
     // ── head ─────────────────────────────────────────────────
@@ -703,7 +750,7 @@ class AcSplashPainter extends CustomPainter {
     canvas.drawCircle(
       Offset(0, headY),
       headR,
-      Paint()..color = const Color(0xFFDEB887),
+      Paint()..color = _C.skin,
     );
 
     // ── safety helmet (with shine) ───────────────────────────
@@ -721,9 +768,9 @@ class AcSplashPainter extends CustomPainter {
           Offset(headR * 0.3, headY - headR * 0.3),
           headR * 1.8,
           [
-            const Color(0xFFEF5350),
-            const Color(0xFFD32F2F),
-            const Color(0xFF8B0000),
+            _C.helmetRed,
+            _C.helmetMid,
+            _C.helmetDark,
           ],
           [0.0, 0.5, 1.0],
         ),
@@ -755,14 +802,14 @@ class AcSplashPainter extends CustomPainter {
         ),
         const Radius.circular(2),
       ),
-      Paint()..color = const Color(0xFF8B0000),
+      Paint()..color = _C.helmetDark,
     );
 
     // Eye dot
     canvas.drawCircle(
       Offset(headR * 0.25, headY + headR * 0.1),
       1.5,
-      Paint()..color = const Color(0xFF3E2723),
+      Paint()..color = _C.darkBrown,
     );
 
     canvas.restore();
@@ -795,9 +842,9 @@ class AcSplashPainter extends CustomPainter {
           Offset(-w * 0.15, 0),
           Offset(w * 0.15, 0),
           [
-            const Color(0xFF1A237E).withValues(alpha: 0.8),
-            const Color(0xFF1A2744),
-            const Color(0xFF1A237E).withValues(alpha: 0.8),
+            _C.trouserBlue.withValues(alpha: 0.8),
+            _C.trouserNavy,
+            _C.trouserBlue.withValues(alpha: 0.8),
           ],
           [0.0, 0.5, 1.0],
         ),
@@ -813,7 +860,7 @@ class AcSplashPainter extends CustomPainter {
         ),
         const Radius.circular(3),
       ),
-      Paint()..color = const Color(0xFF1A2744),
+      Paint()..color = _C.trouserNavy,
     );
 
     // Boot
@@ -826,7 +873,7 @@ class AcSplashPainter extends CustomPainter {
         ),
         const Radius.circular(2),
       ),
-      Paint()..color = const Color(0xFF3E2723),
+      Paint()..color = _C.darkBrown,
     );
 
     canvas.restore();
@@ -855,7 +902,7 @@ class AcSplashPainter extends CustomPainter {
         ),
         const Radius.circular(3),
       ),
-      Paint()..color = const Color(0xFFF57C00),
+      Paint()..color = _C.vestOrange,
     );
 
     // Forearm
@@ -868,14 +915,14 @@ class AcSplashPainter extends CustomPainter {
         ),
         const Radius.circular(3),
       ),
-      Paint()..color = const Color(0xFFDEB887),
+      Paint()..color = _C.skin,
     );
 
     // Hand
     canvas.drawCircle(
       Offset(0, h * 0.19),
       w * 0.10,
-      Paint()..color = const Color(0xFFDEB887),
+      Paint()..color = _C.skin,
     );
 
     if (holdingTool) {
@@ -894,9 +941,9 @@ class AcSplashPainter extends CustomPainter {
             Offset(-2, h * 0.20),
             Offset(4, h * 0.20),
             [
-              const Color(0xFF757575),
-              const Color(0xFFBDBDBD),
-              const Color(0xFF757575),
+              _C.metalMid,
+              _C.silver,
+              _C.metalMid,
             ],
             [0.0, 0.5, 1.0],
           ),
@@ -905,12 +952,12 @@ class AcSplashPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(1, h * 0.33),
         5,
-        Paint()..color = const Color(0xFF616161),
+        Paint()..color = _C.metalDark,
       );
       canvas.drawCircle(
         Offset(1, h * 0.33),
         2.5,
-        Paint()..color = const Color(0xFF424242),
+        Paint()..color = _C.metalDeep,
       );
     }
 
@@ -964,8 +1011,8 @@ class AcSplashPainter extends CustomPainter {
       final r = (3.0 - sp * 2.5).clamp(0.5, 3.5);
 
       final sparkColor = Color.lerp(
-        const Color(0xFFFFFF00),
-        const Color(0xFFFF6D00),
+        _C.sparkYellow,
+        _C.sparkHot,
         sp,
       )!.withValues(alpha: alpha);
 
@@ -993,7 +1040,7 @@ class AcSplashPainter extends CustomPainter {
         Offset(x, y),
         r * 4,
         Paint()
-          ..color = const Color(0xFFFFAB00).withValues(alpha: alpha * 0.12)
+          ..color = _C.sparkGlow.withValues(alpha: alpha * 0.12)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
       );
     }
@@ -1069,17 +1116,17 @@ class AcSplashPainter extends CustomPainter {
 
     if (p < 0.3) {
       ledAlpha = (math.sin(p * 40) * 0.5 + 0.5).clamp(0.0, 1.0);
-      ledColor = const Color(0xFFFF9800);
+      ledColor = _C.vestAmber;
     } else if (p < 0.7) {
       ledAlpha = (math.sin(p * 30) * 0.5 + 0.5).clamp(0.0, 1.0);
       ledColor = Color.lerp(
-        const Color(0xFFFF5722),
-        const Color(0xFF4CAF50),
+        _C.ledOrange,
+        _C.ledGreen,
         _c((p - 0.3) / 0.4),
       )!;
     } else {
       ledAlpha = 1.0;
-      ledColor = const Color(0xFF4CAF50);
+      ledColor = _C.ledGreen;
     }
 
     canvas.drawCircle(

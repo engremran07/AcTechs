@@ -374,98 +374,6 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     });
   }
 
-  String _monthLabel(AppLocalizations l, DateTime month) {
-    final names = <String>[
-      l.january,
-      l.february,
-      l.march,
-      l.april,
-      l.may,
-      l.june,
-      l.july,
-      l.august,
-      l.september,
-      l.october,
-      l.november,
-      l.december,
-    ];
-    return '${names[month.month - 1]} ${month.year}';
-  }
-
-  String _monthLabelForLocale(String locale, DateTime month) {
-    final names = switch (locale) {
-      'ur' => const <String>[
-        'جنوری',
-        'فروری',
-        'مارچ',
-        'اپریل',
-        'مئی',
-        'جون',
-        'جولائی',
-        'اگست',
-        'ستمبر',
-        'اکتوبر',
-        'نومبر',
-        'دسمبر',
-      ],
-      'ar' => const <String>[
-        'يناير',
-        'فبراير',
-        'مارس',
-        'أبريل',
-        'مايو',
-        'يونيو',
-        'يوليو',
-        'أغسطس',
-        'سبتمبر',
-        'أكتوبر',
-        'نوفمبر',
-        'ديسمبر',
-      ],
-      _ => const <String>[
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ],
-    };
-    return '${names[month.month - 1]} ${month.year}';
-  }
-
-  String _slugify(String input) {
-    final lower = input.toLowerCase().trim();
-    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-    return sanitized
-        .replaceAll(RegExp(r'-{2,}'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
-  }
-
-  String _monthToken(DateTime month) {
-    const monthNames = <String>[
-      'january',
-      'february',
-      'march',
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-    ];
-    return monthNames[month.month - 1];
-  }
-
   ({DateTime first, DateTime last})? _reportDateBounds({
     required List<EarningModel> earnings,
     required List<ExpenseModel> expenses,
@@ -567,7 +475,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                         .map(
                           (m) => DropdownMenuItem<DateTime>(
                             value: m,
-                            child: Text(_monthLabel(l, m)),
+                            child: Text(AppFormatters.monthLabel(l, m)),
                           ),
                         )
                         .toList(),
@@ -710,7 +618,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       };
       final periodLabel = normalizedRange != null
           ? '${AppFormatters.date(normalizedRange.start)} - ${AppFormatters.date(normalizedRange.end)}'
-          : _monthLabelForLocale(reportLocale, normalizedMonth);
+          : AppFormatters.monthLabelForLocale(reportLocale, normalizedMonth);
       final reportTitle = switch (reportLocale) {
         'ur' => '$personName کی رپورٹ ($languageLabel)',
         'ar' => 'تقرير $personName ($languageLabel)',
@@ -728,12 +636,12 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         monthlyMode: true,
       );
 
-      final personToken = _slugify(personName).isEmpty
+      final personToken = AppFormatters.slugify(personName).isEmpty
           ? 'technician'
-          : _slugify(personName);
+          : AppFormatters.slugify(personName);
       final fileSuffix = normalizedRange != null
           ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
-          : '${_monthToken(normalizedMonth)}-${normalizedMonth.year}';
+          : '${AppFormatters.monthNameToken(normalizedMonth)}-${normalizedMonth.year}';
       await PdfGenerator.sharePdfBytes(
         bytes,
         '$personToken-$reportLocale-$fileSuffix-in-out.pdf',
@@ -1423,7 +1331,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             icon: const Icon(Icons.add_rounded, size: 18),
             label: Text(
               _isIn ? l.addMoreEarning : l.addMoreExpense,
-              style: const TextStyle(fontSize: 13),
+              style: Theme.of(context).textTheme.labelMedium,
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: ArcticTheme.arcticBlue,
@@ -1790,12 +1698,10 @@ class _DirectionButton extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   label,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isSelected ? color : ArcticTheme.arcticTextSecondary,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                    fontSize: 13,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ],

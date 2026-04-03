@@ -225,22 +225,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   }
 
   String _monthLabel() {
-    final l = AppLocalizations.of(context)!;
-    final months = [
-      l.january,
-      l.february,
-      l.march,
-      l.april,
-      l.may,
-      l.june,
-      l.july,
-      l.august,
-      l.september,
-      l.october,
-      l.november,
-      l.december,
-    ];
-    return '${months[_selectedMonth.month - 1]} ${_selectedMonth.year}';
+    return AppFormatters.monthLabel(AppLocalizations.of(context)!, _selectedMonth);
   }
 
   DateTimeRange _activeExportRange() =>

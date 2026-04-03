@@ -19,6 +19,9 @@ _EarningModel _$EarningModelFromJson(Map<String, dynamic> json) =>
           EarningApprovalStatus.pending,
       approvedBy: json['approvedBy'] as String? ?? '',
       adminNote: json['adminNote'] as String? ?? '',
+      paymentType:
+          $enumDecodeNullable(_$PaymentTypeEnumMap, json['paymentType']) ??
+          PaymentType.regular,
       date: _timestampFromJson(json['date']),
       createdAt: _timestampFromJson(json['createdAt']),
       reviewedAt: _timestampFromJson(json['reviewedAt']),
@@ -35,6 +38,7 @@ Map<String, dynamic> _$EarningModelToJson(_EarningModel instance) =>
       'status': _$EarningApprovalStatusEnumMap[instance.status]!,
       'approvedBy': instance.approvedBy,
       'adminNote': instance.adminNote,
+      'paymentType': _$PaymentTypeEnumMap[instance.paymentType]!,
       'date': _timestampToJson(instance.date),
       'createdAt': _timestampToJson(instance.createdAt),
       'reviewedAt': _timestampToJson(instance.reviewedAt),
@@ -44,4 +48,10 @@ const _$EarningApprovalStatusEnumMap = {
   EarningApprovalStatus.pending: 'pending',
   EarningApprovalStatus.approved: 'approved',
   EarningApprovalStatus.rejected: 'rejected',
+};
+
+const _$PaymentTypeEnumMap = {
+  PaymentType.advance: 'advance',
+  PaymentType.settlement: 'settlement',
+  PaymentType.regular: 'regular',
 };

@@ -8,6 +8,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
+// Load keystore credentials from key.properties (never commit that file).
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val hasKeystore = keystorePropertiesFile.exists().also { exists ->
+    if (exists) keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.actechs.pk"
     compileSdk = 36
@@ -31,9 +41,25 @@ android {
         multiDexEnabled = true
     }
 
+    signingConfigs {
+        if (hasKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // Use production keystore when key.properties is present,
+            // otherwise fall back to debug signing for local development.
+            signingConfig = if (hasKeystore)
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
             // R8 full mode for smaller APK
             isMinifyEnabled = true
             isShrinkResources = true

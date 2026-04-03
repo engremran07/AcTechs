@@ -123,50 +123,6 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     return '${AppFormatters.date(range.start)} - ${AppFormatters.date(range.end)}';
   }
 
-  String _slugify(String input) {
-    final lower = input.toLowerCase().trim();
-    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-    return sanitized
-        .replaceAll(RegExp(r'-{2,}'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
-  }
-
-  String _monthToken(DateTime month) {
-    const monthNames = <String>[
-      'january',
-      'february',
-      'march',
-      'april',
-      'may',
-      'june',
-      'july',
-      'august',
-      'september',
-      'october',
-      'november',
-      'december',
-    ];
-    return '${monthNames[month.month - 1]}-${month.year}';
-  }
-
-  String _monthLabel(AppLocalizations l, DateTime month) {
-    final names = <String>[
-      l.january,
-      l.february,
-      l.march,
-      l.april,
-      l.may,
-      l.june,
-      l.july,
-      l.august,
-      l.september,
-      l.october,
-      l.november,
-      l.december,
-    ];
-    return '${names[month.month - 1]} ${month.year}';
-  }
-
   List<DateTime> _jobsReportMonths(List<JobModel> jobs) {
     final months = <DateTime>{};
     final now = DateTime.now();
@@ -341,7 +297,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                           .map(
                             (m) => DropdownMenuItem<DateTime>(
                               value: m,
-                              child: Text(_monthLabel(l, m)),
+                              child: Text(AppFormatters.monthLabel(l, m)),
                             ),
                           )
                           .toList(),
@@ -501,17 +457,17 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         maxPages: 2000,
       );
 
-      final personToken = _slugify(personName).isEmpty
+      final personToken = AppFormatters.slugify(personName).isEmpty
           ? 'technician'
-          : _slugify(personName);
+          : AppFormatters.slugify(personName);
       final companyToken = options.companyKey == '__all__'
           ? 'all'
-          : (_slugify(options.companyName).isEmpty
+          : (AppFormatters.slugify(options.companyName).isEmpty
                 ? 'company'
-                : _slugify(options.companyName));
+                : AppFormatters.slugify(options.companyName));
       final periodToken = options.dateRange != null
           ? '${options.dateRange!.start.year}-${options.dateRange!.start.month.toString().padLeft(2, '0')}-${options.dateRange!.start.day.toString().padLeft(2, '0')}-to-${options.dateRange!.end.year}-${options.dateRange!.end.month.toString().padLeft(2, '0')}-${options.dateRange!.end.day.toString().padLeft(2, '0')}'
-          : _monthToken(options.month);
+          : AppFormatters.monthToken(options.month);
 
       await PdfGenerator.sharePdfBytes(
         bytes,
@@ -804,9 +760,9 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                         toDate: job.date,
                                       );
                                   final invoiceToken =
-                                      _slugify(job.invoiceNumber).isEmpty
+                                      AppFormatters.slugify(job.invoiceNumber).isEmpty
                                       ? 'invoice'
-                                      : _slugify(job.invoiceNumber);
+                                      : AppFormatters.slugify(job.invoiceNumber);
                                   await PdfGenerator.sharePdfBytes(
                                     bytes,
                                     '$invoiceToken-$locale-job.pdf',

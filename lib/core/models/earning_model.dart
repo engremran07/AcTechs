@@ -14,6 +14,15 @@ enum EarningApprovalStatus {
   rejected,
 }
 
+enum PaymentType {
+  @JsonValue('advance')
+  advance,
+  @JsonValue('settlement')
+  settlement,
+  @JsonValue('regular')
+  regular,
+}
+
 /// A single earning entry (sold old AC, sold scrap, etc.).
 @freezed
 abstract class EarningModel with _$EarningModel {
@@ -27,6 +36,7 @@ abstract class EarningModel with _$EarningModel {
     @Default(EarningApprovalStatus.pending) EarningApprovalStatus status,
     @Default('') String approvedBy,
     @Default('') String adminNote,
+    @Default(PaymentType.regular) PaymentType paymentType,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? date,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
