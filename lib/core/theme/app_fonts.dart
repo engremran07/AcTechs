@@ -143,9 +143,14 @@ class AppFonts {
   }
 
   /// Font family for PDF generation (picks bundled .ttf path).
+  /// NotoNaskhArabic is used for both Urdu and Arabic in PDFs because
+  /// NotoNastaliqUrdu relies on complex OpenType GSUB/GPOS features for
+  /// Nastaliq shaping that the pdf package's TrueType renderer does not
+  /// support, causing boxes. Naskh has full Arabic Presentation Form glyphs
+  /// that work correctly with arabic_reshaper.
   static String? pdfFontAsset(String locale) {
     return switch (locale) {
-      'ur' => 'assets/fonts/NotoNastaliqUrdu.ttf',
+      'ur' => 'assets/fonts/NotoNaskhArabic.ttf',
       'ar' => 'assets/fonts/NotoNaskhArabic.ttf',
       _ => null, // Use pdf package's built-in latin fonts
     };

@@ -56,7 +56,12 @@ if (-not (Test-Path $hooksDir)) {
 }
 
 Set-Content -Path $hookFileW -Value $ps1Content -Encoding UTF8
-Set-Content -Path $hookFile  -Value $shContent  -Encoding UTF8
+# Write the shell hook with Unix LF endings so git can spawn it on Windows
+[System.IO.File]::WriteAllText(
+    $hookFile,
+    $shContent.Replace("`r`n", "`n"),
+    [System.Text.Encoding]::UTF8
+)
 
 # Make the shell hook executable (needed on Linux/macOS; no-op on Windows)
 if ($env:OS -ne 'Windows_NT') {

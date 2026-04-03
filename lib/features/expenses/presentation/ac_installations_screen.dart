@@ -40,9 +40,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: _buildAcInstallSection(theme, installsAsync),
-      ),
+      body: SafeArea(child: _buildAcInstallSection(theme, installsAsync)),
     );
   }
 
@@ -215,9 +213,9 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Row(

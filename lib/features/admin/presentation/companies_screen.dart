@@ -49,9 +49,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       if (result == null) return;
                       final bytes = result.files.first.bytes;
                       if (bytes == null) return;
-                      setDialogState(
-                        () => pendingLogo = base64Encode(bytes),
-                      );
+                      setDialogState(() => pendingLogo = base64Encode(bytes));
                     },
                     child: Container(
                       width: double.infinity,
@@ -93,9 +91,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                                   top: 4,
                                   right: 4,
                                   child: GestureDetector(
-                                    onTap: () => setDialogState(
-                                      () => pendingLogo = '',
-                                    ),
+                                    onTap: () =>
+                                        setDialogState(() => pendingLogo = ''),
                                     child: Container(
                                       padding: const EdgeInsets.all(2),
                                       decoration: const BoxDecoration(
@@ -123,8 +120,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       hintText: l.companyName,
                       prefixIcon: const Icon(Icons.apartment_rounded),
                     ),
-                    validator: (value) =>
-                        value == null || value.trim().isEmpty ? l.required : null,
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? l.required
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -135,8 +133,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       hintText: l.invoicePrefix,
                       prefixIcon: const Icon(Icons.tag_rounded),
                     ),
-                    validator: (value) =>
-                        value == null || value.trim().isEmpty ? l.required : null,
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? l.required
+                        : null,
                   ),
                 ],
               ),

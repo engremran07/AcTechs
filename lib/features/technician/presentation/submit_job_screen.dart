@@ -395,6 +395,82 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             ),
                             const SizedBox(height: 8),
                           ],
+                          // ── My Share (shown inside shared install) ──
+                          if (_isSharedInstall) ...[
+                            const Divider(
+                              height: 16,
+                              color: ArcticTheme.arcticBlue,
+                              thickness: 0.4,
+                            ),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l.myShare,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: ArcticTheme.arcticBlue,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.splits,
+                                    value: _techSplitShare,
+                                    onChanged: (v) => setState(
+                                      () => _techSplitShare = v.clamp(
+                                        0,
+                                        int.tryParse(
+                                              _sharedSplitUnitsController.text,
+                                            ) ??
+                                            999,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.windowAc,
+                                    value: _techWindowShare,
+                                    onChanged: (v) => setState(
+                                      () => _techWindowShare = v.clamp(
+                                        0,
+                                        int.tryParse(
+                                              _sharedWindowUnitsController.text,
+                                            ) ??
+                                            999,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.standing,
+                                    value: _techFreestandingShare,
+                                    onChanged: (v) => setState(
+                                      () => _techFreestandingShare = v.clamp(
+                                        0,
+                                        int.tryParse(
+                                              _sharedFreestandingUnitsController
+                                                  .text,
+                                            ) ??
+                                            999,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           Row(
                             children: [
                               Expanded(
@@ -491,52 +567,6 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       ),
                     ).animate().fadeIn(delay: 80.ms),
 
-                    // ── My Installation Share ──
-                    if (_splitQty + _windowQty + _dolabQty > 0) ...[
-                      const SizedBox(height: 20),
-                      _SectionHeader(
-                        icon: Icons.person_pin_circle_rounded,
-                        title: l.myShare,
-                      ),
-                      const SizedBox(height: 8),
-                      ArcticCard(
-                        child: Column(
-                          children: [
-                            if (_splitQty > 0)
-                              _QtyTile(
-                                label: l.splits,
-                                value: _techSplitShare,
-                                onChanged: (v) => setState(
-                                  () => _techSplitShare = v.clamp(0, _splitQty),
-                                ),
-                              ),
-                            if (_splitQty > 0 &&
-                                (_windowQty > 0 || _dolabQty > 0))
-                              const SizedBox(height: 8),
-                            if (_windowQty > 0)
-                              _QtyTile(
-                                label: l.windowAc,
-                                value: _techWindowShare,
-                                onChanged: (v) => setState(
-                                  () =>
-                                      _techWindowShare = v.clamp(0, _windowQty),
-                                ),
-                              ),
-                            if (_windowQty > 0 && _dolabQty > 0)
-                              const SizedBox(height: 8),
-                            if (_dolabQty > 0)
-                              _QtyTile(
-                                label: l.standing,
-                                value: _techFreestandingShare,
-                                onChanged: (v) => setState(
-                                  () => _techFreestandingShare =
-                                      v.clamp(0, _dolabQty),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ).animate().fadeIn(delay: 90.ms),
-                    ],
                     const SizedBox(height: 20),
 
                     // ── Date Picker ──

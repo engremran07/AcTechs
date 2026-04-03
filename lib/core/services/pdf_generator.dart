@@ -179,21 +179,15 @@ class PdfGenerator {
   }
 
   // ── Font cache ──────────────────────────────────────────────────────────────
-  static pw.Font? _cachedUrduFont;
-  static pw.Font? _cachedArabicFont;
+  // Shared between ur and ar since both now use NotoNaskhArabic for PDFs.
+  static pw.Font? _cachedRtlFont;
 
   static Future<pw.Font?> _getLocaleFont(String locale) async {
-    if (locale == 'ur') {
-      final asset = AppFonts.pdfFontAsset('ur');
+    if (locale == 'ur' || locale == 'ar') {
+      final asset = AppFonts.pdfFontAsset(locale);
       if (asset == null) return null;
-      _cachedUrduFont ??= pw.Font.ttf(await rootBundle.load(asset));
-      return _cachedUrduFont;
-    }
-    if (locale == 'ar') {
-      final asset = AppFonts.pdfFontAsset('ar');
-      if (asset == null) return null;
-      _cachedArabicFont ??= pw.Font.ttf(await rootBundle.load(asset));
-      return _cachedArabicFont;
+      _cachedRtlFont ??= pw.Font.ttf(await rootBundle.load(asset));
+      return _cachedRtlFont;
     }
     return null; // pdf package's built-in Latin font
   }
@@ -235,7 +229,12 @@ class PdfGenerator {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               logoImage != null
-                  ? pw.Image(logoImage, width: 40, height: 40, fit: pw.BoxFit.contain)
+                  ? pw.Image(
+                      logoImage,
+                      width: 40,
+                      height: 40,
+                      fit: pw.BoxFit.contain,
+                    )
                   : pw.Text(
                       brandName ?? 'AC TECHS',
                       style: pw.TextStyle(
@@ -572,19 +571,22 @@ class PdfGenerator {
           // Jobs table
           pw.TableHelper.fromTextArray(
             context: context,
-            headers: tableHeaders,
-            data: jobs.map((j) {
-              final statusText = statusMap[j.status.name] ?? j.status.name;
-              return [
-                _safeTableCellText(j.invoiceNumber, maxLength: 40),
-                _safeTableCellText(j.techName, maxLength: 35),
-                _safeTableCellText(j.clientName, maxLength: 40),
-                AppFormatters.date(j.date),
-                '${j.totalUnits}',
-                AppFormatters.currency(j.expenses),
-                statusText,
-              ];
-            }).toList(),
+            headers: _shapeRowForPdf(locale, tableHeaders),
+            data: _shapeTableForPdf(
+              locale,
+              jobs.map((j) {
+                final statusText = statusMap[j.status.name] ?? j.status.name;
+                return [
+                  _safeTableCellText(j.invoiceNumber, maxLength: 40),
+                  _safeTableCellText(j.techName, maxLength: 35),
+                  _safeTableCellText(j.clientName, maxLength: 40),
+                  AppFormatters.date(j.date),
+                  '${j.totalUnits}',
+                  AppFormatters.currency(j.expenses),
+                  _shapeRtlForPdf(locale, statusText),
+                ];
+              }).toList(),
+            ),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
             headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
@@ -759,17 +761,23 @@ class PdfGenerator {
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: earningsHeaders,
-              data: earnings
-                  .map(
-                    (e) => [
-                      e.category,
-                      AppFormatters.currency(e.amount),
-                      AppFormatters.date(e.date),
-                      e.note,
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(locale, earningsHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                earnings
+                    .map(
+                      (e) => [
+                        _shapeRtlForPdf(
+                          locale,
+                          _translateCategoryForPdf(locale, e.category),
+                        ),
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(color: _kGreen),
@@ -805,18 +813,24 @@ class PdfGenerator {
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: expensesHeaders,
-              data: expenses
-                  .map(
-                    (e) => [
-                      e.expenseType,
-                      e.category,
-                      AppFormatters.currency(e.amount),
-                      AppFormatters.date(e.date),
-                      e.note,
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(locale, expensesHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                expenses
+                    .map(
+                      (e) => [
+                        _shapeRtlForPdf(locale, e.expenseType),
+                        _shapeRtlForPdf(
+                          locale,
+                          _translateCategoryForPdf(locale, e.category),
+                        ),
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(color: _kRed),
@@ -1125,8 +1139,11 @@ class PdfGenerator {
           _sectionBanner(unitsLabel, font, sectionStyle, _kBrandBlue),
           pw.SizedBox(height: 6),
           pw.TableHelper.fromTextArray(
-            headers: [unitTypeLabel, qtyLabel],
-            data: job.acUnits.map((u) => [u.type, '${u.quantity}']).toList(),
+            headers: _shapeRowForPdf(locale, [unitTypeLabel, qtyLabel]),
+            data: _shapeTableForPdf(
+              locale,
+              job.acUnits.map((u) => [u.type, '${u.quantity}']).toList(),
+            ),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
             headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
@@ -1164,7 +1181,7 @@ class PdfGenerator {
             ),
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
-              headers: [
+              headers: _shapeRowForPdf(locale, [
                 locale == 'ur'
                     ? 'آئٹم'
                     : locale == 'ar'
@@ -1180,7 +1197,7 @@ class PdfGenerator {
                     : locale == 'ar'
                     ? 'المبلغ'
                     : 'Amount (SAR)',
-              ],
+              ]),
               data: [
                 [
                   bracketLabel,
@@ -1405,25 +1422,28 @@ class PdfGenerator {
           pw.SizedBox(height: 12),
           pw.TableHelper.fromTextArray(
             context: context,
-            headers: headers,
-            data: sortedCompanies.map((company) {
-              final companyJobs = companyMap[company] ?? const <JobModel>[];
-              final units = companyJobs.fold<int>(
-                0,
-                (s, j) => s + j.totalUnits,
-              );
-              final techs = companyJobs
-                  .map((j) => j.techName.trim())
-                  .where((n) => n.isNotEmpty)
-                  .toSet()
-                  .join(', ');
-              return [
-                _safeTableCellText(company, maxLength: 42),
-                '${companyJobs.length}',
-                '$units',
-                _safeTableCellText(techs, maxLength: 120),
-              ];
-            }).toList(),
+            headers: _shapeRowForPdf(locale, headers),
+            data: _shapeTableForPdf(
+              locale,
+              sortedCompanies.map((company) {
+                final companyJobs = companyMap[company] ?? const <JobModel>[];
+                final units = companyJobs.fold<int>(
+                  0,
+                  (s, j) => s + j.totalUnits,
+                );
+                final techs = companyJobs
+                    .map((j) => j.techName.trim())
+                    .where((n) => n.isNotEmpty)
+                    .toSet()
+                    .join(', ');
+                return [
+                  _safeTableCellText(company, maxLength: 42),
+                  '${companyJobs.length}',
+                  '$units',
+                  _safeTableCellText(techs, maxLength: 120),
+                ];
+              }).toList(),
+            ),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
             headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
@@ -1627,91 +1647,99 @@ class PdfGenerator {
           ],
           pw.TableHelper.fromTextArray(
             context: context,
-            headers: tableHeaders,
-            data: jobs.map((j) {
-              final splitQty = j.acUnits
-                  .where((u) => u.type == 'Split AC')
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final windowQty = j.acUnits
-                  .where((u) => u.type == 'Window AC')
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallQty = j.acUnits
-                  .where((u) => u.type == AppConstants.unitTypeUninstallOld)
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallSplitQty = j.acUnits
-                  .where((u) => u.type == AppConstants.unitTypeUninstallSplit)
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallWindowQty = j.acUnits
-                  .where((u) => u.type == AppConstants.unitTypeUninstallWindow)
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallStandingQty = j.acUnits
-                  .where(
-                    (u) => u.type == AppConstants.unitTypeUninstallFreestanding,
-                  )
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final dolabQty = j.acUnits
-                  .where((u) => u.type == 'Freestanding AC')
-                  .fold<int>(0, (s, u) => s + u.quantity);
-              final uninstallDetail = () {
-                final splitPart = uninstallSplitQty > 0
-                    ? 'S:$uninstallSplitQty'
+            headers: _shapeRowForPdf(locale, tableHeaders),
+            data: _shapeTableForPdf(
+              locale,
+              jobs.map((j) {
+                final splitQty = j.acUnits
+                    .where((u) => u.type == 'Split AC')
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final windowQty = j.acUnits
+                    .where((u) => u.type == 'Window AC')
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final uninstallQty = j.acUnits
+                    .where((u) => u.type == AppConstants.unitTypeUninstallOld)
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final uninstallSplitQty = j.acUnits
+                    .where((u) => u.type == AppConstants.unitTypeUninstallSplit)
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final uninstallWindowQty = j.acUnits
+                    .where(
+                      (u) => u.type == AppConstants.unitTypeUninstallWindow,
+                    )
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final uninstallStandingQty = j.acUnits
+                    .where(
+                      (u) =>
+                          u.type == AppConstants.unitTypeUninstallFreestanding,
+                    )
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final dolabQty = j.acUnits
+                    .where((u) => u.type == 'Freestanding AC')
+                    .fold<int>(0, (s, u) => s + u.quantity);
+                final uninstallDetail = () {
+                  final splitPart = uninstallSplitQty > 0
+                      ? 'S:$uninstallSplitQty'
+                      : '';
+                  final windowPart = uninstallWindowQty > 0
+                      ? 'W:$uninstallWindowQty'
+                      : '';
+                  final standingPart = uninstallStandingQty > 0
+                      ? 'F:$uninstallStandingQty'
+                      : '';
+                  final parts = [
+                    splitPart,
+                    windowPart,
+                    standingPart,
+                  ].where((p) => p.isNotEmpty).toList();
+                  if (parts.isNotEmpty) return parts.join('|');
+                  return '';
+                }();
+                final uninstallTotal =
+                    uninstallQty +
+                    uninstallSplitQty +
+                    uninstallWindowQty +
+                    uninstallStandingQty;
+                final bracketText = (j.charges?.bracketCount ?? 0) > 0
+                    ? '${j.charges!.bracketCount}'
                     : '';
-                final windowPart = uninstallWindowQty > 0
-                    ? 'W:$uninstallWindowQty'
+                final deliveryText =
+                    j.charges != null &&
+                        j.charges!.deliveryAmount > 0 &&
+                        !AppFormatters.isCustomerCashPaid(
+                          j.charges!.deliveryNote,
+                        )
+                    ? _plainAmount(j.charges!.deliveryAmount)
                     : '';
-                final standingPart = uninstallStandingQty > 0
-                    ? 'F:$uninstallStandingQty'
-                    : '';
-                final parts = [
-                  splitPart,
-                  windowPart,
-                  standingPart,
-                ].where((p) => p.isNotEmpty).toList();
-                if (parts.isNotEmpty) return parts.join('|');
-                return '';
-              }();
-              final uninstallTotal =
-                  uninstallQty +
-                  uninstallSplitQty +
-                  uninstallWindowQty +
-                  uninstallStandingQty;
-              final bracketText = (j.charges?.bracketCount ?? 0) > 0
-                  ? '${j.charges!.bracketCount}'
-                  : '';
-              final deliveryText =
-                  j.charges != null &&
-                      j.charges!.deliveryAmount > 0 &&
-                      !AppFormatters.isCustomerCashPaid(j.charges!.deliveryNote)
-                  ? _plainAmount(j.charges!.deliveryAmount)
-                  : '';
-              final baseDescription = j.expenseNote.isNotEmpty
-                  ? AppFormatters.safeText(j.expenseNote)
-                  : (j.charges != null
-                        ? AppFormatters.safeText(j.charges!.deliveryNote)
-                        : '');
-              final description = [baseDescription, uninstallDetail]
-                  .where((p) => p.isNotEmpty)
-                  .join(
-                    baseDescription.isNotEmpty && uninstallDetail.isNotEmpty
-                        ? ' | '
-                        : '',
-                  );
-              return [
-                AppFormatters.date(j.date),
-                _safeTableCellText(j.invoiceNumber, maxLength: 24),
-                j.clientContact.isEmpty
-                    ? ''
-                    : _safeTableCellText(j.clientContact, maxLength: 20),
-                splitQty > 0 ? '$splitQty' : '',
-                windowQty > 0 ? '$windowQty' : '',
-                uninstallTotal > 0 ? '$uninstallTotal' : '',
-                dolabQty > 0 ? '$dolabQty' : '',
-                bracketText,
-                deliveryText,
-                _safeTableCellText(j.techName, maxLength: 24),
-                _safeTableCellText(description, maxLength: 70),
-              ];
-            }).toList(),
+                final baseDescription = j.expenseNote.isNotEmpty
+                    ? AppFormatters.safeText(j.expenseNote)
+                    : (j.charges != null
+                          ? AppFormatters.safeText(j.charges!.deliveryNote)
+                          : '');
+                final description = [baseDescription, uninstallDetail]
+                    .where((p) => p.isNotEmpty)
+                    .join(
+                      baseDescription.isNotEmpty && uninstallDetail.isNotEmpty
+                          ? ' | '
+                          : '',
+                    );
+                return [
+                  AppFormatters.date(j.date),
+                  _safeTableCellText(j.invoiceNumber, maxLength: 24),
+                  j.clientContact.isEmpty
+                      ? ''
+                      : _safeTableCellText(j.clientContact, maxLength: 20),
+                  splitQty > 0 ? '$splitQty' : '',
+                  windowQty > 0 ? '$windowQty' : '',
+                  uninstallTotal > 0 ? '$uninstallTotal' : '',
+                  dolabQty > 0 ? '$dolabQty' : '',
+                  bracketText,
+                  deliveryText,
+                  _safeTableCellText(j.techName, maxLength: 24),
+                  _safeTableCellText(description, maxLength: 70),
+                ];
+              }).toList(),
+            ),
             headerStyle: headerCellStyle,
             cellStyle: cellStyle,
             headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
@@ -1880,20 +1908,26 @@ class PdfGenerator {
             pw.SizedBox(height: 4),
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: locale == 'ur'
-                  ? ['ٹیکنیشن', 'شیئرڈ جابز', 'شیئرڈ یونٹس']
-                  : locale == 'ar'
-                  ? ['الفني', 'الأعمال المشتركة', 'الوحدات المشتركة']
-                  : ['Technician', 'Shared Jobs', 'Shared Units'],
-              data: sharedByTechnician.entries
-                  .map(
-                    (entry) => [
-                      _safeTableCellText(entry.key, maxLength: 28),
-                      '${entry.value.jobs}',
-                      '${entry.value.units}',
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(
+                locale,
+                locale == 'ur'
+                    ? ['ٹیکنیشن', 'شیئرڈ جابز', 'شیئرڈ یونٹس']
+                    : locale == 'ar'
+                    ? ['الفني', 'الأعمال المشتركة', 'الوحدات المشتركة']
+                    : ['Technician', 'Shared Jobs', 'Shared Units'],
+              ),
+              data: _shapeTableForPdf(
+                locale,
+                sharedByTechnician.entries
+                    .map(
+                      (entry) => [
+                        _safeTableCellText(entry.key, maxLength: 28),
+                        '${entry.value.jobs}',
+                        '${entry.value.units}',
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
@@ -2397,17 +2431,20 @@ class PdfGenerator {
           if (earnings.isNotEmpty)
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: earningsHeaders,
-              data: earnings
-                  .map(
-                    (e) => [
-                      e.category,
-                      AppFormatters.currency(e.amount),
-                      AppFormatters.date(e.date),
-                      e.note,
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(locale, earningsHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                earnings
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(color: _kGreen),
@@ -2652,17 +2689,20 @@ class PdfGenerator {
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: workHeaders,
-              data: workExpenses
-                  .map(
-                    (e) => [
-                      e.category,
-                      AppFormatters.currency(e.amount),
-                      AppFormatters.date(e.date),
-                      e.note,
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(locale, workHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                workExpenses
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(color: _kRed),
@@ -2703,17 +2743,20 @@ class PdfGenerator {
             pw.SizedBox(height: 6),
             pw.TableHelper.fromTextArray(
               context: context,
-              headers: homeHeaders,
-              data: homeExpenses
-                  .map(
-                    (e) => [
-                      e.category,
-                      AppFormatters.currency(e.amount),
-                      AppFormatters.date(e.date),
-                      e.note,
-                    ],
-                  )
-                  .toList(),
+              headers: _shapeRowForPdf(locale, homeHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                homeExpenses
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
               headerStyle: headerCellStyle,
               cellStyle: cellStyle,
               headerDecoration: const pw.BoxDecoration(

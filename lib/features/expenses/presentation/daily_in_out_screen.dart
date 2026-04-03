@@ -1048,7 +1048,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   }
 
   // ── Summary: IN | OUT | Profit/Loss ──
-  Widget _buildSummaryCard(    ThemeData theme,
+  Widget _buildSummaryCard(
+    ThemeData theme,
     AsyncValue<List<EarningModel>> earningsAsync,
     AsyncValue<List<ExpenseModel>> expensesAsync,
   ) {
@@ -1699,8 +1700,9 @@ class _DirectionButton extends StatelessWidget {
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isSelected ? color : ArcticTheme.arcticTextSecondary,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               ],

@@ -28,7 +28,6 @@ import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
-import 'package:ac_techs/features/expenses/presentation/ac_installations_screen.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 final _routerKey = GlobalKey<NavigatorState>();
@@ -183,13 +182,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const DailyInOutScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/tech/installs',
-            pageBuilder: (context, state) => _slideFadePage(
-              pageKey: state.pageKey,
-              child: const AcInstallationsScreen(),
             ),
           ),
           GoRoute(
