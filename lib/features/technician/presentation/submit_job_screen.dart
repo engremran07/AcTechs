@@ -66,11 +66,14 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   List<AcUnit> _unitsFromQuickTemplate() {
     final units = <AcUnit>[];
-    if (_splitQty > 0) {
-      units.add(AcUnit(type: 'Split AC', quantity: _splitQty));
+    final splitQty = _isSharedInstall ? _techSplitShare : _splitQty;
+    final windowQty = _isSharedInstall ? _techWindowShare : _windowQty;
+    final dolabQty = _isSharedInstall ? _techFreestandingShare : _dolabQty;
+    if (splitQty > 0) {
+      units.add(AcUnit(type: 'Split AC', quantity: splitQty));
     }
-    if (_windowQty > 0) {
-      units.add(AcUnit(type: 'Window AC', quantity: _windowQty));
+    if (windowQty > 0) {
+      units.add(AcUnit(type: 'Window AC', quantity: windowQty));
     }
     if (_uninstallSplitQty > 0) {
       units.add(
@@ -96,8 +99,8 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         ),
       );
     }
-    if (_dolabQty > 0) {
-      units.add(AcUnit(type: 'Freestanding AC', quantity: _dolabQty));
+    if (dolabQty > 0) {
+      units.add(AcUnit(type: 'Freestanding AC', quantity: dolabQty));
     }
     return units;
   }
@@ -146,7 +149,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     final quickUnits = _unitsFromQuickTemplate();
 
     if (quickUnits.isEmpty) {
-      ErrorSnackbar.show(
+      AppFeedback.error(
         context,
         message: AppLocalizations.of(context)!.addServiceFirst,
       );
@@ -159,7 +162,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       final asyncUser = ref.read(currentUserProvider);
       if (!asyncUser.hasValue || asyncUser.value == null) {
         if (mounted) {
-          ErrorSnackbar.show(
+          AppFeedback.error(
             context,
             message: asyncUser.isLoading
                 ? AppLocalizations.of(context)!.userDataLoading
@@ -179,11 +182,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       final sharedTeamSize =
           int.tryParse(_sharedTeamSizeController.text.trim()) ?? 0;
       if (_isSharedInstall &&
-          ((_splitQty > 0 && _splitQty > sharedSplitUnits) ||
-              (_windowQty > 0 && _windowQty > sharedWindowUnits) ||
-              (_dolabQty > 0 && _dolabQty > sharedFreestandingUnits))) {
+          ((_techSplitShare > 0 && _techSplitShare > sharedSplitUnits) ||
+              (_techWindowShare > 0 &&
+                  _techWindowShare > sharedWindowUnits) ||
+              (_techFreestandingShare > 0 &&
+                  _techFreestandingShare > sharedFreestandingUnits))) {
         if (mounted) {
-          ErrorSnackbar.show(context, message: l.sharedInstallLimitError);
+          AppFeedback.error(context, message: l.sharedInstallLimitError);
         }
         return;
       }
@@ -192,7 +197,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           double.tryParse(_deliveryAmountController.text.trim()) ?? 0;
       if (_isSharedInstall && rawDeliveryAmount > 0 && sharedTeamSize <= 0) {
         if (mounted) {
-          ErrorSnackbar.show(context, message: l.sharedDeliverySplitInvalid);
+          AppFeedback.error(context, message: l.sharedDeliverySplitInvalid);
         }
         return;
       }
@@ -214,7 +219,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           ? '${(_selectedCompanyId ?? 'no-company')}-${normalizedInvoice.toLowerCase()}'
           : '';
 
-      final sharedContributionUnits = _splitQty + _windowQty + _dolabQty;
+      final sharedContributionUnits = _isSharedInstall
+          ? _techSplitShare + _techWindowShare + _techFreestandingShare
+          : _splitQty + _windowQty + _dolabQty;
       final sharedInvoiceTotalUnits =
           sharedSplitUnits + sharedWindowUnits + sharedFreestandingUnits;
 
@@ -257,7 +264,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       await ref.read(jobRepositoryProvider).submitJob(job);
 
       if (mounted) {
-        SuccessSnackbar.show(
+        AppFeedback.success(
           context,
           message: AppLocalizations.of(context)!.jobSubmitted,
         );
@@ -266,7 +273,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -471,49 +478,65 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             ),
                             const SizedBox(height: 8),
                           ],
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.splits,
-                                  value: _splitQty,
-                                  onChanged: (v) =>
-                                      setState(() => _splitQty = v),
+                          if (!_isSharedInstall) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.splits,
+                                    value: _splitQty,
+                                    onChanged: (v) =>
+                                        setState(() => _splitQty = v),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.windowAc,
-                                  value: _windowQty,
-                                  onChanged: (v) =>
-                                      setState(() => _windowQty = v),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.windowAc,
+                                    value: _windowQty,
+                                    onChanged: (v) =>
+                                        setState(() => _windowQty = v),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.standing,
-                                  value: _dolabQty,
-                                  onChanged: (v) =>
-                                      setState(() => _dolabQty = v),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.standing,
+                                    value: _dolabQty,
+                                    onChanged: (v) =>
+                                        setState(() => _dolabQty = v),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.acOutdoorBracket,
-                                  value: _bracketQty,
-                                  onChanged: (v) =>
-                                      setState(() => _bracketQty = v),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.acOutdoorBracket,
+                                    value: _bracketQty,
+                                    onChanged: (v) =>
+                                        setState(() => _bracketQty = v),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.acOutdoorBracket,
+                                    value: _bracketQty,
+                                    onChanged: (v) =>
+                                        setState(() => _bracketQty = v),
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           Row(
                             children: [
