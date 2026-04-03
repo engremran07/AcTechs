@@ -501,5 +501,31 @@
   "noEarnings": "No earnings",
   "noWorkExpenses": "No work expenses",
   "noHomeExpenses": "No home expenses",
-  "generateReports": "Generate Reports"
+  "generateReports": "Generate Reports",
+  "acInstallations": "AC Installations",
+  "logAcInstallations": "Log AC Installations",
+  "noInstallationsToday": "No installations logged today",
+  "totalOnInvoice": "Total on Invoice",
+  "myShare": "My Share",
+  "splitAcLabel": "Split AC",
+  "windowAcLabel": "Window AC",
+  "freestandingAcLabel": "Freestanding AC",
+  "installationsLogged": "Installations logged successfully.",
+  "deleteInstallRecord": "Delete installation record?",
+  "unitsLabel": "units",
+  "invoiceUnitsLabel": "Invoice: {total} units",
+  "@invoiceUnitsLabel": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "myShareUnitsLabel": "My share: {share} units",
+  "@myShareUnitsLabel": {
+    "placeholders": {
+      "share": { "type": "int" }
+    }
+  },
+  "shareMustNotExceedTotal": "My share cannot exceed total on invoice.",
+  "enterAtLeastOneUnit": "Enter at least one AC unit quantity.",
+  "acInstallNote": "Note (optional)"
 }

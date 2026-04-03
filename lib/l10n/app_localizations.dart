@@ -2685,6 +2685,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generate Reports'**
   String get generateReports;
+
+  /// No description provided for @acInstallations.
+  ///
+  /// In en, this message translates to:
+  /// **'AC Installations'**
+  String get acInstallations;
+
+  /// No description provided for @logAcInstallations.
+  ///
+  /// In en, this message translates to:
+  /// **'Log AC Installations'**
+  String get logAcInstallations;
+
+  /// No description provided for @noInstallationsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No installations logged today'**
+  String get noInstallationsToday;
+
+  /// No description provided for @totalOnInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Total on Invoice'**
+  String get totalOnInvoice;
+
+  /// No description provided for @myShare.
+  ///
+  /// In en, this message translates to:
+  /// **'My Share'**
+  String get myShare;
+
+  /// No description provided for @splitAcLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Split AC'**
+  String get splitAcLabel;
+
+  /// No description provided for @windowAcLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Window AC'**
+  String get windowAcLabel;
+
+  /// No description provided for @freestandingAcLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Freestanding AC'**
+  String get freestandingAcLabel;
+
+  /// No description provided for @installationsLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Installations logged successfully.'**
+  String get installationsLogged;
+
+  /// No description provided for @deleteInstallRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete installation record?'**
+  String get deleteInstallRecord;
+
+  /// No description provided for @unitsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'units'**
+  String get unitsLabel;
+
+  /// No description provided for @invoiceUnitsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice: {total} units'**
+  String invoiceUnitsLabel(int total);
+
+  /// No description provided for @myShareUnitsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'My share: {share} units'**
+  String myShareUnitsLabel(int share);
+
+  /// No description provided for @shareMustNotExceedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'My share cannot exceed total on invoice.'**
+  String get shareMustNotExceedTotal;
+
+  /// No description provided for @enterAtLeastOneUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least one AC unit quantity.'**
+  String get enterAtLeastOneUnit;
+
+  /// No description provided for @acInstallNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get acInstallNote;
 }
 
 class _AppLocalizationsDelegate

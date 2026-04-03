@@ -1367,4 +1367,57 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get generateReports => 'إنشاء التقارير';
+
+  @override
+  String get acInstallations => 'تركيبات التكييف';
+
+  @override
+  String get logAcInstallations => 'تسجيل تركيبات التكييف';
+
+  @override
+  String get noInstallationsToday => 'لا توجد تركيبات مسجلة اليوم';
+
+  @override
+  String get totalOnInvoice => 'إجمالي في الفاتورة';
+
+  @override
+  String get myShare => 'حصتي';
+
+  @override
+  String get splitAcLabel => 'مكيف سبليت';
+
+  @override
+  String get windowAcLabel => 'مكيف شباك';
+
+  @override
+  String get freestandingAcLabel => 'مكيف حر';
+
+  @override
+  String get installationsLogged => 'تم تسجيل التركيب بنجاح.';
+
+  @override
+  String get deleteInstallRecord => 'حذف سجل التركيب؟';
+
+  @override
+  String get unitsLabel => 'وحدات';
+
+  @override
+  String invoiceUnitsLabel(int total) {
+    return 'الفاتورة: $total وحدات';
+  }
+
+  @override
+  String myShareUnitsLabel(int share) {
+    return 'حصتي: $share وحدات';
+  }
+
+  @override
+  String get shareMustNotExceedTotal =>
+      'لا يمكن أن تتجاوز حصتي إجمالي الفاتورة.';
+
+  @override
+  String get enterAtLeastOneUnit => 'أدخل كمية وحدة مكيف واحدة على الأقل.';
+
+  @override
+  String get acInstallNote => 'ملاحظة (اختياري)';
 }

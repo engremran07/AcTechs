@@ -66,7 +66,9 @@ class _BaseSnackbar {
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(color: theme.colorScheme.onSurface),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ),
           ],

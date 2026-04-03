@@ -1369,4 +1369,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get generateReports => 'Generate Reports';
+
+  @override
+  String get acInstallations => 'AC Installations';
+
+  @override
+  String get logAcInstallations => 'Log AC Installations';
+
+  @override
+  String get noInstallationsToday => 'No installations logged today';
+
+  @override
+  String get totalOnInvoice => 'Total on Invoice';
+
+  @override
+  String get myShare => 'My Share';
+
+  @override
+  String get splitAcLabel => 'Split AC';
+
+  @override
+  String get windowAcLabel => 'Window AC';
+
+  @override
+  String get freestandingAcLabel => 'Freestanding AC';
+
+  @override
+  String get installationsLogged => 'Installations logged successfully.';
+
+  @override
+  String get deleteInstallRecord => 'Delete installation record?';
+
+  @override
+  String get unitsLabel => 'units';
+
+  @override
+  String invoiceUnitsLabel(int total) {
+    return 'Invoice: $total units';
+  }
+
+  @override
+  String myShareUnitsLabel(int share) {
+    return 'My share: $share units';
+  }
+
+  @override
+  String get shareMustNotExceedTotal =>
+      'My share cannot exceed total on invoice.';
+
+  @override
+  String get enterAtLeastOneUnit => 'Enter at least one AC unit quantity.';
+
+  @override
+  String get acInstallNote => 'Note (optional)';
 }

@@ -1370,4 +1370,58 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get generateReports => 'رپورٹیں تیار کریں';
+
+  @override
+  String get acInstallations => 'اے سی تنصیب';
+
+  @override
+  String get logAcInstallations => 'اے سی تنصیب درج کریں';
+
+  @override
+  String get noInstallationsToday => 'آج کوئی تنصیب درج نہیں';
+
+  @override
+  String get totalOnInvoice => 'انوائس پر کل';
+
+  @override
+  String get myShare => 'میرا حصہ';
+
+  @override
+  String get splitAcLabel => 'اسپلٹ اے سی';
+
+  @override
+  String get windowAcLabel => 'ونڈو اے سی';
+
+  @override
+  String get freestandingAcLabel => 'فری اسٹینڈنگ اے سی';
+
+  @override
+  String get installationsLogged => 'تنصیب کامیابی سے درج ہو گئی۔';
+
+  @override
+  String get deleteInstallRecord => 'تنصیب ریکارڈ حذف کریں؟';
+
+  @override
+  String get unitsLabel => 'یونٹ';
+
+  @override
+  String invoiceUnitsLabel(int total) {
+    return 'انوائس: $total یونٹ';
+  }
+
+  @override
+  String myShareUnitsLabel(int share) {
+    return 'میرا حصہ: $share یونٹ';
+  }
+
+  @override
+  String get shareMustNotExceedTotal =>
+      'میرا حصہ انوائس کے کل سے زیادہ نہیں ہو سکتا۔';
+
+  @override
+  String get enterAtLeastOneUnit =>
+      'کم از کم ایک اے سی یونٹ کی تعداد درج کریں۔';
+
+  @override
+  String get acInstallNote => 'نوٹ (اختیاری)';
 }

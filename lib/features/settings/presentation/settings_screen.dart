@@ -904,7 +904,12 @@ class _LanguageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Text(flag, style: const TextStyle(fontSize: 24)),
+      leading: Text(
+        flag,
+        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          fontSize: 24,
+        ),
+      ),
       title: Text(label, style: Theme.of(context).textTheme.titleSmall),
       trailing: selected
           ? Icon(

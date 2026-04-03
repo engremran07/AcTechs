@@ -502,5 +502,31 @@
     "noWorkExpenses": "کوئی کام کے اخراجات نہیں",
     "noHomeExpenses": "کوئی گھر کے اخراجات نہیں",
     "selectReportType": "رپورٹ کی قسم منتخب کریں",
-    "generateReports": "رپورٹیں تیار کریں"
+    "generateReports": "رپورٹیں تیار کریں",
+  "acInstallations": "اے سی تنصیب",
+  "logAcInstallations": "اے سی تنصیب درج کریں",
+  "noInstallationsToday": "آج کوئی تنصیب درج نہیں",
+  "totalOnInvoice": "انوائس پر کل",
+  "myShare": "میرا حصہ",
+  "splitAcLabel": "اسپلٹ اے سی",
+  "windowAcLabel": "ونڈو اے سی",
+  "freestandingAcLabel": "فری اسٹینڈنگ اے سی",
+  "installationsLogged": "تنصیب کامیابی سے درج ہو گئی۔",
+  "deleteInstallRecord": "تنصیب ریکارڈ حذف کریں؟",
+  "unitsLabel": "یونٹ",
+  "invoiceUnitsLabel": "انوائس: {total} یونٹ",
+  "@invoiceUnitsLabel": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "myShareUnitsLabel": "میرا حصہ: {share} یونٹ",
+  "@myShareUnitsLabel": {
+    "placeholders": {
+      "share": { "type": "int" }
+    }
+  },
+  "shareMustNotExceedTotal": "میرا حصہ انوائس کے کل سے زیادہ نہیں ہو سکتا۔",
+  "enterAtLeastOneUnit": "کم از کم ایک اے سی یونٹ کی تعداد درج کریں۔",
+  "acInstallNote": "نوٹ (اختیاری)"
 }

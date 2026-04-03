@@ -502,5 +502,31 @@
     "noWorkExpenses": "لا توجد نفقات عمل",
     "noHomeExpenses": "لا توجد نفقات منزل",
     "selectReportType": "اختر نوع التقرير",
-    "generateReports": "إنشاء التقارير"
+    "generateReports": "إنشاء التقارير",
+  "acInstallations": "تركيبات التكييف",
+  "logAcInstallations": "تسجيل تركيبات التكييف",
+  "noInstallationsToday": "لا توجد تركيبات مسجلة اليوم",
+  "totalOnInvoice": "إجمالي في الفاتورة",
+  "myShare": "حصتي",
+  "splitAcLabel": "مكيف سبليت",
+  "windowAcLabel": "مكيف شباك",
+  "freestandingAcLabel": "مكيف حر",
+  "installationsLogged": "تم تسجيل التركيب بنجاح.",
+  "deleteInstallRecord": "حذف سجل التركيب؟",
+  "unitsLabel": "وحدات",
+  "invoiceUnitsLabel": "الفاتورة: {total} وحدات",
+  "@invoiceUnitsLabel": {
+    "placeholders": {
+      "total": { "type": "int" }
+    }
+  },
+  "myShareUnitsLabel": "حصتي: {share} وحدات",
+  "@myShareUnitsLabel": {
+    "placeholders": {
+      "share": { "type": "int" }
+    }
+  },
+  "shareMustNotExceedTotal": "لا يمكن أن تتجاوز حصتي إجمالي الفاتورة.",
+  "enterAtLeastOneUnit": "أدخل كمية وحدة مكيف واحدة على الأقل.",
+  "acInstallNote": "ملاحظة (اختياري)"
 }

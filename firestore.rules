@@ -263,6 +263,7 @@ service cloud.firestore {
           'category',
           'amount',
           'note',
+          'paymentType',
           'status',
           'approvedBy',
           'adminNote',
@@ -299,6 +300,59 @@ service cloud.firestore {
           'techName',
           'category',
           'amount',
+          'note',
+          'paymentType',
+          'date',
+          'status',
+          'approvedBy',
+          'adminNote',
+          'reviewedAt'
+        ])
+      );
+
+      allow delete: if isAdmin() ||
+        (isAuth() && resource.data.techId == request.auth.uid);
+    }
+
+    // ─── AC Installs ───
+    match /ac_installs/{installId} {
+      allow read: if isAuth() &&
+        (resource.data.techId == request.auth.uid || isAdmin());
+
+      allow create: if isAuth() &&
+        request.resource.data.techId == request.auth.uid &&
+        request.resource.data.keys().hasOnly([
+          'techId',
+          'techName',
+          'splitTotal',
+          'splitShare',
+          'windowTotal',
+          'windowShare',
+          'freestandingTotal',
+          'freestandingShare',
+          'note',
+          'status',
+          'approvedBy',
+          'adminNote',
+          'date',
+          'createdAt',
+          'reviewedAt'
+        ]) &&
+        request.resource.data.date is timestamp &&
+        request.resource.data.status in ['pending', 'approved'];
+
+      allow update: if isAdmin() || (
+        isAuth() &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'splitTotal',
+          'splitShare',
+          'windowTotal',
+          'windowShare',
+          'freestandingTotal',
+          'freestandingShare',
           'note',
           'date',
           'status',

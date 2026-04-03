@@ -55,7 +55,9 @@ class CompanySelectorField extends StatelessWidget {
             value: '',
             child: Text(
               l.noCompany,
-              style: const TextStyle(color: ArcticTheme.arcticTextSecondary),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: ArcticTheme.arcticTextSecondary,
+              ),
             ),
           ),
         ...companies.map(

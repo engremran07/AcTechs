@@ -322,3 +322,33 @@ class EarningException extends AppException {
     'تعذر حفظ تغييرات الإيراد. حاول مرة أخرى.',
   );
 }
+
+class AcInstallException extends AppException {
+  const AcInstallException(
+    super.code,
+    super.messageEn,
+    super.messageUr,
+    super.messageAr,
+  );
+
+  factory AcInstallException.saveFailed() => const AcInstallException(
+    'ac_install_save_failed',
+    "Couldn't save the installation record. Please check your connection and try again.",
+    'تنصیب ریکارڈ محفوظ نہیں ہو سکا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+    'تعذر حفظ سجل التركيب. تحقق من اتصالك وحاول مرة أخرى.',
+  );
+
+  factory AcInstallException.deleteFailed() => const AcInstallException(
+    'ac_install_delete_failed',
+    "Couldn't delete the installation record. Please try again.",
+    'تنصیب ریکارڈ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'تعذر حذف سجل التركيب. حاول مرة أخرى.',
+  );
+
+  factory AcInstallException.updateFailed() => const AcInstallException(
+    'ac_install_update_failed',
+    "Couldn't update the installation record. Please try again.",
+    'تنصیب ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    'تعذر تحديث سجل التركيب. حاول مرة أخرى.',
+  );
+}
