@@ -10,6 +10,9 @@ import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/expenses/data/earning_repository.dart';
+import 'package:ac_techs/features/expenses/data/expense_repository.dart';
+import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 
@@ -24,6 +27,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   String _search = '';
   final Set<String> _selected = {};
   bool _isBulkProcessing = false;
+  bool _isApprovingInOut = false;
 
   List<JobModel> _filter(List<JobModel> jobs) {
     if (_search.isEmpty) return jobs;
@@ -129,11 +133,220 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   void _refreshApprovals() {
     ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(pendingEarningsProvider);
+    ref.invalidate(pendingExpensesProvider);
+  }
+
+  Future<void> _approvePendingInOut({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) async {
+    if (earnings.isEmpty && expenses.isEmpty) return;
+    final l = AppLocalizations.of(context)!;
+    final admin = ref.read(currentUserProvider).value;
+    if (admin == null) return;
+
+    setState(() => _isApprovingInOut = true);
+    try {
+      final earningRepo = ref.read(earningRepositoryProvider);
+      final expenseRepo = ref.read(expenseRepositoryProvider);
+
+      for (final earning in earnings) {
+        await earningRepo.approveEarning(earning.id, admin.uid);
+      }
+      for (final expense in expenses) {
+        await expenseRepo.approveExpense(expense.id, admin.uid);
+      }
+
+      if (!mounted) return;
+      SuccessSnackbar.show(
+        context,
+        message: '${l.approved}: ${earnings.length + expenses.length}',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.bulkApproveFailed);
+    } finally {
+      if (mounted) setState(() => _isApprovingInOut = false);
+    }
+  }
+
+  Future<String?> _promptRejectionReason(BuildContext context) async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.reject),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.rejectReason,
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isEmpty) return;
+              Navigator.pop(context, controller.text.trim());
+            },
+            child: Text(AppLocalizations.of(context)!.reject),
+          ),
+        ],
+      ),
+    );
+    return reason;
+  }
+
+  Future<void> _showJobVerificationDialog(JobModel job) async {
+    final l = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(job.invoiceNumber),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${l.technician}: ${job.techName}'),
+            Text('${l.client}: ${job.clientName}'),
+            Text('${l.totalUnits}: ${job.totalUnits}'),
+            if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l.cancel),
+          ),
+          OutlinedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final reason = await _promptRejectionReason(context);
+              if (reason == null || reason.isEmpty) return;
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              await ref
+                  .read(jobRepositoryProvider)
+                  .rejectJob(job.id, admin.uid, reason);
+            },
+            child: Text(l.reject),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              await ref
+                  .read(jobRepositoryProvider)
+                  .approveJob(job.id, admin.uid);
+              if (ctx.mounted) Navigator.of(ctx).pop();
+            },
+            child: Text(l.approve),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showInOutVerificationDialog(_PendingInOutEntry entry) async {
+    final l = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(entry.isEarning ? l.inEarned : l.outSpent),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${l.technician}: ${entry.techName}'),
+            Text('${l.category}: ${entry.category}'),
+            Text('${l.amountSar}: ${AppFormatters.currency(entry.amount)}'),
+            if (entry.note.trim().isNotEmpty) Text(entry.note),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l.cancel),
+          ),
+          OutlinedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final reason = await _promptRejectionReason(context);
+              if (reason == null || reason.isEmpty) return;
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              if (entry.isEarning) {
+                await ref
+                    .read(earningRepositoryProvider)
+                    .rejectEarning(entry.id, admin.uid, reason);
+              } else {
+                await ref
+                    .read(expenseRepositoryProvider)
+                    .rejectExpense(entry.id, admin.uid, reason);
+              }
+            },
+            child: Text(l.reject),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              if (entry.isEarning) {
+                await ref
+                    .read(earningRepositoryProvider)
+                    .approveEarning(entry.id, admin.uid);
+              } else {
+                await ref
+                    .read(expenseRepositoryProvider)
+                    .approveExpense(entry.id, admin.uid);
+              }
+              if (ctx.mounted) Navigator.of(ctx).pop();
+            },
+            child: Text(l.approve),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingApprovalsProvider);
+    final pendingEarnings = ref.watch(pendingEarningsProvider);
+    final pendingExpenses = ref.watch(pendingExpensesProvider);
+    final pendingInOut =
+        <_PendingInOutEntry>[
+          ...(pendingEarnings.value ?? const <EarningModel>[]).map(
+            (e) => _PendingInOutEntry(
+              id: e.id,
+              isEarning: true,
+              techName: e.techName,
+              category: e.category,
+              amount: e.amount,
+              note: e.note,
+              date: e.date,
+            ),
+          ),
+          ...(pendingExpenses.value ?? const <ExpenseModel>[]).map(
+            (e) => _PendingInOutEntry(
+              id: e.id,
+              isEarning: false,
+              techName: e.techName,
+              category: e.category,
+              amount: e.amount,
+              note: e.note,
+              date: e.date,
+            ),
+          ),
+        ]..sort(
+          (a, b) =>
+              (b.date ?? DateTime(2000)).compareTo(a.date ?? DateTime(2000)),
+        );
     final successTone = Theme.of(context).brightness == Brightness.light
         ? ArcticTheme.lightSuccess
         : ArcticTheme.arcticSuccess;
@@ -179,7 +392,49 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                         ),
                       ],
                     ),
-                  if (filtered.isEmpty)
+                  if (pendingEarnings.hasValue || pendingExpenses.hasValue)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: ArcticCard(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${AppLocalizations.of(context)!.inOut} ${AppLocalizations.of(context)!.pending}: '
+                                '${(pendingEarnings.value?.length ?? 0) + (pendingExpenses.value?.length ?? 0)}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              onPressed: _isApprovingInOut
+                                  ? null
+                                  : () => _approvePendingInOut(
+                                      earnings:
+                                          pendingEarnings.value ??
+                                          const <EarningModel>[],
+                                      expenses:
+                                          pendingExpenses.value ??
+                                          const <ExpenseModel>[],
+                                    ),
+                              icon: _isApprovingInOut
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_circle_outline),
+                              label: Text(
+                                AppLocalizations.of(context)!.approve,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (filtered.isEmpty && pendingInOut.isEmpty)
                     Expanded(
                       child: Center(
                         child: Column(
@@ -211,65 +466,95 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     Expanded(
                       child: ArcticRefreshIndicator(
                         onRefresh: () async => _refreshApprovals(),
-                        child: ListView.builder(
+                        child: ListView(
                           padding: const EdgeInsets.all(16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final job = filtered[index];
-                            return SwipeActionCard(
-                                  onSwipeRight: () async {
-                                    // Approve on swipe right
-                                    final approvedMsg = AppLocalizations.of(
-                                      context,
-                                    )!.jobApproved;
-                                    final failMsg = AppLocalizations.of(
-                                      context,
-                                    )!.couldNotApprove;
-                                    try {
-                                      await ref
-                                          .read(jobRepositoryProvider)
-                                          .approveJob(
-                                            job.id,
-                                            ref
-                                                    .read(currentUserProvider)
-                                                    .value
-                                                    ?.uid ??
-                                                '',
-                                          );
-                                      if (!context.mounted) return;
-                                      AppFeedback.success(
+                          children: [
+                            if (pendingInOut.isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  '${AppLocalizations.of(context)!.inOut} ${AppLocalizations.of(context)!.pending}',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                              ...pendingInOut.map(
+                                (entry) => _InOutPendingCard(
+                                  entry: entry,
+                                  onTap: () =>
+                                      _showInOutVerificationDialog(entry),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            if (filtered.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  AppLocalizations.of(context)!.jobs,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                            ...filtered.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final job = entry.value;
+                              return SwipeActionCard(
+                                    onSwipeRight: () async {
+                                      // Approve on swipe right
+                                      final approvedMsg = AppLocalizations.of(
                                         context,
-                                        message: approvedMsg,
-                                      );
-                                    } catch (_) {
-                                      if (!context.mounted) return;
-                                      AppFeedback.error(
+                                      )!.jobApproved;
+                                      final failMsg = AppLocalizations.of(
                                         context,
-                                        message: failMsg,
-                                      );
-                                    }
-                                  },
-                                  onSwipeLeft: () => _showRejectDialogFor(job),
-                                  rightIcon: Icons.check_rounded,
-                                  leftIcon: Icons.close_rounded,
-                                  child: _ApprovalCard(
-                                    job: job,
-                                    isSelected: _selected.contains(job.id),
-                                    onSelect: (v) {
-                                      setState(() {
-                                        if (v) {
-                                          _selected.add(job.id);
-                                        } else {
-                                          _selected.remove(job.id);
-                                        }
-                                      });
+                                      )!.couldNotApprove;
+                                      try {
+                                        await ref
+                                            .read(jobRepositoryProvider)
+                                            .approveJob(
+                                              job.id,
+                                              ref
+                                                      .read(currentUserProvider)
+                                                      .value
+                                                      ?.uid ??
+                                                  '',
+                                            );
+                                        if (!context.mounted) return;
+                                        AppFeedback.success(
+                                          context,
+                                          message: approvedMsg,
+                                        );
+                                      } catch (_) {
+                                        if (!context.mounted) return;
+                                        AppFeedback.error(
+                                          context,
+                                          message: failMsg,
+                                        );
+                                      }
                                     },
-                                  ),
-                                )
-                                .animate(delay: (index * 80).ms)
-                                .fadeIn()
-                                .slideX(begin: 0.05);
-                          },
+                                    onSwipeLeft: () =>
+                                        _showRejectDialogFor(job),
+                                    rightIcon: Icons.check_rounded,
+                                    leftIcon: Icons.close_rounded,
+                                    child: _ApprovalCard(
+                                      job: job,
+                                      isSelected: _selected.contains(job.id),
+                                      onTap: () =>
+                                          _showJobVerificationDialog(job),
+                                      onSelect: (v) {
+                                        setState(() {
+                                          if (v) {
+                                            _selected.add(job.id);
+                                          } else {
+                                            _selected.remove(job.id);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  )
+                                  .animate(delay: (index * 80).ms)
+                                  .fadeIn()
+                                  .slideX(begin: 0.05);
+                            }),
+                          ],
                         ),
                       ),
                     ),
@@ -345,11 +630,13 @@ class _ApprovalCard extends ConsumerStatefulWidget {
   const _ApprovalCard({
     required this.job,
     required this.isSelected,
+    required this.onTap,
     required this.onSelect,
   });
 
   final JobModel job;
   final bool isSelected;
+  final VoidCallback onTap;
   final ValueChanged<bool> onSelect;
 
   @override
@@ -458,186 +745,264 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
         ArcticTheme.arcticTextSecondary;
     final chipBg = Theme.of(context).cardColor;
 
-    return ArcticCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: widget.onTap,
+        child: ArcticCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Checkbox(
-                value: widget.isSelected,
-                onChanged: (v) => widget.onSelect(v ?? false),
-                activeColor: colorScheme.primary,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    job.techName.isNotEmpty
-                        ? job.techName[0].toUpperCase()
-                        : 'T',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
+              Row(
+                children: [
+                  Checkbox(
+                    value: widget.isSelected,
+                    onChanged: (v) => widget.onSelect(v ?? false),
+                    activeColor: colorScheme.primary,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        job.techName.isNotEmpty
+                            ? job.techName[0].toUpperCase()
+                            : 'T',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(color: colorScheme.primary),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.techName,
+                          style: Theme.of(context).textTheme.titleSmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      job.techName,
-                      style: Theme.of(context).textTheme.titleSmall,
+              Divider(height: 24, color: dividerColor),
+              Row(
+                children: [
+                  Icon(Icons.person_outline, size: 16, color: textSecondary),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      job.clientName,
+                      style: Theme.of(context).textTheme.bodyMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              if (job.clientContact.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.phone_outlined, size: 16, color: textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        job.clientContact,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        await WhatsAppLauncher.openChat(job.clientContact);
+                      },
+                      icon: const FaIcon(
+                        FontAwesomeIcons.whatsapp,
+                        color: ArcticTheme.arcticSuccess,
+                        size: 16,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minHeight: 28,
+                        minWidth: 28,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          Divider(height: 24, color: dividerColor),
-          Row(
-            children: [
-              Icon(Icons.person_outline, size: 16, color: textSecondary),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  job.clientName,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (job.clientContact.trim().isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Icon(Icons.phone_outlined, size: 16, color: textSecondary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    job.clientContact,
+              ],
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.ac_unit_rounded, size: 16, color: textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    AppFormatters.units(job.totalUnits),
                     style: Theme.of(context).textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                IconButton(
-                  onPressed: () async {
-                    await WhatsAppLauncher.openChat(job.clientContact);
-                  },
-                  icon: const FaIcon(
-                    FontAwesomeIcons.whatsapp,
-                    color: ArcticTheme.arcticSuccess,
-                    size: 16,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minHeight: 28,
-                    minWidth: 28,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(Icons.ac_unit_rounded, size: 16, color: textSecondary),
-              const SizedBox(width: 6),
-              Text(
-                AppFormatters.units(job.totalUnits),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (job.expenses > 0) ...[
-                const SizedBox(width: 16),
-                Icon(Icons.payments_outlined, size: 16, color: _warningTone),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    AppFormatters.currency(job.expenses),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: _warningTone),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          if (job.acUnits.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: job.acUnits
-                  .map(
-                    (u) => Chip(
-                      label: Text(
-                        '${translateCategory(u.type, AppLocalizations.of(context)!)} × ${u.quantity}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      backgroundColor: chipBg,
-                      side: BorderSide(color: dividerColor),
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  if (job.expenses > 0) ...[
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.payments_outlined,
+                      size: 16,
+                      color: _warningTone,
                     ),
-                  )
-                  .toList(),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isProcessing ? null : _showRejectDialog,
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  label: Text(AppLocalizations.of(context)!.reject),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.error,
-                    side: BorderSide(color: colorScheme.error),
-                    minimumSize: const Size(0, 44),
-                  ),
-                ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        AppFormatters.currency(job.expenses),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: _warningTone),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _isProcessing ? null : _approve,
-                  icon: _isProcessing
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: ArcticTheme.arcticDarkBg,
+              if (job.acUnits.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: job.acUnits
+                      .map(
+                        (u) => Chip(
+                          label: Text(
+                            '${translateCategory(u.type, AppLocalizations.of(context)!)} × ${u.quantity}',
+                            style: const TextStyle(fontSize: 12),
                           ),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(AppLocalizations.of(context)!.approve),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _successTone,
-                    minimumSize: const Size(0, 44),
-                  ),
+                          backgroundColor: chipBg,
+                          side: BorderSide(color: dividerColor),
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      )
+                      .toList(),
                 ),
+              ],
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isProcessing ? null : _showRejectDialog,
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: Text(AppLocalizations.of(context)!.reject),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.error,
+                        side: BorderSide(color: colorScheme.error),
+                        minimumSize: const Size(0, 44),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isProcessing ? null : _approve,
+                      icon: _isProcessing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: ArcticTheme.arcticDarkBg,
+                              ),
+                            )
+                          : const Icon(Icons.check_rounded, size: 18),
+                      label: Text(AppLocalizations.of(context)!.approve),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _successTone,
+                        minimumSize: const Size(0, 44),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingInOutEntry {
+  const _PendingInOutEntry({
+    required this.id,
+    required this.isEarning,
+    required this.techName,
+    required this.category,
+    required this.amount,
+    required this.note,
+    this.date,
+  });
+
+  final String id;
+  final bool isEarning;
+  final String techName;
+  final String category;
+  final double amount;
+  final String note;
+  final DateTime? date;
+}
+
+class _InOutPendingCard extends StatelessWidget {
+  const _InOutPendingCard({required this.entry, required this.onTap});
+
+  final _PendingInOutEntry entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final subtitle = '${entry.techName} • ${AppFormatters.date(entry.date)}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: ArcticCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.isEarning ? l.inEarned : l.outSpent,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 4),
+                Text(
+                  '${entry.category} • ${AppFormatters.currency(entry.amount)}',
+                ),
+                if (entry.note.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    entry.note,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

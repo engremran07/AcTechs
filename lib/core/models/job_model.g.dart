@@ -59,6 +59,22 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   importMeta:
       json['importMeta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
   approvedBy: json['approvedBy'] as String? ?? '',
+  isSharedInstall: json['isSharedInstall'] as bool? ?? false,
+  sharedInstallGroupKey: json['sharedInstallGroupKey'] as String? ?? '',
+  sharedInvoiceTotalUnits:
+      (json['sharedInvoiceTotalUnits'] as num?)?.toInt() ?? 0,
+  sharedContributionUnits:
+      (json['sharedContributionUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceSplitUnits:
+      (json['sharedInvoiceSplitUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceWindowUnits:
+      (json['sharedInvoiceWindowUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceFreestandingUnits:
+      (json['sharedInvoiceFreestandingUnits'] as num?)?.toInt() ?? 0,
+  sharedDeliveryTeamCount:
+      (json['sharedDeliveryTeamCount'] as num?)?.toInt() ?? 0,
+  sharedInvoiceDeliveryAmount:
+      (json['sharedInvoiceDeliveryAmount'] as num?)?.toDouble() ?? 0.0,
   charges: json['charges'] == null
       ? null
       : InvoiceCharges.fromJson(json['charges'] as Map<String, dynamic>),
@@ -83,6 +99,15 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'adminNote': instance.adminNote,
   'importMeta': instance.importMeta,
   'approvedBy': instance.approvedBy,
+  'isSharedInstall': instance.isSharedInstall,
+  'sharedInstallGroupKey': instance.sharedInstallGroupKey,
+  'sharedInvoiceTotalUnits': instance.sharedInvoiceTotalUnits,
+  'sharedContributionUnits': instance.sharedContributionUnits,
+  'sharedInvoiceSplitUnits': instance.sharedInvoiceSplitUnits,
+  'sharedInvoiceWindowUnits': instance.sharedInvoiceWindowUnits,
+  'sharedInvoiceFreestandingUnits': instance.sharedInvoiceFreestandingUnits,
+  'sharedDeliveryTeamCount': instance.sharedDeliveryTeamCount,
+  'sharedInvoiceDeliveryAmount': instance.sharedInvoiceDeliveryAmount,
   'charges': instance.charges?.toJson(),
   'date': _timestampToJson(instance.date),
   'submittedAt': _timestampToJson(instance.submittedAt),

@@ -32,6 +32,56 @@ service cloud.firestore {
         ];
     }
 
+    function approvalConfigDocPath() {
+      return /databases/$(database)/documents/app_settings/approval_config;
+    }
+
+    function approvalConfigData() {
+      return get(approvalConfigDocPath()).data;
+    }
+
+    function jobApprovalRequired() {
+      return exists(approvalConfigDocPath()) &&
+        approvalConfigData().jobApprovalRequired is bool &&
+        approvalConfigData().jobApprovalRequired;
+    }
+
+    function inOutApprovalRequired() {
+      return exists(approvalConfigDocPath()) &&
+        approvalConfigData().inOutApprovalRequired is bool &&
+        approvalConfigData().inOutApprovalRequired;
+    }
+
+    function sharedJobApprovalRequired() {
+      return exists(approvalConfigDocPath()) &&
+        approvalConfigData().sharedJobApprovalRequired is bool &&
+        approvalConfigData().sharedJobApprovalRequired;
+    }
+
+    function isSharedJobCreate() {
+      return request.resource.data.isSharedInstall is bool &&
+        request.resource.data.isSharedInstall;
+    }
+
+    function validSharedInstallFields() {
+      return request.resource.data.isSharedInstall is bool &&
+        request.resource.data.sharedInstallGroupKey is string &&
+        request.resource.data.sharedInvoiceTotalUnits is int &&
+        request.resource.data.sharedInvoiceTotalUnits >= 0 &&
+        request.resource.data.sharedContributionUnits is int &&
+        request.resource.data.sharedContributionUnits >= 0 &&
+        request.resource.data.sharedInvoiceSplitUnits is int &&
+        request.resource.data.sharedInvoiceSplitUnits >= 0 &&
+        request.resource.data.sharedInvoiceWindowUnits is int &&
+        request.resource.data.sharedInvoiceWindowUnits >= 0 &&
+        request.resource.data.sharedInvoiceFreestandingUnits is int &&
+        request.resource.data.sharedInvoiceFreestandingUnits >= 0 &&
+        request.resource.data.sharedDeliveryTeamCount is int &&
+        request.resource.data.sharedDeliveryTeamCount >= 0 &&
+        request.resource.data.sharedInvoiceDeliveryAmount is number &&
+        request.resource.data.sharedInvoiceDeliveryAmount >= 0;
+    }
+
     function validJobCreatePayload() {
       return request.resource.data.keys().hasAll([
         'techId',
@@ -79,20 +129,29 @@ service cloud.firestore {
 
       allow create: if (isAuth() &&
         request.resource.data.techId == request.auth.uid &&
-        request.resource.data.status == 'pending' &&
-        validJobCreatePayload()) ||
+        request.resource.data.status == (
+          isSharedJobCreate()
+            ? (sharedJobApprovalRequired() ? 'pending' : 'approved')
+            : (jobApprovalRequired() ? 'pending' : 'approved')
+        ) &&
+        validJobCreatePayload() &&
+        validSharedInstallFields()) ||
         (isAdmin() &&
           validJobCreatePayload() &&
+          validSharedInstallFields() &&
           request.resource.data.status in ['pending', 'approved', 'rejected']);
 
       allow update: if isAdmin() || (
         isOwner(resource.data.techId) &&
-        resource.data.status == 'pending' &&
-        request.resource.data.status == 'pending' &&
+        (jobApprovalRequired()
+          ? resource.data.status == 'pending'
+          : resource.data.status in ['pending', 'approved']) &&
+        request.resource.data.status == resource.data.status &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.approvedBy == resource.data.approvedBy &&
         request.resource.data.reviewedAt == resource.data.reviewedAt &&
         request.resource.data.adminNote == resource.data.adminNote &&
+        validSharedInstallFields() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'companyId',
@@ -101,6 +160,15 @@ service cloud.firestore {
           'clientName',
           'clientContact',
           'acUnits',
+          'isSharedInstall',
+          'sharedInstallGroupKey',
+          'sharedInvoiceTotalUnits',
+          'sharedContributionUnits',
+          'sharedInvoiceSplitUnits',
+          'sharedInvoiceWindowUnits',
+          'sharedInvoiceFreestandingUnits',
+          'sharedDeliveryTeamCount',
+          'sharedInvoiceDeliveryAmount',
           'charges',
           'date',
           'submittedAt',
@@ -129,27 +197,50 @@ service cloud.firestore {
           'amount',
           'note',
           'expenseType',
+          'status',
+          'approvedBy',
+          'adminNote',
           'date',
-          'createdAt'
+          'createdAt',
+          'reviewedAt'
         ]) &&
         request.resource.data.amount is number &&
         request.resource.data.amount > 0 &&
         request.resource.data.amount <= 1000000 &&
         request.resource.data.expenseType in ['work', 'home'] &&
-        request.resource.data.date is timestamp;
+        request.resource.data.date is timestamp &&
+        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved') &&
+        request.resource.data.approvedBy is string &&
+        request.resource.data.adminNote is string;
 
       allow update: if isAdmin() || (
         isAuth() &&
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
+        (
+          (inOutApprovalRequired() &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == resource.data.status &&
+            request.resource.data.approvedBy == resource.data.approvedBy &&
+            request.resource.data.adminNote == resource.data.adminNote &&
+            request.resource.data.reviewedAt == resource.data.reviewedAt)
+        ) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'category',
           'amount',
           'note',
           'expenseType',
-          'date'
+          'date',
+          'status',
+          'approvedBy',
+          'adminNote',
+          'reviewedAt'
         ])
       );
 
@@ -172,25 +263,48 @@ service cloud.firestore {
           'category',
           'amount',
           'note',
+          'status',
+          'approvedBy',
+          'adminNote',
           'date',
-          'createdAt'
+          'createdAt',
+          'reviewedAt'
         ]) &&
         request.resource.data.amount is number &&
         request.resource.data.amount > 0 &&
         request.resource.data.amount <= 1000000 &&
-        request.resource.data.date is timestamp;
+        request.resource.data.date is timestamp &&
+        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved') &&
+        request.resource.data.approvedBy is string &&
+        request.resource.data.adminNote is string;
 
       allow update: if isAdmin() || (
         isAuth() &&
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
+        (
+          (inOutApprovalRequired() &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == resource.data.status &&
+            request.resource.data.approvedBy == resource.data.approvedBy &&
+            request.resource.data.adminNote == resource.data.adminNote &&
+            request.resource.data.reviewedAt == resource.data.reviewedAt)
+        ) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'category',
           'amount',
           'note',
-          'date'
+          'date',
+          'status',
+          'approvedBy',
+          'adminNote',
+          'reviewedAt'
         ])
       );
 
@@ -223,6 +337,12 @@ service cloud.firestore {
         request.resource.data.invoicePrefix is string &&
         request.resource.data.isActive is bool;
       allow delete: if isAdmin();
+    }
+
+    // ─── App Settings ───
+    match /app_settings/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
     }
   }
 }

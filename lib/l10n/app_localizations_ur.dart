@@ -80,6 +80,15 @@ class AppLocalizationsUr extends AppLocalizations {
   String get approvals => 'منظوریاں';
 
   @override
+  String get sharedInstallApprovalRequired => 'شیئرڈ انسٹال منظوری';
+
+  @override
+  String get enforceMinimumBuild => 'کم از کم بلڈ نافذ کریں';
+
+  @override
+  String get minimumSupportedBuild => 'کم از کم سپورٹڈ بلڈ';
+
+  @override
   String get analytics => 'تجزیات';
 
   @override
@@ -576,6 +585,47 @@ class AppLocalizationsUr extends AppLocalizations {
   String get submitAJob => 'کام جمع کریں';
 
   @override
+  String get sharedInstall => 'شیئرڈ انسٹال';
+
+  @override
+  String get sharedInstallHint =>
+      'جب ایک ہی انوائس کئی ٹیکنیشنز میں تقسیم ہو تو اسے فعال کریں۔';
+
+  @override
+  String get sharedInstallMixHint =>
+      'انوائس کے کل یونٹس قسم کے مطابق درج کریں۔ ہر ٹیکنیشن اپنی مرضی کے مطابق اپنی یونٹ شیئر درج کرے گا۔ صرف ڈیلیوری برابر تقسیم ہوگی۔';
+
+  @override
+  String get sharedInvoiceTotalUnits => 'انوائس کے کل یونٹس';
+
+  @override
+  String get sharedInstallLimitError =>
+      'آپ کے درج کردہ یونٹس انوائس کے کل یونٹس سے زیادہ ہیں۔';
+
+  @override
+  String get sharedInvoiceSplitUnits => 'انوائس سپلٹ یونٹس';
+
+  @override
+  String get sharedInvoiceWindowUnits => 'انوائس ونڈو یونٹس';
+
+  @override
+  String get sharedInvoiceFreestandingUnits => 'انوائس اسٹینڈنگ یونٹس';
+
+  @override
+  String get sharedTeamSize => 'مشترکہ ٹیم کی تعداد';
+
+  @override
+  String get sharedInvoiceDeliveryAmount => 'کل ڈیلیوری چارج (انوائس)';
+
+  @override
+  String get sharedDeliverySplitHint =>
+      'یہ ڈیلیوری رقم مشترکہ ٹیم میں برابر تقسیم ہوگی۔';
+
+  @override
+  String get sharedDeliverySplitInvalid =>
+      'مشترکہ ٹیم کی تعداد درج کریں تاکہ ڈیلیوری برابر تقسیم ہو سکے۔';
+
+  @override
   String get splits => 'اسپلٹ';
 
   @override
@@ -898,6 +948,16 @@ class AppLocalizationsUr extends AppLocalizations {
       'تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں';
 
   @override
+  String get flushScope => 'فلش اسکوپ';
+
+  @override
+  String get flushAllData => 'تمام ڈیٹا';
+
+  @override
+  String get flushOnlySelectedTechnician =>
+      'صرف منتخب ٹیکنیشن کا ڈیٹا (کام اور ان/آؤٹ) فلش ہوگا۔';
+
+  @override
   String get flushStep1Title => 'مرحلہ 1 از 2 — ارادے کی تصدیق';
 
   @override
@@ -967,6 +1027,23 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get flushWrongPassword => 'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String get currentBuild => 'موجودہ بلڈ';
+
+  @override
+  String get updateRequiredTitle => 'اپ ڈیٹ ضروری ہے';
+
+  @override
+  String updateRequiredBody(int build) {
+    return 'آپ کی ایپ بلڈ ($build) اب سپورٹ نہیں ہے۔ جاری رکھنے کے لیے تازہ APK انسٹال کریں۔';
+  }
+
+  @override
+  String get updateRequiredLoading => 'ایپ ورژن چیک ہو رہا ہے...';
+
+  @override
+  String get iUpdatedRefresh => 'میں نے اپ ڈیٹ کر لیا - ریفریش';
 
   @override
   String get catSplitAc => 'اسپلٹ اے سی';

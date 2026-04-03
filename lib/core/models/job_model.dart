@@ -58,6 +58,15 @@ abstract class JobModel with _$JobModel {
     @Default('') String adminNote,
     @Default(<String, dynamic>{}) Map<String, dynamic> importMeta,
     @Default('') String approvedBy,
+    @Default(false) bool isSharedInstall,
+    @Default('') String sharedInstallGroupKey,
+    @Default(0) int sharedInvoiceTotalUnits,
+    @Default(0) int sharedContributionUnits,
+    @Default(0) int sharedInvoiceSplitUnits,
+    @Default(0) int sharedInvoiceWindowUnits,
+    @Default(0) int sharedInvoiceFreestandingUnits,
+    @Default(0) int sharedDeliveryTeamCount,
+    @Default(0.0) double sharedInvoiceDeliveryAmount,
 
     /// Additional invoice charges (bracket, delivery).
     InvoiceCharges? charges,
@@ -95,6 +104,17 @@ extension JobModelX on JobModel {
   bool get isRejected => status == JobStatus.rejected;
 
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);
+
+  int unitsForType(String type) {
+    return acUnits
+        .where((unit) => unit.type == type)
+      .fold(0, (total, unit) => total + unit.quantity);
+  }
+
+  int get sharedInstallUnitsTotal =>
+      unitsForType('Split AC') +
+      unitsForType('Window AC') +
+      unitsForType('Freestanding AC');
 
   /// Total of all additional charges on this invoice.
   double get totalCharges {

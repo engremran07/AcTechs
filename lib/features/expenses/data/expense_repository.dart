@@ -39,6 +39,52 @@ class ExpenseRepository {
     }
   }
 
+  Future<void> approveExpense(String id, String adminUid) async {
+    try {
+      await _ref.doc(id).update({
+        'status': AppConstants.statusApproved,
+        'approvedBy': adminUid,
+        'reviewedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      throw ExpenseException.userSaveFailed();
+    }
+  }
+
+  Future<void> rejectExpense(String id, String adminUid, String reason) async {
+    try {
+      await _ref.doc(id).update({
+        'status': AppConstants.statusRejected,
+        'approvedBy': adminUid,
+        'adminNote': reason,
+        'reviewedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      throw ExpenseException.userSaveFailed();
+    }
+  }
+
+  Stream<List<ExpenseModel>> pendingExpenses() {
+    return _ref
+        .where('status', isEqualTo: AppConstants.statusPending)
+        .orderBy('date', descending: false)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+        );
+  }
+
+  Stream<List<ExpenseModel>> allExpenses() {
+    return _ref
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+        );
+  }
+
   /// Real-time stream of a tech's expenses, newest first.
   Stream<List<ExpenseModel>> techExpenses(String techId) {
     return _ref

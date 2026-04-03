@@ -17,6 +17,10 @@ class JobRepository {
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
 
+  int _unitsForType(JobModel job, String type) => job.acUnits
+      .where((unit) => unit.type == type)
+      .fold(0, (total, unit) => total + unit.quantity);
+
   String _safeImportDocId(JobModel job) {
     final invoice = InvoiceUtils.normalize(job.invoiceNumber).toLowerCase();
     final safe = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
@@ -28,6 +32,9 @@ class JobRepository {
   Future<void> submitJob(JobModel job) async {
     try {
       final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
+      final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
+          ? ''
+          : InvoiceUtils.normalize(job.sharedInstallGroupKey).toLowerCase();
       final duplicateSnap = await _jobsRef
           .where('techId', isEqualTo: job.techId)
           .where('companyId', isEqualTo: job.companyId)
@@ -38,8 +45,105 @@ class JobRepository {
         throw JobException.duplicateInvoice();
       }
 
+      if (job.isSharedInstall) {
+        final splitContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeSplitAc,
+        );
+        final windowContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeWindowAc,
+        );
+        final freestandingContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeFreestandingAc,
+        );
+
+        final typeLimits = <(String, int, int)>[
+          (
+            AppConstants.unitTypeSplitAc,
+            splitContribution,
+            job.sharedInvoiceSplitUnits,
+          ),
+          (
+            AppConstants.unitTypeWindowAc,
+            windowContribution,
+            job.sharedInvoiceWindowUnits,
+          ),
+          (
+            AppConstants.unitTypeFreestandingAc,
+            freestandingContribution,
+            job.sharedInvoiceFreestandingUnits,
+          ),
+        ];
+
+        for (final typeLimit in typeLimits) {
+          final contribution = typeLimit.$2;
+          final totalAllowed = typeLimit.$3;
+          if (contribution <= 0) continue;
+          if (totalAllowed <= 0 || contribution > totalAllowed) {
+            throw JobException.sharedTypeUnitsExceeded(
+              unitType: typeLimit.$1,
+              remaining: totalAllowed < 0 ? 0 : totalAllowed,
+            );
+          }
+        }
+
+        final key = normalizedGroupKey.isNotEmpty
+            ? normalizedGroupKey
+            : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
+        final sharedSnap = await _jobsRef
+            .where('sharedInstallGroupKey', isEqualTo: key)
+            .get();
+        final existingSharedJobs = sharedSnap.docs
+            .map((doc) => JobModel.fromFirestore(doc))
+            .where((entry) => entry.status != JobStatus.rejected)
+            .toList();
+
+        for (final typeLimit in typeLimits) {
+          final typeName = typeLimit.$1;
+          final contribution = typeLimit.$2;
+          final totalAllowed = typeLimit.$3;
+          if (contribution <= 0) continue;
+          final consumed = existingSharedJobs.fold<int>(
+            0,
+            (total, entry) => total + _unitsForType(entry, typeName),
+          );
+          final remaining = totalAllowed - consumed;
+          if (contribution > remaining) {
+            throw JobException.sharedTypeUnitsExceeded(
+              unitType: typeName,
+              remaining: remaining < 0 ? 0 : remaining,
+            );
+          }
+        }
+
+        final invoiceDeliveryAmount = job.sharedInvoiceDeliveryAmount;
+        final deliveryShare = job.charges?.deliveryAmount ?? 0;
+        if (invoiceDeliveryAmount > 0) {
+          if (job.sharedDeliveryTeamCount <= 0) {
+            throw JobException.sharedDeliverySplitInvalid();
+          }
+          final consumedDelivery = existingSharedJobs.fold<double>(
+            0,
+            (total, entry) => total + (entry.charges?.deliveryAmount ?? 0),
+          );
+          final remainingDelivery = invoiceDeliveryAmount - consumedDelivery;
+          if (deliveryShare - remainingDelivery > 0.01) {
+            throw JobException.sharedUnitsExceeded(
+              remaining: remainingDelivery <= 0 ? 0 : remainingDelivery.floor(),
+            );
+          }
+        }
+      }
+
       final data = job.toFirestore();
       data['invoiceNumber'] = normalizedInvoice;
+      if (job.isSharedInstall) {
+        data['sharedInstallGroupKey'] = normalizedGroupKey.isNotEmpty
+            ? normalizedGroupKey
+            : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
+      }
       data['date'] ??= FieldValue.serverTimestamp();
       data['submittedAt'] ??= FieldValue.serverTimestamp();
       await _jobsRef.add(data);

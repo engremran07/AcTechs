@@ -15,8 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ExpenseModel {
 
- String get id; String get techId; String get techName; String get category; double get amount; String get note;/// 'work' for regular expenses, 'home' for home chores
- String get expenseType;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get date;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;
+ String get id; String get techId; String get techName; String get category; double get amount; String get note; ExpenseApprovalStatus get status; String get approvedBy; String get adminNote;/// 'work' for regular expenses, 'home' for home chores
+ String get expenseType;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get date;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get reviewedAt;
 /// Create a copy of ExpenseModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $ExpenseModelCopyWith<ExpenseModel> get copyWith => _$ExpenseModelCopyWithImpl<E
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.expenseType, expenseType) || other.expenseType == expenseType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.expenseType, expenseType) || other.expenseType == expenseType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,expenseType,date,createdAt);
+int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,expenseType,date,createdAt,reviewedAt);
 
 @override
 String toString() {
-  return 'ExpenseModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, expenseType: $expenseType, date: $date, createdAt: $createdAt)';
+  return 'ExpenseModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, expenseType: $expenseType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $ExpenseModelCopyWith<$Res>  {
   factory $ExpenseModelCopyWith(ExpenseModel value, $Res Function(ExpenseModel) _then) = _$ExpenseModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String techId, String techName, String category, double amount, String note, String expenseType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
+ String id, String techId, String techName, String category, double amount, String note, ExpenseApprovalStatus status, String approvedBy, String adminNote, String expenseType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
 });
 
 
@@ -66,7 +66,7 @@ class _$ExpenseModelCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? expenseType = null,Object? date = freezed,Object? createdAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? expenseType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -74,9 +74,13 @@ as String,techName: null == techName ? _self.techName : techName // ignore: cast
 as String,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as ExpenseApprovalStatus,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
+as String,adminNote: null == adminNote ? _self.adminNote : adminNote // ignore: cast_nullable_to_non_nullable
 as String,expenseType: null == expenseType ? _self.expenseType : expenseType // ignore: cast_nullable_to_non_nullable
 as String,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,reviewedAt: freezed == reviewedAt ? _self.reviewedAt : reviewedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -162,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  ExpenseApprovalStatus status,  String approvedBy,  String adminNote,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ExpenseModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.expenseType,_that.date,_that.createdAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.expenseType,_that.date,_that.createdAt,_that.reviewedAt);case _:
   return orElse();
 
 }
@@ -183,10 +187,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  ExpenseApprovalStatus status,  String approvedBy,  String adminNote,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseModel():
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.expenseType,_that.date,_that.createdAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.expenseType,_that.date,_that.createdAt,_that.reviewedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +207,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  ExpenseApprovalStatus status,  String approvedBy,  String adminNote,  String expenseType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.expenseType,_that.date,_that.createdAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.expenseType,_that.date,_that.createdAt,_that.reviewedAt);case _:
   return null;
 
 }
@@ -218,7 +222,7 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 @JsonSerializable()
 
 class _ExpenseModel implements ExpenseModel {
-  const _ExpenseModel({this.id = '', required this.techId, required this.techName, required this.category, required this.amount, this.note = '', this.expenseType = 'work', @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt});
+  const _ExpenseModel({this.id = '', required this.techId, required this.techName, required this.category, required this.amount, this.note = '', this.status = ExpenseApprovalStatus.pending, this.approvedBy = '', this.adminNote = '', this.expenseType = 'work', @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt});
   factory _ExpenseModel.fromJson(Map<String, dynamic> json) => _$ExpenseModelFromJson(json);
 
 @override@JsonKey() final  String id;
@@ -227,10 +231,14 @@ class _ExpenseModel implements ExpenseModel {
 @override final  String category;
 @override final  double amount;
 @override@JsonKey() final  String note;
+@override@JsonKey() final  ExpenseApprovalStatus status;
+@override@JsonKey() final  String approvedBy;
+@override@JsonKey() final  String adminNote;
 /// 'work' for regular expenses, 'home' for home chores
 @override@JsonKey() final  String expenseType;
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? date;
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? createdAt;
+@override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? reviewedAt;
 
 /// Create a copy of ExpenseModel
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +253,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.expenseType, expenseType) || other.expenseType == expenseType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.expenseType, expenseType) || other.expenseType == expenseType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,expenseType,date,createdAt);
+int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,expenseType,date,createdAt,reviewedAt);
 
 @override
 String toString() {
-  return 'ExpenseModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, expenseType: $expenseType, date: $date, createdAt: $createdAt)';
+  return 'ExpenseModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, expenseType: $expenseType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt)';
 }
 
 
@@ -265,7 +273,7 @@ abstract mixin class _$ExpenseModelCopyWith<$Res> implements $ExpenseModelCopyWi
   factory _$ExpenseModelCopyWith(_ExpenseModel value, $Res Function(_ExpenseModel) _then) = __$ExpenseModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String techId, String techName, String category, double amount, String note, String expenseType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
+ String id, String techId, String techName, String category, double amount, String note, ExpenseApprovalStatus status, String approvedBy, String adminNote, String expenseType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
 });
 
 
@@ -282,7 +290,7 @@ class __$ExpenseModelCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? expenseType = null,Object? date = freezed,Object? createdAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? expenseType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,}) {
   return _then(_ExpenseModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -290,9 +298,13 @@ as String,techName: null == techName ? _self.techName : techName // ignore: cast
 as String,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,note: null == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
+as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as ExpenseApprovalStatus,approvedBy: null == approvedBy ? _self.approvedBy : approvedBy // ignore: cast_nullable_to_non_nullable
+as String,adminNote: null == adminNote ? _self.adminNote : adminNote // ignore: cast_nullable_to_non_nullable
 as String,expenseType: null == expenseType ? _self.expenseType : expenseType // ignore: cast_nullable_to_non_nullable
 as String,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,reviewedAt: freezed == reviewedAt ? _self.reviewedAt : reviewedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }

@@ -48,6 +48,11 @@ class AdminShell extends StatelessWidget {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: idx < 0 ? 0 : idx,
           onTap: (index) {
+            final current = idx;
+            if (current == index) {
+              HapticFeedback.selectionClick();
+              return;
+            }
             switch (index) {
               case 0:
                 context.go('/admin');

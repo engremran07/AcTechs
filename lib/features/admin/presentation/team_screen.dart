@@ -443,8 +443,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             ? null
             : FloatingActionButton.extended(
                     onPressed: _showAddTechnicianDialog,
-                    backgroundColor: ArcticTheme.arcticBlue,
-                    foregroundColor: ArcticTheme.arcticDarkBg,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     icon: const Icon(Icons.person_add_rounded),
                     label: Text(l.addTechnician),
                   )
@@ -600,7 +600,9 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       },
       child: GestureDetector(
         onLongPress: () => _toggleSelect(tech.uid),
-        onTap: _selectMode ? () => _toggleSelect(tech.uid) : null,
+        onTap: _selectMode
+            ? () => _toggleSelect(tech.uid)
+            : () => _showEditDialog(tech),
         child: _TechCard(
           user: tech,
           selected: isSelected,
@@ -635,7 +637,10 @@ class _TechCard extends ConsumerWidget {
       child: DecoratedBox(
         decoration: selected
             ? BoxDecoration(
-                border: Border.all(color: ArcticTheme.arcticBlue, width: 2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
                 borderRadius: BorderRadius.circular(12),
               )
             : const BoxDecoration(),
@@ -646,7 +651,9 @@ class _TechCard extends ConsumerWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: user.isActive
-                    ? ArcticTheme.arcticBlue.withValues(alpha: 0.15)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.15)
                     : ArcticTheme.arcticTextSecondary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -655,7 +662,7 @@ class _TechCard extends ConsumerWidget {
                   user.name.isNotEmpty ? user.name[0].toUpperCase() : 'T',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: user.isActive
-                        ? ArcticTheme.arcticBlue
+                        ? Theme.of(context).colorScheme.primary
                         : ArcticTheme.arcticTextSecondary,
                   ),
                 ),
@@ -689,7 +696,7 @@ class _TechCard extends ConsumerWidget {
                       color:
                           (user.isAdmin
                                   ? ArcticTheme.arcticWarning
-                                  : ArcticTheme.arcticBlue)
+                                  : Theme.of(context).colorScheme.primary)
                               .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -700,7 +707,7 @@ class _TechCard extends ConsumerWidget {
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: user.isAdmin
                             ? ArcticTheme.arcticWarning
-                            : ArcticTheme.arcticBlue,
+                            : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ),

@@ -274,14 +274,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: ArcticTheme.arcticBlue.withValues(
-                              alpha: 0.15,
-                            ),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.upload_file_rounded,
-                            color: ArcticTheme.arcticBlue,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 22,
                           ),
                         ),

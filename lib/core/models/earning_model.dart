@@ -5,6 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'earning_model.freezed.dart';
 part 'earning_model.g.dart';
 
+enum EarningApprovalStatus {
+  @JsonValue('pending')
+  pending,
+  @JsonValue('approved')
+  approved,
+  @JsonValue('rejected')
+  rejected,
+}
+
 /// A single earning entry (sold old AC, sold scrap, etc.).
 @freezed
 abstract class EarningModel with _$EarningModel {
@@ -15,10 +24,15 @@ abstract class EarningModel with _$EarningModel {
     required String category,
     required double amount,
     @Default('') String note,
+    @Default(EarningApprovalStatus.pending) EarningApprovalStatus status,
+    @Default('') String approvedBy,
+    @Default('') String adminNote,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? date,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? createdAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? reviewedAt,
   }) = _EarningModel;
 
   factory EarningModel.fromJson(Map<String, dynamic> json) =>
@@ -47,4 +61,8 @@ extension EarningModelX on EarningModel {
     json.remove('id');
     return json;
   }
+
+  bool get isPending => status == EarningApprovalStatus.pending;
+  bool get isApproved => status == EarningApprovalStatus.approved;
+  bool get isRejected => status == EarningApprovalStatus.rejected;
 }

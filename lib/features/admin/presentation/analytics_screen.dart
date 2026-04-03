@@ -10,8 +10,29 @@ import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
+
+enum _AdminInOutPeriodType { month, range }
+
+class _AdminInOutReportOptions {
+  const _AdminInOutReportOptions({
+    required this.locale,
+    required this.techId,
+    required this.techName,
+    required this.periodType,
+    required this.month,
+    this.dateRange,
+  });
+
+  final String locale;
+  final String techId;
+  final String techName;
+  final _AdminInOutPeriodType periodType;
+  final DateTime month;
+  final DateTimeRange? dateRange;
+}
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -23,10 +44,632 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   bool _isExporting = false;
   bool _isExportingTodayCompanyPdf = false;
+  bool _isExportingInOutPdf = false;
   String _periodFilter = 'all';
   String _reportPreset = 'all';
   String _technicianFilter = 'all';
   DateTimeRange? _customDateRange;
+
+  String _slugify(String input) {
+    final lower = input.toLowerCase().trim();
+    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return sanitized
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+  }
+
+  String _monthToken(DateTime month) {
+    const names = <String>[
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+    return '${names[month.month - 1]}-${month.year}';
+  }
+
+  List<DateTime> _invoiceReportMonths(List<JobModel> jobs) {
+    final months = <DateTime>{};
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    for (final job in jobs) {
+      final d = job.date;
+      if (d == null || d.year < 2000) continue;
+      final normalized = DateTime(d.year, d.month);
+      if (normalized.isAfter(currentMonth)) continue;
+      months.add(normalized);
+    }
+
+    final list = months.toList();
+    list.sort((a, b) {
+      final y = b.year.compareTo(a.year);
+      return y != 0 ? y : b.month.compareTo(a.month);
+    });
+    return list;
+  }
+
+  String _monthLabel(AppLocalizations l, DateTime month) {
+    final names = <String>[
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
+    ];
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  String _monthLabelForLocale(String locale, DateTime month) {
+    final names = switch (locale) {
+      'ur' => const <String>[
+        'جنوری',
+        'فروری',
+        'مارچ',
+        'اپریل',
+        'مئی',
+        'جون',
+        'جولائی',
+        'اگست',
+        'ستمبر',
+        'اکتوبر',
+        'نومبر',
+        'دسمبر',
+      ],
+      'ar' => const <String>[
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
+      ],
+      _ => const <String>[
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ],
+    };
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  List<DateTime> _inOutMonthsForTech({
+    required String techId,
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) {
+    final months = <DateTime>{};
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    void add(DateTime? d) {
+      if (d == null || d.year < 2000) return;
+      final m = DateTime(d.year, d.month);
+      if (m.isAfter(currentMonth)) return;
+      months.add(m);
+    }
+
+    for (final item in earnings) {
+      if (item.techId != techId) continue;
+      add(item.date);
+    }
+    for (final item in expenses) {
+      if (item.techId != techId) continue;
+      add(item.date);
+    }
+
+    final list = months.toList()
+      ..sort((a, b) {
+        final y = b.year.compareTo(a.year);
+        return y != 0 ? y : b.month.compareTo(a.month);
+      });
+    return list;
+  }
+
+  ({DateTime first, DateTime last})? _inOutBoundsForTech({
+    required String techId,
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) {
+    final dates = <DateTime>[];
+
+    void add(DateTime? d) {
+      if (d == null) return;
+      dates.add(DateTime(d.year, d.month, d.day));
+    }
+
+    for (final item in earnings) {
+      if (item.techId == techId) add(item.date);
+    }
+    for (final item in expenses) {
+      if (item.techId == techId) add(item.date);
+    }
+
+    if (dates.isEmpty) return null;
+    dates.sort((a, b) => a.compareTo(b));
+    return (first: dates.first, last: dates.last);
+  }
+
+  Future<_AdminInOutReportOptions?> _pickAdminInOutOptions({
+    required List<UserModel> technicians,
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) async {
+    final l = AppLocalizations.of(context)!;
+    if (technicians.isEmpty) return null;
+
+    String selectedTechId = technicians.first.uid;
+    String selectedTechName = technicians.first.name;
+    String selectedLocale = ref.read(appLocaleProvider);
+    _AdminInOutPeriodType selectedPeriodType = _AdminInOutPeriodType.month;
+
+    List<DateTime> months = _inOutMonthsForTech(
+      techId: selectedTechId,
+      earnings: earnings,
+      expenses: expenses,
+    );
+    if (months.isEmpty) return null;
+    DateTime selectedMonth = months.first;
+    var bounds = _inOutBoundsForTech(
+      techId: selectedTechId,
+      earnings: earnings,
+      expenses: expenses,
+    );
+    if (bounds == null) return null;
+    DateTimeRange selectedRange = DateTimeRange(
+      start: bounds.first,
+      end: bounds.last,
+    );
+
+    return showDialog<_AdminInOutReportOptions>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            return AlertDialog(
+              title: Text(l.exportPdf),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.technician),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedTechId,
+                    decoration: const InputDecoration(isDense: true),
+                    items: technicians
+                        .map(
+                          (t) => DropdownMenuItem<String>(
+                            value: t.uid,
+                            child: Text(t.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      final selected = technicians.firstWhere(
+                        (t) => t.uid == value,
+                        orElse: () => technicians.first,
+                      );
+                      final nextMonths = _inOutMonthsForTech(
+                        techId: selected.uid,
+                        earnings: earnings,
+                        expenses: expenses,
+                      );
+                      final nextBounds = _inOutBoundsForTech(
+                        techId: selected.uid,
+                        earnings: earnings,
+                        expenses: expenses,
+                      );
+                      if (nextMonths.isEmpty || nextBounds == null) return;
+
+                      setLocalState(() {
+                        selectedTechId = selected.uid;
+                        selectedTechName = selected.name;
+                        months = nextMonths;
+                        bounds = nextBounds;
+                        selectedMonth = months.first;
+                        selectedRange = DateTimeRange(
+                          start: bounds!.first,
+                          end: bounds!.last,
+                        );
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l.language),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedLocale,
+                    decoration: const InputDecoration(isDense: true),
+                    items: [
+                      DropdownMenuItem(value: 'en', child: Text(l.english)),
+                      DropdownMenuItem(value: 'ur', child: Text(l.urdu)),
+                      DropdownMenuItem(value: 'ar', child: Text(l.arabic)),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setLocalState(() => selectedLocale = value);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(l.reportPreset),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: Text(l.monthlySummary),
+                        selected:
+                            selectedPeriodType == _AdminInOutPeriodType.month,
+                        onSelected: (_) => setLocalState(
+                          () =>
+                              selectedPeriodType = _AdminInOutPeriodType.month,
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: Text(l.selectPdfDateRange),
+                        selected:
+                            selectedPeriodType == _AdminInOutPeriodType.range,
+                        onSelected: (_) => setLocalState(
+                          () =>
+                              selectedPeriodType = _AdminInOutPeriodType.range,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (selectedPeriodType == _AdminInOutPeriodType.month) ...[
+                    Text(l.selectDate),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<DateTime>(
+                      initialValue: selectedMonth,
+                      decoration: const InputDecoration(isDense: true),
+                      items: months
+                          .map(
+                            (m) => DropdownMenuItem<DateTime>(
+                              value: m,
+                              child: Text(_monthLabel(l, m)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setLocalState(() => selectedMonth = value);
+                      },
+                    ),
+                  ] else ...[
+                    Text(
+                      '${AppFormatters.date(selectedRange.start)} - ${AppFormatters.date(selectedRange.end)}',
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDateRangePicker(
+                          context: context,
+                          firstDate: bounds!.first,
+                          lastDate: bounds!.last,
+                          initialDateRange: selectedRange,
+                          helpText: l.selectPdfDateRange,
+                        );
+                        if (picked == null) return;
+                        setLocalState(() {
+                          selectedRange = DateTimeRange(
+                            start: DateTime(
+                              picked.start.year,
+                              picked.start.month,
+                              picked.start.day,
+                            ),
+                            end: DateTime(
+                              picked.end.year,
+                              picked.end.month,
+                              picked.end.day,
+                            ),
+                          );
+                        });
+                      },
+                      icon: const Icon(Icons.date_range_rounded),
+                      label: Text(l.selectDate),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(l.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(
+                    _AdminInOutReportOptions(
+                      locale: selectedLocale,
+                      techId: selectedTechId,
+                      techName: selectedTechName,
+                      periodType: selectedPeriodType,
+                      month: selectedMonth,
+                      dateRange:
+                          selectedPeriodType == _AdminInOutPeriodType.range
+                          ? selectedRange
+                          : null,
+                    ),
+                  ),
+                  child: Text(l.exportPdf),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _exportAdminInOutPdf({
+    required _AdminInOutReportOptions options,
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) async {
+    final l = AppLocalizations.of(context)!;
+    setState(() => _isExportingInOutPdf = true);
+    try {
+      final normalizedMonth = DateTime(options.month.year, options.month.month);
+      final normalizedRange = options.dateRange == null
+          ? null
+          : DateTimeRange(
+              start: DateTime(
+                options.dateRange!.start.year,
+                options.dateRange!.start.month,
+                options.dateRange!.start.day,
+              ),
+              end: DateTime(
+                options.dateRange!.end.year,
+                options.dateRange!.end.month,
+                options.dateRange!.end.day,
+                23,
+                59,
+                59,
+              ),
+            );
+
+      final scopedEarnings = earnings.where((item) {
+        if (item.techId != options.techId) return false;
+        final d = item.date;
+        if (d == null) return false;
+        if (normalizedRange != null) {
+          return !d.isBefore(normalizedRange.start) &&
+              !d.isAfter(normalizedRange.end);
+        }
+        return d.year == normalizedMonth.year &&
+            d.month == normalizedMonth.month;
+      }).toList();
+
+      final scopedExpenses = expenses.where((item) {
+        if (item.techId != options.techId) return false;
+        final d = item.date;
+        if (d == null) return false;
+        if (normalizedRange != null) {
+          return !d.isBefore(normalizedRange.start) &&
+              !d.isAfter(normalizedRange.end);
+        }
+        return d.year == normalizedMonth.year &&
+            d.month == normalizedMonth.month;
+      }).toList();
+
+      if (scopedEarnings.isEmpty && scopedExpenses.isEmpty) {
+        if (mounted) {
+          ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+        }
+        return;
+      }
+
+      final languageLabel = switch (options.locale) {
+        'ur' => l.urdu,
+        'ar' => l.arabic,
+        _ => l.english,
+      };
+      final periodLabel = normalizedRange != null
+          ? '${AppFormatters.date(normalizedRange.start)} - ${AppFormatters.date(normalizedRange.end)}'
+          : _monthLabelForLocale(options.locale, normalizedMonth);
+      final reportTitle = switch (options.locale) {
+        'ur' => '${options.techName} کی رپورٹ ($languageLabel)',
+        'ar' => 'تقرير ${options.techName} ($languageLabel)',
+        _ => 'Report of ${options.techName} ($languageLabel)',
+      };
+
+      final bytes = await PdfGenerator.generateTodayInOutReport(
+        earnings: scopedEarnings,
+        expenses: scopedExpenses,
+        locale: options.locale,
+        technicianName: options.techName,
+        reportTitle: reportTitle,
+        reportDate: normalizedRange?.start ?? normalizedMonth,
+        periodLabel: periodLabel,
+        monthlyMode: true,
+      );
+
+      final techToken = _slugify(options.techName).isEmpty
+          ? 'technician'
+          : _slugify(options.techName);
+      final periodToken = normalizedRange != null
+          ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
+          : _monthToken(normalizedMonth);
+
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        '$techToken-${options.locale}-$periodToken-in-out.pdf',
+      );
+    } catch (_) {
+      if (mounted) {
+        ErrorSnackbar.show(context, message: l.couldNotExport);
+      }
+    } finally {
+      if (mounted) setState(() => _isExportingInOutPdf = false);
+    }
+  }
+
+  Future<({DateTime month, String companyKey, String companyName})?>
+  _pickInvoiceReportOptions(List<JobModel> jobs) async {
+    final l = AppLocalizations.of(context)!;
+    final months = _invoiceReportMonths(jobs);
+    if (months.isEmpty) return null;
+
+    DateTime selectedMonth = months.first;
+    String selectedCompanyKey = '__all__';
+    String selectedCompanyName = l.all;
+
+    String companyKey(JobModel job) {
+      final id = job.companyId.trim();
+      if (id.isNotEmpty) return id;
+      final name = job.companyName.trim();
+      return name.isNotEmpty ? name : '__no_company__';
+    }
+
+    String companyName(JobModel job) {
+      final name = job.companyName.trim();
+      return name.isNotEmpty ? name : l.noCompany;
+    }
+
+    List<({String key, String name})> companiesForMonth(DateTime month) {
+      final map = <String, String>{};
+      for (final job in jobs) {
+        final d = job.date;
+        if (d == null) continue;
+        if (d.year != month.year || d.month != month.month) continue;
+        map[companyKey(job)] = companyName(job);
+      }
+      final entries = map.entries
+          .map((e) => (key: e.key, name: e.value))
+          .toList();
+      entries.sort((a, b) => a.name.compareTo(b.name));
+      return entries;
+    }
+
+    final picked =
+        await showDialog<
+          ({DateTime month, String companyKey, String companyName})
+        >(
+          context: context,
+          builder: (ctx) {
+            return StatefulBuilder(
+              builder: (ctx, setLocalState) {
+                final monthCompanies = companiesForMonth(selectedMonth);
+                final companyItems = <({String key, String name})>[
+                  (key: '__all__', name: l.all),
+                  ...monthCompanies,
+                ];
+
+                if (!companyItems.any((c) => c.key == selectedCompanyKey)) {
+                  selectedCompanyKey = '__all__';
+                  selectedCompanyName = l.all;
+                }
+
+                return AlertDialog(
+                  title: Text(l.exportTodayCompanyInvoices),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l.selectDate),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<DateTime>(
+                        initialValue: selectedMonth,
+                        decoration: const InputDecoration(isDense: true),
+                        items: months
+                            .map(
+                              (m) => DropdownMenuItem<DateTime>(
+                                value: m,
+                                child: Text(_monthLabel(l, m)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setLocalState(() {
+                            selectedMonth = value;
+                            selectedCompanyKey = '__all__';
+                            selectedCompanyName = l.all;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Text(l.company),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedCompanyKey,
+                        decoration: const InputDecoration(isDense: true),
+                        items: companyItems
+                            .map(
+                              (c) => DropdownMenuItem<String>(
+                                value: c.key,
+                                child: Text(c.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          final selected = companyItems.firstWhere(
+                            (c) => c.key == value,
+                            orElse: () => (key: '__all__', name: l.all),
+                          );
+                          setLocalState(() {
+                            selectedCompanyKey = selected.key;
+                            selectedCompanyName = selected.name;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(l.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop((
+                        month: selectedMonth,
+                        companyKey: selectedCompanyKey,
+                        companyName: selectedCompanyName,
+                      )),
+                      child: Text(l.exportPdf),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+
+    return picked;
+  }
 
   Future<void> _pickCustomDateRange() async {
     final l = AppLocalizations.of(context)!;
@@ -165,29 +808,61 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     }
   }
 
-  Future<void> _exportTodayCompanyInvoicesPdf(List<JobModel> jobs) async {
+  Future<void> _exportTodayCompanyInvoicesPdf({
+    required List<JobModel> jobs,
+    required DateTime month,
+    required String companyKey,
+    required String companyName,
+  }) async {
     setState(() => _isExportingTodayCompanyPdf = true);
     try {
       final l = AppLocalizations.of(context)!;
       final locale = ref.read(appLocaleProvider);
-      final now = DateTime.now();
 
-      if (jobs.isEmpty) {
+      String companyFilterKey(JobModel job) {
+        final id = job.companyId.trim();
+        if (id.isNotEmpty) return id;
+        final name = job.companyName.trim();
+        return name.isNotEmpty ? name : '__no_company__';
+      }
+
+      final scopedJobs = jobs.where((job) {
+        final d = job.date;
+        if (d == null) return false;
+        if (d.year != month.year || d.month != month.month) return false;
+        if (companyKey == '__all__') return true;
+        return companyFilterKey(job) == companyKey;
+      }).toList();
+
+      if (scopedJobs.isEmpty) {
         if (mounted) {
           ErrorSnackbar.show(context, message: l.noJobsForPeriod);
         }
         return;
       }
 
+      final reportTitle = switch (locale) {
+        'ur' => 'کمپنی انوائس رپورٹ ($companyName)',
+        'ar' => 'تقرير فواتير الشركة ($companyName)',
+        _ => 'Company Invoice Report ($companyName)',
+      };
+
+      final periodLabel = _monthLabel(l, month);
+
       final bytes = await PdfGenerator.generateTodayCompanyInvoicesReport(
-        jobs: jobs,
+        jobs: scopedJobs,
         locale: locale,
+        reportTitle: reportTitle,
+        periodLabel: periodLabel,
       );
 
-      await PdfGenerator.sharePdfBytes(
-        bytes,
-        'company_invoices_today_${now.year}_${now.month}_${now.day}.pdf',
+      final companyToken = _slugify(
+        companyName.isEmpty ? l.noCompany : companyName,
       );
+      final fileName =
+          '${companyToken.isEmpty ? 'company' : companyToken}-${_monthToken(month)}-invoice-report.pdf';
+
+      await PdfGenerator.sharePdfBytes(bytes, fileName);
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(
@@ -204,6 +879,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final allJobs = ref.watch(allJobsProvider);
     final usersAsync = ref.watch(allUsersProvider);
+    final allEarningsAsync = ref.watch(allEarningsProvider);
+    final allExpensesAsync = ref.watch(allExpensesProvider);
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -250,13 +927,50 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ],
           ),
           IconButton(
+            onPressed: _isExportingInOutPdf
+                ? null
+                : () async {
+                    final users = usersAsync.value;
+                    final earnings = allEarningsAsync.value;
+                    final expenses = allExpensesAsync.value;
+                    if (users == null || earnings == null || expenses == null) {
+                      return;
+                    }
+                    final techs = users.where((u) => !u.isAdmin).toList();
+                    final picked = await _pickAdminInOutOptions(
+                      technicians: techs,
+                      earnings: earnings,
+                      expenses: expenses,
+                    );
+                    if (picked == null) return;
+                    await _exportAdminInOutPdf(
+                      options: picked,
+                      earnings: earnings,
+                      expenses: expenses,
+                    );
+                  },
+            icon: _isExportingInOutPdf
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.receipt_long_rounded),
+            tooltip: l.inOut,
+          ),
+          IconButton(
             onPressed: _isExportingTodayCompanyPdf
                 ? null
-                : () {
+                : () async {
                     final jobs = ref.read(allJobsProvider).value;
                     if (jobs != null) {
+                      final picked = await _pickInvoiceReportOptions(jobs);
+                      if (picked == null) return;
                       _exportTodayCompanyInvoicesPdf(
-                        _applyTechnicianFilter(_applyPeriodFilter(jobs)),
+                        jobs: jobs,
+                        month: picked.month,
+                        companyKey: picked.companyKey,
+                        companyName: picked.companyName,
                       );
                     }
                   },

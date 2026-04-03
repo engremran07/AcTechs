@@ -29,12 +29,17 @@ class FlushDatabaseNotifier extends AsyncNotifier<void> {
   Future<void> flush(
     String password, {
     required bool deleteNonAdminUsers,
+    String? targetTechnicianId,
   }) async {
     state = const AsyncLoading();
     try {
       final repo = ref.read(userRepositoryProvider);
       await repo.verifyAdminPassword(password);
-      await repo.flushDatabase(deleteNonAdminUsers: deleteNonAdminUsers);
+      if (targetTechnicianId != null && targetTechnicianId.trim().isNotEmpty) {
+        await repo.flushTechnicianData(targetTechnicianId);
+      } else {
+        await repo.flushDatabase(deleteNonAdminUsers: deleteNonAdminUsers);
+      }
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);

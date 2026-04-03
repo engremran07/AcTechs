@@ -476,32 +476,18 @@ class _HistoricalImportScreenState
                           _selectedCompany = null;
                         }
 
-                        return DropdownButtonFormField<String>(
-                          initialValue: _selectedCompany?.id,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            labelText: l.company,
-                            prefixIcon: const Icon(Icons.business_outlined),
-                          ),
-                          items: companies.map((company) {
-                            return DropdownMenuItem<String>(
-                              value: company.id,
-                              child: Text(
-                                company.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: _isImporting
-                              ? null
-                              : (value) {
-                                  setState(() {
-                                    _selectedCompany = findCompany(
-                                      value,
-                                      companies,
-                                    );
-                                  });
-                                },
+                        return CompanySelectorField(
+                          companies: companies,
+                          selectedCompanyId: _selectedCompany?.id,
+                          enabled: !_isImporting,
+                          includeNoCompanyOption: false,
+                          labelText: l.company,
+                          prefixIcon: const Icon(Icons.business_outlined),
+                          onChanged: (selectedCompany) {
+                            setState(() {
+                              _selectedCompany = selectedCompany;
+                            });
+                          },
                         );
                       },
                       loading: () => const Padding(

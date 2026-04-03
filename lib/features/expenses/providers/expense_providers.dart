@@ -112,3 +112,27 @@ final monthlyEarningsProvider = StreamProvider.autoDispose
           .watch(earningRepositoryProvider)
           .monthlyEarnings(user.uid, month);
     });
+
+final pendingExpensesProvider = StreamProvider<List<ExpenseModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) return Stream.value([]);
+  return ref.watch(expenseRepositoryProvider).pendingExpenses();
+});
+
+final pendingEarningsProvider = StreamProvider<List<EarningModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) return Stream.value([]);
+  return ref.watch(earningRepositoryProvider).pendingEarnings();
+});
+
+final allExpensesProvider = StreamProvider<List<ExpenseModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) return Stream.value([]);
+  return ref.watch(expenseRepositoryProvider).allExpenses();
+});
+
+final allEarningsProvider = StreamProvider<List<EarningModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) return Stream.value([]);
+  return ref.watch(earningRepositoryProvider).allEarnings();
+});

@@ -35,6 +35,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _deleteNonAdminUsers = false;
+  String? _targetTechnicianId;
 
   @override
   void initState() {
@@ -79,7 +80,11 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
     try {
       await ref
           .read(flushDatabaseProvider.notifier)
-          .flush(password, deleteNonAdminUsers: _deleteNonAdminUsers);
+          .flush(
+            password,
+            deleteNonAdminUsers: _deleteNonAdminUsers,
+            targetTechnicianId: _targetTechnicianId,
+          );
       if (!mounted) return;
       AppFeedback.success(context, message: l.flushSuccess);
       context.go('/admin');
@@ -92,6 +97,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
         _countdown = _kStep1Delay;
         _passwordCtrl.clear();
         _deleteNonAdminUsers = false;
+        _targetTechnicianId = null;
       });
       _startCountdown();
     }
@@ -101,6 +107,10 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final flushState = ref.watch(flushDatabaseProvider);
+    final usersAsync = ref.watch(allUsersProvider);
+    final users = usersAsync.asData?.value;
+    final technicians =
+        users?.where((u) => !u.isAdmin).toList() ?? const <UserModel>[];
     final isLoading = flushState.isLoading;
 
     return Scaffold(
@@ -134,6 +144,10 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   onFlush: _executeFlush,
                   onCancel: () => context.go('/admin'),
                   isLoading: isLoading,
+                  technicians: technicians,
+                  targetTechnicianId: _targetTechnicianId,
+                  onTargetTechnicianChanged: (value) =>
+                      setState(() => _targetTechnicianId = value),
                 ),
         ),
       ),
@@ -320,6 +334,9 @@ class _Step2View extends StatelessWidget {
     required this.isLoading,
     required this.deleteNonAdminUsers,
     required this.onToggleDeleteUsers,
+    required this.technicians,
+    required this.targetTechnicianId,
+    required this.onTargetTechnicianChanged,
   });
 
   final int countdown;
@@ -328,6 +345,9 @@ class _Step2View extends StatelessWidget {
   final bool obscurePassword;
   final bool deleteNonAdminUsers;
   final ValueChanged<bool> onToggleDeleteUsers;
+  final List<UserModel> technicians;
+  final String? targetTechnicianId;
+  final ValueChanged<String?> onTargetTechnicianChanged;
   final VoidCallback onToggleObscure;
   final VoidCallback onFlush;
   final VoidCallback onCancel;
@@ -387,83 +407,120 @@ class _Step2View extends StatelessWidget {
         // Password entry
         Form(
           key: formKey,
-          child: TextFormField(
-            controller: passwordCtrl,
-            obscureText: obscurePassword,
-            decoration: InputDecoration(
-              labelText: l.flushEnterPassword,
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
+          child: Column(
+            children: [
+              DropdownButtonFormField<String?>(
+                initialValue: targetTechnicianId,
+                decoration: InputDecoration(
+                  labelText: l.flushScope,
+                  prefixIcon: const Icon(Icons.group_work_outlined),
                 ),
-                onPressed: onToggleObscure,
+                items: [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(l.flushAllData),
+                  ),
+                  ...technicians.map(
+                    (tech) => DropdownMenuItem<String?>(
+                      value: tech.uid,
+                      child: Text(tech.name),
+                    ),
+                  ),
+                ],
+                onChanged: isLoading ? null : onTargetTechnicianChanged,
               ),
-            ),
-            validator: (v) => (v == null || v.isEmpty) ? l.required : null,
+              const SizedBox(height: 12),
+              if (targetTechnicianId != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    l.flushOnlySelectedTechnician,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
+                  ),
+                ),
+              TextFormField(
+                controller: passwordCtrl,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: l.flushEnterPassword,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: onToggleObscure,
+                  ),
+                ),
+                validator: (v) => (v == null || v.isEmpty) ? l.required : null,
+              ),
+            ],
           ),
         ).animate().fadeIn(delay: 200.ms),
         const SizedBox(height: 12),
 
-        CheckboxListTile(
-          value: deleteNonAdminUsers,
-          onChanged: isLoading
-              ? null
-              : (value) => onToggleDeleteUsers(value ?? false),
-          contentPadding: EdgeInsets.zero,
-          controlAffinity: ListTileControlAffinity.leading,
-          activeColor: ArcticTheme.arcticError,
-          title: Text(
-            l.flushDeleteUsersOption,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: deleteNonAdminUsers
-                  ? ArcticTheme.arcticError
-                  : ArcticTheme.arcticTextPrimary,
-              fontWeight: deleteNonAdminUsers ? FontWeight.w700 : null,
-            ),
-          ),
-          subtitle: Text(
-            l.flushDeleteUsersHelp,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: deleteNonAdminUsers
-                  ? ArcticTheme.arcticError
-                  : ArcticTheme.arcticTextSecondary,
-            ),
-          ),
-        ).animate().fadeIn(delay: 220.ms),
-        if (deleteNonAdminUsers)
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: ArcticTheme.arcticError.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: ArcticTheme.arcticError.withValues(alpha: 0.35),
+        if (targetTechnicianId == null) ...[
+          CheckboxListTile(
+            value: deleteNonAdminUsers,
+            onChanged: isLoading
+                ? null
+                : (value) => onToggleDeleteUsers(value ?? false),
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            activeColor: ArcticTheme.arcticError,
+            title: Text(
+              l.flushDeleteUsersOption,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: deleteNonAdminUsers
+                    ? ArcticTheme.arcticError
+                    : ArcticTheme.arcticTextPrimary,
+                fontWeight: deleteNonAdminUsers ? FontWeight.w700 : null,
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: ArcticTheme.arcticError,
+            subtitle: Text(
+              l.flushDeleteUsersHelp,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: deleteNonAdminUsers
+                    ? ArcticTheme.arcticError
+                    : ArcticTheme.arcticTextSecondary,
+              ),
+            ),
+          ).animate().fadeIn(delay: 220.ms),
+          if (deleteNonAdminUsers)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: ArcticTheme.arcticError.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: ArcticTheme.arcticError.withValues(alpha: 0.35),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    l.flushDeleteUsersEnabledWarning,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: ArcticTheme.arcticError,
-                      fontWeight: FontWeight.w600,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: ArcticTheme.arcticError,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      l.flushDeleteUsersEnabledWarning,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: ArcticTheme.arcticError,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: 240.ms).slideY(begin: 0.08),
+                ],
+              ),
+            ).animate().fadeIn(delay: 240.ms).slideY(begin: 0.08),
+        ],
         const SizedBox(height: 32),
 
         // Countdown / flush button

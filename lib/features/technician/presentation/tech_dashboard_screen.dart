@@ -332,8 +332,8 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => context.go('/tech/submit'),
-          backgroundColor: ArcticTheme.arcticBlue,
-          foregroundColor: ArcticTheme.arcticDarkBg,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           icon: const Icon(Icons.add_rounded),
           label: Text(l.newJob),
         ),

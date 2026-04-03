@@ -10,6 +10,8 @@ class AppConstants {
   static const String expensesCollection = 'expenses';
   static const String earningsCollection = 'earnings';
   static const String companiesCollection = 'companies';
+  static const String appSettingsCollection = 'app_settings';
+  static const String approvalConfigDocId = 'approval_config';
 
   static const String expenseTypeWork = 'work';
   static const String expenseTypeHome = 'home';

@@ -14,9 +14,15 @@ _ExpenseModel _$ExpenseModelFromJson(Map<String, dynamic> json) =>
       category: json['category'] as String,
       amount: (json['amount'] as num).toDouble(),
       note: json['note'] as String? ?? '',
+      status:
+          $enumDecodeNullable(_$ExpenseApprovalStatusEnumMap, json['status']) ??
+          ExpenseApprovalStatus.pending,
+      approvedBy: json['approvedBy'] as String? ?? '',
+      adminNote: json['adminNote'] as String? ?? '',
       expenseType: json['expenseType'] as String? ?? 'work',
       date: _timestampFromJson(json['date']),
       createdAt: _timestampFromJson(json['createdAt']),
+      reviewedAt: _timestampFromJson(json['reviewedAt']),
     );
 
 Map<String, dynamic> _$ExpenseModelToJson(_ExpenseModel instance) =>
@@ -27,7 +33,17 @@ Map<String, dynamic> _$ExpenseModelToJson(_ExpenseModel instance) =>
       'category': instance.category,
       'amount': instance.amount,
       'note': instance.note,
+      'status': _$ExpenseApprovalStatusEnumMap[instance.status]!,
+      'approvedBy': instance.approvedBy,
+      'adminNote': instance.adminNote,
       'expenseType': instance.expenseType,
       'date': _timestampToJson(instance.date),
       'createdAt': _timestampToJson(instance.createdAt),
+      'reviewedAt': _timestampToJson(instance.reviewedAt),
     };
+
+const _$ExpenseApprovalStatusEnumMap = {
+  ExpenseApprovalStatus.pending: 'pending',
+  ExpenseApprovalStatus.approved: 'approved',
+  ExpenseApprovalStatus.rejected: 'rejected',
+};

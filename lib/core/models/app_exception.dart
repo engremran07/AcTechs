@@ -192,6 +192,31 @@ class JobException extends AppException {
     'اس انوائس نمبر سے پہلے سے ایک کام موجود ہے۔',
     'يوجد عمل بهذا الرقم بالفعل.',
   );
+
+  factory JobException.sharedUnitsExceeded({required int remaining}) =>
+      JobException(
+        'job_shared_units_exceeded',
+        'Shared units exceed invoice total. Remaining units: $remaining.',
+        'شیئرڈ یونٹس انوائس کے کل یونٹس سے زیادہ ہیں۔ باقی یونٹس: $remaining۔',
+        'وحدات المشاركة تتجاوز إجمالي الفاتورة. الوحدات المتبقية: $remaining.',
+      );
+
+  factory JobException.sharedTypeUnitsExceeded({
+    required String unitType,
+    required int remaining,
+  }) => JobException(
+    'job_shared_type_units_exceeded',
+    '$unitType units exceed the invoice total. Remaining units: $remaining.',
+    '$unitType یونٹس انوائس کے کل سے زیادہ ہیں۔ باقی یونٹس: $remaining۔',
+    'وحدات $unitType تتجاوز إجمالي الفاتورة. الوحدات المتبقية: $remaining.',
+  );
+
+  factory JobException.sharedDeliverySplitInvalid() => const JobException(
+    'job_shared_delivery_split_invalid',
+    'Enter the shared team size so delivery charges can be split equally.',
+    'مشترکہ ٹیم کی تعداد درج کریں تاکہ ڈیلیوری چارج برابر تقسیم ہو سکے۔',
+    'أدخل عدد أعضاء الفريق المشترك ليتم تقسيم رسوم التوصيل بالتساوي.',
+  );
 }
 
 class AdminException extends AppException {

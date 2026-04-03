@@ -11,6 +11,6 @@ final allCompaniesProvider = StreamProvider<List<CompanyModel>>((ref) {
 
 final activeCompaniesProvider = StreamProvider<List<CompanyModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
-  if (user == null || !user.isAdmin) return Stream.value([]);
+  if (user == null) return Stream.value([]);
   return ref.watch(companyRepositoryProvider).activeCompanies();
 });

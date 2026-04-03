@@ -14,8 +14,27 @@ import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+
+enum _JobsReportPeriodType { month, range }
+
+class _JobsReportOptions {
+  const _JobsReportOptions({
+    required this.periodType,
+    required this.month,
+    this.dateRange,
+    required this.companyKey,
+    required this.companyName,
+  });
+
+  final _JobsReportPeriodType periodType;
+  final DateTime month;
+  final DateTimeRange? dateRange;
+  final String companyKey;
+  final String companyName;
+}
 
 class JobHistoryScreen extends ConsumerStatefulWidget {
   const JobHistoryScreen({super.key});
@@ -102,6 +121,406 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     if (_periodFilter == 'today') return l.today;
     if (_periodFilter == 'month') return l.thisMonth;
     return '${AppFormatters.date(range.start)} - ${AppFormatters.date(range.end)}';
+  }
+
+  String _slugify(String input) {
+    final lower = input.toLowerCase().trim();
+    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return sanitized
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+  }
+
+  String _monthToken(DateTime month) {
+    const monthNames = <String>[
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+    return '${monthNames[month.month - 1]}-${month.year}';
+  }
+
+  String _monthLabel(AppLocalizations l, DateTime month) {
+    final names = <String>[
+      l.january,
+      l.february,
+      l.march,
+      l.april,
+      l.may,
+      l.june,
+      l.july,
+      l.august,
+      l.september,
+      l.october,
+      l.november,
+      l.december,
+    ];
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  List<DateTime> _jobsReportMonths(List<JobModel> jobs) {
+    final months = <DateTime>{};
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+
+    for (final job in jobs) {
+      final d = job.date;
+      if (d == null || d.year < 2000) continue;
+      final normalized = DateTime(d.year, d.month);
+      if (normalized.isAfter(currentMonth)) continue;
+      months.add(normalized);
+    }
+
+    final list = months.toList();
+    list.sort((a, b) {
+      final y = b.year.compareTo(a.year);
+      return y != 0 ? y : b.month.compareTo(a.month);
+    });
+    return list;
+  }
+
+  ({DateTime first, DateTime last})? _jobsDateBounds(List<JobModel> jobs) {
+    final dates = <DateTime>[];
+    for (final job in jobs) {
+      final d = job.date;
+      if (d == null || d.year < 2000) continue;
+      dates.add(DateTime(d.year, d.month, d.day));
+    }
+    if (dates.isEmpty) return null;
+    dates.sort((a, b) => a.compareTo(b));
+    return (first: dates.first, last: dates.last);
+  }
+
+  String _jobCompanyKey(JobModel job) {
+    final id = job.companyId.trim();
+    if (id.isNotEmpty) return id;
+    final name = job.companyName.trim();
+    return name.isNotEmpty ? name : '__no_company__';
+  }
+
+  String _jobCompanyName(AppLocalizations l, JobModel job) {
+    final name = job.companyName.trim();
+    return name.isNotEmpty ? name : l.noCompany;
+  }
+
+  bool _isInRange(DateTime date, DateTimeRange range) {
+    final start = DateTime(
+      range.start.year,
+      range.start.month,
+      range.start.day,
+    );
+    final end = DateTime(
+      range.end.year,
+      range.end.month,
+      range.end.day,
+      23,
+      59,
+      59,
+    );
+    return !date.isBefore(start) && !date.isAfter(end);
+  }
+
+  List<JobModel> _jobsByPeriod({
+    required List<JobModel> jobs,
+    required _JobsReportPeriodType periodType,
+    required DateTime month,
+    DateTimeRange? dateRange,
+  }) {
+    return jobs.where((job) {
+      final d = job.date;
+      if (d == null) return false;
+      if (periodType == _JobsReportPeriodType.range && dateRange != null) {
+        return _isInRange(d, dateRange);
+      }
+      return d.year == month.year && d.month == month.month;
+    }).toList();
+  }
+
+  Future<_JobsReportOptions?> _pickJobsReportOptions(
+    List<JobModel> jobs,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final months = _jobsReportMonths(jobs);
+    final bounds = _jobsDateBounds(jobs);
+    if (months.isEmpty || bounds == null) return null;
+
+    DateTime selectedMonth = months.first;
+    DateTimeRange selectedRange = DateTimeRange(
+      start: bounds.first,
+      end: bounds.last,
+    );
+    _JobsReportPeriodType selectedPeriodType = _JobsReportPeriodType.month;
+    String selectedCompanyKey = '__all__';
+    String selectedCompanyName = l.all;
+
+    List<({String key, String name})> companiesForSelection() {
+      final scoped = _jobsByPeriod(
+        jobs: jobs,
+        periodType: selectedPeriodType,
+        month: selectedMonth,
+        dateRange: selectedRange,
+      );
+      final map = <String, String>{};
+      for (final job in scoped) {
+        map[_jobCompanyKey(job)] = _jobCompanyName(l, job);
+      }
+      final list = map.entries.map((e) => (key: e.key, name: e.value)).toList();
+      list.sort((a, b) => a.name.compareTo(b.name));
+      return list;
+    }
+
+    final picked = await showDialog<_JobsReportOptions>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            final companyItems = <({String key, String name})>[
+              (key: '__all__', name: l.all),
+              ...companiesForSelection(),
+            ];
+
+            if (!companyItems.any((item) => item.key == selectedCompanyKey)) {
+              selectedCompanyKey = '__all__';
+              selectedCompanyName = l.all;
+            }
+
+            return AlertDialog(
+              title: Text(l.exportPdf),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.reportPreset),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: Text(l.monthlySummary),
+                        selected:
+                            selectedPeriodType == _JobsReportPeriodType.month,
+                        onSelected: (_) {
+                          setLocalState(() {
+                            selectedPeriodType = _JobsReportPeriodType.month;
+                            selectedCompanyKey = '__all__';
+                            selectedCompanyName = l.all;
+                          });
+                        },
+                      ),
+                      ChoiceChip(
+                        label: Text(l.selectPdfDateRange),
+                        selected:
+                            selectedPeriodType == _JobsReportPeriodType.range,
+                        onSelected: (_) {
+                          setLocalState(() {
+                            selectedPeriodType = _JobsReportPeriodType.range;
+                            selectedCompanyKey = '__all__';
+                            selectedCompanyName = l.all;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (selectedPeriodType == _JobsReportPeriodType.month) ...[
+                    Text(l.selectDate),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<DateTime>(
+                      initialValue: selectedMonth,
+                      decoration: const InputDecoration(isDense: true),
+                      items: months
+                          .map(
+                            (m) => DropdownMenuItem<DateTime>(
+                              value: m,
+                              child: Text(_monthLabel(l, m)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setLocalState(() {
+                          selectedMonth = value;
+                          selectedCompanyKey = '__all__';
+                          selectedCompanyName = l.all;
+                        });
+                      },
+                    ),
+                  ] else ...[
+                    Text(
+                      '${AppFormatters.date(selectedRange.start)} - ${AppFormatters.date(selectedRange.end)}',
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final pickedRange = await showDateRangePicker(
+                          context: context,
+                          firstDate: bounds.first,
+                          lastDate: bounds.last,
+                          initialDateRange: selectedRange,
+                          helpText: l.selectPdfDateRange,
+                        );
+                        if (pickedRange == null) return;
+                        setLocalState(() {
+                          selectedRange = DateTimeRange(
+                            start: DateTime(
+                              pickedRange.start.year,
+                              pickedRange.start.month,
+                              pickedRange.start.day,
+                            ),
+                            end: DateTime(
+                              pickedRange.end.year,
+                              pickedRange.end.month,
+                              pickedRange.end.day,
+                            ),
+                          );
+                          selectedCompanyKey = '__all__';
+                          selectedCompanyName = l.all;
+                        });
+                      },
+                      icon: const Icon(Icons.date_range_rounded),
+                      label: Text(l.selectDate),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Text(l.company),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCompanyKey,
+                    decoration: const InputDecoration(isDense: true),
+                    items: companyItems
+                        .map(
+                          (item) => DropdownMenuItem<String>(
+                            value: item.key,
+                            child: Text(item.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      final selected = companyItems.firstWhere(
+                        (item) => item.key == value,
+                        orElse: () => (key: '__all__', name: l.all),
+                      );
+                      setLocalState(() {
+                        selectedCompanyKey = selected.key;
+                        selectedCompanyName = selected.name;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(l.cancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(
+                    _JobsReportOptions(
+                      periodType: selectedPeriodType,
+                      month: selectedMonth,
+                      dateRange:
+                          selectedPeriodType == _JobsReportPeriodType.range
+                          ? selectedRange
+                          : null,
+                      companyKey: selectedCompanyKey,
+                      companyName: selectedCompanyName,
+                    ),
+                  ),
+                  child: Text(l.exportPdf),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return picked;
+  }
+
+  Future<void> _exportJobsHistoryPdf({
+    required List<JobModel> jobs,
+    required String locale,
+    required _JobsReportOptions options,
+  }) async {
+    final l = AppLocalizations.of(context)!;
+    final user = ref.read(currentUserProvider).value;
+    final personName = (user?.name.trim().isNotEmpty ?? false)
+        ? user!.name.trim()
+        : l.technician;
+
+    final filteredByPeriod = _jobsByPeriod(
+      jobs: jobs,
+      periodType: options.periodType,
+      month: options.month,
+      dateRange: options.dateRange,
+    );
+    final filtered = options.companyKey == '__all__'
+        ? filteredByPeriod
+        : filteredByPeriod
+              .where((job) => _jobCompanyKey(job) == options.companyKey)
+              .toList();
+
+    if (filtered.isEmpty) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+      return;
+    }
+
+    final reportTitle = switch (locale) {
+      'ur' => 'جاب ہسٹری رپورٹ (${options.companyName})',
+      'ar' => 'تقرير سجل الوظائف (${options.companyName})',
+      _ => 'Jobs History Report (${options.companyName})',
+    };
+
+    try {
+      final fromDate =
+          options.dateRange?.start ??
+          DateTime(options.month.year, options.month.month, 1);
+      final toDate =
+          options.dateRange?.end ??
+          DateTime(options.month.year, options.month.month + 1, 0);
+
+      final bytes = await PdfGenerator.generateJobsDetailsReport(
+        jobs: filtered,
+        title: reportTitle,
+        locale: locale,
+        technicianName: personName,
+        fromDate: fromDate,
+        toDate: toDate,
+        maxPages: 2000,
+      );
+
+      final personToken = _slugify(personName).isEmpty
+          ? 'technician'
+          : _slugify(personName);
+      final companyToken = options.companyKey == '__all__'
+          ? 'all'
+          : (_slugify(options.companyName).isEmpty
+                ? 'company'
+                : _slugify(options.companyName));
+      final periodToken = options.dateRange != null
+          ? '${options.dateRange!.start.year}-${options.dateRange!.start.month.toString().padLeft(2, '0')}-${options.dateRange!.start.day.toString().padLeft(2, '0')}-to-${options.dateRange!.end.year}-${options.dateRange!.end.month.toString().padLeft(2, '0')}-${options.dateRange!.end.day.toString().padLeft(2, '0')}'
+          : _monthToken(options.month);
+
+      await PdfGenerator.sharePdfBytes(
+        bytes,
+        '$personToken-$locale-$companyToken-$periodToken-jobs-history.pdf',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: l.couldNotExport);
+    }
   }
 
   List<JobModel> _applyFilters(List<JobModel> jobs) {
@@ -374,9 +793,24 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                 );
                               } else if (action == 'export_pdf') {
                                 try {
-                                  await PdfGenerator.previewPdf(context, [
-                                    job,
-                                  ], locale);
+                                  final l = AppLocalizations.of(context)!;
+                                  final bytes =
+                                      await PdfGenerator.generateJobsDetailsReport(
+                                        jobs: [job],
+                                        title: l.jobs,
+                                        locale: locale,
+                                        technicianName: job.techName,
+                                        fromDate: job.date,
+                                        toDate: job.date,
+                                      );
+                                  final invoiceToken =
+                                      _slugify(job.invoiceNumber).isEmpty
+                                      ? 'invoice'
+                                      : _slugify(job.invoiceNumber);
+                                  await PdfGenerator.sharePdfBytes(
+                                    bytes,
+                                    '$invoiceToken-$locale-job.pdf',
+                                  );
                                 } catch (_) {
                                   if (context.mounted) {
                                     ErrorSnackbar.show(
@@ -535,11 +969,17 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                     child: ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: summaries.length,
-                      itemBuilder: (context, index) =>
-                          _InOutHistoryCard(summary: summaries[index])
-                              .animate(delay: (index * 70).ms)
-                              .fadeIn(duration: 220.ms)
-                              .slideX(begin: 0.05),
+                      itemBuilder: (context, index) {
+                        final s = summaries[index];
+                        return _InOutHistoryCard(
+                              summary: s,
+                              onTap: () =>
+                                  context.push('/tech/summary', extra: s.date),
+                            )
+                            .animate(delay: (index * 70).ms)
+                            .fadeIn(duration: 220.ms)
+                            .slideX(begin: 0.05);
+                      },
                     ),
                   ),
                 ),
@@ -624,13 +1064,14 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                 onPressed: () async {
                   final jobList = jobs.value;
                   if (jobList == null || jobList.isEmpty) return;
-                  final filtered = _applyFilters(jobList);
-                  try {
-                    await PdfGenerator.previewPdf(context, filtered, locale);
-                  } catch (_) {
-                    if (!context.mounted) return;
-                    ErrorSnackbar.show(context, message: l.couldNotExport);
-                  }
+                  final options = await _pickJobsReportOptions(jobList);
+                  if (options == null) return;
+                  if (!mounted) return;
+                  await _exportJobsHistoryPdf(
+                    jobs: jobList,
+                    locale: locale,
+                    options: options,
+                  );
                 },
               ),
               IconButton(
@@ -683,121 +1124,116 @@ class _HistoryJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: ArcticCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return ArcticCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          job.clientName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  StatusBadge(status: job.status.name),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _InfoChip(
-                    icon: Icons.ac_unit_rounded,
-                    label: AppFormatters.units(job.totalUnits),
-                  ),
-                  const SizedBox(width: 12),
-                  if (job.expenses > 0)
-                    Flexible(
-                      child: _InfoChip(
-                        icon: Icons.payments_outlined,
-                        label: AppFormatters.currency(job.expenses),
-                        color: ArcticTheme.arcticWarning,
-                      ),
-                    ),
-                ],
-              ),
-              if (job.clientContact.trim().isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.phone_outlined,
-                      size: 15,
-                      color: ArcticTheme.arcticTextSecondary,
+                    Text(
+                      job.clientName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        job.clientContact,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        await WhatsAppLauncher.openChat(job.clientContact);
-                      },
-                      icon: const FaIcon(
-                        FontAwesomeIcons.whatsapp,
-                        color: ArcticTheme.arcticSuccess,
-                        size: 16,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minHeight: 28,
-                        minWidth: 28,
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
-              ],
-              if (job.isRejected && job.adminNote.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: ArcticTheme.arcticError.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+              ),
+              StatusBadge(status: job.status.name),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _InfoChip(
+                icon: Icons.ac_unit_rounded,
+                label: AppFormatters.units(job.totalUnits),
+              ),
+              const SizedBox(width: 12),
+              if (job.expenses > 0)
+                Flexible(
+                  child: _InfoChip(
+                    icon: Icons.payments_outlined,
+                    label: AppFormatters.currency(job.expenses),
+                    color: ArcticTheme.arcticWarning,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: ArcticTheme.arcticError,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          job.adminNote,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: ArcticTheme.arcticError),
-                        ),
-                      ),
-                    ],
+                ),
+            ],
+          ),
+          if (job.clientContact.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.phone_outlined,
+                  size: 15,
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    job.clientContact,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    await WhatsAppLauncher.openChat(job.clientContact);
+                  },
+                  icon: const FaIcon(
+                    FontAwesomeIcons.whatsapp,
+                    color: ArcticTheme.arcticSuccess,
+                    size: 16,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 28,
+                    minWidth: 28,
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
+            ),
+          ],
+          if (job.isRejected && job.adminNote.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: ArcticTheme.arcticError.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: ArcticTheme.arcticError,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      job.adminNote,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: ArcticTheme.arcticError,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -913,15 +1349,17 @@ class _InOutDaySummary {
 }
 
 class _InOutHistoryCard extends StatelessWidget {
-  const _InOutHistoryCard({required this.summary});
+  const _InOutHistoryCard({required this.summary, this.onTap});
 
   final _InOutDaySummary summary;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return ArcticCard(
       margin: const EdgeInsets.only(bottom: 10),
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

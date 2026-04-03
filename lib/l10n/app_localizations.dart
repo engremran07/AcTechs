@@ -238,6 +238,24 @@ abstract class AppLocalizations {
   /// **'Approvals'**
   String get approvals;
 
+  /// No description provided for @sharedInstallApprovalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Install Approvals'**
+  String get sharedInstallApprovalRequired;
+
+  /// No description provided for @enforceMinimumBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Enforce Minimum Build'**
+  String get enforceMinimumBuild;
+
+  /// No description provided for @minimumSupportedBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum Supported Build'**
+  String get minimumSupportedBuild;
+
   /// No description provided for @analytics.
   ///
   /// In en, this message translates to:
@@ -1204,6 +1222,78 @@ abstract class AppLocalizations {
   /// **'Submit a Job'**
   String get submitAJob;
 
+  /// No description provided for @sharedInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Install'**
+  String get sharedInstall;
+
+  /// No description provided for @sharedInstallHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable when one invoice is split across multiple technicians.'**
+  String get sharedInstallHint;
+
+  /// No description provided for @sharedInstallMixHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter invoice totals by type. Technicians will enter their own unit share manually. Delivery is split equally only.'**
+  String get sharedInstallMixHint;
+
+  /// No description provided for @sharedInvoiceTotalUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Total Units'**
+  String get sharedInvoiceTotalUnits;
+
+  /// No description provided for @sharedInstallLimitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entered units exceed the invoice total units.'**
+  String get sharedInstallLimitError;
+
+  /// No description provided for @sharedInvoiceSplitUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Split Units'**
+  String get sharedInvoiceSplitUnits;
+
+  /// No description provided for @sharedInvoiceWindowUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Window Units'**
+  String get sharedInvoiceWindowUnits;
+
+  /// No description provided for @sharedInvoiceFreestandingUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Standing Units'**
+  String get sharedInvoiceFreestandingUnits;
+
+  /// No description provided for @sharedTeamSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Team Size'**
+  String get sharedTeamSize;
+
+  /// No description provided for @sharedInvoiceDeliveryAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Delivery Charge (Invoice)'**
+  String get sharedInvoiceDeliveryAmount;
+
+  /// No description provided for @sharedDeliverySplitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This delivery amount will be split equally across the shared team.'**
+  String get sharedDeliverySplitHint;
+
+  /// No description provided for @sharedDeliverySplitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the shared team size so delivery charges can be split equally.'**
+  String get sharedDeliverySplitInvalid;
+
   /// No description provided for @splits.
   ///
   /// In en, this message translates to:
@@ -1792,6 +1882,24 @@ abstract class AppLocalizations {
   /// **'Reset all data to a clean state'**
   String get flushDatabaseSubtitle;
 
+  /// No description provided for @flushScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush Scope'**
+  String get flushScope;
+
+  /// No description provided for @flushAllData.
+  ///
+  /// In en, this message translates to:
+  /// **'All Data'**
+  String get flushAllData;
+
+  /// No description provided for @flushOnlySelectedTechnician.
+  ///
+  /// In en, this message translates to:
+  /// **'Only selected technician data (jobs and in/out) will be flushed.'**
+  String get flushOnlySelectedTechnician;
+
   /// No description provided for @flushStep1Title.
   ///
   /// In en, this message translates to:
@@ -1917,6 +2025,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Incorrect password. Please try again.'**
   String get flushWrongPassword;
+
+  /// No description provided for @currentBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Current build'**
+  String get currentBuild;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Required'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your app build ({build}) is no longer supported. Please install the latest APK to continue.'**
+  String updateRequiredBody(int build);
+
+  /// No description provided for @updateRequiredLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking app version...'**
+  String get updateRequiredLoading;
+
+  /// No description provided for @iUpdatedRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'I Updated - Refresh'**
+  String get iUpdatedRefresh;
 
   /// No description provided for @catSplitAc.
   ///

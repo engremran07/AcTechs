@@ -15,7 +15,9 @@ import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 
 class MonthlySummaryScreen extends ConsumerStatefulWidget {
-  const MonthlySummaryScreen({super.key});
+  const MonthlySummaryScreen({super.key, this.initialMonth});
+
+  final DateTime? initialMonth;
 
   @override
   ConsumerState<MonthlySummaryScreen> createState() =>
@@ -33,7 +35,10 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _selectedMonth = DateTime(now.year, now.month);
+    final init = widget.initialMonth;
+    _selectedMonth = init != null
+        ? DateTime(init.year, init.month)
+        : DateTime(now.year, now.month);
     _pdfDateRange = _defaultPdfRangeForMonth(_selectedMonth);
   }
 

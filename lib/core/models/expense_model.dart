@@ -5,6 +5,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'expense_model.freezed.dart';
 part 'expense_model.g.dart';
 
+enum ExpenseApprovalStatus {
+  @JsonValue('pending')
+  pending,
+  @JsonValue('approved')
+  approved,
+  @JsonValue('rejected')
+  rejected,
+}
+
 /// A single daily expense entry (food, petrol, consumables, rent, etc.).
 @freezed
 abstract class ExpenseModel with _$ExpenseModel {
@@ -15,6 +24,9 @@ abstract class ExpenseModel with _$ExpenseModel {
     required String category,
     required double amount,
     @Default('') String note,
+    @Default(ExpenseApprovalStatus.pending) ExpenseApprovalStatus status,
+    @Default('') String approvedBy,
+    @Default('') String adminNote,
 
     /// 'work' for regular expenses, 'home' for home chores
     @Default('work') String expenseType,
@@ -22,6 +34,8 @@ abstract class ExpenseModel with _$ExpenseModel {
     DateTime? date,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? createdAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? reviewedAt,
   }) = _ExpenseModel;
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) =>
@@ -50,4 +64,8 @@ extension ExpenseModelX on ExpenseModel {
     json.remove('id');
     return json;
   }
+
+  bool get isPending => status == ExpenseApprovalStatus.pending;
+  bool get isApproved => status == ExpenseApprovalStatus.approved;
+  bool get isRejected => status == ExpenseApprovalStatus.rejected;
 }

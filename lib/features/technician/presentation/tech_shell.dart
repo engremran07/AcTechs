@@ -45,6 +45,11 @@ class TechShell extends StatelessWidget {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex(context),
           onTap: (index) {
+            final current = _currentIndex(context);
+            if (current == index) {
+              HapticFeedback.selectionClick();
+              return;
+            }
             switch (index) {
               case 0:
                 context.go('/tech');

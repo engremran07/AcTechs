@@ -110,7 +110,10 @@ class SortButton<T> extends StatelessWidget {
     return PopupMenuButton<T>(
       initialValue: currentValue,
       onSelected: onSelected,
-      icon: const Icon(Icons.sort_rounded, color: ArcticTheme.arcticBlue),
+      icon: Icon(
+        Icons.sort_rounded,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       tooltip: 'Sort',
       itemBuilder: (_) => options
           .map(
@@ -119,10 +122,10 @@ class SortButton<T> extends StatelessWidget {
               child: Row(
                 children: [
                   if (o.value == currentValue)
-                    const Icon(
+                    Icon(
                       Icons.check,
                       size: 16,
-                      color: ArcticTheme.arcticBlue,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   if (o.value == currentValue) const SizedBox(width: 8),
                   Text(o.label),
@@ -159,7 +162,9 @@ class BulkActionBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: ArcticTheme.arcticSurface,
         border: Border(
-          top: BorderSide(color: ArcticTheme.arcticBlue.withValues(alpha: 0.3)),
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          ),
         ),
       ),
       child: SafeArea(

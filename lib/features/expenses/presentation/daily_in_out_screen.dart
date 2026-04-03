@@ -6,6 +6,7 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
+import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -14,6 +15,7 @@ import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 /// Unified daily In/Out screen — techs add earnings (IN) and expenses (OUT)
 /// in a single view with a running profit/loss summary on top.
@@ -22,6 +24,22 @@ class DailyInOutScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<DailyInOutScreen> createState() => _DailyInOutScreenState();
+}
+
+enum _ReportPeriodType { month, range }
+
+class _InOutReportOptions {
+  final String locale;
+  final _ReportPeriodType periodType;
+  final DateTime month;
+  final DateTimeRange? dateRange;
+
+  const _InOutReportOptions({
+    required this.locale,
+    required this.periodType,
+    required this.month,
+    this.dateRange,
+  });
 }
 
 class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
@@ -163,6 +181,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     try {
       final user = ref.read(currentUserProvider).value;
       if (user == null) return;
+      final approvalConfig = ref.read(approvalConfigProvider).value;
+      final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
 
       final now = DateTime.now();
 
@@ -180,8 +200,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             category: row.category,
             amount: amount,
             note: remark,
+            status: requiresApproval
+                ? EarningApprovalStatus.pending
+                : EarningApprovalStatus.approved,
+            adminNote: '',
             date: now,
             createdAt: now,
+            reviewedAt: requiresApproval ? null : now,
           );
           await ref.read(earningRepositoryProvider).addEarning(earning);
         } else {
@@ -192,8 +217,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             amount: amount,
             note: remark,
             expenseType: _expenseType,
+            status: requiresApproval
+                ? ExpenseApprovalStatus.pending
+                : ExpenseApprovalStatus.approved,
+            adminNote: '',
             date: now,
             createdAt: now,
+            reviewedAt: requiresApproval ? null : now,
           );
           await ref.read(expenseRepositoryProvider).addExpense(expense);
         }
@@ -362,17 +392,120 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     return '${names[month.month - 1]} ${month.year}';
   }
 
-  Future<({DateTime month, String locale})?> _pickReportOptions(
-    List<DateTime> monthsWithData,
-  ) async {
+  String _monthLabelForLocale(String locale, DateTime month) {
+    final names = switch (locale) {
+      'ur' => const <String>[
+        'جنوری',
+        'فروری',
+        'مارچ',
+        'اپریل',
+        'مئی',
+        'جون',
+        'جولائی',
+        'اگست',
+        'ستمبر',
+        'اکتوبر',
+        'نومبر',
+        'دسمبر',
+      ],
+      'ar' => const <String>[
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
+      ],
+      _ => const <String>[
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ],
+    };
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
+  String _slugify(String input) {
+    final lower = input.toLowerCase().trim();
+    final sanitized = lower.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return sanitized
+        .replaceAll(RegExp(r'-{2,}'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '');
+  }
+
+  String _monthToken(DateTime month) {
+    const monthNames = <String>[
+      'january',
+      'february',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+    ];
+    return monthNames[month.month - 1];
+  }
+
+  ({DateTime first, DateTime last})? _reportDateBounds({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+  }) {
+    final dates = <DateTime>[];
+
+    void add(DateTime? value) {
+      if (value == null) return;
+      dates.add(DateTime(value.year, value.month, value.day));
+    }
+
+    for (final item in earnings) {
+      add(item.date);
+    }
+    for (final item in expenses) {
+      add(item.date);
+    }
+
+    if (dates.isEmpty) return null;
+    dates.sort((a, b) => a.compareTo(b));
+    return (first: dates.first, last: dates.last);
+  }
+
+  Future<_InOutReportOptions?> _pickReportOptions({
+    required List<DateTime> monthsWithData,
+    required ({DateTime first, DateTime last}) dateBounds,
+  }) async {
     if (monthsWithData.isEmpty) return null;
     final l = AppLocalizations.of(context)!;
     final currentLocale = Localizations.localeOf(context).languageCode;
 
     DateTime selectedMonth = _effectiveExportMonth(monthsWithData);
     String selectedLocale = currentLocale;
+    _ReportPeriodType selectedPeriodType = _ReportPeriodType.month;
+    DateTimeRange selectedRange = DateTimeRange(
+      start: dateBounds.first,
+      end: dateBounds.last,
+    );
 
-    final result = await showDialog<({DateTime month, String locale})>(
+    final result = await showDialog<_InOutReportOptions>(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
@@ -398,24 +531,85 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Text(l.selectDate),
+                Text(l.reportPreset),
                 const SizedBox(height: 6),
-                DropdownButtonFormField<DateTime>(
-                  initialValue: selectedMonth,
-                  decoration: const InputDecoration(isDense: true),
-                  items: monthsWithData
-                      .map(
-                        (m) => DropdownMenuItem<DateTime>(
-                          value: m,
-                          child: Text(_monthLabel(l, m)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setLocalState(() => selectedMonth = value);
-                  },
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: Text(l.monthlySummary),
+                      selected: selectedPeriodType == _ReportPeriodType.month,
+                      onSelected: (_) {
+                        setLocalState(() {
+                          selectedPeriodType = _ReportPeriodType.month;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: Text(l.selectPdfDateRange),
+                      selected: selectedPeriodType == _ReportPeriodType.range,
+                      onSelected: (_) {
+                        setLocalState(() {
+                          selectedPeriodType = _ReportPeriodType.range;
+                        });
+                      },
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 6),
+                if (selectedPeriodType == _ReportPeriodType.month) ...[
+                  Text(l.selectDate),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<DateTime>(
+                    initialValue: selectedMonth,
+                    decoration: const InputDecoration(isDense: true),
+                    items: monthsWithData
+                        .map(
+                          (m) => DropdownMenuItem<DateTime>(
+                            value: m,
+                            child: Text(_monthLabel(l, m)),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setLocalState(() => selectedMonth = value);
+                    },
+                  ),
+                ] else ...[
+                  Text(
+                    '${AppFormatters.date(selectedRange.start)} - ${AppFormatters.date(selectedRange.end)}',
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: dateBounds.first,
+                        lastDate: dateBounds.last,
+                        initialDateRange: selectedRange,
+                        helpText: l.selectPdfDateRange,
+                      );
+                      if (picked == null) return;
+                      setLocalState(() {
+                        selectedRange = DateTimeRange(
+                          start: DateTime(
+                            picked.start.year,
+                            picked.start.month,
+                            picked.start.day,
+                          ),
+                          end: DateTime(
+                            picked.end.year,
+                            picked.end.month,
+                            picked.end.day,
+                          ),
+                        );
+                      });
+                    },
+                    icon: const Icon(Icons.date_range_rounded),
+                    label: Text(l.selectDate),
+                  ),
+                ],
               ],
             ),
             actions: [
@@ -424,9 +618,16 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                 child: Text(l.cancel),
               ),
               FilledButton(
-                onPressed: () => Navigator.of(
-                  ctx,
-                ).pop((month: selectedMonth, locale: selectedLocale)),
+                onPressed: () => Navigator.of(ctx).pop(
+                  _InOutReportOptions(
+                    locale: selectedLocale,
+                    periodType: selectedPeriodType,
+                    month: selectedMonth,
+                    dateRange: selectedPeriodType == _ReportPeriodType.range
+                        ? selectedRange
+                        : null,
+                  ),
+                ),
                 child: Text(l.exportPdf),
               ),
             ],
@@ -440,6 +641,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
   Future<void> _exportTodayInOutPdf({
     required DateTime month,
+    DateTimeRange? dateRange,
     required String reportLocale,
     required List<EarningModel> allEarnings,
     required List<ExpenseModel> allExpenses,
@@ -449,18 +651,46 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     setState(() => _isExportingTodayPdf = true);
     try {
       final normalizedMonth = DateTime(month.year, month.month);
+      final normalizedRange = dateRange == null
+          ? null
+          : DateTimeRange(
+              start: DateTime(
+                dateRange.start.year,
+                dateRange.start.month,
+                dateRange.start.day,
+              ),
+              end: DateTime(
+                dateRange.end.year,
+                dateRange.end.month,
+                dateRange.end.day,
+                23,
+                59,
+                59,
+              ),
+            );
+
       final earnings = allEarnings.where((item) {
         final d = item.date;
-        return d != null &&
-            d.year == normalizedMonth.year &&
+        if (d == null) return false;
+        if (normalizedRange != null) {
+          return !d.isBefore(normalizedRange.start) &&
+              !d.isAfter(normalizedRange.end);
+        }
+        return d.year == normalizedMonth.year &&
             d.month == normalizedMonth.month;
       }).toList();
+
       final expenses = allExpenses.where((item) {
         final d = item.date;
-        return d != null &&
-            d.year == normalizedMonth.year &&
+        if (d == null) return false;
+        if (normalizedRange != null) {
+          return !d.isBefore(normalizedRange.start) &&
+              !d.isAfter(normalizedRange.end);
+        }
+        return d.year == normalizedMonth.year &&
             d.month == normalizedMonth.month;
       }).toList();
+
       if (earnings.isEmpty && expenses.isEmpty) {
         if (mounted) {
           ErrorSnackbar.show(context, message: l.noEntriesToday);
@@ -470,18 +700,43 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
       if (!mounted) return;
       final user = ref.read(currentUserProvider).value;
+      final personName = (user?.name.trim().isNotEmpty ?? false)
+          ? user!.name.trim()
+          : l.technician;
+      final languageLabel = switch (reportLocale) {
+        'ur' => l.urdu,
+        'ar' => l.arabic,
+        _ => l.english,
+      };
+      final periodLabel = normalizedRange != null
+          ? '${AppFormatters.date(normalizedRange.start)} - ${AppFormatters.date(normalizedRange.end)}'
+          : _monthLabelForLocale(reportLocale, normalizedMonth);
+      final reportTitle = switch (reportLocale) {
+        'ur' => '$personName کی رپورٹ ($languageLabel)',
+        'ar' => 'تقرير $personName ($languageLabel)',
+        _ => 'Report of $personName ($languageLabel)',
+      };
+
       final bytes = await PdfGenerator.generateTodayInOutReport(
         earnings: earnings,
         expenses: expenses,
         locale: reportLocale,
-        technicianName: user?.name,
-        reportDate: normalizedMonth,
+        technicianName: personName,
+        reportTitle: reportTitle,
+        reportDate: normalizedRange?.start ?? normalizedMonth,
+        periodLabel: periodLabel,
         monthlyMode: true,
       );
 
+      final personToken = _slugify(personName).isEmpty
+          ? 'technician'
+          : _slugify(personName);
+      final fileSuffix = normalizedRange != null
+          ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
+          : '${_monthToken(normalizedMonth)}-${normalizedMonth.year}';
       await PdfGenerator.sharePdfBytes(
         bytes,
-        'in_out_${normalizedMonth.year}_${normalizedMonth.month.toString().padLeft(2, '0')}.pdf',
+        '$personToken-$reportLocale-$fileSuffix-in-out.pdf',
       );
     } catch (_) {
       if (mounted) {
@@ -675,6 +930,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
     final amount = double.parse(amountCtrl.text.trim());
     final note = noteCtrl.text.trim();
+    final approvalConfig = ref.read(approvalConfigProvider).value;
+    final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
 
     if (item.isIn) {
       await _updateEarning(
@@ -685,8 +942,14 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           category: selectedCategory,
           amount: amount,
           note: note,
+          status: requiresApproval
+              ? EarningApprovalStatus.pending
+              : EarningApprovalStatus.approved,
+          approvedBy: requiresApproval ? '' : item.approvedBy,
+          adminNote: requiresApproval ? '' : item.adminNote,
           date: item.date,
           createdAt: item.createdAt,
+          reviewedAt: requiresApproval ? null : item.reviewedAt,
         ),
       );
     } else {
@@ -699,8 +962,14 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           amount: amount,
           note: note,
           expenseType: selectedExpenseType,
+          status: requiresApproval
+              ? ExpenseApprovalStatus.pending
+              : ExpenseApprovalStatus.approved,
+          approvedBy: requiresApproval ? '' : item.approvedBy,
+          adminNote: requiresApproval ? '' : item.adminNote,
           date: item.date,
           createdAt: item.createdAt,
+          reviewedAt: requiresApproval ? null : item.reviewedAt,
         ),
       );
     }
@@ -755,6 +1024,10 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       earnings: allEarnings,
       expenses: allExpenses,
     );
+    final dateBounds = _reportDateBounds(
+      earnings: allEarnings,
+      expenses: allExpenses,
+    );
 
     ref.listen<AsyncValue<List<JobModel>>>(technicianJobsProvider, (
       prev,
@@ -804,11 +1077,16 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                     allExpensesAsync.isLoading
                 ? null
                 : () async {
-                    final picked = await _pickReportOptions(monthsWithData);
+                    if (dateBounds == null) return;
+                    final picked = await _pickReportOptions(
+                      monthsWithData: monthsWithData,
+                      dateBounds: dateBounds,
+                    );
                     if (picked == null) return;
                     if (!mounted) return;
                     await _exportTodayInOutPdf(
                       month: picked.month,
+                      dateRange: picked.dateRange,
                       reportLocale: picked.locale,
                       allEarnings: allEarnings,
                       allExpenses: allExpenses,
@@ -1251,8 +1529,11 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               category: e.category,
               amount: e.amount,
               note: e.note,
+              approvedBy: e.approvedBy,
+              adminNote: e.adminNote,
               date: e.date,
               createdAt: e.createdAt,
+              reviewedAt: e.reviewedAt,
             ),
           for (final e in expenses)
             _EntryItem(
@@ -1263,9 +1544,12 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               category: e.category,
               amount: e.amount,
               note: e.note,
+              approvedBy: e.approvedBy,
+              adminNote: e.adminNote,
               expenseType: e.expenseType,
               date: e.date,
               createdAt: e.createdAt,
+              reviewedAt: e.reviewedAt,
             ),
         ]..sort(
           (a, b) =>
@@ -1295,110 +1579,117 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               _deleteExpense(item.id);
             }
           },
-          child: ArcticCard(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                // Direction icon
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color:
-                        (item.isIn
-                                ? ArcticTheme.arcticSuccess
-                                : ArcticTheme.arcticError)
-                            .withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    item.isIn
-                        ? Icons.arrow_downward_rounded
-                        : Icons.arrow_upward_rounded,
-                    color: item.isIn
-                        ? ArcticTheme.arcticSuccess
-                        : ArcticTheme.arcticError,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        translateCategory(item.category, l),
-                        style: theme.textTheme.titleSmall,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showEditEntryDialog(item),
+              child: ArcticCard(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    // Direction icon
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color:
+                            (item.isIn
+                                    ? ArcticTheme.arcticSuccess
+                                    : ArcticTheme.arcticError)
+                                .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      if (item.note.isNotEmpty)
-                        Text(
-                          item.note,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: ArcticTheme.arcticTextSecondary,
-                          ),
-                        ),
-                      if (!item.isIn &&
-                          item.expenseType == AppConstants.expenseTypeHome)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ArcticTheme.arcticBlue.withValues(
-                                alpha: 0.15,
-                              ),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              l.homeExpenses,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: ArcticTheme.arcticBlue,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: l.editEntry,
-                  onPressed: () => _showEditEntryDialog(item),
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    color: ArcticTheme.arcticBlue,
-                    size: 20,
-                  ),
-                ),
-                IconButton(
-                  tooltip: l.delete,
-                  onPressed: () => _confirmDeleteEntry(item),
-                  icon: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: ArcticTheme.arcticError,
-                    size: 20,
-                  ),
-                ),
-                // Amount
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '${item.isIn ? "+" : "-"} SAR ${item.amount.toStringAsFixed(0)}',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      child: Icon(
+                        item.isIn
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
                         color: item.isIn
                             ? ArcticTheme.arcticSuccess
                             : ArcticTheme.arcticError,
-                        fontWeight: FontWeight.bold,
+                        size: 20,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    // Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            translateCategory(item.category, l),
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          if (item.note.isNotEmpty)
+                            Text(
+                              item.note,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: ArcticTheme.arcticTextSecondary,
+                              ),
+                            ),
+                          if (!item.isIn &&
+                              item.expenseType == AppConstants.expenseTypeHome)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: ArcticTheme.arcticBlue.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  l.homeExpenses,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: ArcticTheme.arcticBlue,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l.editEntry,
+                      onPressed: () => _showEditEntryDialog(item),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: ArcticTheme.arcticBlue,
+                        size: 20,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l.delete,
+                      onPressed: () => _confirmDeleteEntry(item),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: ArcticTheme.arcticError,
+                        size: 20,
+                      ),
+                    ),
+                    // Amount
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${item.isIn ? "+" : "-"} SAR ${item.amount.toStringAsFixed(0)}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: item.isIn
+                                ? ArcticTheme.arcticSuccess
+                                : ArcticTheme.arcticError,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ).animate().fadeIn(delay: (50 + entry.key * 40).ms),
         );
@@ -1430,9 +1721,12 @@ class _EntryItem {
     required this.category,
     required this.amount,
     required this.note,
+    this.approvedBy = '',
+    this.adminNote = '',
     this.expenseType = AppConstants.expenseTypeWork,
     this.date,
     this.createdAt,
+    this.reviewedAt,
   });
 
   final String id;
@@ -1442,9 +1736,12 @@ class _EntryItem {
   final String category;
   final double amount;
   final String note;
+  final String approvedBy;
+  final String adminNote;
   final String expenseType;
   final DateTime? date;
   final DateTime? createdAt;
+  final DateTime? reviewedAt;
 }
 
 // ── IN / OUT toggle button ──

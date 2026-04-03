@@ -362,12 +362,65 @@ class UserRepository {
     }
   }
 
+  Future<void> flushTechnicianData(String techId) async {
+    try {
+      if (techId.trim().isEmpty) return;
+      await _deleteCollectionByFieldInChunks(
+        AppConstants.jobsCollection,
+        'techId',
+        techId,
+      );
+      await _deleteCollectionByFieldInChunks(
+        AppConstants.expensesCollection,
+        'techId',
+        techId,
+      );
+      await _deleteCollectionByFieldInChunks(
+        AppConstants.earningsCollection,
+        'techId',
+        techId,
+      );
+    } on FirebaseException catch (e) {
+      debugPrint('flushTechnicianData error code: ${e.code}');
+      if (e.code == 'permission-denied') {
+        throw const AdminException(
+          'admin_flush_permission_denied',
+          'Database flush is blocked by security rules. Contact admin support.',
+          'ڈیٹا بیس فلش سیکیورٹی رولز کی وجہ سے بلاک ہے۔ ایڈمن سپورٹ سے رابطہ کریں۔',
+          'تم حظر مسح قاعدة البيانات بواسطة قواعد الأمان. تواصل مع دعم المسؤول.',
+        );
+      }
+      throw AdminException.flushFailed();
+    }
+  }
+
   /// Deletes all documents in [collectionName] in chunks of 400.
   Future<void> _deleteCollectionInChunks(String collectionName) async {
     const chunkSize = 400;
     while (true) {
       final snap = await firestore
           .collection(collectionName)
+          .limit(chunkSize)
+          .get();
+      if (snap.docs.isEmpty) break;
+      final batch = firestore.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+
+  Future<void> _deleteCollectionByFieldInChunks(
+    String collectionName,
+    String field,
+    String value,
+  ) async {
+    const chunkSize = 400;
+    while (true) {
+      final snap = await firestore
+          .collection(collectionName)
+          .where(field, isEqualTo: value)
           .limit(chunkSize)
           .get();
       if (snap.docs.isEmpty) break;

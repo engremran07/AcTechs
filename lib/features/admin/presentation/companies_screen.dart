@@ -131,8 +131,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       appBar: AppBar(title: Text(l.companies)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCompanyDialog,
-        backgroundColor: ArcticTheme.arcticBlue,
-        foregroundColor: ArcticTheme.arcticDarkBg,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add_business_rounded),
         label: Text(l.addCompany),
       ),

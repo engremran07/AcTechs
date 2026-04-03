@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:arabic_reshaper/arabic_reshaper.dart' as reshaper;
-import 'package:bidi/bidi.dart' as bidi;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -81,9 +80,7 @@ class PdfGenerator {
   static String _shapeRtlForPdf(String locale, String text) {
     if (locale != 'ur' && locale != 'ar') return text;
     if (text.isEmpty || !_arabicScriptRegex.hasMatch(text)) return text;
-    final reshaped = _reshaper.reshape(text);
-    final visual = String.fromCharCodes(bidi.logicalToVisual(reshaped));
-    return visual;
+    return _reshaper.reshape(text);
   }
 
   static List<String> _shapeRowForPdf(String locale, List<String> row) {
@@ -169,8 +166,15 @@ class PdfGenerator {
 
   static String _safeTableCellText(String? value, {int maxLength = 120}) {
     final cleaned = AppFormatters.safeText(value);
+    if (cleaned.trim().isEmpty || cleaned == '-') return '';
     if (cleaned.length <= maxLength) return cleaned;
     return '${cleaned.substring(0, maxLength - 3)}...';
+  }
+
+  static String _plainAmount(double value) {
+    if (value <= 0) return '';
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value.toStringAsFixed(2);
   }
 
   // ── Font cache ──────────────────────────────────────────────────────────────
@@ -1289,6 +1293,8 @@ class PdfGenerator {
   static Future<Uint8List> generateTodayCompanyInvoicesReport({
     required List<JobModel> jobs,
     String locale = 'en',
+    String? reportTitle,
+    String? periodLabel,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -1329,11 +1335,13 @@ class PdfGenerator {
         ? ['الشركة', 'عدد الفواتير', 'إجمالي الوحدات', 'الفنيون']
         : ['Company', 'Invoices', 'Total Units', 'Technicians'];
 
-    final title = locale == 'ur'
-        ? 'آج کی کمپنی وائز انوائس رپورٹ'
-        : locale == 'ar'
-        ? 'تقرير فواتير اليوم حسب الشركة'
-        : 'Today Company-wise Invoices';
+    final title =
+        reportTitle ??
+        (locale == 'ur'
+            ? 'آج کی کمپنی وائز انوائس رپورٹ'
+            : locale == 'ar'
+            ? 'تقرير فواتير اليوم حسب الشركة'
+            : 'Today Company-wise Invoices');
 
     final totalInvoices = jobs.length;
     final totalUnits = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
@@ -1352,7 +1360,7 @@ class PdfGenerator {
           reportTitle: title,
           font: font,
           dir: dir,
-          dateRange: AppFormatters.date(today),
+          dateRange: periodLabel ?? AppFormatters.date(today),
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [
@@ -1502,6 +1510,80 @@ class PdfGenerator {
     final dateRange = (fromDate != null && toDate != null)
         ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
         : null;
+    final totalUnits = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
+    final totalSplitUnits = jobs.fold<int>(
+      0,
+      (s, j) =>
+          s +
+          j.acUnits
+              .where((u) => u.type == 'Split AC')
+              .fold<int>(0, (x, u) => x + u.quantity),
+    );
+    final totalWindowUnits = jobs.fold<int>(
+      0,
+      (s, j) =>
+          s +
+          j.acUnits
+              .where((u) => u.type == 'Window AC')
+              .fold<int>(0, (x, u) => x + u.quantity),
+    );
+    final totalFreestandingUnits = jobs.fold<int>(
+      0,
+      (s, j) =>
+          s +
+          j.acUnits
+              .where((u) => u.type == 'Freestanding AC')
+              .fold<int>(0, (x, u) => x + u.quantity),
+    );
+    final totalUninstallations = jobs.fold<int>(
+      0,
+      (s, j) =>
+          s +
+          j.acUnits
+              .where(
+                (u) =>
+                    u.type == AppConstants.unitTypeUninstallOld ||
+                    u.type == AppConstants.unitTypeUninstallSplit ||
+                    u.type == AppConstants.unitTypeUninstallWindow ||
+                    u.type == AppConstants.unitTypeUninstallFreestanding,
+              )
+              .fold<int>(0, (x, u) => x + u.quantity),
+    );
+    final totalInstalledBrackets = jobs.fold<int>(
+      0,
+      (s, j) => s + (j.charges?.bracketCount ?? 0),
+    );
+    final totalDeliveryCharges = jobs.fold<double>(
+      0,
+      (s, j) =>
+          s +
+          ((j.charges != null &&
+                  !AppFormatters.isCustomerCashPaid(j.charges!.deliveryNote))
+              ? j.charges!.deliveryAmount
+              : 0),
+    );
+    final sharedJobs = jobs.where((j) => j.isSharedInstall).toList();
+    final soloJobs = jobs.where((j) => !j.isSharedInstall).toList();
+    final sharedJobsCount = sharedJobs.length;
+    final soloJobsCount = soloJobs.length;
+    final sharedUnitsTotal = sharedJobs.fold<int>(
+      0,
+      (sum, j) => sum + j.sharedInstallUnitsTotal,
+    );
+    final soloUnitsTotal = soloJobs.fold<int>(
+      0,
+      (sum, j) => sum + j.totalUnits,
+    );
+
+    final sharedByTechnician = <String, ({int jobs, int units})>{};
+    for (final job in sharedJobs) {
+      final key = job.techName.trim().isEmpty ? '-' : job.techName.trim();
+      final current = sharedByTechnician[key] ?? (jobs: 0, units: 0);
+      sharedByTechnician[key] = (
+        jobs: current.jobs + 1,
+        units: current.units + job.sharedInstallUnitsTotal,
+      );
+    }
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -1577,19 +1659,15 @@ class PdfGenerator {
                   uninstallSplitQty +
                   uninstallWindowQty +
                   uninstallStandingQty;
-              final bracketText = j.charges == null
-                  ? '—'
-                  : (j.charges!.bracketCount > 0
-                        ? '${j.charges!.bracketCount}'
-                        : (j.charges!.acBracket && j.charges!.bracketAmount > 0
-                              ? AppFormatters.currency(j.charges!.bracketAmount)
-                              : '—'));
+              final bracketText = (j.charges?.bracketCount ?? 0) > 0
+                  ? '${j.charges!.bracketCount}'
+                  : '';
               final deliveryText =
                   j.charges != null &&
                       j.charges!.deliveryAmount > 0 &&
                       !AppFormatters.isCustomerCashPaid(j.charges!.deliveryNote)
-                  ? AppFormatters.currency(j.charges!.deliveryAmount)
-                  : '—';
+                  ? _plainAmount(j.charges!.deliveryAmount)
+                  : '';
               final baseDescription = j.expenseNote.isNotEmpty
                   ? AppFormatters.safeText(j.expenseNote)
                   : (j.charges != null
@@ -1606,12 +1684,12 @@ class PdfGenerator {
                 AppFormatters.date(j.date),
                 _safeTableCellText(j.invoiceNumber, maxLength: 24),
                 j.clientContact.isEmpty
-                    ? '—'
+                    ? ''
                     : _safeTableCellText(j.clientContact, maxLength: 20),
-                '$splitQty',
-                '$windowQty',
-                '$uninstallTotal',
-                '$dolabQty',
+                splitQty > 0 ? '$splitQty' : '',
+                windowQty > 0 ? '$windowQty' : '',
+                uninstallTotal > 0 ? '$uninstallTotal' : '',
+                dolabQty > 0 ? '$dolabQty' : '',
                 bracketText,
                 deliveryText,
                 _safeTableCellText(j.techName, maxLength: 24),
@@ -1647,8 +1725,10 @@ class PdfGenerator {
             ),
           ),
           pw.SizedBox(height: 4),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+          pw.Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            alignment: pw.WrapAlignment.spaceBetween,
             children: [
               pw.Text(
                 '${locale == "ur"
@@ -1668,13 +1748,158 @@ class PdfGenerator {
                     ? "کل یونٹس"
                     : locale == "ar"
                     ? "إجمالي الوحدات"
-                    : "Total Units"}: ${jobs.fold<int>(0, (s, j) => s + j.totalUnits)}',
+                    : "Total Units"}: $totalUnits',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "سپلٹ یونٹس"
+                    : locale == "ar"
+                    ? "وحدات سبليت"
+                    : "Split Units"}: $totalSplitUnits',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "ونڈو یونٹس"
+                    : locale == "ar"
+                    ? "وحدات الشباك"
+                    : "Window Units"}: $totalWindowUnits',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "دولاب یونٹس"
+                    : locale == "ar"
+                    ? "وحدات الدولاب"
+                    : "Free Standing Units"}: $totalFreestandingUnits',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "کل اَن انسٹال"
+                    : locale == "ar"
+                    ? "إجمالي فك التركيب"
+                    : "Total Uninstallations"}: $totalUninstallations',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "انسٹال بریکٹس"
+                    : locale == "ar"
+                    ? "الحوامل المركبة"
+                    : "Brackets Installed"}: $totalInstalledBrackets',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "ڈیلیوری چارجز"
+                    : locale == "ar"
+                    ? "رسوم التوصيل"
+                    : "Delivery Charges"}: ${_plainAmount(totalDeliveryCharges)}',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "سولو انسٹال"
+                    : locale == "ar"
+                    ? "تركيبات فردية"
+                    : "Solo Installs"}: $soloJobsCount',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "شیئرڈ انسٹال"
+                    : locale == "ar"
+                    ? "تركيبات مشتركة"
+                    : "Shared Installs"}: $sharedJobsCount',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "شیئرڈ یونٹس"
+                    : locale == "ar"
+                    ? "وحدات مشتركة"
+                    : "Shared Units"}: $sharedUnitsTotal',
+                style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
+                textDirection: dir,
+              ),
+              pw.Text(
+                '${locale == "ur"
+                    ? "سولو یونٹس"
+                    : locale == "ar"
+                    ? "وحدات فردية"
+                    : "Solo Units"}: $soloUnitsTotal',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
             ],
           ),
           pw.SizedBox(height: 8),
+          if (sharedByTechnician.isNotEmpty) ...[
+            _sectionBanner(
+              locale == 'ur'
+                  ? 'شیئرڈ انسٹال کا تفصیل'
+                  : locale == 'ar'
+                  ? 'تفاصيل التركيبات المشتركة'
+                  : 'Shared Installation Breakdown',
+              font,
+              pw.TextStyle(
+                font: font,
+                fontSize: 8,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.white,
+              ),
+              _kBrandBlue,
+            ),
+            pw.SizedBox(height: 4),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: locale == 'ur'
+                  ? ['ٹیکنیشن', 'شیئرڈ جابز', 'شیئرڈ یونٹس']
+                  : locale == 'ar'
+                  ? ['الفني', 'الأعمال المشتركة', 'الوحدات المشتركة']
+                  : ['Technician', 'Shared Jobs', 'Shared Units'],
+              data: sharedByTechnician.entries
+                  .map(
+                    (entry) => [
+                      _safeTableCellText(entry.key, maxLength: 28),
+                      '${entry.value.jobs}',
+                      '${entry.value.units}',
+                    ],
+                  )
+                  .toList(),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(1.8),
+                1: const pw.FlexColumnWidth(1.0),
+                2: const pw.FlexColumnWidth(1.0),
+              },
+              cellAlignments: {
+                0: pw.Alignment.centerLeft,
+                1: pw.Alignment.center,
+                2: pw.Alignment.center,
+              },
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 3,
+                vertical: 2,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+          ],
           _sectionBanner(
             locale == 'ur'
                 ? 'اَن انسٹال کا تفصیل'
@@ -1774,7 +1999,9 @@ class PdfGenerator {
     required List<ExpenseModel> expenses,
     String locale = 'en',
     String? technicianName,
+    String? reportTitle,
     DateTime? reportDate,
+    String? periodLabel,
     bool monthlyMode = false,
   }) async {
     final font = await _getLocaleFont(locale);
@@ -1961,22 +2188,26 @@ class PdfGenerator {
         textDirection: dir,
         header: (ctx) => _pageHeader(
           ctx,
-          reportTitle: monthlyMode
-              ? (locale == 'ur'
-                    ? 'ماہانہ ان/آؤٹ رپورٹ'
-                    : locale == 'ar'
-                    ? 'تقرير شهري للدخول/الخروج'
-                    : 'Monthly In/Out Report')
-              : (locale == 'ur'
-                    ? 'آج کی ان/آؤٹ رپورٹ'
-                    : locale == 'ar'
-                    ? 'تقرير اليوم للدخول/الخروج'
-                    : 'Today In/Out Report'),
+          reportTitle:
+              reportTitle ??
+              (monthlyMode
+                  ? (locale == 'ur'
+                        ? 'ماہانہ ان/آؤٹ رپورٹ'
+                        : locale == 'ar'
+                        ? 'تقرير شهري للدخول/الخروج'
+                        : 'Monthly In/Out Report')
+                  : (locale == 'ur'
+                        ? 'آج کی ان/آؤٹ رپورٹ'
+                        : locale == 'ar'
+                        ? 'تقرير اليوم للدخول/الخروج'
+                        : 'Today In/Out Report')),
           font: font,
           dir: dir,
-          dateRange: monthlyMode
-              ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
-              : AppFormatters.date(periodDate),
+          dateRange:
+              periodLabel ??
+              (monthlyMode
+                  ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
+                  : AppFormatters.date(periodDate)),
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [

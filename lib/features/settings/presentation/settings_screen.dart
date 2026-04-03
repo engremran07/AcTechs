@@ -10,6 +10,9 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/settings/data/approval_config_repository.dart';
+import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -27,6 +30,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = ref.watch(currentUserProvider).value;
     final themeMode = ref.watch(appThemeModeProvider);
     final locale = ref.watch(appLocaleProvider);
+    final approvalConfigAsync = ref.watch(approvalConfigProvider);
+    final appBuildAsync = ref.watch(appBuildNumberProvider);
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -125,6 +130,76 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.03),
           const SizedBox(height: 24),
+
+          if (user?.isAdmin ?? false) ...[
+            _SectionTitle(title: '${l.approvals} ${l.settings}'),
+            const SizedBox(height: 8),
+            ArcticCard(
+              child: approvalConfigAsync.when(
+                data: (config) => Column(
+                  children: [
+                    SwitchListTile.adaptive(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text('${l.jobs} ${l.approvals}'),
+                      subtitle: Text(l.required),
+                      value: config.jobApprovalRequired,
+                      onChanged: (value) => _toggleJobApproval(value),
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text(l.sharedInstallApprovalRequired),
+                      subtitle: Text(l.required),
+                      value: config.sharedJobApprovalRequired,
+                      onChanged: (value) => _toggleSharedJobApproval(value),
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text('${l.inOut} ${l.approvals}'),
+                      subtitle: Text(l.required),
+                      value: config.inOutApprovalRequired,
+                      onChanged: (value) => _toggleInOutApproval(value),
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text(l.enforceMinimumBuild),
+                      subtitle: Text(l.required),
+                      value: config.enforceMinimumBuild,
+                      onChanged: (value) =>
+                          _toggleMinimumBuildEnforcement(value),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text(l.minimumSupportedBuild),
+                      subtitle: Text(
+                        appBuildAsync.asData?.value == null
+                            ? '${config.minSupportedBuildNumber}'
+                            : '${config.minSupportedBuildNumber} (${l.currentBuild}: ${appBuildAsync.asData?.value})',
+                      ),
+                      trailing: IconButton(
+                        onPressed: () => _editMinimumSupportedBuild(
+                          config.minSupportedBuildNumber,
+                        ),
+                        icon: const Icon(Icons.edit_rounded),
+                      ),
+                    ),
+                  ],
+                ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, _) => Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(l.couldNotExport),
+                ),
+              ),
+            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.03),
+            const SizedBox(height: 24),
+          ],
 
           // ── App Info ──
           _SectionTitle(title: l.about),
@@ -232,6 +307,104 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _updateLanguage(String lang) {
     ref.read(appLocaleProvider.notifier).setLocale(lang);
+  }
+
+  Future<void> _toggleJobApproval(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setJobApprovalRequired(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _toggleInOutApproval(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setInOutApprovalRequired(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _toggleSharedJobApproval(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setSharedJobApprovalRequired(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _toggleMinimumBuildEnforcement(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setEnforceMinimumBuild(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _editMinimumSupportedBuild(int initialValue) async {
+    final l = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: '$initialValue');
+    final next = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.minimumSupportedBuild),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(hintText: l.minimumSupportedBuild),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final parsed = int.tryParse(controller.text.trim());
+              if (parsed == null || parsed < 1) return;
+              Navigator.of(ctx).pop(parsed);
+            },
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+    if (next == null) return;
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setMinimumSupportedBuildNumber(next);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
   }
 
   Future<void> _handlePasswordReset(String email) async {

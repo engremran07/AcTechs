@@ -7,6 +7,8 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/presentation/login_screen.dart';
 import 'package:ac_techs/features/auth/presentation/splash_screen.dart';
+import 'package:ac_techs/features/auth/presentation/update_required_screen.dart';
+import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/features/technician/presentation/tech_shell.dart';
 import 'package:ac_techs/features/technician/presentation/tech_dashboard_screen.dart';
 import 'package:ac_techs/features/technician/presentation/submit_job_screen.dart';
@@ -23,6 +25,7 @@ import 'package:ac_techs/features/admin/presentation/team_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
 import 'package:ac_techs/features/admin/presentation/historical_import_screen.dart';
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -71,6 +74,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.listen(authStateProvider, (_, _) => queueRefresh());
   ref.listen(currentUserProvider, (_, _) => queueRefresh());
+  ref.listen(approvalConfigProvider, (_, _) => queueRefresh());
+  ref.listen(appBuildNumberProvider, (_, _) => queueRefresh());
 
   ref.onDispose(() {
     refreshDebounce?.cancel();
@@ -84,9 +89,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isSplashRoute = state.matchedLocation == '/splash';
       final isLoginRoute = state.matchedLocation == '/login';
+      final isUpdateRoute = state.matchedLocation == '/update-required';
 
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
+      final approvalConfig = ref.read(approvalConfigProvider).asData?.value;
+      final appBuild = ref.read(appBuildNumberProvider).asData?.value;
 
       final isAuthLoading = authState.isLoading;
       final isLoggedIn = authState.value != null;
@@ -107,6 +115,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!user.isActive) {
         return '/login';
+      }
+
+      if (approvalConfig != null &&
+          approvalConfig.enforceMinimumBuild &&
+          appBuild != null &&
+          appBuild < approvalConfig.minSupportedBuildNumber) {
+        return isUpdateRoute ? null : '/update-required';
+      }
+
+      if (isUpdateRoute) {
+        return user.isAdmin ? '/admin' : '/tech';
       }
 
       if (isSplashRoute || isLoginRoute) {
@@ -133,6 +152,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         pageBuilder: (context, state) =>
             _slideFadePage(pageKey: state.pageKey, child: const LoginScreen()),
+      ),
+      GoRoute(
+        path: '/update-required',
+        pageBuilder: (context, state) => _slideFadePage(
+          pageKey: state.pageKey,
+          child: const UpdateRequiredScreen(),
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) => TechShell(child: child),
@@ -162,7 +188,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/tech/summary',
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
-              child: const MonthlySummaryScreen(),
+              child: MonthlySummaryScreen(
+                initialMonth: state.extra is DateTime
+                    ? state.extra as DateTime
+                    : null,
+              ),
             ),
           ),
           GoRoute(

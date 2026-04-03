@@ -10,6 +10,7 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class SubmitJobScreen extends ConsumerStatefulWidget {
   const SubmitJobScreen({super.key});
@@ -36,6 +37,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   int _uninstallWindowQty = 0;
   int _uninstallStandingQty = 0;
   int _dolabQty = 0;
+  bool _isSharedInstall = false;
+  final _sharedSplitUnitsController = TextEditingController();
+  final _sharedWindowUnitsController = TextEditingController();
+  final _sharedFreestandingUnitsController = TextEditingController();
+  final _sharedTeamSizeController = TextEditingController();
   String? _selectedCompanyId;
   String _selectedCompanyName = '';
   String _selectedCompanyPrefix = '';
@@ -48,6 +54,10 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _deliveryAmountController.dispose();
     _deliveryNoteController.dispose();
     _descriptionController.dispose();
+    _sharedSplitUnitsController.dispose();
+    _sharedWindowUnitsController.dispose();
+    _sharedFreestandingUnitsController.dispose();
+    _sharedTeamSizeController.dispose();
     super.dispose();
   }
 
@@ -105,6 +115,10 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _deliveryAmountController.clear();
     _deliveryNoteController.clear();
     _descriptionController.clear();
+    _sharedSplitUnitsController.clear();
+    _sharedWindowUnitsController.clear();
+    _sharedFreestandingUnitsController.clear();
+    _sharedTeamSizeController.clear();
     setState(() {
       _bracketQty = 0;
       _splitQty = 0;
@@ -113,6 +127,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       _uninstallWindowQty = 0;
       _uninstallStandingQty = 0;
       _dolabQty = 0;
+      _isSharedInstall = false;
       _selectedCompanyId = null;
       _selectedCompanyName = '';
       _selectedCompanyPrefix = '';
@@ -121,6 +136,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final l = AppLocalizations.of(context)!;
     final quickUnits = _unitsFromQuickTemplate();
 
     if (quickUnits.isEmpty) {
@@ -147,32 +163,86 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         return;
       }
       final user = asyncUser.value!;
+      final approvalConfig = ref.read(approvalConfigProvider).value;
+      final sharedSplitUnits =
+          int.tryParse(_sharedSplitUnitsController.text.trim()) ?? 0;
+      final sharedWindowUnits =
+          int.tryParse(_sharedWindowUnitsController.text.trim()) ?? 0;
+      final sharedFreestandingUnits =
+          int.tryParse(_sharedFreestandingUnitsController.text.trim()) ?? 0;
+      final sharedTeamSize =
+          int.tryParse(_sharedTeamSizeController.text.trim()) ?? 0;
+      if (_isSharedInstall &&
+          ((_splitQty > 0 && _splitQty > sharedSplitUnits) ||
+              (_windowQty > 0 && _windowQty > sharedWindowUnits) ||
+              (_dolabQty > 0 && _dolabQty > sharedFreestandingUnits))) {
+        if (mounted) {
+          ErrorSnackbar.show(context, message: l.sharedInstallLimitError);
+        }
+        return;
+      }
+
+      final rawDeliveryAmount =
+          double.tryParse(_deliveryAmountController.text.trim()) ?? 0;
+      if (_isSharedInstall && rawDeliveryAmount > 0 && sharedTeamSize <= 0) {
+        if (mounted) {
+          ErrorSnackbar.show(context, message: l.sharedDeliverySplitInvalid);
+        }
+        return;
+      }
+      final deliveryAmount = _isSharedInstall && rawDeliveryAmount > 0
+          ? rawDeliveryAmount / sharedTeamSize
+          : rawDeliveryAmount;
 
       final charges = InvoiceCharges(
         acBracket: _bracketQty > 0,
         bracketCount: _bracketQty,
         bracketAmount: 0,
-        deliveryAmount:
-            double.tryParse(_deliveryAmountController.text.trim()) ?? 0,
-        deliveryCharge:
-            (double.tryParse(_deliveryAmountController.text.trim()) ?? 0) > 0,
+        deliveryAmount: deliveryAmount,
+        deliveryCharge: deliveryAmount > 0,
         deliveryNote: _deliveryNoteController.text.trim(),
       );
+
+      final normalizedInvoice = _buildInvoiceNumber();
+      final sharedGroupKey = _isSharedInstall
+          ? '${(_selectedCompanyId ?? 'no-company')}-${normalizedInvoice.toLowerCase()}'
+          : '';
+
+      final sharedContributionUnits = _splitQty + _windowQty + _dolabQty;
+      final sharedInvoiceTotalUnits =
+          sharedSplitUnits + sharedWindowUnits + sharedFreestandingUnits;
 
       final job = JobModel(
         techId: user.uid,
         techName: user.name,
         companyId: _selectedCompanyId ?? '',
         companyName: _selectedCompanyName,
-        invoiceNumber: _buildInvoiceNumber(),
+        invoiceNumber: normalizedInvoice,
         clientName: _clientNameController.text.trim(),
         clientContact: _normalizeContact(_clientContactController.text),
         acUnits: quickUnits,
         expenseNote: _descriptionController.text.trim(),
+        isSharedInstall: _isSharedInstall,
+        sharedInstallGroupKey: sharedGroupKey,
+        sharedInvoiceTotalUnits: _isSharedInstall ? sharedInvoiceTotalUnits : 0,
+        sharedContributionUnits: _isSharedInstall ? sharedContributionUnits : 0,
+        sharedInvoiceSplitUnits: _isSharedInstall ? sharedSplitUnits : 0,
+        sharedInvoiceWindowUnits: _isSharedInstall ? sharedWindowUnits : 0,
+        sharedInvoiceFreestandingUnits: _isSharedInstall
+            ? sharedFreestandingUnits
+            : 0,
+        sharedDeliveryTeamCount: _isSharedInstall ? sharedTeamSize : 0,
+        sharedInvoiceDeliveryAmount: _isSharedInstall ? rawDeliveryAmount : 0,
         charges: charges,
         date: _selectedDate,
         submittedAt: DateTime.now(),
-        status: JobStatus.pending,
+        status:
+            ((_isSharedInstall
+                    ? approvalConfig?.sharedJobApprovalRequired
+                    : approvalConfig?.jobApprovalRequired) ??
+                false)
+            ? JobStatus.pending
+            : JobStatus.approved,
       );
 
       await ref.read(jobRepositoryProvider).submitJob(job);
@@ -223,6 +293,99 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     ArcticCard(
                       child: Column(
                         children: [
+                          SwitchListTile.adaptive(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(l.sharedInstall),
+                            subtitle: Text(l.sharedInstallHint),
+                            value: _isSharedInstall,
+                            onChanged: (value) =>
+                                setState(() => _isSharedInstall = value),
+                          ),
+                          if (_isSharedInstall) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              l.sharedInstallMixHint,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: ArcticTheme.arcticTextSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _sharedSplitUnitsController,
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: InputDecoration(
+                                      hintText: l.sharedInvoiceSplitUnits,
+                                      labelText: l.sharedInvoiceSplitUnits,
+                                      prefixIcon: const Icon(
+                                        Icons.ac_unit_rounded,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _sharedWindowUnitsController,
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: InputDecoration(
+                                      hintText: l.sharedInvoiceWindowUnits,
+                                      labelText: l.sharedInvoiceWindowUnits,
+                                      prefixIcon: const Icon(
+                                        Icons.window_rounded,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller:
+                                        _sharedFreestandingUnitsController,
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          l.sharedInvoiceFreestandingUnits,
+                                      labelText:
+                                          l.sharedInvoiceFreestandingUnits,
+                                      prefixIcon: const Icon(
+                                        Icons.weekend_rounded,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _sharedTeamSizeController,
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: InputDecoration(
+                                      hintText: l.sharedTeamSize,
+                                      labelText: l.sharedTeamSize,
+                                      prefixIcon: const Icon(
+                                        Icons.groups_rounded,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           Row(
                             children: [
                               Expanded(
@@ -364,52 +527,20 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         .when(
                           data: (companies) => companies.isEmpty
                               ? const SizedBox.shrink()
-                              : DropdownButtonFormField<String>(
-                                  initialValue: _selectedCompanyId,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    hintText: l.selectCompany,
-                                    prefixIcon: const Icon(
-                                      Icons.apartment_rounded,
-                                      color: ArcticTheme.arcticTextSecondary,
-                                    ),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem<String>(
-                                      value: '',
-                                      child: Text(
-                                        l.noCompany,
-                                        style: const TextStyle(
-                                          color:
-                                              ArcticTheme.arcticTextSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                    ...companies.map(
-                                      (company) => DropdownMenuItem(
-                                        value: company.id,
-                                        child: Text(company.name),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    CompanyModel? selectedCompany;
-                                    for (final company in companies) {
-                                      if (company.id == value) {
-                                        selectedCompany = company;
-                                        break;
-                                      }
-                                    }
+                              : CompanySelectorField(
+                                  companies: companies,
+                                  selectedCompanyId: _selectedCompanyId,
+                                  includeNoCompanyOption: true,
+                                  hintText: l.selectCompany,
+                                  onChanged: (selectedCompany) {
                                     setState(() {
-                                      _selectedCompanyId =
-                                          value?.isEmpty ?? true ? null : value;
+                                      _selectedCompanyId = selectedCompany?.id;
                                       _selectedCompanyName =
                                           selectedCompany?.name ?? '';
                                       _selectedCompanyPrefix =
                                           selectedCompany?.invoicePrefix ?? '';
                                     });
                                   },
-                                  // Company selection is optional
                                 ),
                           loading: () =>
                               const ArcticShimmer(height: 56, count: 1),
@@ -518,7 +649,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             textInputAction: TextInputAction.next,
                             enableInteractiveSelection: true,
                             decoration: InputDecoration(
-                              hintText: l.deliveryChargeAmount,
+                              hintText: _isSharedInstall
+                                  ? l.sharedInvoiceDeliveryAmount
+                                  : l.deliveryChargeAmount,
                               prefixIcon: const Icon(
                                 Icons.payments_outlined,
                                 color: ArcticTheme.arcticTextSecondary,
@@ -526,6 +659,18 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               isDense: true,
                             ),
                           ),
+                          if (_isSharedInstall) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l.sharedDeliverySplitHint,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _deliveryNoteController,

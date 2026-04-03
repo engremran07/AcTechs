@@ -80,6 +80,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get approvals => 'الموافقات';
 
   @override
+  String get sharedInstallApprovalRequired => 'موافقات التركيبات المشتركة';
+
+  @override
+  String get enforceMinimumBuild => 'فرض الحد الأدنى للبناء';
+
+  @override
+  String get minimumSupportedBuild => 'أدنى بناء مدعوم';
+
+  @override
   String get analytics => 'التحليلات';
 
   @override
@@ -574,6 +583,47 @@ class AppLocalizationsAr extends AppLocalizations {
   String get submitAJob => 'إرسال عمل';
 
   @override
+  String get sharedInstall => 'تركيب مشترك';
+
+  @override
+  String get sharedInstallHint =>
+      'فعّل هذا الخيار عندما يتم تقسيم الفاتورة نفسها بين عدة فنيين.';
+
+  @override
+  String get sharedInstallMixHint =>
+      'أدخل إجمالي وحدات الفاتورة حسب النوع. سيُدخل كل فني حصته من الوحدات يدوياً. فقط رسوم التوصيل تُقسم بالتساوي.';
+
+  @override
+  String get sharedInvoiceTotalUnits => 'إجمالي وحدات الفاتورة';
+
+  @override
+  String get sharedInstallLimitError =>
+      'الوحدات التي أدخلتها تتجاوز إجمالي وحدات الفاتورة.';
+
+  @override
+  String get sharedInvoiceSplitUnits => 'وحدات السبليت في الفاتورة';
+
+  @override
+  String get sharedInvoiceWindowUnits => 'وحدات الشباك في الفاتورة';
+
+  @override
+  String get sharedInvoiceFreestandingUnits => 'وحدات القائم في الفاتورة';
+
+  @override
+  String get sharedTeamSize => 'عدد أعضاء الفريق المشترك';
+
+  @override
+  String get sharedInvoiceDeliveryAmount => 'إجمالي رسوم التوصيل للفاتورة';
+
+  @override
+  String get sharedDeliverySplitHint =>
+      'سيتم تقسيم مبلغ التوصيل هذا بالتساوي على الفريق المشترك.';
+
+  @override
+  String get sharedDeliverySplitInvalid =>
+      'أدخل عدد أعضاء الفريق المشترك ليتم تقسيم رسوم التوصيل بالتساوي.';
+
+  @override
   String get splits => 'سبليت';
 
   @override
@@ -898,6 +948,16 @@ class AppLocalizationsAr extends AppLocalizations {
       'إعادة تعيين جميع البيانات إلى حالة نظيفة';
 
   @override
+  String get flushScope => 'نطاق التفريغ';
+
+  @override
+  String get flushAllData => 'كل البيانات';
+
+  @override
+  String get flushOnlySelectedTechnician =>
+      'سيتم تفريغ بيانات الفني المحدد فقط (الأعمال والدخول/الخروج).';
+
+  @override
   String get flushStep1Title => 'الخطوة 1 من 2 — تأكيد النية';
 
   @override
@@ -966,6 +1026,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get flushWrongPassword => 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
+
+  @override
+  String get currentBuild => 'رقم البناء الحالي';
+
+  @override
+  String get updateRequiredTitle => 'التحديث مطلوب';
+
+  @override
+  String updateRequiredBody(int build) {
+    return 'إصدار التطبيق لديك ($build) لم يعد مدعوماً. يرجى تثبيت أحدث APK للمتابعة.';
+  }
+
+  @override
+  String get updateRequiredLoading => 'جارٍ التحقق من إصدار التطبيق...';
+
+  @override
+  String get iUpdatedRefresh => 'تم التحديث - إعادة تحقق';
 
   @override
   String get catSplitAc => 'مكيف سبليت';

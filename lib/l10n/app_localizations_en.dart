@@ -80,6 +80,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvals => 'Approvals';
 
   @override
+  String get sharedInstallApprovalRequired => 'Shared Install Approvals';
+
+  @override
+  String get enforceMinimumBuild => 'Enforce Minimum Build';
+
+  @override
+  String get minimumSupportedBuild => 'Minimum Supported Build';
+
+  @override
   String get analytics => 'Analytics';
 
   @override
@@ -577,6 +586,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get submitAJob => 'Submit a Job';
 
   @override
+  String get sharedInstall => 'Shared Install';
+
+  @override
+  String get sharedInstallHint =>
+      'Enable when one invoice is split across multiple technicians.';
+
+  @override
+  String get sharedInstallMixHint =>
+      'Enter invoice totals by type. Technicians will enter their own unit share manually. Delivery is split equally only.';
+
+  @override
+  String get sharedInvoiceTotalUnits => 'Invoice Total Units';
+
+  @override
+  String get sharedInstallLimitError =>
+      'Your entered units exceed the invoice total units.';
+
+  @override
+  String get sharedInvoiceSplitUnits => 'Invoice Split Units';
+
+  @override
+  String get sharedInvoiceWindowUnits => 'Invoice Window Units';
+
+  @override
+  String get sharedInvoiceFreestandingUnits => 'Invoice Standing Units';
+
+  @override
+  String get sharedTeamSize => 'Shared Team Size';
+
+  @override
+  String get sharedInvoiceDeliveryAmount => 'Total Delivery Charge (Invoice)';
+
+  @override
+  String get sharedDeliverySplitHint =>
+      'This delivery amount will be split equally across the shared team.';
+
+  @override
+  String get sharedDeliverySplitInvalid =>
+      'Enter the shared team size so delivery charges can be split equally.';
+
+  @override
   String get splits => 'Splits';
 
   @override
@@ -899,6 +949,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flushDatabaseSubtitle => 'Reset all data to a clean state';
 
   @override
+  String get flushScope => 'Flush Scope';
+
+  @override
+  String get flushAllData => 'All Data';
+
+  @override
+  String get flushOnlySelectedTechnician =>
+      'Only selected technician data (jobs and in/out) will be flushed.';
+
+  @override
   String get flushStep1Title => 'Step 1 of 2 — Confirm Intent';
 
   @override
@@ -967,6 +1027,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get flushWrongPassword => 'Incorrect password. Please try again.';
+
+  @override
+  String get currentBuild => 'Current build';
+
+  @override
+  String get updateRequiredTitle => 'Update Required';
+
+  @override
+  String updateRequiredBody(int build) {
+    return 'Your app build ($build) is no longer supported. Please install the latest APK to continue.';
+  }
+
+  @override
+  String get updateRequiredLoading => 'Checking app version...';
+
+  @override
+  String get iUpdatedRefresh => 'I Updated - Refresh';
 
   @override
   String get catSplitAc => 'Split AC';
