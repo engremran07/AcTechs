@@ -33,19 +33,19 @@ $pubspec = Join-Path $PSScriptRoot '..\..\pubspec.yaml'
 $content = Get-Content $pubspec -Raw
 
 if ($content -notmatch 'version:\s*(\d+\.\d+\.\d+)\+(\d+)') {
-    Write-Host "pre-commit: could not parse version — skipping bump"
+    Write-Host "pre-commit: could not parse version - skipping bump"
     exit 0
 }
 
 $semver    = $Matches[1]
 [int]$build = [int]$Matches[2] + 1
-$newVersion = "version: $semver+$build"
+$newVersion = "version: ${semver}+${build}"
 $updated = $content -replace 'version:\s*\d+\.\d+\.\d+\+\d+', $newVersion
 Set-Content -Path $pubspec -Value $updated -NoNewline
 
 # Stage the bumped file
 git add $pubspec
-Write-Host "pre-commit: bumped build to $semver+$build"
+Write-Host "pre-commit: bumped build to ${semver}+${build}"
 '@
 
 # POSIX shell wrapper (git runs sh on all platforms via Git for Windows)
