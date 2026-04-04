@@ -52,4 +52,12 @@ class ApprovalConfigRepository {
     final sanitized = buildNumber < 1 ? 1 : buildNumber;
     await _mergeConfig({'minSupportedBuildNumber': sanitized});
   }
+
+  Future<void> setLockedBeforeDate(DateTime? date) async {
+    await _mergeConfig({
+      'lockedBefore': date == null
+          ? FieldValue.delete()
+          : Timestamp.fromDate(date),
+    });
+  }
 }

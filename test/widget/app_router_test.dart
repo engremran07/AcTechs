@@ -51,4 +51,68 @@ void main() {
 
     expect(redirect, '/login');
   });
+
+  test('minimum build gate holds on splash until app build loads', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: '/tech',
+      isAuthLoading: false,
+      isLoggedIn: true,
+      currentUser: const AsyncData(
+        UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
+      ),
+      approvalConfig: const ApprovalConfig(
+        jobApprovalRequired: false,
+        sharedJobApprovalRequired: false,
+        inOutApprovalRequired: false,
+        enforceMinimumBuild: true,
+        minSupportedBuildNumber: 99,
+        lockedBeforeDate: null,
+      ),
+      appBuild: null,
+    );
+
+    expect(redirect, '/splash');
+  });
+
+  test('minimum build gate redirects outdated builds', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: '/tech',
+      isAuthLoading: false,
+      isLoggedIn: true,
+      currentUser: const AsyncData(
+        UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
+      ),
+      approvalConfig: const ApprovalConfig(
+        jobApprovalRequired: false,
+        sharedJobApprovalRequired: false,
+        inOutApprovalRequired: false,
+        enforceMinimumBuild: true,
+        minSupportedBuildNumber: 9,
+        lockedBeforeDate: null,
+      ),
+      appBuild: 7,
+    );
+
+    expect(redirect, '/update-required');
+  });
+
+  test('admin users are redirected away from technician routes', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: '/tech/ac-installs',
+      isAuthLoading: false,
+      isLoggedIn: true,
+      currentUser: const AsyncData(
+        UserModel(
+          uid: 'admin-1',
+          name: 'Admin',
+          email: 'admin@example.com',
+          role: 'admin',
+        ),
+      ),
+      approvalConfig: ApprovalConfig.defaults(),
+      appBuild: 7,
+    );
+
+    expect(redirect, '/admin');
+  });
 }

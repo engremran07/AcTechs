@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/features/settings/data/period_lock_guard.dart';
 
 final earningRepositoryProvider = Provider<EarningRepository>((ref) {
   return EarningRepository(firestore: FirebaseFirestore.instance);
@@ -20,6 +21,16 @@ class EarningRepository {
     return _ref.doc(earningId).collection('history');
   }
 
+  PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
+
+  Future<void> _ensureMutableRecord(String id) async {
+    final snap = await _ref.doc(id).get();
+    final status = snap.data()?['status'] as String?;
+    if (status == EarningApprovalStatus.approved.name) {
+      throw EarningException.approvedRecordLocked();
+    }
+  }
+
   Future<List<ApprovalHistoryEntry>> fetchHistory(
     String earningId, {
     int limit = 10,
@@ -34,7 +45,10 @@ class EarningRepository {
 
   Future<void> addEarning(EarningModel earning) async {
     try {
+      await _periodLockGuard.ensureUnlockedDate(earning.date);
       await _ref.add(earning.toFirestore());
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('addEarning error: ${e.code} — ${e.message}');
       throw EarningException.saveFailed();
@@ -46,7 +60,13 @@ class EarningRepository {
 
   Future<void> deleteEarning(String id) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
+      await _ensureMutableRecord(id);
       await _ref.doc(id).delete();
+    } on EarningException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('deleteEarning error: ${e.code} — ${e.message}');
       throw EarningException.deleteFailed();
@@ -58,7 +78,13 @@ class EarningRepository {
 
   Future<void> updateEarning(EarningModel earning) async {
     try {
+      await _periodLockGuard.ensureUnlockedDate(earning.date);
+      await _ensureMutableRecord(earning.id);
       await _ref.doc(earning.id).update(earning.toFirestore());
+    } on EarningException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('updateEarning error: ${e.code} — ${e.message}');
       throw EarningException.updateFailed();
@@ -70,10 +96,14 @@ class EarningRepository {
 
   Future<void> approveEarning(String id, String adminUid) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final docRef = _ref.doc(id);
         final snap = await tx.get(docRef);
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (prevStatus == EarningApprovalStatus.approved.name) {
+          throw EarningException.approvedRecordLocked();
+        }
         tx.update(docRef, {
           'status': 'approved',
           'approvedBy': adminUid,
@@ -86,6 +116,10 @@ class EarningRepository {
           'newStatus': 'approved',
         });
       });
+    } on EarningException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('approveEarning error: ${e.code} — ${e.message}');
       throw EarningException.updateFailed();
@@ -97,10 +131,14 @@ class EarningRepository {
 
   Future<void> rejectEarning(String id, String adminUid, String reason) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final docRef = _ref.doc(id);
         final snap = await tx.get(docRef);
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (prevStatus == EarningApprovalStatus.approved.name) {
+          throw EarningException.approvedRecordLocked();
+        }
         tx.update(docRef, {
           'status': 'rejected',
           'approvedBy': adminUid,
@@ -115,6 +153,10 @@ class EarningRepository {
           'reason': reason,
         });
       });
+    } on EarningException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('rejectEarning error: ${e.code} — ${e.message}');
       throw EarningException.updateFailed();

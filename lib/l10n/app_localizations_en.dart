@@ -89,6 +89,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minimumSupportedBuild => 'Minimum Supported Build';
 
   @override
+  String get lockRecordsBefore => 'Lock Records Before';
+
+  @override
+  String get noPeriodLock => 'No period lock is active.';
+
+  @override
+  String get clearPeriodLock => 'Clear Period Lock';
+
+  @override
+  String get lockedPeriodDescription =>
+      'Older records cannot be created, edited, approved, rejected, or deleted.';
+
+  @override
   String get analytics => 'Analytics';
 
   @override
@@ -497,7 +510,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userUpdated => 'User updated successfully!';
 
   @override
-  String get userDeleted => 'User deleted successfully!';
+  String get userDeleted => 'User archived successfully!';
 
   @override
   String get usersActivated => 'Users activated';

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/features/settings/data/period_lock_guard.dart';
 
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
   return ExpenseRepository(firestore: FirebaseFirestore.instance);
@@ -20,6 +21,16 @@ class ExpenseRepository {
     return _ref.doc(expenseId).collection('history');
   }
 
+  PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
+
+  Future<void> _ensureMutableRecord(String id) async {
+    final snap = await _ref.doc(id).get();
+    final status = snap.data()?['status'] as String?;
+    if (status == ExpenseApprovalStatus.approved.name) {
+      throw ExpenseException.approvedRecordLocked();
+    }
+  }
+
   Future<List<ApprovalHistoryEntry>> fetchHistory(
     String expenseId, {
     int limit = 10,
@@ -34,7 +45,10 @@ class ExpenseRepository {
 
   Future<void> addExpense(ExpenseModel expense) async {
     try {
+      await _periodLockGuard.ensureUnlockedDate(expense.date);
       await _ref.add(expense.toFirestore());
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('addExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.saveFailed();
@@ -46,7 +60,13 @@ class ExpenseRepository {
 
   Future<void> deleteExpense(String id) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
+      await _ensureMutableRecord(id);
       await _ref.doc(id).delete();
+    } on ExpenseException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('deleteExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.deleteFailed();
@@ -58,7 +78,13 @@ class ExpenseRepository {
 
   Future<void> updateExpense(ExpenseModel expense) async {
     try {
+      await _periodLockGuard.ensureUnlockedDate(expense.date);
+      await _ensureMutableRecord(expense.id);
       await _ref.doc(expense.id).update(expense.toFirestore());
+    } on ExpenseException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('updateExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();
@@ -70,10 +96,14 @@ class ExpenseRepository {
 
   Future<void> approveExpense(String id, String adminUid) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final docRef = _ref.doc(id);
         final snap = await tx.get(docRef);
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (prevStatus == ExpenseApprovalStatus.approved.name) {
+          throw ExpenseException.approvedRecordLocked();
+        }
         tx.update(docRef, {
           'status': 'approved',
           'approvedBy': adminUid,
@@ -86,6 +116,10 @@ class ExpenseRepository {
           'newStatus': 'approved',
         });
       });
+    } on ExpenseException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('approveExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();
@@ -97,10 +131,14 @@ class ExpenseRepository {
 
   Future<void> rejectExpense(String id, String adminUid, String reason) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final docRef = _ref.doc(id);
         final snap = await tx.get(docRef);
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (prevStatus == ExpenseApprovalStatus.approved.name) {
+          throw ExpenseException.approvedRecordLocked();
+        }
         tx.update(docRef, {
           'status': 'rejected',
           'approvedBy': adminUid,
@@ -115,6 +153,10 @@ class ExpenseRepository {
           'reason': reason,
         });
       });
+    } on ExpenseException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('rejectExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.userSaveFailed();

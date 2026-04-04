@@ -157,6 +157,22 @@ class NetworkException extends AppException {
   );
 }
 
+class PeriodException extends AppException {
+  const PeriodException(
+    super.code,
+    super.messageEn,
+    super.messageUr,
+    super.messageAr,
+  );
+
+  factory PeriodException.locked() => const PeriodException(
+    'period_locked',
+    'This record falls in a locked period. Ask your admin to unlock it first.',
+    'یہ ریکارڈ ایک لاک مدت میں آتا ہے۔ پہلے اپنے ایڈمن سے اسے اَن لاک کروائیں۔',
+    'هذا السجل يقع ضمن فترة مقفلة. اطلب من المسؤول فتحها أولاً.',
+  );
+}
+
 class JobException extends AppException {
   const JobException(
     super.code,
@@ -223,6 +239,20 @@ class JobException extends AppException {
     'This shared invoice already exists with different totals. Use the same shared totals for every technician on this invoice.',
     'یہ مشترکہ انوائس مختلف کل مقدار کے ساتھ پہلے سے موجود ہے۔ اس انوائس پر ہر ٹیکنیشن کے لیے ایک ہی مشترکہ کل مقدار استعمال کریں۔',
     'هذه الفاتورة المشتركة موجودة بالفعل بإجماليات مختلفة. استخدم نفس الإجماليات المشتركة لكل فني في هذه الفاتورة.',
+  );
+
+  factory JobException.permissionDenied() => const JobException(
+    'job_permission_denied',
+    'Permission denied. Please contact your admin.',
+    'اجازت نہیں۔ براہ کرم ایڈمن سے رابطہ کریں۔',
+    'ليس لديك إذن. تواصل مع المسؤول.',
+  );
+
+  factory JobException.approvedRecordLocked() => const JobException(
+    'job_approved_record_locked',
+    'Approved records are locked. Create a correction entry instead of editing this record.',
+    'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
+    'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
   );
 }
 
@@ -298,6 +328,13 @@ class ExpenseException extends AppException {
     'تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
     'تعذر حفظ التغييرات. حاول مرة أخرى.',
   );
+
+  factory ExpenseException.approvedRecordLocked() => const ExpenseException(
+    'expense_approved_record_locked',
+    'Approved records are locked. Create a correction entry instead of editing this record.',
+    'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
+    'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
+  );
 }
 
 class EarningException extends AppException {
@@ -327,6 +364,13 @@ class EarningException extends AppException {
     "Couldn't save changes to the earning. Please try again.",
     'آمدنی میں تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
     'تعذر حفظ تغييرات الإيراد. حاول مرة أخرى.',
+  );
+
+  factory EarningException.approvedRecordLocked() => const EarningException(
+    'earning_approved_record_locked',
+    'Approved records are locked. Create a correction entry instead of editing this record.',
+    'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
+    'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
   );
 }
 
@@ -358,4 +402,12 @@ class AcInstallException extends AppException {
     'تنصیب ریکارڈ اپ ڈیٹ نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
     'تعذر تحديث سجل التركيب. حاول مرة أخرى.',
   );
+
+  factory AcInstallException.approvedRecordLocked() =>
+      const AcInstallException(
+        'ac_install_approved_record_locked',
+        'Approved records are locked. Create a correction entry instead of editing this record.',
+        'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
+        'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
+      );
 }

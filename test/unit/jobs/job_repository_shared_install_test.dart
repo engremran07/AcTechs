@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -117,5 +118,24 @@ void main() {
     expect(jobHistorySnap.docs, hasLength(1));
     expect(jobHistorySnap.docs.single.data()['newStatus'], 'rejected');
     expect(jobHistorySnap.docs.single.data()['reason'], 'Mismatch');
+  });
+
+  test('rejecting an approved shared job is blocked by immutability', () async {
+    final jobRef = await firestore.collection(AppConstants.jobsCollection).add({
+      ...buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-300',
+        splitShare: 1,
+      ).toFirestore(),
+      'status': 'approved',
+      'approvedBy': 'admin-1',
+      'reviewedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 10)),
+    });
+
+    await expectLater(
+      () => repository.rejectJob(jobRef.id, 'admin-2', 'Late correction'),
+      throwsA(isA<JobException>()),
+    );
   });
 }

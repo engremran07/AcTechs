@@ -354,6 +354,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         icon: const Icon(Icons.edit_rounded),
                       ),
                     ),
+                    const Divider(height: 1),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text(l.lockRecordsBefore),
+                      subtitle: Text(
+                        config.lockedBeforeDate == null
+                            ? l.noPeriodLock
+                            : '${MaterialLocalizations.of(context).formatMediumDate(config.lockedBeforeDate!)} • ${l.lockedPeriodDescription}',
+                      ),
+                      trailing: Wrap(
+                        spacing: 4,
+                        children: [
+                          if (config.lockedBeforeDate != null)
+                            IconButton(
+                              onPressed: _clearLockedBeforeDate,
+                              icon: const Icon(Icons.lock_open_rounded),
+                              tooltip: l.clearPeriodLock,
+                            ),
+                          IconButton(
+                            onPressed: () =>
+                                _editLockedBeforeDate(config.lockedBeforeDate),
+                            icon: const Icon(Icons.event_busy_rounded),
+                            tooltip: l.lockRecordsBefore,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 loading: () => const Padding(
@@ -670,6 +697,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref
           .read(approvalConfigRepositoryProvider)
           .setMinimumSupportedBuildNumber(next);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _editLockedBeforeDate(DateTime? initialValue) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialValue ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+
+    final normalized = DateTime(picked.year, picked.month, picked.day);
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setLockedBeforeDate(normalized);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.couldNotExport,
+      );
+    }
+  }
+
+  Future<void> _clearLockedBeforeDate() async {
+    try {
+      await ref.read(approvalConfigRepositoryProvider).setLockedBeforeDate(null);
     } on Exception {
       if (!mounted) return;
       ErrorSnackbar.show(

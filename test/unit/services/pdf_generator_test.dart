@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/services/pdf_generator.dart';
 
 /// Unit-level tests for the PDF generator helper logic.
 ///
@@ -9,6 +10,8 @@ import 'package:ac_techs/core/models/models.dart';
 ///  • AppFormatters methods used inside the generator
 ///  • Status label mapping consistency
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   // ── JobModelX helpers (consumed by generateJobsReport) ────────────────────
   group('JobModelX helpers', () {
     test('totalUnits sums all acUnit quantities', () {
@@ -249,6 +252,28 @@ void main() {
           earnings.fold<double>(0, (s, e) => s + e.amount) -
           expenses.fold<double>(0, (s, e) => s + e.amount);
       expect(net, 0.0);
+    });
+  });
+
+  group('PDF rendering', () {
+    test('generateJobsReport renders mixed RTL and Latin content', () async {
+      final bytes = await PdfGenerator.generateJobsReport(
+        jobs: [
+          JobModel(
+            techId: 'tech-1',
+            techName: 'أحمد 123',
+            invoiceNumber: 'INV-123',
+            clientName: 'شركة Test 45',
+            acUnits: const [AcUnit(type: 'Split AC', quantity: 2)],
+            date: DateTime(2026, 4, 4),
+          ),
+        ],
+        title: 'تقرير INV-123',
+        locale: 'ar',
+      );
+
+      expect(bytes, isNotEmpty);
+      expect(bytes.length, greaterThan(1000));
     });
   });
 }

@@ -110,4 +110,23 @@ void main() {
     expect(history.single.newStatus, 'rejected');
     expect(history.single.reason, 'Missing invoice match');
   });
+
+  test('deleteInstall rejects approved records', () async {
+    final doc = await firestore
+        .collection(AppConstants.acInstallsCollection)
+        .add({
+          ...buildInstall(status: 'approved', approvedBy: 'admin-1').toFirestore(),
+          'status': 'approved',
+          'approvedBy': 'admin-1',
+          'adminNote': '',
+          'date': Timestamp.fromDate(DateTime(2024, 1, 12, 8)),
+          'createdAt': Timestamp.fromDate(DateTime(2024, 1, 12, 8)),
+          'reviewedAt': Timestamp.fromDate(DateTime(2024, 1, 12, 9)),
+        });
+
+    await expectLater(
+      () => repository.deleteInstall(doc.id),
+      throwsA(isA<AcInstallException>()),
+    );
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:arabic_reshaper/arabic_reshaper.dart' as reshaper;
+import 'package:bidi/bidi.dart' as bidi;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -108,7 +109,8 @@ class PdfGenerator {
   static String _shapeRtlForPdf(String locale, String text) {
     if (locale != 'ur' && locale != 'ar') return text;
     if (text.isEmpty || !_arabicScriptRegex.hasMatch(text)) return text;
-    return _reshaper.reshape(text);
+    final reshaped = _reshaper.reshape(text);
+    return String.fromCharCodes(bidi.logicalToVisual(reshaped));
   }
 
   static List<String> _shapeRowForPdf(String locale, List<String> row) {

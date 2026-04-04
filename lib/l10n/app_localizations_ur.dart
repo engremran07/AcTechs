@@ -89,6 +89,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get minimumSupportedBuild => 'کم از کم سپورٹڈ بلڈ';
 
   @override
+  String get lockRecordsBefore => 'اس تاریخ سے پہلے ریکارڈ لاک کریں';
+
+  @override
+  String get noPeriodLock => 'ابھی کوئی پیریڈ لاک فعال نہیں ہے۔';
+
+  @override
+  String get clearPeriodLock => 'پیریڈ لاک ختم کریں';
+
+  @override
+  String get lockedPeriodDescription =>
+      'اس سے پرانے ریکارڈ بن نہیں سکیں گے، تبدیل نہیں ہوں گے، منظور یا مسترد نہیں ہوں گے، اور حذف نہیں ہوں گے۔';
+
+  @override
   String get analytics => 'تجزیات';
 
   @override
@@ -496,7 +509,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get userUpdated => 'صارف کامیابی سے اپ ڈیٹ ہو گیا!';
 
   @override
-  String get userDeleted => 'صارف کامیابی سے حذف ہو گیا!';
+  String get userDeleted => 'صارف کامیابی سے محفوظ کر کے غیر فعال کر دیا گیا!';
 
   @override
   String get usersActivated => 'صارفین فعال ہو گئے';

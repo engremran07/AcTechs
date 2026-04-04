@@ -5,12 +5,16 @@ import 'package:ac_techs/core/models/job_model.dart';
 
 class AdminTechnicianJobTotal {
   const AdminTechnicianJobTotal({
+    required this.techId,
     required this.techName,
     required this.jobCount,
   });
 
+  final String techId;
   final String techName;
   final int jobCount;
+
+  String get displayName => techName.trim().isEmpty ? techId : techName;
 }
 
 class AdminJobSummary {
@@ -62,9 +66,20 @@ class AdminJobSummary {
 
   int get technicianCount => technicianJobCounts.length;
 
-  Map<String, int> get technicianJobsMap => UnmodifiableMapView({
-    for (final item in technicianJobCounts) item.techName: item.jobCount,
-  });
+  Map<String, int> get technicianJobsMap {
+    final duplicateCounts = <String, int>{};
+    for (final item in technicianJobCounts) {
+      duplicateCounts[item.displayName] =
+          (duplicateCounts[item.displayName] ?? 0) + 1;
+    }
+
+    return UnmodifiableMapView({
+      for (final item in technicianJobCounts)
+        duplicateCounts[item.displayName] == 1
+            ? item.displayName
+            : '${item.displayName} (${item.techId})': item.jobCount,
+    });
+  }
 
   factory AdminJobSummary.empty() {
     return const AdminJobSummary(
@@ -109,7 +124,7 @@ class AdminJobSummary {
     var uninstallStandingUnits = 0;
 
     final seenSharedGroups = <String>{};
-    final technicianJobs = <String, int>{};
+    final technicianJobs = <String, ({String techName, int jobCount})>{};
 
     for (final job in jobs) {
       totalJobs += 1;
@@ -140,8 +155,11 @@ class AdminJobSummary {
         AppConstants.unitTypeUninstallFreestanding,
       );
 
-      final techName = job.techName.trim().isEmpty ? job.techId : job.techName;
-      technicianJobs[techName] = (technicianJobs[techName] ?? 0) + 1;
+      final existing = technicianJobs[job.techId];
+      technicianJobs[job.techId] = (
+        techName: job.techName.trim().isEmpty ? job.techId : job.techName,
+        jobCount: (existing?.jobCount ?? 0) + 1,
+      );
 
       if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty) {
         sharedJobsCount += 1;
@@ -161,14 +179,17 @@ class AdminJobSummary {
         technicianJobs.entries
             .map(
               (entry) => AdminTechnicianJobTotal(
-                techName: entry.key,
-                jobCount: entry.value,
+                techId: entry.key,
+                techName: entry.value.techName,
+                jobCount: entry.value.jobCount,
               ),
             )
             .toList(growable: false)
           ..sort((a, b) {
             final byCount = b.jobCount.compareTo(a.jobCount);
-            return byCount != 0 ? byCount : a.techName.compareTo(b.techName);
+            return byCount != 0
+                ? byCount
+                : a.displayName.compareTo(b.displayName);
           });
 
     return AdminJobSummary(

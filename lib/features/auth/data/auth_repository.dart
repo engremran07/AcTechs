@@ -255,7 +255,17 @@ class AuthRepository {
         .snapshots()
         .listen(
           (doc) {
-            controller.add(doc.exists ? UserModel.fromFirestore(doc) : null);
+              if (!doc.exists) {
+                controller.add(null);
+                return;
+              }
+
+              final userModel = UserModel.fromFirestore(doc);
+              controller.add(userModel);
+
+              if (!userModel.isActive) {
+                unawaited(auth.signOut());
+              }
           },
           onError: (error, stackTrace) {
             if (error is FirebaseException &&

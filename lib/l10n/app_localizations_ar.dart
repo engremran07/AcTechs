@@ -89,6 +89,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get minimumSupportedBuild => 'أدنى بناء مدعوم';
 
   @override
+  String get lockRecordsBefore => 'اقفل السجلات قبل';
+
+  @override
+  String get noPeriodLock => 'لا يوجد قفل فترة مفعل حالياً.';
+
+  @override
+  String get clearPeriodLock => 'إزالة قفل الفترة';
+
+  @override
+  String get lockedPeriodDescription =>
+      'لن يمكن إنشاء السجلات الأقدم أو تعديلها أو اعتمادها أو رفضها أو حذفها.';
+
+  @override
   String get analytics => 'التحليلات';
 
   @override
@@ -494,7 +507,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get userUpdated => 'تم تحديث المستخدم بنجاح!';
 
   @override
-  String get userDeleted => 'تم حذف المستخدم بنجاح!';
+  String get userDeleted => 'تمت أرشفة المستخدم بنجاح!';
 
   @override
   String get usersActivated => 'تم تفعيل المستخدمين';

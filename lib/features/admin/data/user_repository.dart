@@ -260,14 +260,14 @@ class UserRepository {
     }
   }
 
-  /// Delete user by removing the Firestore user document permanently.
-  ///
-  /// The Firebase Auth account still requires deletion from Firebase Console or
-  /// Admin SDK. This method removes the app-visible record so the APK and
-  /// Firestore data remain clean and aligned.
+  /// Archive a user instead of deleting the profile so historical records
+  /// remain attributable to the original technician.
   Future<void> deleteUser(String uid) async {
     try {
-      await _usersRef.doc(uid).delete();
+      await _usersRef.doc(uid).update({
+        'isActive': false,
+        'archivedAt': FieldValue.serverTimestamp(),
+      });
     } on FirebaseException catch (e) {
       debugPrint('deleteUser error code: ${e.code}');
       if (e.code == 'permission-denied') {

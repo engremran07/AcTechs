@@ -11,9 +11,15 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 class ExcelExport {
   ExcelExport._();
 
+  static String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
   static void _appendReportBrandingHeader({
     required excel_pkg.Sheet sheet,
     required String reportTitle,
+    required DateTime generatedAt,
     ReportBrandingContext? reportBranding,
   }) {
     final serviceCompany = reportBranding?.serviceCompany;
@@ -41,28 +47,28 @@ class ExcelExport {
     }
     sheet.appendRow([
       excel_pkg.TextCellValue('Generated At'),
-      excel_pkg.TextCellValue(AppFormatters.dateTime(DateTime.now())),
+      excel_pkg.TextCellValue(AppFormatters.dateTime(generatedAt)),
     ]);
     sheet.appendRow([excel_pkg.TextCellValue('')]);
   }
 
-  /// Export jobs to Excel with bracket/delivery details.
-  static Future<void> exportJobsToExcel({
+  static excel_pkg.Excel buildJobsWorkbook({
     required List<JobModel> jobs,
-    String? technicianName,
     ReportBrandingContext? reportBranding,
-  }) async {
+    DateTime? generatedAt,
+  }) {
     final excelFile = excel_pkg.Excel.createExcel();
-    excelFile.delete('Sheet1'); // Remove default Sheet1
+    excelFile.delete('Sheet1');
     final sheet = excelFile['Jobs'];
+    final reportTime = generatedAt ?? DateTime.now();
 
     _appendReportBrandingHeader(
       sheet: sheet,
       reportTitle: 'Jobs Report',
+      generatedAt: reportTime,
       reportBranding: reportBranding,
     );
 
-    // Headers
     sheet.appendRow([
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Invoice Number'),
@@ -99,7 +105,6 @@ class ExcelExport {
     var totalUninstallStanding = 0;
     var totalUninstallOld = 0;
 
-    // Data
     for (final job in jobs) {
       final splitQty = job.acUnits
           .where((u) => u.type == 'Split AC')
@@ -185,11 +190,7 @@ class ExcelExport {
           );
 
       sheet.appendRow([
-        excel_pkg.TextCellValue(
-          job.date != null
-              ? '${job.date!.day.toString().padLeft(2, '0')}/${job.date!.month.toString().padLeft(2, '0')}/${job.date!.year}'
-              : '',
-        ),
+        excel_pkg.TextCellValue(_formatDate(job.date)),
         excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
         excel_pkg.TextCellValue(job.isSharedInstall ? 'Yes' : 'No'),
         excel_pkg.TextCellValue(
@@ -245,26 +246,26 @@ class ExcelExport {
       excel_pkg.IntCellValue(totalBracketZeroPriceJobs),
     ]);
 
-    await _shareExcelFile(excelFile, 'jobs_report');
+    return excelFile;
   }
 
-  /// Export earnings to Excel with category breakdown.
-  static Future<void> exportEarningsToExcel({
+  static excel_pkg.Excel buildEarningsWorkbook({
     required List<EarningModel> earnings,
-    String? technicianName,
     ReportBrandingContext? reportBranding,
-  }) async {
+    DateTime? generatedAt,
+  }) {
     final excelFile = excel_pkg.Excel.createExcel();
-    excelFile.delete('Sheet1'); // Remove default Sheet1
+    excelFile.delete('Sheet1');
     final sheet = excelFile['Earnings'];
+    final reportTime = generatedAt ?? DateTime.now();
 
     _appendReportBrandingHeader(
       sheet: sheet,
       reportTitle: 'Earnings Report',
+      generatedAt: reportTime,
       reportBranding: reportBranding,
     );
 
-    // Headers
     sheet.appendRow([
       excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
@@ -272,21 +273,15 @@ class ExcelExport {
       excel_pkg.TextCellValue('Note'),
     ]);
 
-    // Data
     for (final earning in earnings) {
       sheet.appendRow([
         excel_pkg.TextCellValue(earning.category),
         excel_pkg.DoubleCellValue(earning.amount),
-        excel_pkg.TextCellValue(
-          earning.date != null
-              ? '${earning.date!.day.toString().padLeft(2, '0')}/${earning.date!.month.toString().padLeft(2, '0')}/${earning.date!.year}'
-              : '',
-        ),
+        excel_pkg.TextCellValue(_formatDate(earning.date)),
         excel_pkg.TextCellValue(earning.note),
       ]);
     }
 
-    // Summary row
     final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
     sheet.appendRow([
       excel_pkg.TextCellValue('TOTAL'),
@@ -295,23 +290,23 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
     ]);
 
-    await _shareExcelFile(excelFile, 'earnings_report');
+    return excelFile;
   }
 
-  /// Export expenses to Excel split by work and home.
-  static Future<void> exportExpensesToExcel({
+  static excel_pkg.Excel buildExpensesWorkbook({
     required List<ExpenseModel> expenses,
-    String? technicianName,
     ReportBrandingContext? reportBranding,
-  }) async {
+    DateTime? generatedAt,
+  }) {
     final excelFile = excel_pkg.Excel.createExcel();
-    excelFile.delete('Sheet1'); // Remove default Sheet1
+    excelFile.delete('Sheet1');
+    final reportTime = generatedAt ?? DateTime.now();
 
-    // Work sheet
     final workSheet = excelFile['Work Expenses'];
     _appendReportBrandingHeader(
       sheet: workSheet,
       reportTitle: 'Expenses Report',
+      generatedAt: reportTime,
       reportBranding: reportBranding,
     );
     workSheet.appendRow([
@@ -328,11 +323,7 @@ class ExcelExport {
       workSheet.appendRow([
         excel_pkg.TextCellValue(expense.category),
         excel_pkg.DoubleCellValue(expense.amount),
-        excel_pkg.TextCellValue(
-          expense.date != null
-              ? '${expense.date!.day.toString().padLeft(2, '0')}/${expense.date!.month.toString().padLeft(2, '0')}/${expense.date!.year}'
-              : '',
-        ),
+        excel_pkg.TextCellValue(_formatDate(expense.date)),
         excel_pkg.TextCellValue(expense.note),
       ]);
     }
@@ -345,11 +336,11 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
     ]);
 
-    // Home sheet
     final homeSheet = excelFile['Home Expenses'];
     _appendReportBrandingHeader(
       sheet: homeSheet,
       reportTitle: 'Expenses Report',
+      generatedAt: reportTime,
       reportBranding: reportBranding,
     );
     homeSheet.appendRow([
@@ -366,11 +357,7 @@ class ExcelExport {
       homeSheet.appendRow([
         excel_pkg.TextCellValue(expense.category),
         excel_pkg.DoubleCellValue(expense.amount),
-        excel_pkg.TextCellValue(
-          expense.date != null
-              ? '${expense.date!.day.toString().padLeft(2, '0')}/${expense.date!.month.toString().padLeft(2, '0')}/${expense.date!.year}'
-              : '',
-        ),
+        excel_pkg.TextCellValue(_formatDate(expense.date)),
         excel_pkg.TextCellValue(expense.note),
       ]);
     }
@@ -383,30 +370,29 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
     ]);
 
-    // Summary sheet
     final summarySheet = excelFile['Summary'];
     _appendReportBrandingHeader(
       sheet: summarySheet,
       reportTitle: 'Expenses Summary',
+      generatedAt: reportTime,
       reportBranding: reportBranding,
     );
-    final now = DateTime.now();
     final todaysWork = workExpenses
         .where(
           (e) =>
               e.date != null &&
-              e.date!.year == now.year &&
-              e.date!.month == now.month &&
-              e.date!.day == now.day,
+              e.date!.year == reportTime.year &&
+              e.date!.month == reportTime.month &&
+              e.date!.day == reportTime.day,
         )
         .fold<double>(0, (s, e) => s + e.amount);
     final todaysHome = homeExpenses
         .where(
           (e) =>
               e.date != null &&
-              e.date!.year == now.year &&
-              e.date!.month == now.month &&
-              e.date!.day == now.day,
+              e.date!.year == reportTime.year &&
+              e.date!.month == reportTime.month &&
+              e.date!.day == reportTime.day,
         )
         .fold<double>(0, (s, e) => s + e.amount);
 
@@ -430,6 +416,48 @@ class ExcelExport {
       excel_pkg.DoubleCellValue(todaysWork + todaysHome),
       excel_pkg.DoubleCellValue(workTotal + homeTotal),
     ]);
+
+    return excelFile;
+  }
+
+  /// Export jobs to Excel with bracket/delivery details.
+  static Future<void> exportJobsToExcel({
+    required List<JobModel> jobs,
+    String? technicianName,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    final excelFile = buildJobsWorkbook(
+      jobs: jobs,
+      reportBranding: reportBranding,
+    );
+
+    await _shareExcelFile(excelFile, 'jobs_report');
+  }
+
+  /// Export earnings to Excel with category breakdown.
+  static Future<void> exportEarningsToExcel({
+    required List<EarningModel> earnings,
+    String? technicianName,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    final excelFile = buildEarningsWorkbook(
+      earnings: earnings,
+      reportBranding: reportBranding,
+    );
+
+    await _shareExcelFile(excelFile, 'earnings_report');
+  }
+
+  /// Export expenses to Excel split by work and home.
+  static Future<void> exportExpensesToExcel({
+    required List<ExpenseModel> expenses,
+    String? technicianName,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    final excelFile = buildExpensesWorkbook(
+      expenses: expenses,
+      reportBranding: reportBranding,
+    );
 
     await _shareExcelFile(excelFile, 'expenses_report');
   }

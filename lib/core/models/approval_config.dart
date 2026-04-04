@@ -7,6 +7,7 @@ class ApprovalConfig {
     required this.inOutApprovalRequired,
     required this.enforceMinimumBuild,
     required this.minSupportedBuildNumber,
+    required this.lockedBeforeDate,
   });
 
   final bool jobApprovalRequired;
@@ -14,6 +15,7 @@ class ApprovalConfig {
   final bool inOutApprovalRequired;
   final bool enforceMinimumBuild;
   final int minSupportedBuildNumber;
+  final DateTime? lockedBeforeDate;
 
   factory ApprovalConfig.defaults() => const ApprovalConfig(
     jobApprovalRequired: false,
@@ -21,6 +23,7 @@ class ApprovalConfig {
     inOutApprovalRequired: false,
     enforceMinimumBuild: false,
     minSupportedBuildNumber: 1,
+    lockedBeforeDate: null,
   );
 
   factory ApprovalConfig.fromMap(Map<String, dynamic>? data) {
@@ -43,8 +46,15 @@ class ApprovalConfig {
       minSupportedBuildNumber: minSupportedBuildNumber < 1
           ? 1
           : minSupportedBuildNumber,
+        lockedBeforeDate: _timestampFromConfig(data?['lockedBefore']),
     );
   }
+
+      static DateTime? _timestampFromConfig(Object? value) {
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      return null;
+      }
 
   ApprovalConfig copyWith({
     bool? jobApprovalRequired,
@@ -52,6 +62,8 @@ class ApprovalConfig {
     bool? inOutApprovalRequired,
     bool? enforceMinimumBuild,
     int? minSupportedBuildNumber,
+    DateTime? lockedBeforeDate,
+    bool clearLockedBeforeDate = false,
   }) {
     return ApprovalConfig(
       jobApprovalRequired: jobApprovalRequired ?? this.jobApprovalRequired,
@@ -62,6 +74,9 @@ class ApprovalConfig {
       enforceMinimumBuild: enforceMinimumBuild ?? this.enforceMinimumBuild,
       minSupportedBuildNumber:
           minSupportedBuildNumber ?? this.minSupportedBuildNumber,
+      lockedBeforeDate: clearLockedBeforeDate
+          ? null
+          : lockedBeforeDate ?? this.lockedBeforeDate,
     );
   }
 
@@ -71,8 +86,16 @@ class ApprovalConfig {
     'inOutApprovalRequired': inOutApprovalRequired,
     'enforceMinimumBuild': enforceMinimumBuild,
     'minSupportedBuildNumber': minSupportedBuildNumber,
+    'lockedBefore': lockedBeforeDate == null
+        ? null
+        : Timestamp.fromDate(lockedBeforeDate!),
     'updatedAt': FieldValue.serverTimestamp(),
   };
+
+  bool locksDate(DateTime value) {
+    final lockDate = lockedBeforeDate;
+    return lockDate != null && value.isBefore(lockDate);
+  }
 
   @override
   bool operator ==(Object other) {
@@ -82,7 +105,8 @@ class ApprovalConfig {
         other.sharedJobApprovalRequired == sharedJobApprovalRequired &&
         other.inOutApprovalRequired == inOutApprovalRequired &&
         other.enforceMinimumBuild == enforceMinimumBuild &&
-        other.minSupportedBuildNumber == minSupportedBuildNumber;
+        other.minSupportedBuildNumber == minSupportedBuildNumber &&
+        other.lockedBeforeDate == lockedBeforeDate;
   }
 
   @override
@@ -92,5 +116,6 @@ class ApprovalConfig {
     inOutApprovalRequired,
     enforceMinimumBuild,
     minSupportedBuildNumber,
+    lockedBeforeDate,
   );
 }

@@ -256,6 +256,30 @@ abstract class AppLocalizations {
   /// **'Minimum Supported Build'**
   String get minimumSupportedBuild;
 
+  /// No description provided for @lockRecordsBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Records Before'**
+  String get lockRecordsBefore;
+
+  /// No description provided for @noPeriodLock.
+  ///
+  /// In en, this message translates to:
+  /// **'No period lock is active.'**
+  String get noPeriodLock;
+
+  /// No description provided for @clearPeriodLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Period Lock'**
+  String get clearPeriodLock;
+
+  /// No description provided for @lockedPeriodDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Older records cannot be created, edited, approved, rejected, or deleted.'**
+  String get lockedPeriodDescription;
+
   /// No description provided for @analytics.
   ///
   /// In en, this message translates to:
@@ -1051,7 +1075,7 @@ abstract class AppLocalizations {
   /// No description provided for @userDeleted.
   ///
   /// In en, this message translates to:
-  /// **'User deleted successfully!'**
+  /// **'User archived successfully!'**
   String get userDeleted;
 
   /// No description provided for @usersActivated.

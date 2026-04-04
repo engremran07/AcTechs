@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/features/settings/data/period_lock_guard.dart';
 
 final acInstallRepositoryProvider = Provider<AcInstallRepository>((ref) {
   return AcInstallRepository(firestore: FirebaseFirestore.instance);
@@ -18,6 +19,16 @@ class AcInstallRepository {
 
   CollectionReference<Map<String, dynamic>> _historyRef(String installId) =>
       _ref.doc(installId).collection('history');
+
+  PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
+
+  Future<void> _ensureMutableRecord(String id) async {
+    final snap = await _ref.doc(id).get();
+    final status = snap.data()?['status'] as String?;
+    if (status == AcInstallStatus.approved.name) {
+      throw AcInstallException.approvedRecordLocked();
+    }
+  }
 
   void _validateInstall(AcInstallModel install) {
     final totals = <(int total, int share)>[
@@ -96,7 +107,10 @@ class AcInstallRepository {
   Future<void> addInstall(AcInstallModel install) async {
     try {
       _validateInstall(install);
+      await _periodLockGuard.ensureUnlockedDate(install.date);
       await _ref.add(_normalizedInstallData(install));
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('addInstall error: ${e.code} — ${e.message}');
       throw AcInstallException.saveFailed();
@@ -110,7 +124,13 @@ class AcInstallRepository {
 
   Future<void> deleteInstall(String id) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
+      await _ensureMutableRecord(id);
       await _ref.doc(id).delete();
+    } on AcInstallException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('deleteInstall error: ${e.code} — ${e.message}');
       throw AcInstallException.deleteFailed();
@@ -122,10 +142,14 @@ class AcInstallRepository {
 
   Future<void> approveInstall(String id, String adminUid) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final installRef = _ref.doc(id);
         final snap = await tx.get(installRef);
         final previousStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (previousStatus == AcInstallStatus.approved.name) {
+          throw AcInstallException.approvedRecordLocked();
+        }
         tx.update(installRef, {
           'status': 'approved',
           'approvedBy': adminUid,
@@ -139,6 +163,10 @@ class AcInstallRepository {
           'newStatus': 'approved',
         });
       });
+    } on AcInstallException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('approveInstall error: ${e.code} — ${e.message}');
       throw AcInstallException.updateFailed();
@@ -150,10 +178,14 @@ class AcInstallRepository {
 
   Future<void> rejectInstall(String id, String adminUid, String note) async {
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await firestore.runTransaction((tx) async {
         final installRef = _ref.doc(id);
         final snap = await tx.get(installRef);
         final previousStatus = snap.data()?['status'] as String? ?? 'pending';
+        if (previousStatus == AcInstallStatus.approved.name) {
+          throw AcInstallException.approvedRecordLocked();
+        }
         tx.update(installRef, {
           'status': 'rejected',
           'approvedBy': adminUid,
@@ -168,6 +200,10 @@ class AcInstallRepository {
           'reason': note,
         });
       });
+    } on AcInstallException {
+      rethrow;
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('rejectInstall error: ${e.code} — ${e.message}');
       throw AcInstallException.updateFailed();
