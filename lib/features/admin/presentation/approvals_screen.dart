@@ -12,6 +12,8 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
+import 'package:ac_techs/features/expenses/data/ac_install_repository.dart';
+import 'package:ac_techs/features/expenses/providers/ac_install_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
@@ -161,6 +163,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     ref.invalidate(approvedSharedInstallsProvider);
     ref.invalidate(pendingEarningsProvider);
     ref.invalidate(pendingExpensesProvider);
+    ref.invalidate(pendingAcInstallsProvider);
   }
 
   Future<void> _approvePendingInOut({
@@ -394,12 +397,87 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     );
   }
 
+  Future<void> _showAcInstallVerificationDialog(AcInstallModel install) async {
+    final l = AppLocalizations.of(context)!;
+    final historyFuture = ref
+        .read(acInstallRepositoryProvider)
+        .fetchInstallHistory(install.id);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.acInstallations),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${l.technician}: ${install.techName}'),
+              Text('${l.technicianUidLabel}: ${install.techId}'),
+              Text(
+                '${l.totalOnInvoice}: ${AppFormatters.units(install.totalInvoiceUnits)}',
+              ),
+              Text(
+                '${l.myShare}: ${AppFormatters.units(install.totalPersonalUnits)}',
+              ),
+              if (install.note.trim().isNotEmpty) Text(install.note.trim()),
+              if (install.adminNote.trim().isNotEmpty)
+                Text('${l.rejectReason}: ${install.adminNote.trim()}'),
+              const SizedBox(height: 12),
+              _ApprovalHistorySection(
+                future: historyFuture,
+                title: l.history,
+                statusLabel: l.statusLabel,
+                dateLabel: l.date,
+                actorLabel: l.approverUidLabel,
+                reasonLabel: l.rejectReason,
+                approvedLabel: l.approved,
+                rejectedLabel: l.rejected,
+                pendingLabel: l.pending,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(l.cancel),
+          ),
+          OutlinedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final reason = await _promptRejectionReason(context);
+              if (reason == null || reason.isEmpty) return;
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              await ref
+                  .read(acInstallRepositoryProvider)
+                  .rejectInstall(install.id, admin.uid, reason);
+            },
+            child: Text(l.reject),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final admin = ref.read(currentUserProvider).value;
+              if (admin == null) return;
+              await ref
+                  .read(acInstallRepositoryProvider)
+                  .approveInstall(install.id, admin.uid);
+              if (ctx.mounted) Navigator.of(ctx).pop();
+            },
+            child: Text(l.approve),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingApprovalsProvider);
     final approvedSharedAsync = ref.watch(approvedSharedInstallsProvider);
     final pendingEarnings = ref.watch(pendingEarningsProvider);
     final pendingExpenses = ref.watch(pendingExpensesProvider);
+    final pendingAcInstalls = ref.watch(pendingAcInstallsProvider);
     final pendingInOut =
         <_PendingInOutEntry>[
           ...(pendingEarnings.value ?? const <EarningModel>[]).map(
@@ -449,6 +527,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   approvedSharedAsync.value ?? const <JobModel>[];
               final approvedSharedGroups = _sharedJobGroups(approvedShared);
               final filteredApprovedShared = _filter(approvedShared);
+              final pendingAcInstallItems =
+                  pendingAcInstalls.value ?? const <AcInstallModel>[];
               _selected.removeWhere((id) => !filtered.any((j) => j.id == id));
 
               return Column(
@@ -552,6 +632,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                       ),
                     ),
                   if (filtered.isEmpty &&
+                      pendingAcInstallItems.isEmpty &&
                       pendingInOut.isEmpty &&
                       filteredApprovedShared.isEmpty)
                     Expanded(
@@ -588,6 +669,23 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                         child: ListView(
                           padding: const EdgeInsets.all(16),
                           children: [
+                            if (pendingAcInstallItems.isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  AppLocalizations.of(context)!.acInstallations,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                              ...pendingAcInstallItems.map(
+                                (install) => _PendingAcInstallCard(
+                                  install: install,
+                                  onTap: () =>
+                                      _showAcInstallVerificationDialog(install),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             if (pendingInOut.isNotEmpty) ...[
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
@@ -1243,6 +1341,181 @@ class _PendingInOutEntry {
   final double amount;
   final String note;
   final DateTime? date;
+}
+
+class _PendingAcInstallCard extends ConsumerStatefulWidget {
+  const _PendingAcInstallCard({required this.install, required this.onTap});
+
+  final AcInstallModel install;
+  final VoidCallback onTap;
+
+  @override
+  ConsumerState<_PendingAcInstallCard> createState() =>
+      _PendingAcInstallCardState();
+}
+
+class _PendingAcInstallCardState extends ConsumerState<_PendingAcInstallCard> {
+  bool _isProcessing = false;
+
+  Future<void> _approve() async {
+    setState(() => _isProcessing = true);
+    try {
+      final admin = ref.read(currentUserProvider).value;
+      if (admin == null) return;
+      await ref
+          .read(acInstallRepositoryProvider)
+          .approveInstall(widget.install.id, admin.uid);
+      if (mounted) {
+        SuccessSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.approved,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ErrorSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.couldNotApprove,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _reject() async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.reject),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.rejectReason,
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isEmpty) return;
+              Navigator.pop(context, controller.text.trim());
+            },
+            child: Text(AppLocalizations.of(context)!.reject),
+          ),
+        ],
+      ),
+    );
+    if (reason == null || reason.isEmpty) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      final admin = ref.read(currentUserProvider).value;
+      if (admin == null) return;
+      await ref
+          .read(acInstallRepositoryProvider)
+          .rejectInstall(widget.install.id, admin.uid, reason);
+      if (mounted) {
+        SuccessSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.rejected,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ErrorSnackbar.show(
+          context,
+          message: AppLocalizations.of(context)!.couldNotReject,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final install = widget.install;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: ArcticCard(
+        onTap: widget.onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              install.techName,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${AppLocalizations.of(context)!.date}: ${AppFormatters.date(install.date)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                Chip(
+                  label: Text(
+                    '${AppLocalizations.of(context)!.totalOnInvoice}: ${AppFormatters.units(install.totalInvoiceUnits)}',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                Chip(
+                  label: Text(
+                    '${AppLocalizations.of(context)!.myShare}: ${AppFormatters.units(install.totalPersonalUnits)}',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ],
+            ),
+            if (install.note.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                install.note.trim(),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _isProcessing ? null : _reject,
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: Text(AppLocalizations.of(context)!.reject),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _isProcessing ? null : _approve,
+                    icon: _isProcessing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_rounded, size: 18),
+                    label: Text(AppLocalizations.of(context)!.approve),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ApprovalHistorySection extends StatelessWidget {

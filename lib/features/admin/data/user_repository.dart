@@ -22,6 +22,8 @@ class UserRepository {
       .where('role', isEqualTo: AppConstants.roleTechnician)
       .where('isActive', isEqualTo: true);
 
+  Query<Map<String, dynamic>> get _allUsersQuery => _usersRef.orderBy('name');
+
   Stream<List<UserModel>> allTechnicians() {
     return _activeTechniciansQuery.snapshots().map(
       (snap) => _dedupeUsers(snap.docs),
@@ -29,13 +31,7 @@ class UserRepository {
   }
 
   Stream<List<UserModel>> allUsers() {
-    return _usersRef
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => UserModel.fromFirestore(doc)).toList(),
-        );
+    return _allUsersQuery.snapshots().map((snap) => _dedupeUsers(snap.docs));
   }
 
   Future<List<UserModel>> usersForImport() async {
@@ -71,11 +67,7 @@ class UserRepository {
 
   Future<void> toggleUserActive(String uid, bool isActive) async {
     try {
-      if (isActive) {
-        await _usersRef.doc(uid).update({'isActive': true});
-      } else {
-        await _usersRef.doc(uid).delete();
-      }
+      await _usersRef.doc(uid).update({'isActive': isActive});
     } on FirebaseException catch (e) {
       debugPrint('toggleUserActive error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -225,11 +217,7 @@ class UserRepository {
     try {
       final batch = firestore.batch();
       for (final uid in uids) {
-        if (isActive) {
-          batch.update(_usersRef.doc(uid), {'isActive': true});
-        } else {
-          batch.delete(_usersRef.doc(uid));
-        }
+        batch.update(_usersRef.doc(uid), {'isActive': isActive});
       }
       await batch.commit();
     } on FirebaseException catch (e) {

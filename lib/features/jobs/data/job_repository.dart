@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -6,13 +7,17 @@ import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/invoice_utils.dart';
 
 final jobRepositoryProvider = Provider<JobRepository>((ref) {
-  return JobRepository(firestore: FirebaseFirestore.instance);
+  return JobRepository(
+    firestore: FirebaseFirestore.instance,
+    functions: FirebaseFunctions.instance,
+  );
 });
 
 class JobRepository {
-  JobRepository({required this.firestore});
+  JobRepository({required this.firestore, this.functions});
 
   final FirebaseFirestore firestore;
+  final FirebaseFunctions? functions;
   static const String _sharedBracketType = 'Bracket';
 
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
@@ -20,6 +25,8 @@ class JobRepository {
 
   CollectionReference<Map<String, dynamic>> get _sharedAggregatesRef =>
       firestore.collection(AppConstants.sharedInstallAggregatesCollection);
+
+  bool get _usesServerGateway => functions != null;
 
   Future<
     ({
@@ -206,6 +213,11 @@ class JobRepository {
 
   Future<void> submitJob(JobModel job) async {
     try {
+      if (job.isSharedInstall && _usesServerGateway) {
+        await _submitSharedJobOnServer(job);
+        return;
+      }
+
       final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
       final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
           ? ''
@@ -441,6 +453,11 @@ class JobRepository {
   }
 
   Future<void> approveJob(String jobId, String adminUid) async {
+    if (_usesServerGateway) {
+      await _reviewJobOnServer(jobId: jobId, action: 'approve');
+      return;
+    }
+
     try {
       await firestore.runTransaction((tx) async {
         final snap = await tx.get(_jobsRef.doc(jobId));
@@ -467,6 +484,11 @@ class JobRepository {
   }
 
   Future<void> rejectJob(String jobId, String adminUid, String reason) async {
+    if (_usesServerGateway) {
+      await _reviewJobOnServer(jobId: jobId, action: 'reject', reason: reason);
+      return;
+    }
+
     try {
       await firestore.runTransaction((tx) async {
         final snap = await tx.get(_jobsRef.doc(jobId));
@@ -488,6 +510,7 @@ class JobRepository {
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': prevStatus,
           'newStatus': 'rejected',
+          'reason': reason,
         });
       });
     } on FirebaseException catch (e) {
@@ -502,6 +525,13 @@ class JobRepository {
   Future<void> bulkApproveJobs(List<String> jobIds, String adminUid) async {
     try {
       if (jobIds.isEmpty) return;
+      if (_usesServerGateway) {
+        for (final id in jobIds) {
+          await approveJob(id, adminUid);
+        }
+        return;
+      }
+
       const chunkSize = 400;
       for (var i = 0; i < jobIds.length; i += chunkSize) {
         final end = (i + chunkSize > jobIds.length)
@@ -692,6 +722,107 @@ class JobRepository {
     } catch (e) {
       debugPrint('importJobs unknown error: $e');
       throw JobException.saveFailed();
+    }
+  }
+
+  Map<String, dynamic> _sharedJobPayload(JobModel job) {
+    return {
+      'techId': job.techId,
+      'techName': job.techName,
+      'companyId': job.companyId,
+      'companyName': job.companyName,
+      'invoiceNumber': job.invoiceNumber,
+      'clientName': job.clientName,
+      'clientContact': job.clientContact,
+      'acUnits': job.acUnits
+          .map((unit) => {'type': unit.type, 'quantity': unit.quantity})
+          .toList(growable: false),
+      'status': job.status.name,
+      'expenses': job.expenses,
+      'expenseNote': job.expenseNote,
+      'adminNote': job.adminNote,
+      'approvedBy': job.approvedBy,
+      'isSharedInstall': job.isSharedInstall,
+      'sharedInstallGroupKey': job.sharedInstallGroupKey,
+      'sharedInvoiceTotalUnits': job.sharedInvoiceTotalUnits,
+      'sharedContributionUnits': job.sharedContributionUnits,
+      'sharedInvoiceSplitUnits': job.sharedInvoiceSplitUnits,
+      'sharedInvoiceWindowUnits': job.sharedInvoiceWindowUnits,
+      'sharedInvoiceFreestandingUnits': job.sharedInvoiceFreestandingUnits,
+      'sharedInvoiceBracketCount': job.sharedInvoiceBracketCount,
+      'sharedDeliveryTeamCount': job.sharedDeliveryTeamCount,
+      'sharedInvoiceDeliveryAmount': job.sharedInvoiceDeliveryAmount,
+      'techSplitShare': job.techSplitShare,
+      'techWindowShare': job.techWindowShare,
+      'techFreestandingShare': job.techFreestandingShare,
+      'techBracketShare': job.techBracketShare,
+      'charges': job.charges == null
+          ? null
+          : {
+              'acBracket': job.charges!.acBracket,
+              'bracketCount': job.charges!.bracketCount,
+              'bracketAmount': job.charges!.bracketAmount,
+              'deliveryCharge': job.charges!.deliveryCharge,
+              'deliveryAmount': job.charges!.deliveryAmount,
+              'deliveryNote': job.charges!.deliveryNote,
+            },
+      'date': job.date?.millisecondsSinceEpoch,
+      'submittedAt': job.submittedAt?.millisecondsSinceEpoch,
+      'reviewedAt': job.reviewedAt?.millisecondsSinceEpoch,
+    };
+  }
+
+  Future<void> _submitSharedJobOnServer(JobModel job) async {
+    try {
+      await functions!.httpsCallable(AppConstants.submitSharedJobCallable).call(
+        {'job': _sharedJobPayload(job)},
+      );
+    } on FirebaseFunctionsException catch (e) {
+      throw _jobExceptionFromFunctions(e);
+    }
+  }
+
+  Future<void> _reviewJobOnServer({
+    required String jobId,
+    required String action,
+    String reason = '',
+  }) async {
+    try {
+      await functions!.httpsCallable(AppConstants.reviewJobCallable).call({
+        'jobId': jobId,
+        'action': action,
+        'reason': reason,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw _jobExceptionFromFunctions(e);
+    }
+  }
+
+  JobException _jobExceptionFromFunctions(FirebaseFunctionsException error) {
+    final details = error.details;
+    final detailMap = details is Map<Object?, Object?>
+        ? details.map((key, value) => MapEntry(key?.toString() ?? '', value))
+        : const <String, Object?>{};
+    final appCode = detailMap['code']?.toString() ?? '';
+    final remaining = (detailMap['remaining'] as num?)?.toInt() ?? 0;
+    final unitType = detailMap['unitType']?.toString() ?? '';
+
+    switch (appCode) {
+      case 'job_duplicate_invoice':
+        return JobException.duplicateInvoice();
+      case 'job_shared_group_mismatch':
+        return JobException.sharedGroupMismatch();
+      case 'job_shared_delivery_split_invalid':
+        return JobException.sharedDeliverySplitInvalid();
+      case 'job_shared_type_units_exceeded':
+        return JobException.sharedTypeUnitsExceeded(
+          unitType: unitType,
+          remaining: remaining,
+        );
+      case 'job_shared_units_exceeded':
+        return JobException.sharedUnitsExceeded(remaining: remaining);
+      default:
+        return JobException.saveFailed();
     }
   }
 }

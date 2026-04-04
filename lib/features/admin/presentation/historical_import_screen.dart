@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
@@ -12,6 +11,7 @@ import 'package:ac_techs/features/admin/data/historical_jobs_import_service.dart
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/core/utils/picked_file_bytes.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class HistoricalImportScreen extends ConsumerStatefulWidget {
@@ -253,7 +253,7 @@ class _HistoricalImportScreenState
     final l = AppLocalizations.of(context)!;
     final picked = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      withData: kIsWeb,
+      withData: true,
       type: FileType.custom,
       allowedExtensions: const ['xlsx', 'xls'],
     );
@@ -305,10 +305,7 @@ class _HistoricalImportScreenState
       final preparedBatches = <_PreparedImportBatch>[];
 
       for (final source in sources) {
-        Uint8List? bytes = source.bytes;
-        if (bytes == null && source.path != null) {
-          bytes = await File(source.path!).readAsBytes();
-        }
+        final bytes = await loadPickedFileBytes(source);
         if (bytes == null || bytes.isEmpty) continue;
 
         final parsedMap =
@@ -356,8 +353,6 @@ class _HistoricalImportScreenState
             parsed: parsed,
           ),
         );
-
-        bytes = Uint8List(0);
       }
 
       if (preparedBatches.isEmpty) {
@@ -388,16 +383,7 @@ class _HistoricalImportScreenState
         skippedRows += parsed.skippedRows;
         unresolvedTechs += parsed.unresolvedTechnicians;
 
-        if (!kIsWeb && prepared.source.path != null) {
-          try {
-            final sourceFile = File(prepared.source.path!);
-            if (await sourceFile.exists()) {
-              await sourceFile.delete();
-            }
-          } catch (_) {
-            // Best effort only. Some providers may not allow deletion.
-          }
-        }
+        await cleanupPickedFile(prepared.source);
       }
 
       if (!mounted) return;

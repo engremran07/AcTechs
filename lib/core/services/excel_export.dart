@@ -1,6 +1,6 @@
-import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:excel/excel.dart' as excel_pkg;
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -444,20 +444,18 @@ class ExcelExport {
     final now = DateTime.now();
     final fileName =
         '${baseFileName}_${now.year}_${now.month.toString().padLeft(2, "0")}_${now.day.toString().padLeft(2, "0")}.xlsx';
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$fileName');
-    await file.writeAsBytes(bytes);
-
-    try {
-      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
-    } finally {
-      try {
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (_) {
-        // Best effort cleanup only.
-      }
-    }
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [
+          XFile.fromData(
+            Uint8List.fromList(bytes),
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            name: fileName,
+          ),
+        ],
+        fileNameOverrides: [fileName],
+      ),
+    );
   }
 }

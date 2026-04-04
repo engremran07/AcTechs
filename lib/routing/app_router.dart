@@ -27,10 +27,63 @@ import 'package:ac_techs/features/admin/presentation/historical_import_screen.da
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
+import 'package:ac_techs/features/expenses/presentation/ac_installations_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 final _routerKey = GlobalKey<NavigatorState>();
+
+String? resolveAppRedirect({
+  required String matchedLocation,
+  required bool isAuthLoading,
+  required bool isLoggedIn,
+  required AsyncValue<UserModel?> currentUser,
+  required ApprovalConfig? approvalConfig,
+  required int? appBuild,
+}) {
+  final isSplashRoute = matchedLocation == '/splash';
+  final isLoginRoute = matchedLocation == '/login';
+  final isUpdateRoute = matchedLocation == '/update-required';
+  final user = currentUser.value;
+
+  if (isAuthLoading || (isLoggedIn && currentUser.isLoading)) {
+    return isSplashRoute ? null : '/splash';
+  }
+
+  if (!isLoggedIn) {
+    return isLoginRoute ? null : '/login';
+  }
+
+  if (currentUser.hasError || user == null) {
+    return isLoginRoute ? null : '/login';
+  }
+
+  if (!user.isActive) {
+    return '/login';
+  }
+
+  if (approvalConfig != null &&
+      approvalConfig.enforceMinimumBuild &&
+      appBuild != null &&
+      appBuild < approvalConfig.minSupportedBuildNumber) {
+    return isUpdateRoute ? null : '/update-required';
+  }
+
+  if (isUpdateRoute) {
+    return user.isAdmin ? '/admin' : '/tech';
+  }
+
+  if (isSplashRoute || isLoginRoute) {
+    return user.isAdmin ? '/admin' : '/tech';
+  }
+
+  final isAdminRoute = matchedLocation.startsWith('/admin');
+  final isTechRoute = matchedLocation.startsWith('/tech');
+  if (user.isAdmin && isTechRoute) return '/admin';
+  if (!user.isAdmin && isAdminRoute) return '/tech';
+
+  return null;
+}
 
 /// A `CustomTransitionPage` that fades and slides up slightly — used for all
 /// full-screen route pushes so the app feels snappy and polished.
@@ -87,58 +140,19 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final isSplashRoute = state.matchedLocation == '/splash';
-      final isLoginRoute = state.matchedLocation == '/login';
-      final isUpdateRoute = state.matchedLocation == '/update-required';
-
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
       final approvalConfig = ref.read(approvalConfigProvider).asData?.value;
       final appBuild = ref.read(appBuildNumberProvider).asData?.value;
 
-      final isAuthLoading = authState.isLoading;
-      final isLoggedIn = authState.value != null;
-      final user = currentUser.value;
-
-      // Keep users on splash until auth + profile streams settle.
-      if (isAuthLoading || (isLoggedIn && currentUser.isLoading)) {
-        return isSplashRoute ? null : '/splash';
-      }
-
-      if (!isLoggedIn) {
-        return isLoginRoute ? null : '/login';
-      }
-
-      if (currentUser.hasError || user == null) {
-        return isLoginRoute ? null : '/login';
-      }
-
-      if (!user.isActive) {
-        return '/login';
-      }
-
-      if (approvalConfig != null &&
-          approvalConfig.enforceMinimumBuild &&
-          appBuild != null &&
-          appBuild < approvalConfig.minSupportedBuildNumber) {
-        return isUpdateRoute ? null : '/update-required';
-      }
-
-      if (isUpdateRoute) {
-        return user.isAdmin ? '/admin' : '/tech';
-      }
-
-      if (isSplashRoute || isLoginRoute) {
-        return user.isAdmin ? '/admin' : '/tech';
-      }
-
-      // Prevent technician from accessing admin routes and vice versa
-      final isAdminRoute = state.matchedLocation.startsWith('/admin');
-      final isTechRoute = state.matchedLocation.startsWith('/tech');
-      if (user.isAdmin && isTechRoute) return '/admin';
-      if (!user.isAdmin && isAdminRoute) return '/tech';
-
-      return null;
+      return resolveAppRedirect(
+        matchedLocation: state.matchedLocation,
+        isAuthLoading: authState.isLoading,
+        isLoggedIn: authState.value != null,
+        currentUser: currentUser,
+        approvalConfig: approvalConfig,
+        appBuild: appBuild,
+      );
     },
     routes: [
       // ✅ Splash Screen (shown on every app launch)
@@ -182,6 +196,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const DailyInOutScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tech/ac-installs',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const AcInstallationsScreen(),
             ),
           ),
           GoRoute(

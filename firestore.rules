@@ -32,6 +32,11 @@ service cloud.firestore {
         ];
     }
 
+    function isActiveUser() {
+      return userExists() &&
+        (!(userData().isActive is bool) || userData().isActive == true);
+    }
+
     function approvalConfigDocPath() {
       return /databases/$(database)/documents/app_settings/approval_config;
     }
@@ -204,8 +209,8 @@ service cloud.firestore {
 
     // ─── Jobs ───
     match /jobs/{jobId} {
-      allow read: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      allow read: if isAdmin() ||
+        (isActiveUser() && resource.data.techId == request.auth.uid);
 
       match /history/{historyId} {
         allow read: if isAdmin();
@@ -213,8 +218,9 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      allow create: if (isAuth() &&
+      allow create: if (isActiveUser() &&
         request.resource.data.techId == request.auth.uid &&
+        !(request.resource.data.isSharedInstall is bool && request.resource.data.isSharedInstall) &&
         request.resource.data.status == (
           isSharedJobCreate()
             ? (sharedJobApprovalRequired() ? 'pending' : 'approved')
@@ -228,6 +234,7 @@ service cloud.firestore {
           request.resource.data.status in ['pending', 'approved', 'rejected']);
 
       allow update: if isAdmin() || (
+        isActiveUser() &&
         isOwner(resource.data.techId) &&
         (jobApprovalRequired()
           ? resource.data.status == 'pending'
@@ -270,27 +277,16 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin() ||
-        (isAuth() &&
+        (isActiveUser() &&
          resource.data.techId == request.auth.uid &&
          !(resource.data.isSharedInstall is bool && resource.data.isSharedInstall));
     }
 
     match /shared_install_aggregates/{aggregateId} {
-      allow get: if isAuth();
+      allow get: if isAdmin() || isActiveUser();
       allow list: if isAdmin();
 
-      allow create: if isAdmin() || (
-        isAuth() &&
-        request.resource.data.createdBy == request.auth.uid &&
-        validSharedAggregatePayload()
-      );
-
-      allow update: if isAdmin() || (
-        isAuth() &&
-        validSharedAggregateUpdate()
-      );
-
-      allow delete: if isAdmin();
+      allow create, update, delete: if false;
     }
 
     // ─── Expenses ───
@@ -302,11 +298,11 @@ service cloud.firestore {
       }
 
       // Techs read own; admins read all
-      allow read: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      allow read: if isAdmin() ||
+        (isActiveUser() && resource.data.techId == request.auth.uid);
 
       // Techs create own expenses
-      allow create: if isAuth() &&
+      allow create: if isActiveUser() &&
         request.resource.data.techId == request.auth.uid &&
         request.resource.data.keys().hasOnly([
           'techId',
@@ -332,7 +328,7 @@ service cloud.firestore {
         request.resource.data.adminNote is string;
 
       allow update: if isAdmin() || (
-        isAuth() &&
+        isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
@@ -363,7 +359,7 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin() ||
-        (isAuth() && resource.data.techId == request.auth.uid);
+        (isActiveUser() && resource.data.techId == request.auth.uid);
     }
 
     // ─── Earnings ───
@@ -375,11 +371,11 @@ service cloud.firestore {
       }
 
       // Techs read own; admins read all
-      allow read: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      allow read: if isAdmin() ||
+        (isActiveUser() && resource.data.techId == request.auth.uid);
 
       // Techs create own earnings
-      allow create: if isAuth() &&
+      allow create: if isActiveUser() &&
         request.resource.data.techId == request.auth.uid &&
         request.resource.data.keys().hasOnly([
           'techId',
@@ -404,7 +400,7 @@ service cloud.firestore {
         request.resource.data.adminNote is string;
 
       allow update: if isAdmin() || (
-        isAuth() &&
+        isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
@@ -435,15 +431,21 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin() ||
-        (isAuth() && resource.data.techId == request.auth.uid);
+        (isActiveUser() && resource.data.techId == request.auth.uid);
     }
 
     // ─── AC Installs ───
     match /ac_installs/{installId} {
-      allow read: if isAuth() &&
-        (resource.data.techId == request.auth.uid || isAdmin());
+      match /history/{historyId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
 
-      allow create: if isAuth() &&
+      allow read: if isAdmin() ||
+        (isActiveUser() && resource.data.techId == request.auth.uid);
+
+      allow create: if isActiveUser() &&
         request.resource.data.techId == request.auth.uid &&
         request.resource.data.keys().hasOnly([
           'techId',
@@ -462,13 +464,75 @@ service cloud.firestore {
           'createdAt',
           'reviewedAt'
         ]) &&
+        request.resource.data.splitTotal is int &&
+        request.resource.data.splitTotal >= 0 &&
+        request.resource.data.splitShare is int &&
+        request.resource.data.splitShare >= 0 &&
+        request.resource.data.splitShare <= request.resource.data.splitTotal &&
+        request.resource.data.windowTotal is int &&
+        request.resource.data.windowTotal >= 0 &&
+        request.resource.data.windowShare is int &&
+        request.resource.data.windowShare >= 0 &&
+        request.resource.data.windowShare <= request.resource.data.windowTotal &&
+        request.resource.data.freestandingTotal is int &&
+        request.resource.data.freestandingTotal >= 0 &&
+        request.resource.data.freestandingShare is int &&
+        request.resource.data.freestandingShare >= 0 &&
+        request.resource.data.freestandingShare <= request.resource.data.freestandingTotal &&
+        (request.resource.data.splitTotal + request.resource.data.windowTotal + request.resource.data.freestandingTotal) > 0 &&
+        request.resource.data.techName is string &&
+        request.resource.data.note is string &&
         request.resource.data.date is timestamp &&
-        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved');
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.approvedBy is string &&
+        request.resource.data.adminNote is string &&
+        (
+          (inOutApprovalRequired() &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == 'approved' &&
+            request.resource.data.reviewedAt is timestamp)
+        );
 
       allow update: if isAdmin() || (
-        isAuth() &&
+        isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.splitTotal is int &&
+        request.resource.data.splitTotal >= 0 &&
+        request.resource.data.splitShare is int &&
+        request.resource.data.splitShare >= 0 &&
+        request.resource.data.splitShare <= request.resource.data.splitTotal &&
+        request.resource.data.windowTotal is int &&
+        request.resource.data.windowTotal >= 0 &&
+        request.resource.data.windowShare is int &&
+        request.resource.data.windowShare >= 0 &&
+        request.resource.data.windowShare <= request.resource.data.windowTotal &&
+        request.resource.data.freestandingTotal is int &&
+        request.resource.data.freestandingTotal >= 0 &&
+        request.resource.data.freestandingShare is int &&
+        request.resource.data.freestandingShare >= 0 &&
+        request.resource.data.freestandingShare <= request.resource.data.freestandingTotal &&
+        (request.resource.data.splitTotal + request.resource.data.windowTotal + request.resource.data.freestandingTotal) > 0 &&
+        request.resource.data.techName is string &&
+        request.resource.data.note is string &&
+        (
+          (inOutApprovalRequired() &&
+            resource.data.status == 'pending' &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == resource.data.status &&
+            request.resource.data.approvedBy == resource.data.approvedBy &&
+            request.resource.data.adminNote == resource.data.adminNote &&
+            request.resource.data.reviewedAt == resource.data.reviewedAt)
+        ) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'splitTotal',
@@ -486,8 +550,7 @@ service cloud.firestore {
         ])
       );
 
-      allow delete: if isAdmin() ||
-        (isAuth() && resource.data.techId == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
     // ─── Companies ───

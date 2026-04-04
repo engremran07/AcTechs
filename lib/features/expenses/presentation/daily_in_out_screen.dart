@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -1020,6 +1021,11 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                       allExpenses: allExpenses,
                     );
                   },
+          ),
+          IconButton(
+            icon: const Icon(Icons.air_rounded),
+            tooltip: l.acInstallations,
+            onPressed: () => context.push('/tech/ac-installs'),
           ),
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded),

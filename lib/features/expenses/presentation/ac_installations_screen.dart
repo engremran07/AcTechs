@@ -108,21 +108,6 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
                 ),
               ),
               StatusBadge(status: install.status.name),
-              if (install.isPending) ...[
-                const SizedBox(width: 4),
-                InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => _confirmDeleteInstall(install),
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.delete_outline_rounded,
-                      size: 18,
-                      color: ArcticTheme.arcticError,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           const SizedBox(height: 8),
@@ -160,6 +145,15 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
               install.note,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: ArcticTheme.arcticTextSecondary,
+              ),
+            ),
+          ],
+          if (install.adminNote.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              install.adminNote,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: ArcticTheme.arcticWarning,
               ),
             ),
           ],
@@ -419,42 +413,6 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
           message: AppLocalizations.of(context)!.installationsLogged,
         );
       }
-    } on AppException catch (e) {
-      if (mounted) {
-        final locale = ref.read(appLocaleProvider);
-        ErrorSnackbar.show(context, message: e.message(locale));
-      }
-    }
-  }
-
-  Future<void> _confirmDeleteInstall(AcInstallModel install) async {
-    final l = AppLocalizations.of(context)!;
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.delete),
-        content: Text(l.deleteInstallRecord),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: ArcticTheme.arcticError,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l.delete),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldDelete != true) return;
-    try {
-      await ref.read(acInstallRepositoryProvider).deleteInstall(install.id);
-      if (mounted) HapticFeedback.mediumImpact();
     } on AppException catch (e) {
       if (mounted) {
         final locale = ref.read(appLocaleProvider);

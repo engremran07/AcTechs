@@ -16,6 +16,7 @@ dependencies:
   firebase_core: ^4.6.0
   firebase_auth: ^6.3.0
   cloud_firestore: ^6.2.0
+  cloud_functions: ^6.0.0
   firebase_app_check: ^0.4.1+1
 
   # State Management
@@ -62,6 +63,8 @@ dev_dependencies:
   freezed: ^3.0.6
   json_serializable: ^6.13.0
   riverpod_generator: ^4.0.0
+  fake_cloud_firestore: ^4.0.0
+  firebase_auth_mocks: ^0.15.1
 
 flutter:
   uses-material-design: true
