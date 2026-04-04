@@ -29,11 +29,6 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
   workflow_dispatch:
     inputs:
-      version_name:
-        description: 'Version name (e.g. v1.0.0-beta)'
-        required: true
-        default: 'v1.0.0-test'
-        type: string
       create_release:
         description: 'Create a GitHub Release'
         required: false
@@ -52,14 +47,44 @@ jobs:
     name: Build & Publish Release
     runs-on: ubuntu-latest
 
-    env:
-      # Use tag name for tag-triggered runs, or the manually-provided version
-      RELEASE_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version_name || github.ref_name }}
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # full history for changelog generation
+
+      - name: Resolve app version from pubspec
+        id: app_version
+        run: |
+          VERSION_LINE=$(grep -m1 '^version:' pubspec.yaml | sed 's/^version:[[:space:]]*//')
+          if [ -z "$VERSION_LINE" ]; then
+            echo "Unable to resolve version from pubspec.yaml"
+            exit 1
+          fi
+
+          VERSION_NAME=${VERSION_LINE%%+*}
+          VERSION_CODE=${VERSION_LINE##*+}
+
+          echo "full=$VERSION_LINE" >> "$GITHUB_OUTPUT"
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve release version
+        id: release_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=v${{ steps.app_version.outputs.name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate tag matches pubspec version
+        if: github.event_name == 'push'
+        run: |
+          EXPECTED_TAG="v${{ steps.app_version.outputs.name }}"
+          if [ "$GITHUB_REF_NAME" != "$EXPECTED_TAG" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $EXPECTED_TAG"
+            exit 1
+          fi
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -165,7 +190,7 @@ jobs:
       - name: Rename debug APK
         run: |
           mv build/app/outputs/flutter-apk/app-debug.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk
+             build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-debug.apk
 
       - name: Build release APK
         run: flutter build apk --release --no-tree-shake-icons
@@ -173,13 +198,13 @@ jobs:
       - name: Rename release APK
         run: |
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
+             build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-release.apk
 
       # ── Upload APKs as artifacts (available even without a GitHub Release) ──
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ac-techs-${{ env.RELEASE_VERSION }}-apks
+          name: ac-techs-${{ steps.app_version.outputs.full }}-apks
           path: build/app/outputs/flutter-apk/ac-techs-*.apk
           retention-days: 30
 
@@ -212,18 +237,20 @@ jobs:
         if: github.event_name == 'push' || inputs.create_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: AC Techs ${{ env.RELEASE_VERSION }}
+          tag_name: ${{ steps.release_version.outputs.value }}
+          name: AC Techs ${{ steps.release_version.outputs.value }}
           draft: false
-          prerelease: ${{ contains(env.RELEASE_VERSION, '-') }}
+          prerelease: ${{ contains(steps.release_version.outputs.value, '-') }}
           body: |
-            ## AC Techs ${{ env.RELEASE_VERSION }}
+            ## AC Techs ${{ steps.release_version.outputs.value }}
+
+            Pubspec version: `${{ steps.app_version.outputs.full }}`
 
             ### 📥 Downloads
             | File | Description |
             |------|-------------|
-            | `ac-techs-${{ env.RELEASE_VERSION }}-release.apk` | Production build (minified + R8) |
-            | `ac-techs-${{ env.RELEASE_VERSION }}-debug.apk`   | Debug build (for testing) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-release.apk` | Production build (minified + R8) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-debug.apk`   | Debug build (for testing) |
 
             ### 📝 Changes
             ${{ steps.changelog.outputs.log }}
@@ -231,5 +258,5 @@ jobs:
             ---
             Built with Flutter stable · Firebase · Riverpod
           files: |
-            build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
-            build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-release.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-debug.apk

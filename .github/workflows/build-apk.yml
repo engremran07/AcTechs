@@ -58,6 +58,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Resolve app version from pubspec
+        id: app_version
+        run: |
+          VERSION_LINE=$(grep -m1 '^version:' pubspec.yaml | sed 's/^version:[[:space:]]*//')
+          if [ -z "$VERSION_LINE" ]; then
+            echo "Unable to resolve version from pubspec.yaml"
+            exit 1
+          fi
+
+          VERSION_NAME=${VERSION_LINE%%+*}
+          VERSION_CODE=${VERSION_LINE##*+}
+
+          echo "full=$VERSION_LINE" >> "$GITHUB_OUTPUT"
+          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
       # ── Java ─────────────────────────────────────────────────────────────
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -232,10 +248,10 @@ jobs:
           mkdir -p /tmp/apk-output
           if [ "${{ inputs.build_type }}" = "debug" ]; then
             cp build/app/outputs/flutter-apk/app-debug.apk \
-               /tmp/apk-output/ac-techs-debug-run${{ github.run_number }}.apk
+               /tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-debug-run${{ github.run_number }}.apk
           else
             cp build/app/outputs/flutter-apk/app-release.apk \
-               /tmp/apk-output/ac-techs-release-run${{ github.run_number }}.apk
+               /tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-release-run${{ github.run_number }}.apk
           fi
           ls -lh /tmp/apk-output/
 
@@ -243,7 +259,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ac-techs-${{ inputs.build_type }}-run${{ github.run_number }}
+          name: ac-techs-${{ steps.app_version.outputs.full }}-${{ inputs.build_type }}-run${{ github.run_number }}
           path: /tmp/apk-output/*.apk
           retention-days: 30
 

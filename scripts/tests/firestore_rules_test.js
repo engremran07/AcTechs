@@ -133,7 +133,7 @@ async function main() {
 
     await assertFails(activeTech.firestore().doc('users/tech-1').delete());
 
-    await assertFails(
+    await assertSucceeds(
       activeTech.firestore().collection('jobs').add({
         techId: 'tech-1',
         techName: 'Tech One',
@@ -168,7 +168,7 @@ async function main() {
       }),
     );
 
-    await assertFails(
+    await assertSucceeds(
       activeTech.firestore().doc('shared_install_aggregates/group-1').set({
         groupKey: 'group-1',
         sharedInvoiceSplitUnits: 2,
@@ -185,6 +185,46 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2024-01-12T09:00:00Z'),
         updatedAt: new Date('2024-01-12T09:00:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      activeTech.firestore().doc('shared_install_aggregates/group-1').update({
+        groupKey: 'group-1',
+        sharedInvoiceSplitUnits: 2,
+        sharedInvoiceWindowUnits: 0,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 0,
+        sharedInvoiceDeliveryAmount: 0,
+        consumedSplitUnits: 2,
+        consumedWindowUnits: 0,
+        consumedFreestandingUnits: 0,
+        consumedBracketCount: 0,
+        consumedDeliveryAmount: 0,
+        createdBy: 'tech-1',
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        updatedAt: new Date('2024-01-12T09:05:00Z'),
+      }),
+    );
+
+    await assertFails(
+      activeTech.firestore().doc('shared_install_aggregates/group-1').update({
+        groupKey: 'group-1',
+        sharedInvoiceSplitUnits: 2,
+        sharedInvoiceWindowUnits: 0,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 0,
+        sharedInvoiceDeliveryAmount: 0,
+        consumedSplitUnits: 1,
+        consumedWindowUnits: 0,
+        consumedFreestandingUnits: 0,
+        consumedBracketCount: 0,
+        consumedDeliveryAmount: 0,
+        createdBy: 'tech-1',
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        updatedAt: new Date('2024-01-12T09:06:00Z'),
       }),
     );
 
