@@ -4,9 +4,11 @@
 # Can also be triggered manually via workflow_dispatch.
 # Steps: static analysis → unit tests → debug APK build.
 #
-# Required repository secrets:
+# Optional repository secrets for debug CI builds:
 #   GOOGLE_SERVICES_JSON  — base64-encoded android/app/google-services.json
 #   FIREBASE_OPTIONS_DART — base64-encoded lib/firebase_options.dart
+# If omitted, CI generates debug-only stubs so analysis, tests, and APK builds
+# can still run on GitHub without production Firebase config.
 
 name: CI
 
@@ -146,8 +148,33 @@ jobs:
           fi
 
           if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "GOOGLE_SERVICES_JSON secret is required for this workflow"
-            exit 1
+            cat > android/app/google-services.json <<EOF
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "ci-stub",
+              "storage_bucket": "ci-stub.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:ci00000000000000",
+                  "android_client_info": {
+                    "package_name": "$APP_ID"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "ci-debug-stub"
+                  }
+                ]
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+            echo "Using generated debug stub google-services.json"
+            exit 0
           fi
 
           echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
@@ -163,8 +190,18 @@ jobs:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
           if [ -z "$FIREBASE_OPTIONS_DART" ]; then
-            echo "FIREBASE_OPTIONS_DART secret is required for this workflow"
-            exit 1
+            cat > lib/firebase_options.dart <<'EOF'
+          // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
+          // CI debug stub - not used at runtime.
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform =>
+                throw UnsupportedError('CI debug stub only.');
+          }
+          EOF
+            echo "Using generated debug stub firebase_options.dart"
+            exit 0
           fi
 
           echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
