@@ -11,6 +11,7 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/data/ac_install_repository.dart';
 import 'package:ac_techs/features/expenses/providers/ac_install_providers.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class AcInstallationsScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
     final theme = Theme.of(context);
     final l = AppLocalizations.of(context)!;
     final installsAsync = ref.watch(todaysAcInstallsProvider);
+    final todaysJobsAsync = ref.watch(todaysJobsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -40,8 +42,77 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
           ),
         ],
       ),
-      body: SafeArea(child: _buildAcInstallSection(theme, installsAsync)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildInstallSourceCard(theme, todaysJobsAsync, installsAsync),
+            const SizedBox(height: 16),
+            _buildAcInstallSection(theme, installsAsync),
+          ],
+        ),
+      ),
     );
+  }
+
+  int _countUnits(List<JobModel> jobs, String type) {
+    return jobs.fold<int>(
+      0,
+      (sum, job) =>
+          sum +
+          job.acUnits
+              .where((unit) => unit.type == type)
+              .fold<int>(0, (unitSum, unit) => unitSum + unit.quantity),
+    );
+  }
+
+  Widget _buildInstallSourceCard(
+    ThemeData theme,
+    AsyncValue<List<JobModel>> todaysJobsAsync,
+    AsyncValue<List<AcInstallModel>> installsAsync,
+  ) {
+    final l = AppLocalizations.of(context)!;
+    final jobs = todaysJobsAsync.value ?? const <JobModel>[];
+    final manualLogs = installsAsync.value ?? const <AcInstallModel>[];
+    final splitCount = _countUnits(jobs, 'Split AC');
+    final windowCount = _countUnits(jobs, 'Window AC');
+    final freestandingCount = _countUnits(jobs, 'Freestanding AC');
+    final cassetteCount = _countUnits(jobs, 'Cassette AC');
+
+    return ArcticCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l.jobInstallationsToday, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            l.manualInstallLogDescription,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: ArcticTheme.arcticTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InstallSummaryChip(label: l.splitAcLabel, value: splitCount),
+              _InstallSummaryChip(label: l.windowAcLabel, value: windowCount),
+              _InstallSummaryChip(
+                label: l.freestandingAcLabel,
+                value: freestandingCount,
+              ),
+              _InstallSummaryChip(label: l.cassette, value: cassetteCount),
+              _InstallSummaryChip(
+                label: l.manualLogsToday,
+                value: manualLogs.length,
+                color: ArcticTheme.arcticSuccess,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 220.ms);
   }
 
   // ── AC Installations Section ──
@@ -58,18 +129,17 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
     }
 
     if (installs.isEmpty) {
-      return Center(
+      return ArcticCard(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
               Icons.air_outlined,
-              size: 64,
+              size: 56,
               color: ArcticTheme.arcticTextSecondary,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
-              l.noInstallationsToday,
+              l.noManualInstallLogsToday,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: ArcticTheme.arcticTextSecondary,
               ),
@@ -79,12 +149,21 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
       ).animate().fadeIn(duration: 300.ms);
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: installs.length,
-      separatorBuilder: (_, i) => const SizedBox(height: 12),
-      itemBuilder: (context, index) =>
-          _buildInstallCard(theme, installs[index], l),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l.logAcInstallations, style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        ...List.generate(
+          installs.length,
+          (index) => Padding(
+            padding: EdgeInsets.only(
+              bottom: index == installs.length - 1 ? 0 : 12,
+            ),
+            child: _buildInstallCard(theme, installs[index], l),
+          ),
+        ),
+      ],
     ).animate().fadeIn(duration: 300.ms);
   }
 
@@ -419,5 +498,41 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
         ErrorSnackbar.show(context, message: e.message(locale));
       }
     }
+  }
+}
+
+class _InstallSummaryChip extends StatelessWidget {
+  const _InstallSummaryChip({
+    required this.label,
+    required this.value,
+    this.color = ArcticTheme.arcticBlue,
+  });
+
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: Theme.of(context).textTheme.bodySmall,
+          children: [
+            TextSpan(
+              text: '$value ',
+              style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: label),
+          ],
+        ),
+      ),
+    );
   }
 }

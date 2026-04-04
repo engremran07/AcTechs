@@ -1442,6 +1442,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noInstallationsToday => 'لا توجد تركيبات مسجلة اليوم';
 
   @override
+  String get noManualInstallLogsToday =>
+      'لم تتم إضافة أي سجلات تركيب يدوي اليوم.';
+
+  @override
+  String get manualInstallLogDescription =>
+      'تعرض هذه الشاشة سجلات التركيب اليدوية فقط. يتم احتساب أعمال الفواتير والتركيبات المشتركة بشكل منفصل في الأعلى.';
+
+  @override
+  String get jobInstallationsToday => 'أعمال التركيب اليوم';
+
+  @override
+  String get manualLogsToday => 'السجلات اليدوية اليوم';
+
+  @override
+  String get entryDetails => 'تفاصيل القيد';
+
+  @override
   String get totalOnInvoice => 'إجمالي في الفاتورة';
 
   @override
@@ -1496,6 +1513,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'اضغط لتحميل الشعار';
+
+  @override
+  String get uploadLogo => 'رفع الشعار';
+
+  @override
+  String get replaceLogo => 'استبدال الشعار';
 
   @override
   String get logoTooLarge =>

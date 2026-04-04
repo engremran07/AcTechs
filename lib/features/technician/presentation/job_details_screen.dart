@@ -165,6 +165,27 @@ class JobDetailsScreen extends ConsumerWidget {
                           label: l.myShare,
                           value: AppFormatters.units(_displayUnits(job)),
                         ),
+                        if (job.sharedInvoiceUninstallSplitUnits > 0)
+                          _DetailRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallSplit,
+                            value:
+                                '${job.techUninstallSplitShare}/${job.sharedInvoiceUninstallSplitUnits}',
+                          ),
+                        if (job.sharedInvoiceUninstallWindowUnits > 0)
+                          _DetailRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallWindow,
+                            value:
+                                '${job.techUninstallWindowShare}/${job.sharedInvoiceUninstallWindowUnits}',
+                          ),
+                        if (job.sharedInvoiceUninstallFreestandingUnits > 0)
+                          _DetailRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallStanding,
+                            value:
+                                '${job.techUninstallFreestandingShare}/${job.sharedInvoiceUninstallFreestandingUnits}',
+                          ),
                         if (job.sharedInvoiceBracketCount > 0)
                           _DetailRow(
                             icon: Icons.hardware_outlined,

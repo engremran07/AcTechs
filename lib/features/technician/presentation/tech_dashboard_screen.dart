@@ -118,8 +118,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                       final totalFreestanding = countByType(
                         AppConstants.unitTypeFreestandingAc,
                       );
-                      final totalCassette = countByType(
-                        AppConstants.unitTypeCassetteAc,
+                      final totalBrackets = jobs.fold<int>(
+                        0,
+                        (sum, job) => sum + (job.charges?.bracketCount ?? 0),
                       );
                       final totalUninstalls =
                           countByType(AppConstants.unitTypeUninstallOld) +
@@ -210,9 +211,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                             children: [
                               Expanded(
                                 child: _StatCard(
-                                  title: l.cassette,
-                                  value: '$totalCassette',
-                                  icon: Icons.grid_view_rounded,
+                                  title: l.acOutdoorBracket,
+                                  value: '$totalBrackets',
+                                  icon: Icons.hardware_outlined,
                                   color: ArcticTheme.arcticPurple,
                                 ),
                               ),

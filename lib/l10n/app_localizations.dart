@@ -2830,6 +2830,36 @@ abstract class AppLocalizations {
   /// **'No installations logged today'**
   String get noInstallationsToday;
 
+  /// No description provided for @noManualInstallLogsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No manual AC installation logs were added today.'**
+  String get noManualInstallLogsToday;
+
+  /// No description provided for @manualInstallLogDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This screen tracks manual AC-install log entries. Invoice and shared-install jobs are counted separately above.'**
+  String get manualInstallLogDescription;
+
+  /// No description provided for @jobInstallationsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Install jobs today'**
+  String get jobInstallationsToday;
+
+  /// No description provided for @manualLogsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual logs today'**
+  String get manualLogsToday;
+
+  /// No description provided for @entryDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry Details'**
+  String get entryDetails;
+
   /// No description provided for @totalOnInvoice.
   ///
   /// In en, this message translates to:
@@ -2931,6 +2961,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to upload logo'**
   String get tapToUploadLogo;
+
+  /// No description provided for @uploadLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Logo'**
+  String get uploadLogo;
+
+  /// No description provided for @replaceLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace Logo'**
+  String get replaceLogo;
 
   /// No description provided for @logoTooLarge.
   ///

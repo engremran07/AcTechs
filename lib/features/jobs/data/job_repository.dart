@@ -129,6 +129,15 @@ class JobRepository {
             job.sharedInvoiceWindowUnits ||
         _readAggregateInt(aggregate, 'sharedInvoiceFreestandingUnits') !=
             job.sharedInvoiceFreestandingUnits ||
+        _readAggregateInt(aggregate, 'sharedInvoiceUninstallSplitUnits') !=
+            job.sharedInvoiceUninstallSplitUnits ||
+        _readAggregateInt(aggregate, 'sharedInvoiceUninstallWindowUnits') !=
+            job.sharedInvoiceUninstallWindowUnits ||
+        _readAggregateInt(
+              aggregate,
+              'sharedInvoiceUninstallFreestandingUnits',
+            ) !=
+            job.sharedInvoiceUninstallFreestandingUnits ||
         _readAggregateInt(aggregate, 'sharedInvoiceBracketCount') !=
             job.sharedInvoiceBracketCount ||
         _readAggregateInt(aggregate, 'sharedDeliveryTeamCount') !=
@@ -147,6 +156,9 @@ class JobRepository {
     int splitContribution,
     int windowContribution,
     int freestandingContribution,
+    int uninstallSplitContribution,
+    int uninstallWindowContribution,
+    int uninstallFreestandingContribution,
     int bracketContribution,
     double deliveryContribution,
   ) {
@@ -155,12 +167,20 @@ class JobRepository {
       'sharedInvoiceSplitUnits': job.sharedInvoiceSplitUnits,
       'sharedInvoiceWindowUnits': job.sharedInvoiceWindowUnits,
       'sharedInvoiceFreestandingUnits': job.sharedInvoiceFreestandingUnits,
+      'sharedInvoiceUninstallSplitUnits': job.sharedInvoiceUninstallSplitUnits,
+      'sharedInvoiceUninstallWindowUnits':
+          job.sharedInvoiceUninstallWindowUnits,
+      'sharedInvoiceUninstallFreestandingUnits':
+          job.sharedInvoiceUninstallFreestandingUnits,
       'sharedInvoiceBracketCount': job.sharedInvoiceBracketCount,
       'sharedDeliveryTeamCount': job.sharedDeliveryTeamCount,
       'sharedInvoiceDeliveryAmount': job.sharedInvoiceDeliveryAmount,
       'consumedSplitUnits': splitContribution,
       'consumedWindowUnits': windowContribution,
       'consumedFreestandingUnits': freestandingContribution,
+      'consumedUninstallSplitUnits': uninstallSplitContribution,
+      'consumedUninstallWindowUnits': uninstallWindowContribution,
+      'consumedUninstallFreestandingUnits': uninstallFreestandingContribution,
       'consumedBracketCount': bracketContribution,
       'consumedDeliveryAmount': deliveryContribution,
       'createdBy': job.techId,
@@ -194,6 +214,18 @@ class JobRepository {
         (_readAggregateInt(aggregate, 'consumedFreestandingUnits') -
                 _unitsForType(job, AppConstants.unitTypeFreestandingAc))
             .clamp(0, 1 << 31);
+    final nextConsumedUninstallSplitUnits =
+        (_readAggregateInt(aggregate, 'consumedUninstallSplitUnits') -
+                _unitsForType(job, AppConstants.unitTypeUninstallSplit))
+            .clamp(0, 1 << 31);
+    final nextConsumedUninstallWindowUnits =
+        (_readAggregateInt(aggregate, 'consumedUninstallWindowUnits') -
+                _unitsForType(job, AppConstants.unitTypeUninstallWindow))
+            .clamp(0, 1 << 31);
+    final nextConsumedUninstallFreestandingUnits =
+        (_readAggregateInt(aggregate, 'consumedUninstallFreestandingUnits') -
+                _unitsForType(job, AppConstants.unitTypeUninstallFreestanding))
+            .clamp(0, 1 << 31);
     final nextConsumedBracketCount =
         (_readAggregateInt(aggregate, 'consumedBracketCount') -
                 _bracketCount(job))
@@ -207,6 +239,10 @@ class JobRepository {
       'consumedSplitUnits': nextConsumedSplitUnits,
       'consumedWindowUnits': nextConsumedWindowUnits,
       'consumedFreestandingUnits': nextConsumedFreestandingUnits,
+      'consumedUninstallSplitUnits': nextConsumedUninstallSplitUnits,
+      'consumedUninstallWindowUnits': nextConsumedUninstallWindowUnits,
+      'consumedUninstallFreestandingUnits':
+          nextConsumedUninstallFreestandingUnits,
       'consumedBracketCount': nextConsumedBracketCount,
       'consumedDeliveryAmount': nextConsumedDeliveryAmount,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -248,6 +284,18 @@ class JobRepository {
           job,
           AppConstants.unitTypeFreestandingAc,
         );
+        final uninstallSplitContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeUninstallSplit,
+        );
+        final uninstallWindowContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeUninstallWindow,
+        );
+        final uninstallFreestandingContribution = _unitsForType(
+          job,
+          AppConstants.unitTypeUninstallFreestanding,
+        );
 
         final typeLimits = <(String, int, int)>[
           (
@@ -264,6 +312,21 @@ class JobRepository {
             AppConstants.unitTypeFreestandingAc,
             freestandingContribution,
             job.sharedInvoiceFreestandingUnits,
+          ),
+          (
+            AppConstants.unitTypeUninstallSplit,
+            uninstallSplitContribution,
+            job.sharedInvoiceUninstallSplitUnits,
+          ),
+          (
+            AppConstants.unitTypeUninstallWindow,
+            uninstallWindowContribution,
+            job.sharedInvoiceUninstallWindowUnits,
+          ),
+          (
+            AppConstants.unitTypeUninstallFreestanding,
+            uninstallFreestandingContribution,
+            job.sharedInvoiceUninstallFreestandingUnits,
           ),
           (
             _sharedBracketType,
@@ -310,6 +373,9 @@ class JobRepository {
           var consumedSplitUnits = 0;
           var consumedWindowUnits = 0;
           var consumedFreestandingUnits = 0;
+          var consumedUninstallSplitUnits = 0;
+          var consumedUninstallWindowUnits = 0;
+          var consumedUninstallFreestandingUnits = 0;
           var consumedBracketCount = 0;
           var consumedDeliveryAmount = 0.0;
 
@@ -327,6 +393,18 @@ class JobRepository {
             consumedFreestandingUnits = _readAggregateInt(
               aggregate,
               'consumedFreestandingUnits',
+            );
+            consumedUninstallSplitUnits = _readAggregateInt(
+              aggregate,
+              'consumedUninstallSplitUnits',
+            );
+            consumedUninstallWindowUnits = _readAggregateInt(
+              aggregate,
+              'consumedUninstallWindowUnits',
+            );
+            consumedUninstallFreestandingUnits = _readAggregateInt(
+              aggregate,
+              'consumedUninstallFreestandingUnits',
             );
             consumedBracketCount = _readAggregateInt(
               aggregate,
@@ -347,6 +425,12 @@ class JobRepository {
               AppConstants.unitTypeSplitAc => consumedSplitUnits,
               AppConstants.unitTypeWindowAc => consumedWindowUnits,
               AppConstants.unitTypeFreestandingAc => consumedFreestandingUnits,
+              AppConstants.unitTypeUninstallSplit =>
+                consumedUninstallSplitUnits,
+              AppConstants.unitTypeUninstallWindow =>
+                consumedUninstallWindowUnits,
+              AppConstants.unitTypeUninstallFreestanding =>
+                consumedUninstallFreestandingUnits,
               _sharedBracketType => consumedBracketCount,
               _ => 0,
             };
@@ -376,6 +460,13 @@ class JobRepository {
               consumedWindowUnits + windowContribution;
           final nextConsumedFreestandingUnits =
               consumedFreestandingUnits + freestandingContribution;
+          final nextConsumedUninstallSplitUnits =
+              consumedUninstallSplitUnits + uninstallSplitContribution;
+          final nextConsumedUninstallWindowUnits =
+              consumedUninstallWindowUnits + uninstallWindowContribution;
+          final nextConsumedUninstallFreestandingUnits =
+              consumedUninstallFreestandingUnits +
+              uninstallFreestandingContribution;
           final nextConsumedBracketCount =
               consumedBracketCount + _bracketCount(job);
           final nextConsumedDeliveryAmount =
@@ -386,6 +477,10 @@ class JobRepository {
               'consumedSplitUnits': nextConsumedSplitUnits,
               'consumedWindowUnits': nextConsumedWindowUnits,
               'consumedFreestandingUnits': nextConsumedFreestandingUnits,
+              'consumedUninstallSplitUnits': nextConsumedUninstallSplitUnits,
+              'consumedUninstallWindowUnits': nextConsumedUninstallWindowUnits,
+              'consumedUninstallFreestandingUnits':
+                  nextConsumedUninstallFreestandingUnits,
               'consumedBracketCount': nextConsumedBracketCount,
               'consumedDeliveryAmount': nextConsumedDeliveryAmount,
               'updatedAt': FieldValue.serverTimestamp(),
@@ -399,6 +494,9 @@ class JobRepository {
                 splitContribution,
                 windowContribution,
                 freestandingContribution,
+                uninstallSplitContribution,
+                uninstallWindowContribution,
+                uninstallFreestandingContribution,
                 _bracketCount(job),
                 deliveryShare,
               ),

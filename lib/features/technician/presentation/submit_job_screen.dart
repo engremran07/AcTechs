@@ -41,15 +41,20 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   int _sharedSplitUnits = 0;
   int _sharedWindowUnits = 0;
   int _sharedFreestandingUnits = 0;
+  int _sharedUninstallSplitUnits = 0;
+  int _sharedUninstallWindowUnits = 0;
+  int _sharedUninstallFreestandingUnits = 0;
   int _sharedBracketQty = 0;
   int _sharedTeamSize = 0;
   int _techSplitShare = 0;
   int _techWindowShare = 0;
   int _techFreestandingShare = 0;
+  int _techUninstallSplitShare = 0;
+  int _techUninstallWindowShare = 0;
+  int _techUninstallFreestandingShare = 0;
   int _techBracketShare = 0;
   String? _selectedCompanyId;
   String _selectedCompanyName = '';
-  String _selectedCompanyPrefix = '';
 
   @override
   void dispose() {
@@ -74,33 +79,42 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     final splitQty = _isSharedInstall ? _techSplitShare : _splitQty;
     final windowQty = _isSharedInstall ? _techWindowShare : _windowQty;
     final dolabQty = _isSharedInstall ? _techFreestandingShare : _dolabQty;
+    final uninstallSplitQty = _isSharedInstall
+        ? _techUninstallSplitShare
+        : _uninstallSplitQty;
+    final uninstallWindowQty = _isSharedInstall
+        ? _techUninstallWindowShare
+        : _uninstallWindowQty;
+    final uninstallStandingQty = _isSharedInstall
+        ? _techUninstallFreestandingShare
+        : _uninstallStandingQty;
     if (splitQty > 0) {
       units.add(AcUnit(type: 'Split AC', quantity: splitQty));
     }
     if (windowQty > 0) {
       units.add(AcUnit(type: 'Window AC', quantity: windowQty));
     }
-    if (_uninstallSplitQty > 0) {
+    if (uninstallSplitQty > 0) {
       units.add(
         AcUnit(
           type: AppConstants.unitTypeUninstallSplit,
-          quantity: _uninstallSplitQty,
+          quantity: uninstallSplitQty,
         ),
       );
     }
-    if (_uninstallWindowQty > 0) {
+    if (uninstallWindowQty > 0) {
       units.add(
         AcUnit(
           type: AppConstants.unitTypeUninstallWindow,
-          quantity: _uninstallWindowQty,
+          quantity: uninstallWindowQty,
         ),
       );
     }
-    if (_uninstallStandingQty > 0) {
+    if (uninstallStandingQty > 0) {
       units.add(
         AcUnit(
           type: AppConstants.unitTypeUninstallFreestanding,
-          quantity: _uninstallStandingQty,
+          quantity: uninstallStandingQty,
         ),
       );
     }
@@ -138,15 +152,20 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       _sharedSplitUnits = 0;
       _sharedWindowUnits = 0;
       _sharedFreestandingUnits = 0;
+      _sharedUninstallSplitUnits = 0;
+      _sharedUninstallWindowUnits = 0;
+      _sharedUninstallFreestandingUnits = 0;
       _sharedBracketQty = 0;
       _sharedTeamSize = 0;
       _techSplitShare = 0;
       _techWindowShare = 0;
       _techFreestandingShare = 0;
+      _techUninstallSplitShare = 0;
+      _techUninstallWindowShare = 0;
+      _techUninstallFreestandingShare = 0;
       _techBracketShare = 0;
       _selectedCompanyId = null;
       _selectedCompanyName = '';
-      _selectedCompanyPrefix = '';
     });
   }
 
@@ -185,6 +204,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               (_techWindowShare > 0 && _techWindowShare > _sharedWindowUnits) ||
               (_techFreestandingShare > 0 &&
                   _techFreestandingShare > _sharedFreestandingUnits) ||
+              (_techUninstallSplitShare > 0 &&
+                  _techUninstallSplitShare > _sharedUninstallSplitUnits) ||
+              (_techUninstallWindowShare > 0 &&
+                  _techUninstallWindowShare > _sharedUninstallWindowUnits) ||
+              (_techUninstallFreestandingShare > 0 &&
+                  _techUninstallFreestandingShare >
+                      _sharedUninstallFreestandingUnits) ||
               (_techBracketShare > 0 &&
                   _techBracketShare > _sharedBracketQty))) {
         if (mounted) {
@@ -220,10 +246,20 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           : '';
 
       final sharedContributionUnits = _isSharedInstall
-          ? _techSplitShare + _techWindowShare + _techFreestandingShare
+          ? _techSplitShare +
+                _techWindowShare +
+                _techFreestandingShare +
+                _techUninstallSplitShare +
+                _techUninstallWindowShare +
+                _techUninstallFreestandingShare
           : _splitQty + _windowQty + _dolabQty;
       final sharedInvoiceTotalUnits =
-          _sharedSplitUnits + _sharedWindowUnits + _sharedFreestandingUnits;
+          _sharedSplitUnits +
+          _sharedWindowUnits +
+          _sharedFreestandingUnits +
+          _sharedUninstallSplitUnits +
+          _sharedUninstallWindowUnits +
+          _sharedUninstallFreestandingUnits;
       final requiresApproval =
           ((_isSharedInstall
               ? approvalConfig?.sharedJobApprovalRequired
@@ -250,12 +286,24 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         sharedInvoiceFreestandingUnits: _isSharedInstall
             ? _sharedFreestandingUnits
             : 0,
+        sharedInvoiceUninstallSplitUnits: _isSharedInstall
+            ? _sharedUninstallSplitUnits
+            : 0,
+        sharedInvoiceUninstallWindowUnits: _isSharedInstall
+            ? _sharedUninstallWindowUnits
+            : 0,
+        sharedInvoiceUninstallFreestandingUnits: _isSharedInstall
+            ? _sharedUninstallFreestandingUnits
+            : 0,
         sharedInvoiceBracketCount: _isSharedInstall ? _sharedBracketQty : 0,
         sharedDeliveryTeamCount: _isSharedInstall ? _sharedTeamSize : 0,
         sharedInvoiceDeliveryAmount: _isSharedInstall ? rawDeliveryAmount : 0,
         techSplitShare: _techSplitShare,
         techWindowShare: _techWindowShare,
         techFreestandingShare: _techFreestandingShare,
+        techUninstallSplitShare: _techUninstallSplitShare,
+        techUninstallWindowShare: _techUninstallWindowShare,
+        techUninstallFreestandingShare: _techUninstallFreestandingShare,
         techBracketShare: _techBracketShare,
         charges: charges,
         date: _selectedDate,
@@ -328,11 +376,17 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                 _sharedSplitUnits = 0;
                                 _sharedWindowUnits = 0;
                                 _sharedFreestandingUnits = 0;
+                                _sharedUninstallSplitUnits = 0;
+                                _sharedUninstallWindowUnits = 0;
+                                _sharedUninstallFreestandingUnits = 0;
                                 _sharedBracketQty = 0;
                                 _sharedTeamSize = 0;
                                 _techSplitShare = 0;
                                 _techWindowShare = 0;
                                 _techFreestandingShare = 0;
+                                _techUninstallSplitShare = 0;
+                                _techUninstallWindowShare = 0;
+                                _techUninstallFreestandingShare = 0;
                                 _techBracketShare = 0;
                               }
                             }),
@@ -422,6 +476,63 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               }),
                             ),
                             const SizedBox(height: 8),
+                            _SharedInstallTypeRow(
+                              title: l.uninstallSplit,
+                              totalValue: _sharedUninstallSplitUnits,
+                              shareValue: _techUninstallSplitShare,
+                              onTotalChanged: (value) => setState(() {
+                                _sharedUninstallSplitUnits = value;
+                                _techUninstallSplitShare = _clampShare(
+                                  _techUninstallSplitShare,
+                                  _sharedUninstallSplitUnits,
+                                );
+                              }),
+                              onShareChanged: (value) => setState(() {
+                                _techUninstallSplitShare = _clampShare(
+                                  value,
+                                  _sharedUninstallSplitUnits,
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 8),
+                            _SharedInstallTypeRow(
+                              title: l.uninstallWindow,
+                              totalValue: _sharedUninstallWindowUnits,
+                              shareValue: _techUninstallWindowShare,
+                              onTotalChanged: (value) => setState(() {
+                                _sharedUninstallWindowUnits = value;
+                                _techUninstallWindowShare = _clampShare(
+                                  _techUninstallWindowShare,
+                                  _sharedUninstallWindowUnits,
+                                );
+                              }),
+                              onShareChanged: (value) => setState(() {
+                                _techUninstallWindowShare = _clampShare(
+                                  value,
+                                  _sharedUninstallWindowUnits,
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 8),
+                            _SharedInstallTypeRow(
+                              title: l.uninstallStanding,
+                              totalValue: _sharedUninstallFreestandingUnits,
+                              shareValue: _techUninstallFreestandingShare,
+                              onTotalChanged: (value) => setState(() {
+                                _sharedUninstallFreestandingUnits = value;
+                                _techUninstallFreestandingShare = _clampShare(
+                                  _techUninstallFreestandingShare,
+                                  _sharedUninstallFreestandingUnits,
+                                );
+                              }),
+                              onShareChanged: (value) => setState(() {
+                                _techUninstallFreestandingShare = _clampShare(
+                                  value,
+                                  _sharedUninstallFreestandingUnits,
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
@@ -481,43 +592,44 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.uninstallSplit,
+                                    value: _uninstallSplitQty,
+                                    onChanged: (v) =>
+                                        setState(() => _uninstallSplitQty = v),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.uninstallWindow,
+                                    value: _uninstallWindowQty,
+                                    onChanged: (v) =>
+                                        setState(() => _uninstallWindowQty = v),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _QtyTile(
+                                    label: l.uninstallStanding,
+                                    value: _uninstallStandingQty,
+                                    onChanged: (v) => setState(
+                                      () => _uninstallStandingQty = v,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                              ],
+                            ),
                           ],
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.uninstallSplit,
-                                  value: _uninstallSplitQty,
-                                  onChanged: (v) =>
-                                      setState(() => _uninstallSplitQty = v),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.uninstallWindow,
-                                  value: _uninstallWindowQty,
-                                  onChanged: (v) =>
-                                      setState(() => _uninstallWindowQty = v),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _QtyTile(
-                                  label: l.uninstallStanding,
-                                  value: _uninstallStandingQty,
-                                  onChanged: (v) =>
-                                      setState(() => _uninstallStandingQty = v),
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
-                          ),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _descriptionController,
@@ -591,8 +703,6 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                       _selectedCompanyId = selectedCompany?.id;
                                       _selectedCompanyName =
                                           selectedCompany?.name ?? '';
-                                      _selectedCompanyPrefix =
-                                          selectedCompany?.invoicePrefix ?? '';
                                     });
                                   },
                                 ),
@@ -608,9 +718,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       textInputAction: TextInputAction.next,
                       enableInteractiveSelection: true,
                       decoration: InputDecoration(
-                        hintText: _selectedCompanyPrefix.isEmpty
-                            ? l.invoiceNumber
-                            : l.invoiceSuffix,
+                        hintText: l.invoiceNumber,
                         labelText: l.invoiceNumber,
                         prefixIcon: const Icon(
                           Icons.receipt_outlined,
@@ -620,19 +728,6 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? l.required : null,
                     ).animate().fadeIn(delay: 120.ms),
-                    if (_selectedCompanyPrefix.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '${l.invoicePrefix}: $_selectedCompanyPrefix',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: ArcticTheme.arcticBlue,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _clientNameController,
@@ -787,10 +882,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     } else if (upper.startsWith('INV ')) {
       entered = entered.substring(4).trim();
     }
-    if (_selectedCompanyPrefix.isEmpty || entered.isEmpty) return entered;
-    final prefix = _selectedCompanyPrefix.trim();
-    if (entered.startsWith(prefix)) return entered;
-    return '$prefix-$entered';
+    return entered;
   }
 }
 

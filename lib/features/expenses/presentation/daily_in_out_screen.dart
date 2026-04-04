@@ -678,6 +678,169 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     }
   }
 
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return ArcticTheme.arcticSuccess;
+      case 'rejected':
+        return ArcticTheme.arcticError;
+      default:
+        return ArcticTheme.arcticWarning;
+    }
+  }
+
+  String _directionLabel(_EntryItem item, AppLocalizations l) {
+    if (item.isIn) return l.inEarned;
+    if (item.expenseType == AppConstants.expenseTypeHome) {
+      return l.homeExpenses;
+    }
+    return l.workExpenses;
+  }
+
+  Future<void> _showEntryDetailsSheet(_EntryItem item) async {
+    final l = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: ArcticCard(
+              margin: EdgeInsets.zero,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l.entryDetails,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      StatusBadge(status: item.status),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              (item.isIn
+                                      ? ArcticTheme.arcticSuccess
+                                      : ArcticTheme.arcticError)
+                                  .withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          _directionLabel(item, l),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: item.isIn
+                                ? ArcticTheme.arcticSuccess
+                                : ArcticTheme.arcticError,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _statusColor(
+                            item.status,
+                          ).withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          item.status.toUpperCase(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: _statusColor(item.status),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _EntryDetailRow(
+                    label: l.category,
+                    value: translateCategory(item.category, l),
+                  ),
+                  _EntryDetailRow(
+                    label: l.amountSar,
+                    value:
+                        '${item.isIn ? '+' : '-'} SAR ${item.amount.toStringAsFixed(0)}',
+                    valueColor: item.isIn
+                        ? ArcticTheme.arcticSuccess
+                        : ArcticTheme.arcticError,
+                  ),
+                  _EntryDetailRow(
+                    label: l.date,
+                    value: AppFormatters.dateTime(item.date ?? item.createdAt),
+                  ),
+                  if (item.note.isNotEmpty)
+                    _EntryDetailRow(label: l.remarksOptional, value: item.note),
+                  if (item.adminNote.isNotEmpty)
+                    _EntryDetailRow(
+                      label: l.adminNote,
+                      value: item.adminNote,
+                      valueColor: ArcticTheme.arcticWarning,
+                    ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            _confirmDeleteEntry(item);
+                          },
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: Text(l.delete),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ArcticTheme.arcticError,
+                            side: const BorderSide(
+                              color: ArcticTheme.arcticError,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            _showEditEntryDialog(item);
+                          },
+                          icon: const Icon(Icons.edit_outlined),
+                          label: Text(l.editEntry),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showEditEntryDialog(_EntryItem item) async {
     final l = AppLocalizations.of(context)!;
     final amountCtrl = TextEditingController(
@@ -1024,7 +1187,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.air_rounded),
-            tooltip: l.acInstallations,
+            tooltip: l.logAcInstallations,
             onPressed: () => context.push('/tech/ac-installs'),
           ),
           IconButton(
@@ -1465,6 +1628,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               note: e.note,
               approvedBy: e.approvedBy,
               adminNote: e.adminNote,
+              status: e.status.name,
               date: e.date,
               createdAt: e.createdAt,
               reviewedAt: e.reviewedAt,
@@ -1481,6 +1645,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               approvedBy: e.approvedBy,
               adminNote: e.adminNote,
               expenseType: e.expenseType,
+              status: e.status.name,
               date: e.date,
               createdAt: e.createdAt,
               reviewedAt: e.reviewedAt,
@@ -1517,7 +1682,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () => _showEditEntryDialog(item),
+              onTap: () => _showEntryDetailsSheet(item),
               child: ArcticCard(
                 margin: const EdgeInsets.only(bottom: 8),
                 child: Row(
@@ -1655,6 +1820,7 @@ class _EntryItem {
     required this.category,
     required this.amount,
     required this.note,
+    required this.status,
     this.approvedBy = '',
     this.adminNote = '',
     this.expenseType = AppConstants.expenseTypeWork,
@@ -1670,6 +1836,7 @@ class _EntryItem {
   final String category;
   final double amount;
   final String note;
+  final String status;
   final String approvedBy;
   final String adminNote;
   final String expenseType;
@@ -1735,6 +1902,49 @@ class _DirectionButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EntryDetailRow extends StatelessWidget {
+  const _EntryDetailRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 118,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: ArcticTheme.arcticTextSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: valueColor,
+                fontWeight: valueColor == null ? null : FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -71,6 +71,12 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
       (json['sharedInvoiceWindowUnits'] as num?)?.toInt() ?? 0,
   sharedInvoiceFreestandingUnits:
       (json['sharedInvoiceFreestandingUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceUninstallSplitUnits:
+      (json['sharedInvoiceUninstallSplitUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceUninstallWindowUnits:
+      (json['sharedInvoiceUninstallWindowUnits'] as num?)?.toInt() ?? 0,
+  sharedInvoiceUninstallFreestandingUnits:
+      (json['sharedInvoiceUninstallFreestandingUnits'] as num?)?.toInt() ?? 0,
   sharedInvoiceBracketCount:
       (json['sharedInvoiceBracketCount'] as num?)?.toInt() ?? 0,
   sharedDeliveryTeamCount:
@@ -80,6 +86,12 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   techSplitShare: (json['techSplitShare'] as num?)?.toInt() ?? 0,
   techWindowShare: (json['techWindowShare'] as num?)?.toInt() ?? 0,
   techFreestandingShare: (json['techFreestandingShare'] as num?)?.toInt() ?? 0,
+  techUninstallSplitShare:
+      (json['techUninstallSplitShare'] as num?)?.toInt() ?? 0,
+  techUninstallWindowShare:
+      (json['techUninstallWindowShare'] as num?)?.toInt() ?? 0,
+  techUninstallFreestandingShare:
+      (json['techUninstallFreestandingShare'] as num?)?.toInt() ?? 0,
   techBracketShare: (json['techBracketShare'] as num?)?.toInt() ?? 0,
   charges: json['charges'] == null
       ? null
@@ -112,12 +124,20 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'sharedInvoiceSplitUnits': instance.sharedInvoiceSplitUnits,
   'sharedInvoiceWindowUnits': instance.sharedInvoiceWindowUnits,
   'sharedInvoiceFreestandingUnits': instance.sharedInvoiceFreestandingUnits,
+  'sharedInvoiceUninstallSplitUnits': instance.sharedInvoiceUninstallSplitUnits,
+  'sharedInvoiceUninstallWindowUnits':
+      instance.sharedInvoiceUninstallWindowUnits,
+  'sharedInvoiceUninstallFreestandingUnits':
+      instance.sharedInvoiceUninstallFreestandingUnits,
   'sharedInvoiceBracketCount': instance.sharedInvoiceBracketCount,
   'sharedDeliveryTeamCount': instance.sharedDeliveryTeamCount,
   'sharedInvoiceDeliveryAmount': instance.sharedInvoiceDeliveryAmount,
   'techSplitShare': instance.techSplitShare,
   'techWindowShare': instance.techWindowShare,
   'techFreestandingShare': instance.techFreestandingShare,
+  'techUninstallSplitShare': instance.techUninstallSplitShare,
+  'techUninstallWindowShare': instance.techUninstallWindowShare,
+  'techUninstallFreestandingShare': instance.techUninstallFreestandingShare,
   'techBracketShare': instance.techBracketShare,
   'charges': instance.charges?.toJson(),
   'date': _timestampToJson(instance.date),

@@ -1446,6 +1446,23 @@ class AppLocalizationsUr extends AppLocalizations {
   String get noInstallationsToday => 'آج کوئی تنصیب درج نہیں';
 
   @override
+  String get noManualInstallLogsToday =>
+      'آج کوئی دستی اے سی تنصیب لاگ درج نہیں کی گئی۔';
+
+  @override
+  String get manualInstallLogDescription =>
+      'یہ اسکرین صرف دستی اے سی تنصیب لاگز دکھاتی ہے۔ انوائس اور شیئرڈ انسٹال جابز کی گنتی اوپر الگ دکھائی جاتی ہے۔';
+
+  @override
+  String get jobInstallationsToday => 'آج کی انسٹال جابز';
+
+  @override
+  String get manualLogsToday => 'آج کے دستی لاگز';
+
+  @override
+  String get entryDetails => 'اندراج کی تفصیل';
+
+  @override
   String get totalOnInvoice => 'انوائس پر کل';
 
   @override
@@ -1502,6 +1519,12 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں';
+
+  @override
+  String get uploadLogo => 'لوگو اپ لوڈ کریں';
+
+  @override
+  String get replaceLogo => 'لوگو تبدیل کریں';
 
   @override
   String get logoTooLarge =>

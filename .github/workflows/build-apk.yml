@@ -165,7 +165,14 @@ jobs:
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
+          mkdir -p lib
+
           if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            if [ -f lib/firebase_options.dart ]; then
+              echo "Using checked-in lib/firebase_options.dart"
+              exit 0
+            fi
+
             if [ "${{ inputs.build_type }}" = "release" ]; then
               echo "FIREBASE_OPTIONS_DART secret is required for release builds"
               exit 1

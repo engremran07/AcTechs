@@ -1445,6 +1445,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noInstallationsToday => 'No installations logged today';
 
   @override
+  String get noManualInstallLogsToday =>
+      'No manual AC installation logs were added today.';
+
+  @override
+  String get manualInstallLogDescription =>
+      'This screen tracks manual AC-install log entries. Invoice and shared-install jobs are counted separately above.';
+
+  @override
+  String get jobInstallationsToday => 'Install jobs today';
+
+  @override
+  String get manualLogsToday => 'Manual logs today';
+
+  @override
+  String get entryDetails => 'Entry Details';
+
+  @override
   String get totalOnInvoice => 'Total on Invoice';
 
   @override
@@ -1499,6 +1516,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'Tap to upload logo';
+
+  @override
+  String get uploadLogo => 'Upload Logo';
+
+  @override
+  String get replaceLogo => 'Replace Logo';
 
   @override
   String get logoTooLarge =>

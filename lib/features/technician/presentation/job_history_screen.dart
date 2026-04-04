@@ -1259,6 +1259,27 @@ class _HistoryJobCard extends StatelessWidget {
                       '${l.myShare}: ${job.sharedContributionUnits > 0 ? job.sharedContributionUnits : job.totalUnits}',
                   color: ArcticTheme.arcticSuccess,
                 ),
+                if (job.sharedInvoiceUninstallSplitUnits > 0)
+                  _InfoChip(
+                    icon: Icons.build_circle_outlined,
+                    label:
+                        '${l.uninstallSplit}: ${job.techUninstallSplitShare}/${job.sharedInvoiceUninstallSplitUnits}',
+                    color: ArcticTheme.arcticWarning,
+                  ),
+                if (job.sharedInvoiceUninstallWindowUnits > 0)
+                  _InfoChip(
+                    icon: Icons.build_circle_outlined,
+                    label:
+                        '${l.uninstallWindow}: ${job.techUninstallWindowShare}/${job.sharedInvoiceUninstallWindowUnits}',
+                    color: ArcticTheme.arcticWarning,
+                  ),
+                if (job.sharedInvoiceUninstallFreestandingUnits > 0)
+                  _InfoChip(
+                    icon: Icons.build_circle_outlined,
+                    label:
+                        '${l.uninstallStanding}: ${job.techUninstallFreestandingShare}/${job.sharedInvoiceUninstallFreestandingUnits}',
+                    color: ArcticTheme.arcticWarning,
+                  ),
                 if (job.sharedInvoiceBracketCount > 0)
                   _InfoChip(
                     icon: Icons.hardware_outlined,

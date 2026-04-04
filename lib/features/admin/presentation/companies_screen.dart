@@ -22,9 +22,6 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   Future<void> _showCompanyDialog([CompanyModel? company]) async {
     final l = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(text: company?.name ?? '');
-    final prefixCtrl = TextEditingController(
-      text: company?.invoicePrefix ?? '',
-    );
     final formKey = GlobalKey<FormState>();
     // logoBase64 held in dialog-local state via StatefulBuilder
     String pendingLogo = company?.logoBase64 ?? '';
@@ -122,6 +119,52 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                             ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.image,
+                            withData: true,
+                          );
+                          if (result == null) return;
+                          final bytes = result.files.first.bytes;
+                          if (bytes == null) return;
+                          if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
+                            bytes,
+                          )) {
+                            if (ctx.mounted) {
+                              AppFeedback.error(ctx, message: l.logoTooLarge);
+                            }
+                            return;
+                          }
+                          setDialogState(
+                            () => pendingLogo = Base64ImageCodec.encode(bytes),
+                          );
+                        },
+                        icon: const Icon(Icons.upload_file_outlined),
+                        label: Text(
+                          pendingLogo.isEmpty ? l.uploadLogo : l.replaceLogo,
+                        ),
+                      ),
+                      if (pendingLogo.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              setDialogState(() => pendingLogo = ''),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: Text(l.removeLogo),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ArcticTheme.arcticError,
+                            side: const BorderSide(
+                              color: ArcticTheme.arcticError,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: nameCtrl,
@@ -130,19 +173,6 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                     decoration: InputDecoration(
                       hintText: l.companyName,
                       prefixIcon: const Icon(Icons.apartment_rounded),
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? l.required
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: prefixCtrl,
-                    textInputAction: TextInputAction.done,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: l.invoicePrefix,
-                      prefixIcon: const Icon(Icons.tag_rounded),
                     ),
                     validator: (value) => value == null || value.trim().isEmpty
                         ? l.required
@@ -179,7 +209,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             .read(companyRepositoryProvider)
             .createCompany(
               name: nameCtrl.text.trim(),
-              invoicePrefix: prefixCtrl.text.trim(),
+              invoicePrefix: '',
               logoBase64: pendingLogo,
             );
         if (!mounted) return;
@@ -190,7 +220,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             .updateCompany(
               id: company.id,
               name: nameCtrl.text.trim(),
-              invoicePrefix: prefixCtrl.text.trim(),
+              invoicePrefix: company.invoicePrefix,
               logoBase64: pendingLogo,
             );
         if (!mounted) return;
@@ -253,53 +283,55 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 itemBuilder: (context, index) {
                   final company = companies[index];
                   return ArcticCard(
-                    onTap: () => _showCompanyDialog(company),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ArcticTheme.arcticBlue.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: company.logoBase64.isNotEmpty
-                              ? _CompanyLogoPreview(
-                                  logoBase64: company.logoBase64,
-                                  fit: BoxFit.contain,
-                                )
-                              : const Icon(
-                                  Icons.apartment_rounded,
-                                  color: ArcticTheme.arcticBlue,
+                        onTap: () => _showCompanyDialog(company),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: ArcticTheme.arcticBlue.withValues(
+                                  alpha: 0.15,
                                 ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                company.name,
-                                style: Theme.of(context).textTheme.titleSmall,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Text(
-                                '${l.invoicePrefix}: ${company.invoicePrefix}',
-                                style: Theme.of(context).textTheme.bodySmall,
+                              clipBehavior: Clip.antiAlias,
+                              child: company.logoBase64.isNotEmpty
+                                  ? _CompanyLogoPreview(
+                                      logoBase64: company.logoBase64,
+                                      fit: BoxFit.contain,
+                                    )
+                                  : const Icon(
+                                      Icons.apartment_rounded,
+                                      color: ArcticTheme.arcticBlue,
+                                    ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    company.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Switch(
+                              value: company.isActive,
+                              activeTrackColor: ArcticTheme.arcticSuccess,
+                              onChanged: (value) =>
+                                  _toggleCompany(company, value),
+                            ),
+                          ],
                         ),
-                        Switch(
-                          value: company.isActive,
-                          activeTrackColor: ArcticTheme.arcticSuccess,
-                          onChanged: (value) => _toggleCompany(company, value),
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: (index * 60).ms).slideX(begin: 0.03);
+                      )
+                      .animate()
+                      .fadeIn(delay: (index * 60).ms)
+                      .slideX(begin: 0.03);
                 },
               ),
             );

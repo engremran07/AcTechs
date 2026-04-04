@@ -93,6 +93,12 @@ service cloud.firestore {
         request.resource.data.sharedInvoiceWindowUnits >= 0 &&
         request.resource.data.sharedInvoiceFreestandingUnits is int &&
         request.resource.data.sharedInvoiceFreestandingUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallSplitUnits is int &&
+        request.resource.data.sharedInvoiceUninstallSplitUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallWindowUnits is int &&
+        request.resource.data.sharedInvoiceUninstallWindowUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallFreestandingUnits is int &&
+        request.resource.data.sharedInvoiceUninstallFreestandingUnits >= 0 &&
         request.resource.data.sharedInvoiceBracketCount is int &&
         request.resource.data.sharedInvoiceBracketCount >= 0 &&
         request.resource.data.sharedDeliveryTeamCount is int &&
@@ -105,6 +111,12 @@ service cloud.firestore {
         request.resource.data.techWindowShare >= 0 &&
         request.resource.data.techFreestandingShare is int &&
         request.resource.data.techFreestandingShare >= 0 &&
+        request.resource.data.techUninstallSplitShare is int &&
+        request.resource.data.techUninstallSplitShare >= 0 &&
+        request.resource.data.techUninstallWindowShare is int &&
+        request.resource.data.techUninstallWindowShare >= 0 &&
+        request.resource.data.techUninstallFreestandingShare is int &&
+        request.resource.data.techUninstallFreestandingShare >= 0 &&
         request.resource.data.techBracketShare is int &&
         request.resource.data.techBracketShare >= 0;
     }
@@ -138,6 +150,12 @@ service cloud.firestore {
         data.sharedInvoiceWindowUnits >= 0 &&
         data.sharedInvoiceFreestandingUnits is int &&
         data.sharedInvoiceFreestandingUnits >= 0 &&
+        data.sharedInvoiceUninstallSplitUnits is int &&
+        data.sharedInvoiceUninstallSplitUnits >= 0 &&
+        data.sharedInvoiceUninstallWindowUnits is int &&
+        data.sharedInvoiceUninstallWindowUnits >= 0 &&
+        data.sharedInvoiceUninstallFreestandingUnits is int &&
+        data.sharedInvoiceUninstallFreestandingUnits >= 0 &&
         data.sharedInvoiceBracketCount is int &&
         data.sharedInvoiceBracketCount >= 0 &&
         data.sharedDeliveryTeamCount is int &&
@@ -153,6 +171,15 @@ service cloud.firestore {
         data.consumedFreestandingUnits is int &&
         data.consumedFreestandingUnits >= 0 &&
         data.consumedFreestandingUnits <= data.sharedInvoiceFreestandingUnits &&
+        data.consumedUninstallSplitUnits is int &&
+        data.consumedUninstallSplitUnits >= 0 &&
+        data.consumedUninstallSplitUnits <= data.sharedInvoiceUninstallSplitUnits &&
+        data.consumedUninstallWindowUnits is int &&
+        data.consumedUninstallWindowUnits >= 0 &&
+        data.consumedUninstallWindowUnits <= data.sharedInvoiceUninstallWindowUnits &&
+        data.consumedUninstallFreestandingUnits is int &&
+        data.consumedUninstallFreestandingUnits >= 0 &&
+        data.consumedUninstallFreestandingUnits <= data.sharedInvoiceUninstallFreestandingUnits &&
         data.consumedBracketCount is int &&
         data.consumedBracketCount >= 0 &&
         data.consumedBracketCount <= data.sharedInvoiceBracketCount &&
@@ -167,12 +194,18 @@ service cloud.firestore {
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits',
+          'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
           'sharedInvoiceBracketCount',
           'sharedDeliveryTeamCount',
           'sharedInvoiceDeliveryAmount',
           'consumedSplitUnits',
           'consumedWindowUnits',
           'consumedFreestandingUnits',
+          'consumedUninstallSplitUnits',
+          'consumedUninstallWindowUnits',
+          'consumedUninstallFreestandingUnits',
           'consumedBracketCount',
           'consumedDeliveryAmount',
           'createdBy',
@@ -193,6 +226,9 @@ service cloud.firestore {
         request.resource.data.sharedInvoiceSplitUnits == resource.data.sharedInvoiceSplitUnits &&
         request.resource.data.sharedInvoiceWindowUnits == resource.data.sharedInvoiceWindowUnits &&
         request.resource.data.sharedInvoiceFreestandingUnits == resource.data.sharedInvoiceFreestandingUnits &&
+        request.resource.data.sharedInvoiceUninstallSplitUnits == resource.data.sharedInvoiceUninstallSplitUnits &&
+        request.resource.data.sharedInvoiceUninstallWindowUnits == resource.data.sharedInvoiceUninstallWindowUnits &&
+        request.resource.data.sharedInvoiceUninstallFreestandingUnits == resource.data.sharedInvoiceUninstallFreestandingUnits &&
         request.resource.data.sharedInvoiceBracketCount == resource.data.sharedInvoiceBracketCount &&
         request.resource.data.sharedDeliveryTeamCount == resource.data.sharedDeliveryTeamCount &&
         request.resource.data.sharedInvoiceDeliveryAmount == resource.data.sharedInvoiceDeliveryAmount &&
@@ -206,12 +242,18 @@ service cloud.firestore {
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits',
+          'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
           'sharedInvoiceBracketCount',
           'sharedDeliveryTeamCount',
           'sharedInvoiceDeliveryAmount',
           'consumedSplitUnits',
           'consumedWindowUnits',
           'consumedFreestandingUnits',
+          'consumedUninstallSplitUnits',
+          'consumedUninstallWindowUnits',
+          'consumedUninstallFreestandingUnits',
           'consumedBracketCount',
           'consumedDeliveryAmount',
           'createdBy',
@@ -228,6 +270,9 @@ service cloud.firestore {
         request.resource.data.consumedSplitUnits >= resource.data.consumedSplitUnits &&
         request.resource.data.consumedWindowUnits >= resource.data.consumedWindowUnits &&
         request.resource.data.consumedFreestandingUnits >= resource.data.consumedFreestandingUnits &&
+        request.resource.data.consumedUninstallSplitUnits >= resource.data.consumedUninstallSplitUnits &&
+        request.resource.data.consumedUninstallWindowUnits >= resource.data.consumedUninstallWindowUnits &&
+        request.resource.data.consumedUninstallFreestandingUnits >= resource.data.consumedUninstallFreestandingUnits &&
         request.resource.data.consumedBracketCount >= resource.data.consumedBracketCount &&
         request.resource.data.consumedDeliveryAmount >= resource.data.consumedDeliveryAmount;
     }
@@ -307,12 +352,18 @@ service cloud.firestore {
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits',
+          'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
           'sharedInvoiceBracketCount',
           'sharedDeliveryTeamCount',
           'sharedInvoiceDeliveryAmount',
           'techSplitShare',
           'techWindowShare',
           'techFreestandingShare',
+          'techUninstallSplitShare',
+          'techUninstallWindowShare',
+          'techUninstallFreestandingShare',
           'techBracketShare',
           'charges',
           'date',

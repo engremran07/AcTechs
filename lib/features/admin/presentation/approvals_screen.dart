@@ -259,6 +259,21 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 ),
               if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty)
                 Text('${l.sharedGroup}: ${job.sharedInstallGroupKey}'),
+              if (job.isSharedInstall &&
+                  job.sharedInvoiceUninstallSplitUnits > 0)
+                Text(
+                  '${l.uninstallSplit}: ${job.techUninstallSplitShare}/${job.sharedInvoiceUninstallSplitUnits}',
+                ),
+              if (job.isSharedInstall &&
+                  job.sharedInvoiceUninstallWindowUnits > 0)
+                Text(
+                  '${l.uninstallWindow}: ${job.techUninstallWindowShare}/${job.sharedInvoiceUninstallWindowUnits}',
+                ),
+              if (job.isSharedInstall &&
+                  job.sharedInvoiceUninstallFreestandingUnits > 0)
+                Text(
+                  '${l.uninstallStanding}: ${job.techUninstallFreestandingShare}/${job.sharedInvoiceUninstallFreestandingUnits}',
+                ),
               if (job.isSharedInstall && job.sharedInvoiceBracketCount > 0)
                 Text(
                   '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',

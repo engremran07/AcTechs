@@ -186,7 +186,14 @@ jobs:
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
+          mkdir -p lib
+
           if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            if [ -f lib/firebase_options.dart ]; then
+              echo "Using checked-in lib/firebase_options.dart"
+              exit 0
+            fi
+
             cat > lib/firebase_options.dart <<'EOF'
           // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
           // CI debug stub - not used at runtime.

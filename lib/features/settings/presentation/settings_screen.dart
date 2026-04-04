@@ -61,10 +61,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appBuildAsync = ref.watch(appBuildNumberProvider);
     final appVersionAsync = ref.watch(appVersionLabelProvider);
     final l = AppLocalizations.of(context)!;
-    final companyDisplayName = appBrandingAsync.maybeWhen(
-      data: (branding) => _displayAppBrandingName(l, branding),
-      orElse: () => l.ambiguousCompanyName,
-    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.settings)),
@@ -420,84 +416,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
                 const Divider(height: 1),
-                _InfoTile(
-                  icon: Icons.business_rounded,
-                  label: l.company,
-                  value: companyDisplayName,
-                ),
-                const Divider(height: 1),
-                _InfoTile(
-                  icon: Icons.location_on_outlined,
-                  label: l.region,
-                  value: l.pakistan,
-                ),
-                const Divider(height: 1),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${l.region}: ${l.pakistan}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: ArcticTheme.arcticBlue.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: appBrandingAsync.maybeWhen(
-                              data: (branding) =>
-                                  branding.logoBase64.trim().isNotEmpty
-                                  ? _BrandLogoPreview(
-                                      logoBase64: branding.logoBase64,
-                                    )
-                                  : const Icon(
-                                      Icons.apartment_rounded,
-                                      color: ArcticTheme.arcticBlue,
-                                    ),
-                              orElse: () => const Icon(
-                                Icons.apartment_rounded,
-                                color: ArcticTheme.arcticBlue,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const _PakistanFlagBadge(),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  companyDisplayName,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${l.region}: ${l.pakistan}',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: ArcticTheme.arcticTextSecondary,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
                       Text(
                         l.adminAboutBuiltBy,
                         style: Theme.of(context).textTheme.bodyMedium,
@@ -1185,6 +1108,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ],
                             ),
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.image,
+                            withData: true,
+                          );
+                          if (result == null) return;
+                          final bytes = result.files.first.bytes;
+                          if (bytes == null) return;
+                          if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
+                            bytes,
+                          )) {
+                            if (ctx.mounted) {
+                              AppFeedback.error(ctx, message: l.logoTooLarge);
+                            }
+                            return;
+                          }
+                          setDialogState(
+                            () => pendingLogo = Base64ImageCodec.encode(bytes),
+                          );
+                        },
+                        icon: const Icon(Icons.upload_file_outlined),
+                        label: Text(
+                          pendingLogo.isEmpty ? l.uploadLogo : l.replaceLogo,
+                        ),
+                      ),
+                      if (pendingLogo.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              setDialogState(() => pendingLogo = ''),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: Text(l.removeLogo),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ArcticTheme.arcticError,
+                            side: const BorderSide(
+                              color: ArcticTheme.arcticError,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

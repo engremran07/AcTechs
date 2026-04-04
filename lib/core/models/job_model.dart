@@ -65,6 +65,9 @@ abstract class JobModel with _$JobModel {
     @Default(0) int sharedInvoiceSplitUnits,
     @Default(0) int sharedInvoiceWindowUnits,
     @Default(0) int sharedInvoiceFreestandingUnits,
+    @Default(0) int sharedInvoiceUninstallSplitUnits,
+    @Default(0) int sharedInvoiceUninstallWindowUnits,
+    @Default(0) int sharedInvoiceUninstallFreestandingUnits,
     @Default(0) int sharedInvoiceBracketCount,
     @Default(0) int sharedDeliveryTeamCount,
     @Default(0.0) double sharedInvoiceDeliveryAmount,
@@ -73,6 +76,9 @@ abstract class JobModel with _$JobModel {
     @Default(0) int techSplitShare,
     @Default(0) int techWindowShare,
     @Default(0) int techFreestandingShare,
+    @Default(0) int techUninstallSplitShare,
+    @Default(0) int techUninstallWindowShare,
+    @Default(0) int techUninstallFreestandingShare,
     @Default(0) int techBracketShare,
 
     /// Additional invoice charges (bracket, delivery).
@@ -118,10 +124,14 @@ extension JobModelX on JobModel {
         .fold(0, (total, unit) => total + unit.quantity);
   }
 
-  int get sharedInstallUnitsTotal =>
-      unitsForType('Split AC') +
-      unitsForType('Window AC') +
-      unitsForType('Freestanding AC');
+  int get sharedInstallUnitsTotal => sharedInvoiceTotalUnits > 0
+      ? sharedInvoiceTotalUnits
+      : unitsForType('Split AC') +
+            unitsForType('Window AC') +
+            unitsForType('Freestanding AC') +
+            unitsForType('Uninstallation Split') +
+            unitsForType('Uninstallation Window') +
+            unitsForType('Uninstallation Freestanding');
 
   /// Total of all additional charges on this invoice.
   double get totalCharges {
