@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
@@ -159,7 +158,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       if (amountText.isNotEmpty) {
         final amount = double.tryParse(amountText);
         if (amount == null || amount <= 0) {
-          ErrorSnackbar.show(
+          AppFeedback.error(
             context,
             message: AppLocalizations.of(context)!.enterValidAmount,
           );
@@ -170,7 +169,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     }
 
     if (!hasValid) {
-      ErrorSnackbar.show(
+      AppFeedback.error(
         context,
         message: AppLocalizations.of(context)!.enterAmount,
       );
@@ -231,7 +230,6 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       }
 
       if (mounted) {
-        HapticFeedback.lightImpact();
         // Reset all rows to single empty row
         for (final row in _entryRows) {
           row.amountController.dispose();
@@ -246,11 +244,15 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           ),
         );
         setState(() {});
+        AppFeedback.success(
+          context,
+          message: AppLocalizations.of(context)!.entriesSaved,
+        );
       }
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -260,11 +262,16 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   Future<void> _deleteEarning(String id) async {
     try {
       await ref.read(earningRepositoryProvider).deleteEarning(id);
-      if (mounted) HapticFeedback.mediumImpact();
+      if (mounted) {
+        AppFeedback.success(
+          context,
+          message: AppLocalizations.of(context)!.entryDeleted,
+        );
+      }
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     }
   }
@@ -272,11 +279,16 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   Future<void> _deleteExpense(String id) async {
     try {
       await ref.read(expenseRepositoryProvider).deleteExpense(id);
-      if (mounted) HapticFeedback.mediumImpact();
+      if (mounted) {
+        AppFeedback.success(
+          context,
+          message: AppLocalizations.of(context)!.entryDeleted,
+        );
+      }
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     }
   }
@@ -285,7 +297,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     try {
       await ref.read(earningRepositoryProvider).updateEarning(earning);
       if (mounted) {
-        SuccessSnackbar.show(
+        AppFeedback.success(
           context,
           message: AppLocalizations.of(context)!.entryUpdated,
         );
@@ -293,7 +305,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     }
   }
@@ -302,7 +314,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     try {
       await ref.read(expenseRepositoryProvider).updateExpense(expense);
       if (mounted) {
-        SuccessSnackbar.show(
+        AppFeedback.success(
           context,
           message: AppLocalizations.of(context)!.entryUpdated,
         );
@@ -310,7 +322,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
-        ErrorSnackbar.show(context, message: e.message(locale));
+        AppFeedback.error(context, message: e.message(locale));
       }
     }
   }

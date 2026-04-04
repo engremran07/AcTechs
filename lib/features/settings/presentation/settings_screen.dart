@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
@@ -25,6 +31,23 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sendingReset = false;
 
+  static const String _supportPhoneSaudi = '00966530421571';
+  static const String _supportPhonePakistan = '00923067863310';
+
+  CompanyModel? _primaryCompany(List<CompanyModel> companies) {
+    for (final company in companies) {
+      if (company.isActive) return company;
+    }
+    return companies.isEmpty ? null : companies.first;
+  }
+
+  Future<void> _launchCall(String rawPhone) async {
+    final normalized = rawPhone.replaceAll(RegExp(r'[^0-9+]'), '').trim();
+    if (normalized.isEmpty) return;
+    final uri = Uri(scheme: 'tel', path: normalized);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
@@ -32,7 +55,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final locale = ref.watch(appLocaleProvider);
     final approvalConfigAsync = ref.watch(approvalConfigProvider);
     final appBuildAsync = ref.watch(appBuildNumberProvider);
+    final appVersionAsync = ref.watch(appVersionLabelProvider);
     final l = AppLocalizations.of(context)!;
+    final companiesAsync = (user?.isAdmin ?? false)
+        ? ref.watch(allCompaniesProvider)
+        : ref.watch(activeCompaniesProvider);
+    final companyDisplayName = companiesAsync.maybeWhen(
+      data: (companies) {
+        final company = _primaryCompany(companies);
+        return company?.name.trim().isNotEmpty ?? false
+            ? company!.name.trim()
+            : l.ambiguousCompanyName;
+      },
+      orElse: () => l.ambiguousCompanyName,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l.settings)),
@@ -132,6 +168,112 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
 
           if (user?.isAdmin ?? false) ...[
+            _SectionTitle(title: l.companyBranding),
+            const SizedBox(height: 8),
+            ArcticCard(
+              child: companiesAsync.when(
+                data: (companies) {
+                  final company = _primaryCompany(companies);
+                  final displayName = company?.name.trim().isNotEmpty ?? false
+                      ? company!.name.trim()
+                      : l.ambiguousCompanyName;
+                  final logoBase64 = company?.logoBase64 ?? '';
+
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: ArcticTheme.arcticBlue.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: logoBase64.isNotEmpty
+                                ? _BrandLogoPreview(logoBase64: logoBase64)
+                                : const Icon(
+                                    Icons.apartment_rounded,
+                                    color: ArcticTheme.arcticBlue,
+                                  ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${l.region}: ${l.pakistan}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const _PakistanFlagBadge(),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.go('/admin/companies'),
+                          icon: const Icon(Icons.image_outlined),
+                          label: Text(l.manageLogoAndBranding),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, _) => Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.apartment_rounded,
+                          color: ArcticTheme.arcticBlue,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l.ambiguousCompanyName,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        const _PakistanFlagBadge(),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/admin/companies'),
+                        icon: const Icon(Icons.image_outlined),
+                        label: Text(l.manageLogoAndBranding),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.03),
+            const SizedBox(height: 24),
+
             _SectionTitle(title: '${l.approvals} ${l.settings}'),
             const SizedBox(height: 8),
             ArcticCard(
@@ -210,19 +352,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _InfoTile(
                   icon: Icons.info_outline_rounded,
                   label: l.version,
-                  value: '1.0.0',
+                  value: appVersionAsync.maybeWhen(
+                    data: (value) => value,
+                    orElse: () => '...',
+                  ),
+                ),
+                const Divider(height: 1),
+                _InfoTile(
+                  icon: Icons.numbers_rounded,
+                  label: l.currentBuild,
+                  value: appBuildAsync.maybeWhen(
+                    data: (value) => '$value',
+                    orElse: () => '...',
+                  ),
                 ),
                 const Divider(height: 1),
                 _InfoTile(
                   icon: Icons.business_rounded,
                   label: l.company,
-                  value: l.appName,
+                  value: companyDisplayName,
                 ),
                 const Divider(height: 1),
                 _InfoTile(
                   icon: Icons.location_on_outlined,
                   label: l.region,
-                  value: l.saudiArabia,
+                  value: l.pakistan,
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.adminAboutBuiltBy,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      _DevelopedBySignature(label: l.developedByMuhammadImran),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const _PakistanFlagBadge(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${l.region}: ${l.pakistan}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _SupportContactRow(
+                        countryLabel: l.saudiArabia,
+                        phoneNumber: _supportPhoneSaudi,
+                        onCallTap: () => _launchCall(_supportPhoneSaudi),
+                        onWhatsAppTap: () =>
+                            WhatsAppLauncher.openChat(_supportPhoneSaudi),
+                      ),
+                      const SizedBox(height: 10),
+                      _SupportContactRow(
+                        countryLabel: l.pakistan,
+                        phoneNumber: _supportPhonePakistan,
+                        onCallTap: () => _launchCall(_supportPhonePakistan),
+                        onWhatsAppTap: () =>
+                            WhatsAppLauncher.openChat(_supportPhonePakistan),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -906,9 +1107,9 @@ class _LanguageTile extends StatelessWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: Text(
         flag,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-          fontSize: 24,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.headlineSmall?.copyWith(fontSize: 24),
       ),
       title: Text(label, style: Theme.of(context).textTheme.titleSmall),
       trailing: selected
@@ -940,6 +1141,148 @@ class _InfoTile extends StatelessWidget {
       leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
       title: Text(label, style: Theme.of(context).textTheme.titleSmall),
       trailing: Text(value, style: Theme.of(context).textTheme.bodySmall),
+    );
+  }
+}
+
+class _SupportContactRow extends StatelessWidget {
+  const _SupportContactRow({
+    required this.countryLabel,
+    required this.phoneNumber,
+    required this.onCallTap,
+    required this.onWhatsAppTap,
+  });
+
+  final String countryLabel;
+  final String phoneNumber;
+  final VoidCallback onCallTap;
+  final VoidCallback onWhatsAppTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          onPressed: onCallTap,
+          tooltip: AppLocalizations.of(context)!.call,
+          icon: const Icon(Icons.call_rounded, size: 18),
+        ),
+        IconButton(
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          onPressed: onWhatsAppTap,
+          tooltip: AppLocalizations.of(context)!.whatsApp,
+          icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16),
+        ),
+      ],
+    );
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(countryLabel, style: textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(phoneNumber, style: textTheme.bodyMedium),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        actions,
+      ],
+    );
+  }
+}
+
+class _DevelopedBySignature extends StatelessWidget {
+  const _DevelopedBySignature({required this.label});
+
+  final String label;
+
+  static const String _heartSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff8a9b"/>
+      <stop offset="100%" stop-color="#d90429"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 56c-1.1 0-2.2-.4-3.1-1.2C12.2 39.7 4 31.9 4 20.5 4 12.6 10.3 6 18.2 6c5 0 9.6 2.4 12.5 6.4C33.6 8.4 38.2 6 43.2 6 51.1 6 57.4 12.6 57.4 20.5c0 11.4-8.2 19.2-24.9 34.3-.9.8-2 1.2-3.1 1.2z" fill="url(#heartGradient)"/>
+  <path d="M43.2 10c-4.3 0-8.2 2.3-10.3 6.1L32 17.7l-.9-1.6C29 12.3 25.1 10 20.8 10 14.8 10 10 14.9 10 20.9c0 9 6.7 15.6 22 29.5 15.3-13.9 22-20.5 22-29.5C54 14.9 49.2 10 43.2 10z" fill="#fff" fill-opacity="0.18"/>
+</svg>
+''';
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: ArcticTheme.arcticTextSecondary,
+          ),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(width: 14, height: 14, child: SvgPicture.string(_heartSvg)),
+      ],
+    );
+  }
+}
+
+class _BrandLogoPreview extends StatelessWidget {
+  const _BrandLogoPreview({required this.logoBase64});
+
+  final String logoBase64;
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = Base64ImageCodec.tryDecodeBytes(logoBase64);
+    if (bytes == null) {
+      return const Icon(
+        Icons.broken_image_outlined,
+        color: ArcticTheme.arcticTextSecondary,
+      );
+    }
+
+    final svgText = Base64ImageCodec.tryDecodeSvgBytes(bytes);
+    if (svgText != null) {
+      return SvgPicture.memory(bytes, fit: BoxFit.contain);
+    }
+
+    return Image.memory(bytes, fit: BoxFit.contain);
+  }
+}
+
+class _PakistanFlagBadge extends StatelessWidget {
+  const _PakistanFlagBadge();
+
+  static const String _flagSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <rect width="640" height="480" fill="#01411C"/>
+  <rect width="160" height="480" fill="#fff"/>
+  <circle cx="390" cy="220" r="110" fill="#fff"/>
+  <circle cx="420" cy="200" r="100" fill="#01411C"/>
+  <path d="M430 110l22 64h67l-54 39 20 64-55-40-55 40 21-64-55-39h68z" fill="#fff"/>
+</svg>
+''';
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 28,
+        height: 20,
+        child: SvgPicture.string(_flagSvg, fit: BoxFit.cover),
+      ),
     );
   }
 }

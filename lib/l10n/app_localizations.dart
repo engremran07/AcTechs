@@ -502,6 +502,12 @@ abstract class AppLocalizations {
   /// **'Job submitted successfully! Waiting for admin approval.'**
   String get jobSubmitted;
 
+  /// No description provided for @jobSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry added successfully.'**
+  String get jobSaved;
+
   /// No description provided for @jobApproved.
   ///
   /// In en, this message translates to:
@@ -916,17 +922,41 @@ abstract class AppLocalizations {
   /// **'Company'**
   String get company;
 
+  /// No description provided for @companyBranding.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Branding'**
+  String get companyBranding;
+
   /// No description provided for @region.
   ///
   /// In en, this message translates to:
   /// **'Region'**
   String get region;
 
+  /// No description provided for @pakistan.
+  ///
+  /// In en, this message translates to:
+  /// **'Pakistan'**
+  String get pakistan;
+
   /// No description provided for @saudiArabia.
   ///
   /// In en, this message translates to:
   /// **'Saudi Arabia'**
   String get saudiArabia;
+
+  /// No description provided for @call.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get call;
+
+  /// No description provided for @whatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsApp;
 
   /// No description provided for @active.
   ///
@@ -1654,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Company Name'**
   String get companyName;
 
+  /// No description provided for @ambiguousCompanyName.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambigous'**
+  String get ambiguousCompanyName;
+
   /// No description provided for @invoicePrefix.
   ///
   /// In en, this message translates to:
@@ -1725,6 +1761,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Company deactivated'**
   String get companyDeactivated;
+
+  /// No description provided for @manageLogoAndBranding.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Logo and Branding'**
+  String get manageLogoAndBranding;
 
   /// No description provided for @workExpenses.
   ///
@@ -2350,6 +2392,18 @@ abstract class AppLocalizations {
   /// **'Edit Entry'**
   String get editEntry;
 
+  /// No description provided for @entriesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries saved successfully.'**
+  String get entriesSaved;
+
+  /// No description provided for @entryDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry deleted successfully.'**
+  String get entryDeleted;
+
   /// No description provided for @entryUpdated.
   ///
   /// In en, this message translates to:
@@ -2788,6 +2842,18 @@ abstract class AppLocalizations {
   /// **'Company Logo'**
   String get companyLogo;
 
+  /// No description provided for @adminAboutBuiltBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Built and supported for AC Techs.'**
+  String get adminAboutBuiltBy;
+
+  /// No description provided for @developedByMuhammadImran.
+  ///
+  /// In en, this message translates to:
+  /// **'Developed By Muhammad Imran'**
+  String get developedByMuhammadImran;
+
   /// No description provided for @tapToUploadLogo.
   ///
   /// In en, this message translates to:
@@ -2799,6 +2865,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove Logo'**
   String get removeLogo;
+
+  /// No description provided for @enterValidQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid quantity.'**
+  String get enterValidQuantity;
 }
 
 class _AppLocalizationsDelegate

@@ -217,6 +217,13 @@ class JobException extends AppException {
     'مشترکہ ٹیم کی تعداد درج کریں تاکہ ڈیلیوری چارج برابر تقسیم ہو سکے۔',
     'أدخل عدد أعضاء الفريق المشترك ليتم تقسيم رسوم التوصيل بالتساوي.',
   );
+
+  factory JobException.sharedGroupMismatch() => const JobException(
+    'job_shared_group_mismatch',
+    'This shared invoice already exists with different totals. Use the same shared totals for every technician on this invoice.',
+    'یہ مشترکہ انوائس مختلف کل مقدار کے ساتھ پہلے سے موجود ہے۔ اس انوائس پر ہر ٹیکنیشن کے لیے ایک ہی مشترکہ کل مقدار استعمال کریں۔',
+    'هذه الفاتورة المشتركة موجودة بالفعل بإجماليات مختلفة. استخدم نفس الإجماليات المشتركة لكل فني في هذه الفاتورة.',
+  );
 }
 
 class AdminException extends AppException {

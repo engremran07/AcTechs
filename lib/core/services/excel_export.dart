@@ -23,11 +23,18 @@ class ExcelExport {
     sheet.appendRow([
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Invoice Number'),
+      excel_pkg.TextCellValue('Shared Install'),
+      excel_pkg.TextCellValue('Shared Group Key'),
+      excel_pkg.TextCellValue('Invoice Total Units'),
+      excel_pkg.TextCellValue('My Share Units'),
       excel_pkg.TextCellValue('Contact'),
       excel_pkg.TextCellValue('Split'),
       excel_pkg.TextCellValue('Window'),
       excel_pkg.TextCellValue('Free Standing'),
       excel_pkg.TextCellValue('Bracket'),
+      excel_pkg.TextCellValue('Invoice Brackets'),
+      excel_pkg.TextCellValue('My Brackets'),
+      excel_pkg.TextCellValue('Shared Team Size'),
       excel_pkg.TextCellValue('Delivery'),
       excel_pkg.TextCellValue('Tech Name'),
       excel_pkg.TextCellValue('Description'),
@@ -93,6 +100,11 @@ class ExcelExport {
           uninstallSplitQty +
           uninstallWindowQty +
           uninstallStandingQty;
+      final contributionUnits = job.isSharedInstall
+          ? (job.sharedContributionUnits > 0
+                ? job.sharedContributionUnits
+                : job.totalUnits)
+          : job.totalUnits;
       totalSplit += splitQty;
       totalWindow += windowQty;
       totalStanding += dolabQty;
@@ -136,6 +148,12 @@ class ExcelExport {
               : '',
         ),
         excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
+        excel_pkg.TextCellValue(job.isSharedInstall ? 'Yes' : 'No'),
+        excel_pkg.TextCellValue(
+          AppFormatters.safeText(job.sharedInstallGroupKey),
+        ),
+        excel_pkg.IntCellValue(job.sharedInvoiceTotalUnits),
+        excel_pkg.IntCellValue(contributionUnits),
         excel_pkg.TextCellValue(AppFormatters.safeText(job.clientContact)),
         excel_pkg.IntCellValue(splitQty),
         excel_pkg.IntCellValue(windowQty),
@@ -144,6 +162,9 @@ class ExcelExport {
           excel_pkg.DoubleCellValue(bracketAmount.toDouble())
         else
           excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(job.sharedInvoiceBracketCount),
+        excel_pkg.IntCellValue(job.techBracketShare),
+        excel_pkg.IntCellValue(job.sharedDeliveryTeamCount),
         if (deliveryAmount > 0)
           excel_pkg.DoubleCellValue(deliveryAmount.toDouble())
         else

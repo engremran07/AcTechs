@@ -57,7 +57,9 @@ class _BaseSnackbar {
   }) {
     final theme = Theme.of(context);
     final cardColor = theme.cardTheme.color ?? ArcticTheme.arcticCard;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [

@@ -213,6 +213,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'کام کامیابی سے جمع ہو گیا! ایڈمن کی منظوری کا انتظار ہے۔';
 
   @override
+  String get jobSaved => 'اندراج کامیابی سے شامل ہو گیا۔';
+
+  @override
   String get jobApproved => 'کام منظور ہو گیا!';
 
   @override
@@ -428,10 +431,22 @@ class AppLocalizationsUr extends AppLocalizations {
   String get company => 'کمپنی';
 
   @override
+  String get companyBranding => 'کمپنی برانڈنگ';
+
+  @override
   String get region => 'خطہ';
 
   @override
+  String get pakistan => 'پاکستان';
+
+  @override
   String get saudiArabia => 'سعودی عرب';
+
+  @override
+  String get call => 'کال';
+
+  @override
+  String get whatsApp => 'واٹس ایپ';
 
   @override
   String get active => 'فعال';
@@ -817,6 +832,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get companyName => 'کمپنی کا نام';
 
   @override
+  String get ambiguousCompanyName => 'امبیگوس';
+
+  @override
   String get invoicePrefix => 'انوائس پریفکس';
 
   @override
@@ -851,6 +869,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get companyDeactivated => 'کمپنی غیر فعال ہو گئی';
+
+  @override
+  String get manageLogoAndBranding => 'لوگو اور برانڈنگ مینیج کریں';
 
   @override
   String get workExpenses => 'کام کے اخراجات';
@@ -1200,6 +1221,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get editEntry => 'اندراج میں ترمیم';
 
   @override
+  String get entriesSaved => 'اندراجات کامیابی سے محفوظ ہو گئیں۔';
+
+  @override
+  String get entryDeleted => 'اندراج کامیابی سے حذف ہو گیا۔';
+
+  @override
   String get entryUpdated => 'اندراج کامیابی سے اپ ڈیٹ ہو گیا۔';
 
   @override
@@ -1429,8 +1456,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get companyLogo => 'کمپنی لوگو';
 
   @override
+  String get adminAboutBuiltBy =>
+      'یہ ایپ اے سی ٹیکس کے لیے بنائی اور سپورٹ کی گئی ہے۔';
+
+  @override
+  String get developedByMuhammadImran => 'محمد عمران نے تیار کیا';
+
+  @override
   String get tapToUploadLogo => 'لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں';
 
   @override
   String get removeLogo => 'لوگو ہٹائیں';
+
+  @override
+  String get enterValidQuantity => 'درست تعداد درج کریں۔';
 }

@@ -213,6 +213,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Job submitted successfully! Waiting for admin approval.';
 
   @override
+  String get jobSaved => 'Entry added successfully.';
+
+  @override
   String get jobApproved => 'Job approved!';
 
   @override
@@ -429,10 +432,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get company => 'Company';
 
   @override
+  String get companyBranding => 'Company Branding';
+
+  @override
   String get region => 'Region';
 
   @override
+  String get pakistan => 'Pakistan';
+
+  @override
   String get saudiArabia => 'Saudi Arabia';
+
+  @override
+  String get call => 'Call';
+
+  @override
+  String get whatsApp => 'WhatsApp';
 
   @override
   String get active => 'Active';
@@ -819,6 +834,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyName => 'Company Name';
 
   @override
+  String get ambiguousCompanyName => 'Ambigous';
+
+  @override
   String get invoicePrefix => 'Invoice Prefix';
 
   @override
@@ -853,6 +871,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companyDeactivated => 'Company deactivated';
+
+  @override
+  String get manageLogoAndBranding => 'Manage Logo and Branding';
 
   @override
   String get workExpenses => 'Work Expenses';
@@ -1200,6 +1221,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editEntry => 'Edit Entry';
 
   @override
+  String get entriesSaved => 'Entries saved successfully.';
+
+  @override
+  String get entryDeleted => 'Entry deleted successfully.';
+
+  @override
   String get entryUpdated => 'Entry updated successfully.';
 
   @override
@@ -1427,8 +1454,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyLogo => 'Company Logo';
 
   @override
+  String get adminAboutBuiltBy => 'Built and supported for AC Techs.';
+
+  @override
+  String get developedByMuhammadImran => 'Developed By Muhammad Imran';
+
+  @override
   String get tapToUploadLogo => 'Tap to upload logo';
 
   @override
   String get removeLogo => 'Remove Logo';
+
+  @override
+  String get enterValidQuantity => 'Enter a valid quantity.';
 }

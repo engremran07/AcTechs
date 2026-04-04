@@ -1,10 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/data/company_repository.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
@@ -49,7 +50,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       if (result == null) return;
                       final bytes = result.files.first.bytes;
                       if (bytes == null) return;
-                      setDialogState(() => pendingLogo = base64Encode(bytes));
+                      setDialogState(
+                        () => pendingLogo = Base64ImageCodec.encode(bytes),
+                      );
                     },
                     child: Container(
                       width: double.infinity,
@@ -82,8 +85,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(11),
-                                  child: Image.memory(
-                                    base64Decode(pendingLogo),
+                                  child: _CompanyLogoPreview(
+                                    logoBase64: pendingLogo,
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -256,8 +259,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: company.logoBase64.isNotEmpty
-                              ? Image.memory(
-                                  base64Decode(company.logoBase64),
+                              ? _CompanyLogoPreview(
+                                  logoBase64: company.logoBase64,
                                   fit: BoxFit.contain,
                                 )
                               : const Icon(
@@ -303,5 +306,33 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         ),
       ),
     );
+  }
+}
+
+class _CompanyLogoPreview extends StatelessWidget {
+  const _CompanyLogoPreview({
+    required this.logoBase64,
+    this.fit = BoxFit.contain,
+  });
+
+  final String logoBase64;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = Base64ImageCodec.tryDecodeBytes(logoBase64);
+    if (bytes == null) {
+      return const Icon(
+        Icons.broken_image_outlined,
+        color: ArcticTheme.arcticTextSecondary,
+      );
+    }
+
+    final svgText = Base64ImageCodec.tryDecodeSvgBytes(bytes);
+    if (svgText != null) {
+      return SvgPicture.memory(bytes, fit: fit);
+    }
+
+    return Image.memory(bytes, fit: fit);
   }
 }

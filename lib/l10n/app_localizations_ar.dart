@@ -212,6 +212,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get jobSubmitted => 'تم إرسال العمل بنجاح! في انتظار موافقة المسؤول.';
 
   @override
+  String get jobSaved => 'تمت إضافة الإدخال بنجاح.';
+
+  @override
   String get jobApproved => 'تمت الموافقة على العمل!';
 
   @override
@@ -426,10 +429,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get company => 'الشركة';
 
   @override
+  String get companyBranding => 'هوية الشركة';
+
+  @override
   String get region => 'المنطقة';
 
   @override
+  String get pakistan => 'باكستان';
+
+  @override
   String get saudiArabia => 'المملكة العربية السعودية';
+
+  @override
+  String get call => 'اتصال';
+
+  @override
+  String get whatsApp => 'واتساب';
 
   @override
   String get active => 'نشط';
@@ -816,6 +831,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get companyName => 'اسم الشركة';
 
   @override
+  String get ambiguousCompanyName => 'أمبيغوس';
+
+  @override
   String get invoicePrefix => 'بادئة الفاتورة';
 
   @override
@@ -850,6 +868,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get companyDeactivated => 'تم تعطيل الشركة';
+
+  @override
+  String get manageLogoAndBranding => 'إدارة الشعار وهوية الشركة';
 
   @override
   String get workExpenses => 'مصروفات العمل';
@@ -1199,6 +1220,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get editEntry => 'تعديل الإدخال';
 
   @override
+  String get entriesSaved => 'تم حفظ الإدخالات بنجاح.';
+
+  @override
+  String get entryDeleted => 'تم حذف الإدخال بنجاح.';
+
+  @override
   String get entryUpdated => 'تم تحديث الإدخال بنجاح.';
 
   @override
@@ -1425,8 +1452,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get companyLogo => 'شعار الشركة';
 
   @override
+  String get adminAboutBuiltBy => 'تم تطوير هذا التطبيق ودعمه لصالح AC Techs.';
+
+  @override
+  String get developedByMuhammadImran => 'تم التطوير بواسطة محمد عمران';
+
+  @override
   String get tapToUploadLogo => 'اضغط لتحميل الشعار';
 
   @override
   String get removeLogo => 'إزالة الشعار';
+
+  @override
+  String get enterValidQuantity => 'أدخل كمية صحيحة.';
 }

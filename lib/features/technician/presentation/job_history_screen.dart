@@ -520,6 +520,10 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     }
 
     filtered.sort((a, b) {
+      if (_statusFilter == 'all' && a.status != b.status) {
+        if (a.isPending) return -1;
+        if (b.isPending) return 1;
+      }
       final aDate = a.date ?? DateTime(2000);
       final bDate = b.date ?? DateTime(2000);
       return _sortNewest ? bDate.compareTo(aDate) : aDate.compareTo(bDate);
@@ -546,6 +550,13 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
       59,
     );
     return !date.isBefore(start) && !date.isAfter(end);
+  }
+
+  int _jobDisplayUnits(JobModel job) {
+    if (!job.isSharedInstall) return job.totalUnits;
+    return job.sharedContributionUnits > 0
+        ? job.sharedContributionUnits
+        : job.totalUnits;
   }
 
   List<_InOutDaySummary> _applyInOutFilters(
@@ -619,7 +630,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         final filtered = _applyFilters(jobList);
         final totalUnits = filtered.fold<int>(
           0,
-          (sum, job) => sum + job.totalUnits,
+          (sum, job) => sum + _jobDisplayUnits(job),
         );
 
         return Column(
@@ -760,9 +771,13 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                         toDate: job.date,
                                       );
                                   final invoiceToken =
-                                      AppFormatters.slugify(job.invoiceNumber).isEmpty
+                                      AppFormatters.slugify(
+                                        job.invoiceNumber,
+                                      ).isEmpty
                                       ? 'invoice'
-                                      : AppFormatters.slugify(job.invoiceNumber);
+                                      : AppFormatters.slugify(
+                                          job.invoiceNumber,
+                                        );
                                   await PdfGenerator.sharePdfBytes(
                                     bytes,
                                     '$invoiceToken-$locale-job.pdf',
@@ -1080,6 +1095,7 @@ class _HistoryJobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return ArcticCard(
       onTap: onTap,
       child: Column(
@@ -1112,7 +1128,13 @@ class _HistoryJobCard extends StatelessWidget {
             children: [
               _InfoChip(
                 icon: Icons.ac_unit_rounded,
-                label: AppFormatters.units(job.totalUnits),
+                label: AppFormatters.units(
+                  job.isSharedInstall
+                      ? (job.sharedContributionUnits > 0
+                            ? job.sharedContributionUnits
+                            : job.totalUnits)
+                      : job.totalUnits,
+                ),
               ),
               const SizedBox(width: 12),
               if (job.expenses > 0)
@@ -1125,6 +1147,38 @@ class _HistoryJobCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (job.isSharedInstall) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              children: [
+                _InfoChip(
+                  icon: Icons.groups_rounded,
+                  label: l.sharedInstall,
+                  color: ArcticTheme.arcticBlue,
+                ),
+                _InfoChip(
+                  icon: Icons.receipt_long_rounded,
+                  label: '${l.totalOnInvoice}: ${job.sharedInvoiceTotalUnits}',
+                  color: ArcticTheme.arcticBlue,
+                ),
+                _InfoChip(
+                  icon: Icons.person_outline,
+                  label:
+                      '${l.myShare}: ${job.sharedContributionUnits > 0 ? job.sharedContributionUnits : job.totalUnits}',
+                  color: ArcticTheme.arcticSuccess,
+                ),
+                if (job.sharedInvoiceBracketCount > 0)
+                  _InfoChip(
+                    icon: Icons.hardware_outlined,
+                    label:
+                        '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                    color: ArcticTheme.arcticWarning,
+                  ),
+              ],
+            ),
+          ],
           if (job.clientContact.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(

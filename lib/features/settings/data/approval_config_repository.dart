@@ -25,7 +25,7 @@ class ApprovalConfig {
 
   factory ApprovalConfig.defaults() => const ApprovalConfig(
     jobApprovalRequired: false,
-    sharedJobApprovalRequired: true,
+    sharedJobApprovalRequired: false,
     inOutApprovalRequired: false,
     enforceMinimumBuild: false,
     minSupportedBuildNumber: 1,
@@ -38,7 +38,7 @@ class ApprovalConfig {
           : false,
       sharedJobApprovalRequired: data?['sharedJobApprovalRequired'] is bool
           ? data!['sharedJobApprovalRequired'] as bool
-          : true,
+          : false,
       inOutApprovalRequired: data?['inOutApprovalRequired'] is bool
           ? data!['inOutApprovalRequired'] as bool
           : false,

@@ -11,4 +11,30 @@ class Base64ImageCodec {
   static String encode(Uint8List bytes) => base64Encode(bytes);
 
   static Uint8List decode(String value) => base64Decode(value);
+
+  static Uint8List? tryDecodeBytes(String value) {
+    if (value.trim().isEmpty) return null;
+    try {
+      return decode(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? tryDecodeSvgBytes(Uint8List bytes) {
+    try {
+      final text = utf8.decode(bytes).trimLeft();
+      if (text.isEmpty) return null;
+      final normalized = text.toLowerCase();
+      return normalized.contains('<svg') ? text : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? tryDecodeSvg(String value) {
+    final bytes = tryDecodeBytes(value);
+    if (bytes == null) return null;
+    return tryDecodeSvgBytes(bytes);
+  }
 }

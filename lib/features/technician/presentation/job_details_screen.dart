@@ -15,6 +15,13 @@ class JobDetailsScreen extends ConsumerWidget {
   final String jobId;
   final JobModel? initialJob;
 
+  int _displayUnits(JobModel job) {
+    if (!job.isSharedInstall) return job.totalUnits;
+    return job.sharedContributionUnits > 0
+        ? job.sharedContributionUnits
+        : job.totalUnits;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
@@ -119,6 +126,54 @@ class JobDetailsScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                if (job.isSharedInstall) ...[
+                  const SizedBox(height: 12),
+                  ArcticCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.sharedInstall,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 10),
+                        _DetailRow(
+                          icon: Icons.receipt_long_outlined,
+                          label: l.totalOnInvoice,
+                          value: AppFormatters.units(
+                            job.sharedInvoiceTotalUnits,
+                          ),
+                        ),
+                        _DetailRow(
+                          icon: Icons.person_outline_rounded,
+                          label: l.myShare,
+                          value: AppFormatters.units(_displayUnits(job)),
+                        ),
+                        if (job.sharedInvoiceBracketCount > 0)
+                          _DetailRow(
+                            icon: Icons.hardware_outlined,
+                            label: l.acOutdoorBracket,
+                            value:
+                                '${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                          ),
+                        if (job.sharedDeliveryTeamCount > 0)
+                          _DetailRow(
+                            icon: Icons.groups_rounded,
+                            label: l.sharedTeamSize,
+                            value: '${job.sharedDeliveryTeamCount}',
+                          ),
+                        if (job.sharedInvoiceDeliveryAmount > 0)
+                          _DetailRow(
+                            icon: Icons.local_shipping_outlined,
+                            label: l.sharedInvoiceDeliveryAmount,
+                            value: AppFormatters.currency(
+                              job.sharedInvoiceDeliveryAmount,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 ArcticCard(
                   child: Column(

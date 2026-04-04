@@ -1,7 +1,7 @@
 name: ac_techs
 description: "AC Techs — Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.0.6+7
 
 environment:
   sdk: ^3.11.0
@@ -50,6 +50,7 @@ dependencies:
   printing: ^5.13.5
   shared_preferences: ^2.5.5
   package_info_plus: ^9.0.0
+  flutter_svg: ^2.2.0
   arabic_reshaper: ^0.0.1
   bidi: ^2.0.13
 

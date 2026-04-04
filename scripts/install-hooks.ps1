@@ -24,6 +24,11 @@ $ps1Content = @'
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+if ($env:ACTECHS_SKIP_VERSION_HOOK -eq '1') {
+    Write-Host "pre-commit: skipping version bump"
+    exit 0
+}
+
 $pubspec = Join-Path $PSScriptRoot '..\..\pubspec.yaml'
 $content = Get-Content $pubspec -Raw
 
@@ -47,7 +52,11 @@ Write-Host "pre-commit: bumped build to $semver+$build"
 $shContent = @'
 #!/bin/sh
 # Delegate to the PowerShell script so logic stays in one place.
-pwsh -NoProfile -NonInteractive -File "$(dirname "$0")/pre-commit.ps1"
+if command -v pwsh >/dev/null 2>&1; then
+    pwsh -NoProfile -NonInteractive -File "$(dirname "$0")/pre-commit.ps1"
+else
+    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(dirname "$0")/pre-commit.ps1"
+fi
 exit $?
 '@
 

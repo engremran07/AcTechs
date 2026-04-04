@@ -65,6 +65,7 @@ abstract class JobModel with _$JobModel {
     @Default(0) int sharedInvoiceSplitUnits,
     @Default(0) int sharedInvoiceWindowUnits,
     @Default(0) int sharedInvoiceFreestandingUnits,
+    @Default(0) int sharedInvoiceBracketCount,
     @Default(0) int sharedDeliveryTeamCount,
     @Default(0.0) double sharedInvoiceDeliveryAmount,
 
@@ -72,6 +73,7 @@ abstract class JobModel with _$JobModel {
     @Default(0) int techSplitShare,
     @Default(0) int techWindowShare,
     @Default(0) int techFreestandingShare,
+    @Default(0) int techBracketShare,
 
     /// Additional invoice charges (bracket, delivery).
     InvoiceCharges? charges,

@@ -29,6 +29,31 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   bool _isBulkProcessing = false;
   bool _isApprovingInOut = false;
 
+  Map<String, List<JobModel>> _sharedJobGroups(List<JobModel> jobs) {
+    final groups = <String, List<JobModel>>{};
+    for (final job in jobs) {
+      if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) continue;
+      groups
+          .putIfAbsent(job.sharedInstallGroupKey, () => <JobModel>[])
+          .add(job);
+    }
+    return groups;
+  }
+
+  int _jobContributionUnits(JobModel job) {
+    if (!job.isSharedInstall) return job.totalUnits;
+    return job.sharedContributionUnits > 0
+        ? job.sharedContributionUnits
+        : job.totalUnits;
+  }
+
+  int _sharedInvoiceUnits(Map<String, List<JobModel>> groups) {
+    return groups.values.fold<int>(
+      0,
+      (sum, entries) => sum + entries.first.sharedInvoiceTotalUnits,
+    );
+  }
+
   List<JobModel> _filter(List<JobModel> jobs) {
     if (_search.isEmpty) return jobs;
     final q = _search.toLowerCase();
@@ -202,7 +227,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     return reason;
   }
 
-  Future<void> _showJobVerificationDialog(JobModel job) async {
+  Future<void> _showJobVerificationDialog(
+    JobModel job, {
+    required int groupSize,
+  }) async {
     final l = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
@@ -215,6 +243,15 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             Text('${l.technician}: ${job.techName}'),
             Text('${l.client}: ${job.clientName}'),
             Text('${l.totalUnits}: ${job.totalUnits}'),
+            if (job.isSharedInstall)
+              Text(
+                '${l.sharedInstall}: ${l.totalOnInvoice} ${AppFormatters.units(job.sharedInvoiceTotalUnits)} • ${l.myShare} ${AppFormatters.units(_jobContributionUnits(job))}',
+              ),
+            if (job.isSharedInstall && job.sharedInvoiceBracketCount > 0)
+              Text(
+                '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+              ),
+            if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
             if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
           ],
         ),
@@ -359,6 +396,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           child: pending.when(
             data: (jobs) {
               final filtered = _filter(jobs);
+              final sharedGroups = _sharedJobGroups(filtered);
+              final sharedJobsCount = filtered
+                  .where((job) => job.isSharedInstall)
+                  .length;
+              final sharedInvoiceUnits = _sharedInvoiceUnits(sharedGroups);
               _selected.removeWhere((id) => !filtered.any((j) => j.id == id));
 
               return Column(
@@ -391,6 +433,33 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                           onPressed: _bulkReject,
                         ),
                       ],
+                    ),
+                  if (sharedGroups.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: ArcticCard(
+                        child: Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            _SharedApprovalMetric(
+                              label:
+                                  '${AppLocalizations.of(context)!.sharedInstall} ${AppLocalizations.of(context)!.invoice}',
+                              value: '${sharedGroups.length}',
+                            ),
+                            _SharedApprovalMetric(
+                              label:
+                                  '${AppLocalizations.of(context)!.sharedInstall} ${AppLocalizations.of(context)!.jobs}',
+                              value: '$sharedJobsCount',
+                            ),
+                            _SharedApprovalMetric(
+                              label:
+                                  '${AppLocalizations.of(context)!.sharedInstall} ${AppLocalizations.of(context)!.totalUnits}',
+                              value: AppFormatters.units(sharedInvoiceUnits),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   if (pendingEarnings.hasValue || pendingExpenses.hasValue)
                     Padding(
@@ -497,6 +566,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                             ...filtered.asMap().entries.map((entry) {
                               final index = entry.key;
                               final job = entry.value;
+                              final groupSize = job.isSharedInstall
+                                  ? (sharedGroups[job.sharedInstallGroupKey]
+                                            ?.length ??
+                                        1)
+                                  : 1;
                               return SwipeActionCard(
                                     onSwipeRight: () async {
                                       // Approve on swipe right
@@ -536,9 +610,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                     leftIcon: Icons.close_rounded,
                                     child: _ApprovalCard(
                                       job: job,
+                                      groupSize: groupSize,
                                       isSelected: _selected.contains(job.id),
-                                      onTap: () =>
-                                          _showJobVerificationDialog(job),
+                                      onTap: () => _showJobVerificationDialog(
+                                        job,
+                                        groupSize: groupSize,
+                                      ),
                                       onSelect: (v) {
                                         setState(() {
                                           if (v) {
@@ -629,12 +706,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 class _ApprovalCard extends ConsumerStatefulWidget {
   const _ApprovalCard({
     required this.job,
+    required this.groupSize,
     required this.isSelected,
     required this.onTap,
     required this.onSelect,
   });
 
   final JobModel job;
+  final int groupSize;
   final bool isSelected;
   final VoidCallback onTap;
   final ValueChanged<bool> onSelect;
@@ -738,6 +817,7 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
+    final l = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final dividerColor = Theme.of(context).dividerColor;
     final textSecondary =
@@ -851,7 +931,13 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                   Icon(Icons.ac_unit_rounded, size: 16, color: textSecondary),
                   const SizedBox(width: 6),
                   Text(
-                    AppFormatters.units(job.totalUnits),
+                    AppFormatters.units(
+                      job.isSharedInstall
+                          ? (job.sharedContributionUnits > 0
+                                ? job.sharedContributionUnits
+                                : job.totalUnits)
+                          : job.totalUnits,
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   if (job.expenses > 0) ...[
@@ -873,6 +959,66 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                   ],
                 ],
               ),
+              if (job.isSharedInstall) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Chip(
+                      label: Text(
+                        l.sharedInstall,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      backgroundColor: chipBg,
+                      side: BorderSide(color: dividerColor),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    Chip(
+                      label: Text(
+                        '${l.totalOnInvoice}: ${job.sharedInvoiceTotalUnits}',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      backgroundColor: chipBg,
+                      side: BorderSide(color: dividerColor),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    Chip(
+                      label: Text(
+                        '${l.myShare}: ${job.sharedContributionUnits > 0 ? job.sharedContributionUnits : job.totalUnits}',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      backgroundColor: chipBg,
+                      side: BorderSide(color: dividerColor),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    if (job.sharedInvoiceBracketCount > 0)
+                      Chip(
+                        label: Text(
+                          '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        backgroundColor: chipBg,
+                        side: BorderSide(color: dividerColor),
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    Chip(
+                      label: Text(
+                        '${l.technicians}: ${widget.groupSize}',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      backgroundColor: chipBg,
+                      side: BorderSide(color: dividerColor),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              ],
               if (job.acUnits.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Wrap(
@@ -1004,6 +1150,36 @@ class _InOutPendingCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SharedApprovalMetric extends StatelessWidget {
+  const _SharedApprovalMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: ArcticTheme.arcticTextSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: ArcticTheme.arcticBlue),
+        ),
+      ],
     );
   }
 }

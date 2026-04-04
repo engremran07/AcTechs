@@ -657,6 +657,29 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return periodScoped;
   }
 
+  Map<String, List<JobModel>> _sharedGroups(List<JobModel> jobs) {
+    final groups = <String, List<JobModel>>{};
+    for (final job in jobs) {
+      if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) continue;
+      groups
+          .putIfAbsent(job.sharedInstallGroupKey, () => <JobModel>[])
+          .add(job);
+    }
+    return groups;
+  }
+
+  int _invoiceAwareUnitTotal(List<JobModel> jobs) {
+    final groups = _sharedGroups(jobs);
+    final groupedUnits = groups.values.fold<int>(
+      0,
+      (sum, entries) => sum + entries.first.sharedInvoiceTotalUnits,
+    );
+    final soloUnits = jobs
+        .where((job) => !job.isSharedInstall)
+        .fold<int>(0, (sum, job) => sum + job.totalUnits);
+    return soloUnits + groupedUnits;
+  }
+
   String _periodLabel(AppLocalizations l) {
     final range = _activeRange();
     if (range == null) return l.all;
@@ -928,9 +951,21 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         child: allJobs.when(
           data: (jobs) {
             final scopedJobs = _effectiveJobs(jobs);
+            final sharedGroups = _sharedGroups(scopedJobs);
             final approved = scopedJobs.where((j) => j.isApproved).length;
             final pending = scopedJobs.where((j) => j.isPending).length;
             final rejected = scopedJobs.where((j) => j.isRejected).length;
+            final sharedJobsCount = scopedJobs
+                .where((j) => j.isSharedInstall)
+                .length;
+            final sharedInvoiceUnits = sharedGroups.values.fold<int>(
+              0,
+              (sum, entries) => sum + entries.first.sharedInvoiceTotalUnits,
+            );
+            final sharedInvoiceBrackets = sharedGroups.values.fold<int>(
+              0,
+              (sum, entries) => sum + entries.first.sharedInvoiceBracketCount,
+            );
             final totalExpenses = scopedJobs.fold<double>(
               0,
               (s, j) => s + j.expenses,
@@ -1282,8 +1317,29 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                       _SummaryRow(
                         label: AppLocalizations.of(context)!.totalUnits,
                         value: AppFormatters.units(
-                          scopedJobs.fold<int>(0, (s, j) => s + j.totalUnits),
+                          _invoiceAwareUnitTotal(scopedJobs),
                         ),
+                      ),
+                      const Divider(height: 16),
+                      _SummaryRow(
+                        label: '${l.sharedInstall} ${l.jobs}',
+                        value: '$sharedJobsCount',
+                      ),
+                      const Divider(height: 16),
+                      _SummaryRow(
+                        label:
+                            '${l.sharedInstall} ${l.invoice} ${l.totalUnits}',
+                        value: AppFormatters.units(sharedInvoiceUnits),
+                      ),
+                      const Divider(height: 16),
+                      _SummaryRow(
+                        label: '${l.sharedInstall} ${l.invoice}',
+                        value: '${sharedGroups.length}',
+                      ),
+                      const Divider(height: 16),
+                      _SummaryRow(
+                        label: '${l.sharedInstall} ${l.acOutdoorBracket}',
+                        value: '$sharedInvoiceBrackets',
                       ),
                       const Divider(height: 16),
                       _SummaryRow(

@@ -387,8 +387,16 @@ class _JobCard extends StatelessWidget {
   final JobModel job;
   final VoidCallback onTap;
 
+  int get _displayUnits {
+    if (!job.isSharedInstall) return job.totalUnits;
+    return job.sharedContributionUnits > 0
+        ? job.sharedContributionUnits
+        : job.totalUnits;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return ArcticCard(
       onTap: onTap,
       child: Column(
@@ -426,11 +434,42 @@ class _JobCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                '${job.totalUnits} units',
+                AppFormatters.units(_displayUnits),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
+          if (job.isSharedInstall) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _DashboardInfoChip(
+                  icon: Icons.groups_rounded,
+                  label: l.sharedInstall,
+                  color: ArcticTheme.arcticBlue,
+                ),
+                _DashboardInfoChip(
+                  icon: Icons.receipt_long_rounded,
+                  label: '${l.totalOnInvoice}: ${job.sharedInvoiceTotalUnits}',
+                  color: ArcticTheme.arcticBlue,
+                ),
+                _DashboardInfoChip(
+                  icon: Icons.person_outline_rounded,
+                  label: '${l.myShare}: $_displayUnits',
+                  color: ArcticTheme.arcticSuccess,
+                ),
+                if (job.sharedInvoiceBracketCount > 0)
+                  _DashboardInfoChip(
+                    icon: Icons.hardware_outlined,
+                    label:
+                        '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                    color: ArcticTheme.arcticWarning,
+                  ),
+              ],
+            ),
+          ],
           if (job.clientContact.trim().isNotEmpty) ...[
             const SizedBox(height: 4),
             Row(
@@ -516,6 +555,43 @@ class _JobCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardInfoChip extends StatelessWidget {
+  const _DashboardInfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: color),
+          ),
         ],
       ),
     );

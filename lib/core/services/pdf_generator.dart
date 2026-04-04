@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +8,7 @@ import 'package:printing/printing.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
+import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/theme/app_fonts.dart';
 
 // ─── Brand colours (mirrors arctic_theme.dart) ───────────────────────────────
@@ -211,11 +211,14 @@ class PdfGenerator {
   }) {
     // Decode logo once; fall back to text brand if decoding fails
     pw.MemoryImage? logoImage;
+    String? logoSvg;
     if (logoBase64 != null && logoBase64.isNotEmpty) {
-      try {
-        logoImage = pw.MemoryImage(base64Decode(logoBase64));
-      } catch (_) {
-        logoImage = null;
+      final bytes = Base64ImageCodec.tryDecodeBytes(logoBase64);
+      if (bytes != null) {
+        logoSvg = Base64ImageCodec.tryDecodeSvgBytes(bytes);
+        if (logoSvg == null) {
+          logoImage = pw.MemoryImage(bytes);
+        }
       }
     }
 
@@ -228,7 +231,14 @@ class PdfGenerator {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              logoImage != null
+              logoSvg != null
+                  ? pw.SvgImage(
+                      svg: logoSvg,
+                      width: 40,
+                      height: 40,
+                      fit: pw.BoxFit.contain,
+                    )
+                  : logoImage != null
                   ? pw.Image(
                       logoImage,
                       width: 40,

@@ -13,13 +13,19 @@ class JobRepository {
   JobRepository({required this.firestore});
 
   final FirebaseFirestore firestore;
+  static const String _sharedBracketType = 'Bracket';
 
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
 
+  CollectionReference<Map<String, dynamic>> get _sharedAggregatesRef =>
+      firestore.collection(AppConstants.sharedInstallAggregatesCollection);
+
   int _unitsForType(JobModel job, String type) => job.acUnits
       .where((unit) => unit.type == type)
       .fold(0, (total, unit) => total + unit.quantity);
+
+  int _bracketCount(JobModel job) => job.charges?.bracketCount ?? 0;
 
   String _safeImportDocId(JobModel job) {
     final invoice = InvoiceUtils.normalize(job.invoiceNumber).toLowerCase();
@@ -29,12 +35,126 @@ class JobRepository {
     return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
   }
 
+  String _sharedAggregateDocId(String groupKey) {
+    final safe = groupKey.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    final scoped =
+        'shared_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
+    return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
+  }
+
+  int _readAggregateInt(Map<String, dynamic> data, String key) {
+    return (data[key] as num?)?.toInt() ?? 0;
+  }
+
+  double _readAggregateDouble(Map<String, dynamic> data, String key) {
+    return (data[key] as num?)?.toDouble() ?? 0;
+  }
+
+  void _validateSharedAggregateTotals(
+    Map<String, dynamic> aggregate,
+    JobModel job,
+    String groupKey,
+  ) {
+    if (aggregate['groupKey'] != groupKey ||
+        _readAggregateInt(aggregate, 'sharedInvoiceSplitUnits') !=
+            job.sharedInvoiceSplitUnits ||
+        _readAggregateInt(aggregate, 'sharedInvoiceWindowUnits') !=
+            job.sharedInvoiceWindowUnits ||
+        _readAggregateInt(aggregate, 'sharedInvoiceFreestandingUnits') !=
+            job.sharedInvoiceFreestandingUnits ||
+        _readAggregateInt(aggregate, 'sharedInvoiceBracketCount') !=
+            job.sharedInvoiceBracketCount ||
+        _readAggregateInt(aggregate, 'sharedDeliveryTeamCount') !=
+            job.sharedDeliveryTeamCount ||
+        (_readAggregateDouble(aggregate, 'sharedInvoiceDeliveryAmount') -
+                    job.sharedInvoiceDeliveryAmount)
+                .abs() >
+            0.01) {
+      throw JobException.sharedGroupMismatch();
+    }
+  }
+
+  Map<String, dynamic> _sharedAggregateCreateData(
+    JobModel job,
+    String groupKey,
+    int splitContribution,
+    int windowContribution,
+    int freestandingContribution,
+    int bracketContribution,
+    double deliveryContribution,
+  ) {
+    return {
+      'groupKey': groupKey,
+      'sharedInvoiceSplitUnits': job.sharedInvoiceSplitUnits,
+      'sharedInvoiceWindowUnits': job.sharedInvoiceWindowUnits,
+      'sharedInvoiceFreestandingUnits': job.sharedInvoiceFreestandingUnits,
+      'sharedInvoiceBracketCount': job.sharedInvoiceBracketCount,
+      'sharedDeliveryTeamCount': job.sharedDeliveryTeamCount,
+      'sharedInvoiceDeliveryAmount': job.sharedInvoiceDeliveryAmount,
+      'consumedSplitUnits': splitContribution,
+      'consumedWindowUnits': windowContribution,
+      'consumedFreestandingUnits': freestandingContribution,
+      'consumedBracketCount': bracketContribution,
+      'consumedDeliveryAmount': deliveryContribution,
+      'createdBy': job.techId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  Future<void> _releaseSharedAggregateReservation(
+    Transaction tx,
+    JobModel job,
+  ) async {
+    if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) return;
+
+    final aggregateRef = _sharedAggregatesRef.doc(
+      _sharedAggregateDocId(job.sharedInstallGroupKey),
+    );
+    final aggregateSnap = await tx.get(aggregateRef);
+    if (!aggregateSnap.exists) return;
+
+    final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
+    final nextConsumedSplitUnits =
+        (_readAggregateInt(aggregate, 'consumedSplitUnits') -
+                _unitsForType(job, AppConstants.unitTypeSplitAc))
+            .clamp(0, 1 << 31);
+    final nextConsumedWindowUnits =
+        (_readAggregateInt(aggregate, 'consumedWindowUnits') -
+                _unitsForType(job, AppConstants.unitTypeWindowAc))
+            .clamp(0, 1 << 31);
+    final nextConsumedFreestandingUnits =
+        (_readAggregateInt(aggregate, 'consumedFreestandingUnits') -
+                _unitsForType(job, AppConstants.unitTypeFreestandingAc))
+            .clamp(0, 1 << 31);
+    final nextConsumedBracketCount =
+        (_readAggregateInt(aggregate, 'consumedBracketCount') -
+                _bracketCount(job))
+            .clamp(0, 1 << 31);
+    final nextConsumedDeliveryAmount =
+        (_readAggregateDouble(aggregate, 'consumedDeliveryAmount') -
+                (job.charges?.deliveryAmount ?? 0))
+            .clamp(0, double.infinity);
+
+    tx.update(aggregateRef, {
+      'consumedSplitUnits': nextConsumedSplitUnits,
+      'consumedWindowUnits': nextConsumedWindowUnits,
+      'consumedFreestandingUnits': nextConsumedFreestandingUnits,
+      'consumedBracketCount': nextConsumedBracketCount,
+      'consumedDeliveryAmount': nextConsumedDeliveryAmount,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> submitJob(JobModel job) async {
     try {
       final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
       final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
           ? ''
           : InvoiceUtils.normalize(job.sharedInstallGroupKey).toLowerCase();
+      final resolvedGroupKey = normalizedGroupKey.isNotEmpty
+          ? normalizedGroupKey
+          : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
       final duplicateSnap = await _jobsRef
           .where('techId', isEqualTo: job.techId)
           .where('companyId', isEqualTo: job.companyId)
@@ -75,6 +195,11 @@ class JobRepository {
             freestandingContribution,
             job.sharedInvoiceFreestandingUnits,
           ),
+          (
+            _sharedBracketType,
+            _bracketCount(job),
+            job.sharedInvoiceBracketCount,
+          ),
         ];
 
         for (final typeLimit in typeLimits) {
@@ -88,61 +213,137 @@ class JobRepository {
             );
           }
         }
-
-        final key = normalizedGroupKey.isNotEmpty
-            ? normalizedGroupKey
-            : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
-        final sharedSnap = await _jobsRef
-            .where('sharedInstallGroupKey', isEqualTo: key)
-            .get();
-        final existingSharedJobs = sharedSnap.docs
-            .map((doc) => JobModel.fromFirestore(doc))
-            .where((entry) => entry.status != JobStatus.rejected)
-            .toList();
-
-        for (final typeLimit in typeLimits) {
-          final typeName = typeLimit.$1;
-          final contribution = typeLimit.$2;
-          final totalAllowed = typeLimit.$3;
-          if (contribution <= 0) continue;
-          final consumed = existingSharedJobs.fold<int>(
-            0,
-            (total, entry) => total + _unitsForType(entry, typeName),
-          );
-          final remaining = totalAllowed - consumed;
-          if (contribution > remaining) {
-            throw JobException.sharedTypeUnitsExceeded(
-              unitType: typeName,
-              remaining: remaining < 0 ? 0 : remaining,
-            );
-          }
-        }
-
         final invoiceDeliveryAmount = job.sharedInvoiceDeliveryAmount;
         final deliveryShare = job.charges?.deliveryAmount ?? 0;
+        if (deliveryShare > 0 && invoiceDeliveryAmount <= 0) {
+          throw JobException.sharedUnitsExceeded(remaining: 0);
+        }
         if (invoiceDeliveryAmount > 0) {
           if (job.sharedDeliveryTeamCount <= 0) {
             throw JobException.sharedDeliverySplitInvalid();
           }
-          final consumedDelivery = existingSharedJobs.fold<double>(
-            0,
-            (total, entry) => total + (entry.charges?.deliveryAmount ?? 0),
-          );
-          final remainingDelivery = invoiceDeliveryAmount - consumedDelivery;
-          if (deliveryShare - remainingDelivery > 0.01) {
-            throw JobException.sharedUnitsExceeded(
-              remaining: remainingDelivery <= 0 ? 0 : remainingDelivery.floor(),
+        }
+
+        final data = job.toFirestore();
+        data['invoiceNumber'] = normalizedInvoice;
+        data['sharedInstallGroupKey'] = resolvedGroupKey;
+        data['date'] ??= FieldValue.serverTimestamp();
+        data['submittedAt'] ??= FieldValue.serverTimestamp();
+
+        final newJobRef = _jobsRef.doc();
+        final aggregateRef = _sharedAggregatesRef.doc(
+          _sharedAggregateDocId(resolvedGroupKey),
+        );
+
+        await firestore.runTransaction((tx) async {
+          final aggregateSnap = await tx.get(aggregateRef);
+          var consumedSplitUnits = 0;
+          var consumedWindowUnits = 0;
+          var consumedFreestandingUnits = 0;
+          var consumedBracketCount = 0;
+          var consumedDeliveryAmount = 0.0;
+
+          if (aggregateSnap.exists) {
+            final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
+            _validateSharedAggregateTotals(aggregate, job, resolvedGroupKey);
+            consumedSplitUnits = _readAggregateInt(
+              aggregate,
+              'consumedSplitUnits',
+            );
+            consumedWindowUnits = _readAggregateInt(
+              aggregate,
+              'consumedWindowUnits',
+            );
+            consumedFreestandingUnits = _readAggregateInt(
+              aggregate,
+              'consumedFreestandingUnits',
+            );
+            consumedBracketCount = _readAggregateInt(
+              aggregate,
+              'consumedBracketCount',
+            );
+            consumedDeliveryAmount = _readAggregateDouble(
+              aggregate,
+              'consumedDeliveryAmount',
             );
           }
-        }
+
+          for (final typeLimit in typeLimits) {
+            final typeName = typeLimit.$1;
+            final contribution = typeLimit.$2;
+            final totalAllowed = typeLimit.$3;
+            if (contribution <= 0) continue;
+            final consumed = switch (typeName) {
+              AppConstants.unitTypeSplitAc => consumedSplitUnits,
+              AppConstants.unitTypeWindowAc => consumedWindowUnits,
+              AppConstants.unitTypeFreestandingAc => consumedFreestandingUnits,
+              _sharedBracketType => consumedBracketCount,
+              _ => 0,
+            };
+            final remaining = totalAllowed - consumed;
+            if (contribution > remaining) {
+              throw JobException.sharedTypeUnitsExceeded(
+                unitType: typeName,
+                remaining: remaining < 0 ? 0 : remaining,
+              );
+            }
+          }
+
+          if (invoiceDeliveryAmount > 0) {
+            final remainingDelivery =
+                invoiceDeliveryAmount - consumedDeliveryAmount;
+            if (deliveryShare - remainingDelivery > 0.01) {
+              throw JobException.sharedUnitsExceeded(
+                remaining: remainingDelivery <= 0
+                    ? 0
+                    : remainingDelivery.floor(),
+              );
+            }
+          }
+
+          final nextConsumedSplitUnits = consumedSplitUnits + splitContribution;
+          final nextConsumedWindowUnits =
+              consumedWindowUnits + windowContribution;
+          final nextConsumedFreestandingUnits =
+              consumedFreestandingUnits + freestandingContribution;
+          final nextConsumedBracketCount =
+              consumedBracketCount + _bracketCount(job);
+          final nextConsumedDeliveryAmount =
+              consumedDeliveryAmount + deliveryShare;
+
+          if (aggregateSnap.exists) {
+            tx.update(aggregateRef, {
+              'consumedSplitUnits': nextConsumedSplitUnits,
+              'consumedWindowUnits': nextConsumedWindowUnits,
+              'consumedFreestandingUnits': nextConsumedFreestandingUnits,
+              'consumedBracketCount': nextConsumedBracketCount,
+              'consumedDeliveryAmount': nextConsumedDeliveryAmount,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          } else {
+            tx.set(
+              aggregateRef,
+              _sharedAggregateCreateData(
+                job,
+                resolvedGroupKey,
+                splitContribution,
+                windowContribution,
+                freestandingContribution,
+                _bracketCount(job),
+                deliveryShare,
+              ),
+            );
+          }
+
+          tx.set(newJobRef, data);
+        });
+        return;
       }
 
       final data = job.toFirestore();
       data['invoiceNumber'] = normalizedInvoice;
       if (job.isSharedInstall) {
-        data['sharedInstallGroupKey'] = normalizedGroupKey.isNotEmpty
-            ? normalizedGroupKey
-            : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
+        data['sharedInstallGroupKey'] = resolvedGroupKey;
       }
       data['date'] ??= FieldValue.serverTimestamp();
       data['submittedAt'] ??= FieldValue.serverTimestamp();
@@ -190,15 +391,12 @@ class JobRepository {
           'approvedBy': adminUid,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(
-          _jobsRef.doc(jobId).collection('history').doc(),
-          {
-            'changedBy': adminUid,
-            'changedAt': FieldValue.serverTimestamp(),
-            'previousStatus': prevStatus,
-            'newStatus': 'approved',
-          },
-        );
+        tx.set(_jobsRef.doc(jobId).collection('history').doc(), {
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': prevStatus,
+          'newStatus': 'approved',
+        });
       });
     } on FirebaseException catch (e) {
       debugPrint('approveJob error: ${e.code} — ${e.message}');
@@ -214,21 +412,24 @@ class JobRepository {
       await firestore.runTransaction((tx) async {
         final snap = await tx.get(_jobsRef.doc(jobId));
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        final job = JobModel.fromFirestore(snap);
+
+        if (job.isSharedInstall && prevStatus != 'rejected') {
+          await _releaseSharedAggregateReservation(tx, job);
+        }
+
         tx.update(_jobsRef.doc(jobId), {
           'status': 'rejected',
           'approvedBy': adminUid,
           'adminNote': reason,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(
-          _jobsRef.doc(jobId).collection('history').doc(),
-          {
-            'changedBy': adminUid,
-            'changedAt': FieldValue.serverTimestamp(),
-            'previousStatus': prevStatus,
-            'newStatus': 'rejected',
-          },
-        );
+        tx.set(_jobsRef.doc(jobId).collection('history').doc(), {
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': prevStatus,
+          'newStatus': 'rejected',
+        });
       });
     } on FirebaseException catch (e) {
       debugPrint('rejectJob error: ${e.code} — ${e.message}');

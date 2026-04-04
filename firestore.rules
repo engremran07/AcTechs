@@ -76,10 +76,20 @@ service cloud.firestore {
         request.resource.data.sharedInvoiceWindowUnits >= 0 &&
         request.resource.data.sharedInvoiceFreestandingUnits is int &&
         request.resource.data.sharedInvoiceFreestandingUnits >= 0 &&
+        request.resource.data.sharedInvoiceBracketCount is int &&
+        request.resource.data.sharedInvoiceBracketCount >= 0 &&
         request.resource.data.sharedDeliveryTeamCount is int &&
         request.resource.data.sharedDeliveryTeamCount >= 0 &&
         request.resource.data.sharedInvoiceDeliveryAmount is number &&
-        request.resource.data.sharedInvoiceDeliveryAmount >= 0;
+        request.resource.data.sharedInvoiceDeliveryAmount >= 0 &&
+        request.resource.data.techSplitShare is int &&
+        request.resource.data.techSplitShare >= 0 &&
+        request.resource.data.techWindowShare is int &&
+        request.resource.data.techWindowShare >= 0 &&
+        request.resource.data.techFreestandingShare is int &&
+        request.resource.data.techFreestandingShare >= 0 &&
+        request.resource.data.techBracketShare is int &&
+        request.resource.data.techBracketShare >= 0;
     }
 
     function validJobCreatePayload() {
@@ -102,6 +112,76 @@ service cloud.firestore {
       request.resource.data.expenses is number &&
       request.resource.data.expenses >= 0 &&
       request.resource.data.expenses <= 1000000;
+    }
+
+    function validSharedAggregatePayload() {
+      return request.resource.data.keys().hasOnly([
+        'groupKey',
+        'sharedInvoiceSplitUnits',
+        'sharedInvoiceWindowUnits',
+        'sharedInvoiceFreestandingUnits',
+        'sharedInvoiceBracketCount',
+        'sharedDeliveryTeamCount',
+        'sharedInvoiceDeliveryAmount',
+        'consumedSplitUnits',
+        'consumedWindowUnits',
+        'consumedFreestandingUnits',
+        'consumedBracketCount',
+        'consumedDeliveryAmount',
+        'createdBy',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      request.resource.data.groupKey is string &&
+      request.resource.data.groupKey.size() > 0 &&
+      request.resource.data.sharedInvoiceSplitUnits is int &&
+      request.resource.data.sharedInvoiceSplitUnits >= 0 &&
+      request.resource.data.sharedInvoiceWindowUnits is int &&
+      request.resource.data.sharedInvoiceWindowUnits >= 0 &&
+      request.resource.data.sharedInvoiceFreestandingUnits is int &&
+      request.resource.data.sharedInvoiceFreestandingUnits >= 0 &&
+      request.resource.data.sharedInvoiceBracketCount is int &&
+      request.resource.data.sharedInvoiceBracketCount >= 0 &&
+      request.resource.data.sharedDeliveryTeamCount is int &&
+      request.resource.data.sharedDeliveryTeamCount >= 0 &&
+      request.resource.data.sharedInvoiceDeliveryAmount is number &&
+      request.resource.data.sharedInvoiceDeliveryAmount >= 0 &&
+      request.resource.data.consumedSplitUnits is int &&
+      request.resource.data.consumedSplitUnits >= 0 &&
+      request.resource.data.consumedSplitUnits <= request.resource.data.sharedInvoiceSplitUnits &&
+      request.resource.data.consumedWindowUnits is int &&
+      request.resource.data.consumedWindowUnits >= 0 &&
+      request.resource.data.consumedWindowUnits <= request.resource.data.sharedInvoiceWindowUnits &&
+      request.resource.data.consumedFreestandingUnits is int &&
+      request.resource.data.consumedFreestandingUnits >= 0 &&
+      request.resource.data.consumedFreestandingUnits <= request.resource.data.sharedInvoiceFreestandingUnits &&
+      request.resource.data.consumedBracketCount is int &&
+      request.resource.data.consumedBracketCount >= 0 &&
+      request.resource.data.consumedBracketCount <= request.resource.data.sharedInvoiceBracketCount &&
+      request.resource.data.consumedDeliveryAmount is number &&
+      request.resource.data.consumedDeliveryAmount >= 0 &&
+      request.resource.data.consumedDeliveryAmount <= request.resource.data.sharedInvoiceDeliveryAmount + 0.01 &&
+      request.resource.data.createdBy is string &&
+      request.resource.data.createdAt is timestamp &&
+      request.resource.data.updatedAt is timestamp;
+    }
+
+    function validSharedAggregateUpdate() {
+      return validSharedAggregatePayload() &&
+        request.resource.data.groupKey == resource.data.groupKey &&
+        request.resource.data.sharedInvoiceSplitUnits == resource.data.sharedInvoiceSplitUnits &&
+        request.resource.data.sharedInvoiceWindowUnits == resource.data.sharedInvoiceWindowUnits &&
+        request.resource.data.sharedInvoiceFreestandingUnits == resource.data.sharedInvoiceFreestandingUnits &&
+        request.resource.data.sharedInvoiceBracketCount == resource.data.sharedInvoiceBracketCount &&
+        request.resource.data.sharedDeliveryTeamCount == resource.data.sharedDeliveryTeamCount &&
+        request.resource.data.sharedInvoiceDeliveryAmount == resource.data.sharedInvoiceDeliveryAmount &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.consumedSplitUnits >= resource.data.consumedSplitUnits &&
+        request.resource.data.consumedWindowUnits >= resource.data.consumedWindowUnits &&
+        request.resource.data.consumedFreestandingUnits >= resource.data.consumedFreestandingUnits &&
+        request.resource.data.consumedBracketCount >= resource.data.consumedBracketCount &&
+        request.resource.data.consumedDeliveryAmount >= resource.data.consumedDeliveryAmount;
     }
 
     // Helper: check if caller is the document owner
@@ -167,11 +247,13 @@ service cloud.firestore {
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceBracketCount',
           'sharedDeliveryTeamCount',
           'sharedInvoiceDeliveryAmount',
           'techSplitShare',
           'techWindowShare',
           'techFreestandingShare',
+          'techBracketShare',
           'charges',
           'date',
           'submittedAt',
@@ -182,6 +264,24 @@ service cloud.firestore {
 
       allow delete: if isAdmin() ||
         (isAuth() && resource.data.techId == request.auth.uid);
+    }
+
+    match /shared_install_aggregates/{aggregateId} {
+      allow get: if isAuth();
+      allow list: if false;
+
+      allow create: if isAdmin() || (
+        isAuth() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        validSharedAggregatePayload()
+      );
+
+      allow update: if isAdmin() || (
+        isAuth() &&
+        validSharedAggregateUpdate()
+      );
+
+      allow delete: if isAdmin();
     }
 
     // ─── Expenses ───
