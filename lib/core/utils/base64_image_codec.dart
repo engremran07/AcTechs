@@ -8,6 +8,9 @@ import 'dart:typed_data';
 class Base64ImageCodec {
   const Base64ImageCodec._();
 
+  // Keep logo payloads small enough for Firestore documents on the free tier.
+  static const int recommendedMaxLogoBytes = 180 * 1024;
+
   static String encode(Uint8List bytes) => base64Encode(bytes);
 
   static Uint8List decode(String value) => base64Decode(value);
@@ -36,5 +39,9 @@ class Base64ImageCodec {
     final bytes = tryDecodeBytes(value);
     if (bytes == null) return null;
     return tryDecodeSvgBytes(bytes);
+  }
+
+  static bool isWithinRecommendedLogoLimit(Uint8List bytes) {
+    return bytes.lengthInBytes <= recommendedMaxLogoBytes;
   }
 }

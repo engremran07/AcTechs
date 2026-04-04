@@ -5,6 +5,7 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -15,6 +16,7 @@ import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 
 /// Unified daily In/Out screen — techs add earnings (IN) and expenses (OUT)
@@ -646,6 +648,12 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         reportDate: normalizedRange?.start ?? normalizedMonth,
         periodLabel: periodLabel,
         monthlyMode: true,
+        reportBranding: ReportBrandingContext.fromAppBranding(
+          appBranding:
+              ref.read(appBrandingProvider).value ??
+              AppBrandingConfig.defaults(),
+          fallbackServiceName: l.ambiguousCompanyName,
+        ),
       );
 
       final personToken = AppFormatters.slugify(personName).isEmpty

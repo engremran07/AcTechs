@@ -50,6 +50,14 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       if (result == null) return;
                       final bytes = result.files.first.bytes;
                       if (bytes == null) return;
+                      if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
+                        bytes,
+                      )) {
+                        if (ctx.mounted) {
+                          AppFeedback.error(ctx, message: l.logoTooLarge);
+                        }
+                        return;
+                      }
                       setDialogState(
                         () => pendingLogo = Base64ImageCodec.encode(bytes),
                       );

@@ -23,17 +23,11 @@ class AcInstallRepository {
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
     return _ref
         .where('techId', isEqualTo: techId)
-        .where(
-          'date',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-        )
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map(AcInstallModel.fromFirestore).toList(),
-        );
+        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
   }
 
   /// Stream of all AC install records for a technician (for monthly summaries).
@@ -42,10 +36,7 @@ class AcInstallRepository {
         .where('techId', isEqualTo: techId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map(AcInstallModel.fromFirestore).toList(),
-        );
+        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
   }
 
   /// Admin: stream of all pending AC install records.
@@ -54,10 +45,7 @@ class AcInstallRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map(AcInstallModel.fromFirestore).toList(),
-        );
+        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
   }
 
   Future<void> addInstall(AcInstallModel install) async {

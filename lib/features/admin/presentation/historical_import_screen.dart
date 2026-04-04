@@ -120,7 +120,9 @@ class _HistoricalImportScreenState
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: ArcticTheme.arcticDivider),
+                            border: Border.all(
+                              color: ArcticTheme.arcticDivider,
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: isRtl
@@ -582,7 +584,9 @@ class _HistoricalImportScreenState
                           return Text(
                             progress,
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: ArcticTheme.arcticTextSecondary),
+                                ?.copyWith(
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
                           );
                         },
                       ),

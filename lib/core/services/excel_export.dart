@@ -4,20 +4,63 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 
 /// Helper service for generating Excel exports of jobs, earnings, and expenses.
 class ExcelExport {
   ExcelExport._();
 
+  static void _appendReportBrandingHeader({
+    required excel_pkg.Sheet sheet,
+    required String reportTitle,
+    ReportBrandingContext? reportBranding,
+  }) {
+    final serviceCompany = reportBranding?.serviceCompany;
+    final clientCompany = reportBranding?.clientCompany;
+    final serviceName = serviceCompany?.name.trim().isNotEmpty ?? false
+        ? serviceCompany!.name.trim()
+        : AppConstants.appName;
+
+    sheet.appendRow([excel_pkg.TextCellValue(reportTitle)]);
+    sheet.appendRow([
+      excel_pkg.TextCellValue('Service Company'),
+      excel_pkg.TextCellValue(serviceName),
+    ]);
+    if (serviceCompany?.phoneNumber.trim().isNotEmpty ?? false) {
+      sheet.appendRow([
+        excel_pkg.TextCellValue('Service Phone'),
+        excel_pkg.TextCellValue(serviceCompany!.phoneNumber.trim()),
+      ]);
+    }
+    if (clientCompany?.name.trim().isNotEmpty ?? false) {
+      sheet.appendRow([
+        excel_pkg.TextCellValue('Client Company'),
+        excel_pkg.TextCellValue(clientCompany!.name.trim()),
+      ]);
+    }
+    sheet.appendRow([
+      excel_pkg.TextCellValue('Generated At'),
+      excel_pkg.TextCellValue(AppFormatters.dateTime(DateTime.now())),
+    ]);
+    sheet.appendRow([excel_pkg.TextCellValue('')]);
+  }
+
   /// Export jobs to Excel with bracket/delivery details.
   static Future<void> exportJobsToExcel({
     required List<JobModel> jobs,
     String? technicianName,
+    ReportBrandingContext? reportBranding,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
     excelFile.delete('Sheet1'); // Remove default Sheet1
     final sheet = excelFile['Jobs'];
+
+    _appendReportBrandingHeader(
+      sheet: sheet,
+      reportTitle: 'Jobs Report',
+      reportBranding: reportBranding,
+    );
 
     // Headers
     sheet.appendRow([
@@ -209,10 +252,17 @@ class ExcelExport {
   static Future<void> exportEarningsToExcel({
     required List<EarningModel> earnings,
     String? technicianName,
+    ReportBrandingContext? reportBranding,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
     excelFile.delete('Sheet1'); // Remove default Sheet1
     final sheet = excelFile['Earnings'];
+
+    _appendReportBrandingHeader(
+      sheet: sheet,
+      reportTitle: 'Earnings Report',
+      reportBranding: reportBranding,
+    );
 
     // Headers
     sheet.appendRow([
@@ -252,12 +302,18 @@ class ExcelExport {
   static Future<void> exportExpensesToExcel({
     required List<ExpenseModel> expenses,
     String? technicianName,
+    ReportBrandingContext? reportBranding,
   }) async {
     final excelFile = excel_pkg.Excel.createExcel();
     excelFile.delete('Sheet1'); // Remove default Sheet1
 
     // Work sheet
     final workSheet = excelFile['Work Expenses'];
+    _appendReportBrandingHeader(
+      sheet: workSheet,
+      reportTitle: 'Expenses Report',
+      reportBranding: reportBranding,
+    );
     workSheet.appendRow([
       excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
@@ -291,6 +347,11 @@ class ExcelExport {
 
     // Home sheet
     final homeSheet = excelFile['Home Expenses'];
+    _appendReportBrandingHeader(
+      sheet: homeSheet,
+      reportTitle: 'Expenses Report',
+      reportBranding: reportBranding,
+    );
     homeSheet.appendRow([
       excel_pkg.TextCellValue('Item'),
       excel_pkg.TextCellValue('Amount (SAR)'),
@@ -324,6 +385,11 @@ class ExcelExport {
 
     // Summary sheet
     final summarySheet = excelFile['Summary'];
+    _appendReportBrandingHeader(
+      sheet: summarySheet,
+      reportTitle: 'Expenses Summary',
+      reportBranding: reportBranding,
+    );
     final now = DateTime.now();
     final todaysWork = workExpenses
         .where(

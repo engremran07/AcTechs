@@ -230,6 +230,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   Future<void> _showJobVerificationDialog(
     JobModel job, {
     required int groupSize,
+    bool allowActions = true,
   }) async {
     final l = AppLocalizations.of(context)!;
     await showDialog<void>(
@@ -241,17 +242,22 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('${l.technician}: ${job.techName}'),
+            Text('${l.technicianUidLabel}: ${job.techId}'),
             Text('${l.client}: ${job.clientName}'),
             Text('${l.totalUnits}: ${job.totalUnits}'),
             if (job.isSharedInstall)
               Text(
                 '${l.sharedInstall}: ${l.totalOnInvoice} ${AppFormatters.units(job.sharedInvoiceTotalUnits)} • ${l.myShare} ${AppFormatters.units(_jobContributionUnits(job))}',
               ),
+            if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty)
+              Text('${l.sharedGroup}: ${job.sharedInstallGroupKey}'),
             if (job.isSharedInstall && job.sharedInvoiceBracketCount > 0)
               Text(
                 '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
               ),
             if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
+            if ((job.approvedBy ?? '').trim().isNotEmpty)
+              Text('${l.approverUidLabel}: ${job.approvedBy!.trim()}'),
             if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
           ],
         ),
@@ -260,30 +266,32 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(l.cancel),
           ),
-          OutlinedButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              final reason = await _promptRejectionReason(context);
-              if (reason == null || reason.isEmpty) return;
-              final admin = ref.read(currentUserProvider).value;
-              if (admin == null) return;
-              await ref
-                  .read(jobRepositoryProvider)
-                  .rejectJob(job.id, admin.uid, reason);
-            },
-            child: Text(l.reject),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final admin = ref.read(currentUserProvider).value;
-              if (admin == null) return;
-              await ref
-                  .read(jobRepositoryProvider)
-                  .approveJob(job.id, admin.uid);
-              if (ctx.mounted) Navigator.of(ctx).pop();
-            },
-            child: Text(l.approve),
-          ),
+          if (allowActions)
+            OutlinedButton(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                final reason = await _promptRejectionReason(context);
+                if (reason == null || reason.isEmpty) return;
+                final admin = ref.read(currentUserProvider).value;
+                if (admin == null) return;
+                await ref
+                    .read(jobRepositoryProvider)
+                    .rejectJob(job.id, admin.uid, reason);
+              },
+              child: Text(l.reject),
+            ),
+          if (allowActions)
+            FilledButton(
+              onPressed: () async {
+                final admin = ref.read(currentUserProvider).value;
+                if (admin == null) return;
+                await ref
+                    .read(jobRepositoryProvider)
+                    .approveJob(job.id, admin.uid);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+              },
+              child: Text(l.approve),
+            ),
         ],
       ),
     );
@@ -354,6 +362,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingApprovalsProvider);
+    final allJobs = ref.watch(allJobsProvider);
     final pendingEarnings = ref.watch(pendingEarningsProvider);
     final pendingExpenses = ref.watch(pendingExpensesProvider);
     final pendingInOut =
@@ -401,6 +410,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   .where((job) => job.isSharedInstall)
                   .length;
               final sharedInvoiceUnits = _sharedInvoiceUnits(sharedGroups);
+              final approvedShared = (allJobs.value ?? const <JobModel>[])
+                  .where((job) => job.isSharedInstall && job.isApproved)
+                  .toList();
+              final approvedSharedGroups = _sharedJobGroups(approvedShared);
+              final filteredApprovedShared = _filter(approvedShared);
               _selected.removeWhere((id) => !filtered.any((j) => j.id == id));
 
               return Column(
@@ -503,7 +517,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                         ),
                       ),
                     ),
-                  if (filtered.isEmpty && pendingInOut.isEmpty)
+                  if (filtered.isEmpty &&
+                      pendingInOut.isEmpty &&
+                      filteredApprovedShared.isEmpty)
                     Expanded(
                       child: Center(
                         child: Column(
@@ -631,6 +647,94 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                   .fadeIn()
                                   .slideX(begin: 0.05);
                             }),
+                            if (filteredApprovedShared.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.approvedSharedInstalls,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                              ...filteredApprovedShared.map((job) {
+                                final approvedGroupSize =
+                                    approvedSharedGroups[job
+                                            .sharedInstallGroupKey]
+                                        ?.length ??
+                                    1;
+                                return ArcticCard(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  onTap: () => _showJobVerificationDialog(
+                                    job,
+                                    groupSize: approvedGroupSize,
+                                    allowActions: false,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        job.techName,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 6,
+                                        children: [
+                                          Chip(
+                                            label: Text(
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.sharedInstall,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelSmall,
+                                            ),
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                          Chip(
+                                            label: Text(
+                                              '${AppLocalizations.of(context)!.myShare}: ${AppFormatters.units(_jobContributionUnits(job))}',
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelSmall,
+                                            ),
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                          Chip(
+                                            label: Text(
+                                              '${AppLocalizations.of(context)!.sharedGroup}: ${job.sharedInstallGroupKey}',
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelSmall,
+                                            ),
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
                           ],
                         ),
                       ),

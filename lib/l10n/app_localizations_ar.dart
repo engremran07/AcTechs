@@ -834,6 +834,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ambiguousCompanyName => 'أمبيغوس';
 
   @override
+  String get companyPhoneNumber => 'رقم هاتف الشركة';
+
+  @override
   String get invoicePrefix => 'بادئة الفاتورة';
 
   @override
@@ -871,6 +874,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get manageLogoAndBranding => 'إدارة الشعار وهوية الشركة';
+
+  @override
+  String get editOwnCompanyBranding => 'تعديل هوية AC Techs';
+
+  @override
+  String get manageClientCompanyBranding => 'إدارة هوية شركات العملاء';
+
+  @override
+  String get ownCompanyBrandingUpdated => 'تم تحديث هوية AC Techs بنجاح!';
 
   @override
   String get workExpenses => 'مصروفات العمل';
@@ -1363,6 +1375,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get technicianLabel => 'الفني';
 
   @override
+  String get technicianUidLabel => 'معرّف الفني';
+
+  @override
+  String get approverUidLabel => 'معرّف الموافق';
+
+  @override
+  String get sharedGroup => 'مجموعة التركيب المشترك';
+
+  @override
+  String get approvedSharedInstalls => 'التركيبات المشتركة الموافق عليها';
+
+  @override
   String get contactLabel => 'الاتصال';
 
   @override
@@ -1459,6 +1483,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'اضغط لتحميل الشعار';
+
+  @override
+  String get logoTooLarge =>
+      'الشعار كبير جداً. استخدم صورة أصغر للحفاظ على مساحة Firestore نظيفة.';
 
   @override
   String get removeLogo => 'إزالة الشعار';

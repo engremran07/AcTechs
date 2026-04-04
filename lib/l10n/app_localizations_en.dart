@@ -834,7 +834,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyName => 'Company Name';
 
   @override
-  String get ambiguousCompanyName => 'Ambigous';
+  String get ambiguousCompanyName => 'Ambiguous';
+
+  @override
+  String get companyPhoneNumber => 'Company Phone Number';
 
   @override
   String get invoicePrefix => 'Invoice Prefix';
@@ -874,6 +877,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manageLogoAndBranding => 'Manage Logo and Branding';
+
+  @override
+  String get editOwnCompanyBranding => 'Edit AC Techs Branding';
+
+  @override
+  String get manageClientCompanyBranding => 'Manage Client Company Branding';
+
+  @override
+  String get ownCompanyBrandingUpdated =>
+      'AC Techs branding updated successfully!';
 
   @override
   String get workExpenses => 'Work Expenses';
@@ -1365,6 +1378,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get technicianLabel => 'Technician';
 
   @override
+  String get technicianUidLabel => 'Technician UID';
+
+  @override
+  String get approverUidLabel => 'Approver UID';
+
+  @override
+  String get sharedGroup => 'Shared Group';
+
+  @override
+  String get approvedSharedInstalls => 'Approved Shared Installs';
+
+  @override
   String get contactLabel => 'Contact';
 
   @override
@@ -1461,6 +1486,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'Tap to upload logo';
+
+  @override
+  String get logoTooLarge =>
+      'Logo is too large. Please use a smaller image to keep Firestore storage clean.';
 
   @override
   String get removeLogo => 'Remove Logo';

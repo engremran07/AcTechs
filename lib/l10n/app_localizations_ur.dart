@@ -835,6 +835,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get ambiguousCompanyName => 'امبیگوس';
 
   @override
+  String get companyPhoneNumber => 'کمپنی کا فون نمبر';
+
+  @override
   String get invoicePrefix => 'انوائس پریفکس';
 
   @override
@@ -872,6 +875,16 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get manageLogoAndBranding => 'لوگو اور برانڈنگ مینیج کریں';
+
+  @override
+  String get editOwnCompanyBranding => 'AC Techs برانڈنگ تبدیل کریں';
+
+  @override
+  String get manageClientCompanyBranding => 'کلائنٹ کمپنی برانڈنگ مینیج کریں';
+
+  @override
+  String get ownCompanyBrandingUpdated =>
+      'AC Techs برانڈنگ کامیابی سے اپ ڈیٹ ہو گئی!';
 
   @override
   String get workExpenses => 'کام کے اخراجات';
@@ -1366,6 +1379,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get technicianLabel => 'ٹیکنیشن';
 
   @override
+  String get technicianUidLabel => 'ٹیکنیشن UID';
+
+  @override
+  String get approverUidLabel => 'منظور کرنے والے کا UID';
+
+  @override
+  String get sharedGroup => 'شیئرڈ گروپ';
+
+  @override
+  String get approvedSharedInstalls => 'منظور شدہ شیئرڈ انسٹال';
+
+  @override
   String get contactLabel => 'رابطہ';
 
   @override
@@ -1464,6 +1489,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get tapToUploadLogo => 'لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں';
+
+  @override
+  String get logoTooLarge =>
+      'لوگو بہت بڑا ہے۔ Firestore اسٹوریج صاف رکھنے کے لیے چھوٹی تصویر استعمال کریں۔';
 
   @override
   String get removeLogo => 'لوگو ہٹائیں';

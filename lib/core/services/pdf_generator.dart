@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/theme/app_fonts.dart';
@@ -29,6 +30,11 @@ class _PdfGenerationParams {
   final DateTime? toDate;
   final bool useDetails;
   final int maxPages;
+  final String serviceCompanyName;
+  final String serviceCompanyLogoBase64;
+  final String serviceCompanyPhoneNumber;
+  final String clientCompanyName;
+  final String clientCompanyLogoBase64;
 
   _PdfGenerationParams({
     required this.jobs,
@@ -39,11 +45,30 @@ class _PdfGenerationParams {
     this.toDate, // ignore: unused_element_parameter — reserved for future date range feature
     this.useDetails = false,
     this.maxPages = 2000,
+    this.serviceCompanyName = '',
+    this.serviceCompanyLogoBase64 = '',
+    this.serviceCompanyPhoneNumber = '',
+    this.clientCompanyName = '',
+    this.clientCompanyLogoBase64 = '',
   });
 }
 
 /// Top-level function for isolate PDF generation (called via compute()).
 Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
+  final reportBranding = ReportBrandingContext(
+    serviceCompany: ReportBrandIdentity(
+      name: params.serviceCompanyName,
+      logoBase64: params.serviceCompanyLogoBase64,
+      phoneNumber: params.serviceCompanyPhoneNumber,
+    ),
+    clientCompany: params.clientCompanyName.trim().isEmpty
+        ? null
+        : ReportBrandIdentity(
+            name: params.clientCompanyName,
+            logoBase64: params.clientCompanyLogoBase64,
+          ),
+  );
+
   if (params.useDetails) {
     return PdfGenerator.generateJobsDetailsReport(
       jobs: params.jobs,
@@ -53,6 +78,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
       fromDate: params.fromDate,
       toDate: params.toDate,
       maxPages: params.maxPages,
+      reportBranding: reportBranding,
     );
   } else {
     return PdfGenerator.generateJobsReport(
@@ -62,6 +88,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
       technicianName: params.technicianName,
       fromDate: params.fromDate,
       toDate: params.toDate,
+      reportBranding: reportBranding,
     );
   }
 }
@@ -197,6 +224,94 @@ class PdfGenerator {
       ? pw.TextDirection.rtl
       : pw.TextDirection.ltr;
 
+  static ({pw.MemoryImage? image, String? svg}) _decodePdfLogo(
+    String? logoBase64,
+  ) {
+    if (logoBase64 == null || logoBase64.trim().isEmpty) {
+      return (image: null, svg: null);
+    }
+
+    final bytes = Base64ImageCodec.tryDecodeBytes(logoBase64);
+    if (bytes == null) return (image: null, svg: null);
+
+    final svg = Base64ImageCodec.tryDecodeSvgBytes(bytes);
+    if (svg != null) return (image: null, svg: svg);
+
+    return (image: pw.MemoryImage(bytes), svg: null);
+  }
+
+  static pw.Widget _brandIdentityPanel({
+    required ReportBrandIdentity identity,
+    required pw.Font? font,
+    required pw.TextDirection dir,
+    required bool alignEnd,
+  }) {
+    final decodedLogo = _decodePdfLogo(identity.logoBase64);
+    final hasLogo = decodedLogo.svg != null || decodedLogo.image != null;
+    final crossAxisAlignment = alignEnd
+        ? pw.CrossAxisAlignment.end
+        : pw.CrossAxisAlignment.start;
+    final textAlign = alignEnd ? pw.TextAlign.right : pw.TextAlign.left;
+
+    final logoWidget = hasLogo
+        ? pw.Container(
+            width: 34,
+            height: 34,
+            padding: const pw.EdgeInsets.all(4),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.white,
+              borderRadius: pw.BorderRadius.circular(10),
+            ),
+            child: decodedLogo.svg != null
+                ? pw.SvgImage(svg: decodedLogo.svg!, fit: pw.BoxFit.contain)
+                : pw.Image(decodedLogo.image!, fit: pw.BoxFit.contain),
+          )
+        : null;
+
+    return pw.Row(
+      mainAxisAlignment: alignEnd
+          ? pw.MainAxisAlignment.end
+          : pw.MainAxisAlignment.start,
+      children: [
+        if (!alignEnd && logoWidget != null) logoWidget,
+        if (!alignEnd && logoWidget != null) pw.SizedBox(width: 8),
+        pw.Flexible(
+          child: pw.Column(
+            crossAxisAlignment: crossAxisAlignment,
+            children: [
+              pw.Text(
+                identity.name.trim().isEmpty
+                    ? AppConstants.appName
+                    : identity.name,
+                style: pw.TextStyle(
+                  font: font,
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _kBrandDark,
+                ),
+                textDirection: dir,
+                textAlign: textAlign,
+              ),
+              if (identity.phoneNumber.trim().isNotEmpty)
+                pw.Text(
+                  identity.phoneNumber,
+                  style: pw.TextStyle(
+                    font: font,
+                    fontSize: 7.5,
+                    color: PdfColors.grey700,
+                  ),
+                  textDirection: dir,
+                  textAlign: textAlign,
+                ),
+            ],
+          ),
+        ),
+        if (alignEnd && logoWidget != null) pw.SizedBox(width: 8),
+        if (alignEnd && logoWidget != null) logoWidget,
+      ],
+    );
+  }
+
   // ── Shared page decorators ──────────────────────────────────────────────────
 
   /// Top brand banner shown on every page of every report.
@@ -206,79 +321,86 @@ class PdfGenerator {
     required pw.Font? font,
     required pw.TextDirection dir,
     String? dateRange,
+    ReportBrandingContext? reportBranding,
     String? brandName,
     String? logoBase64,
   }) {
-    // Decode logo once; fall back to text brand if decoding fails
-    pw.MemoryImage? logoImage;
-    String? logoSvg;
-    if (logoBase64 != null && logoBase64.isNotEmpty) {
-      final bytes = Base64ImageCodec.tryDecodeBytes(logoBase64);
-      if (bytes != null) {
-        logoSvg = Base64ImageCodec.tryDecodeSvgBytes(bytes);
-        if (logoSvg == null) {
-          logoImage = pw.MemoryImage(bytes);
-        }
-      }
-    }
+    final serviceCompany =
+        reportBranding?.serviceCompany ??
+        ReportBrandIdentity(
+          name: (brandName?.trim().isNotEmpty ?? false)
+              ? brandName!.trim()
+              : AppConstants.appName,
+          logoBase64: logoBase64 ?? '',
+        );
+    final clientCompany = reportBranding?.clientCompany;
 
     return pw.Column(
       children: [
         pw.Container(
           width: double.infinity,
-          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: const pw.BoxDecoration(color: _kBrandBlue),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.grey50,
+            borderRadius: pw.BorderRadius.circular(14),
+            border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+          ),
           child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              logoSvg != null
-                  ? pw.SvgImage(
-                      svg: logoSvg,
-                      width: 40,
-                      height: 40,
-                      fit: pw.BoxFit.contain,
-                    )
-                  : logoImage != null
-                  ? pw.Image(
-                      logoImage,
-                      width: 40,
-                      height: 40,
-                      fit: pw.BoxFit.contain,
-                    )
-                  : pw.Text(
-                      brandName ?? 'AC TECHS',
+              pw.Expanded(
+                flex: 4,
+                child: _brandIdentityPanel(
+                  identity: serviceCompany,
+                  font: font,
+                  dir: dir,
+                  alignEnd: false,
+                ),
+              ),
+              pw.SizedBox(width: 12),
+              pw.Expanded(
+                flex: 5,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Text(
+                      reportTitle,
                       style: pw.TextStyle(
                         font: font,
-                        fontSize: 16,
+                        fontSize: 11,
                         fontWeight: pw.FontWeight.bold,
                         color: _kBrandDark,
                       ),
                       textDirection: dir,
+                      textAlign: pw.TextAlign.center,
                     ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text(
-                    reportTitle,
-                    style: pw.TextStyle(
-                      font: font,
-                      fontSize: 10,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _kBrandDark,
-                    ),
-                    textDirection: dir,
-                  ),
-                  if (dateRange != null)
-                    pw.Text(
-                      dateRange,
-                      style: pw.TextStyle(
-                        font: font,
-                        fontSize: 8,
-                        color: _kBrandDark,
+                    if (dateRange != null) ...[
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        dateRange,
+                        style: pw.TextStyle(
+                          font: font,
+                          fontSize: 7.5,
+                          color: PdfColors.grey700,
+                        ),
+                        textDirection: dir,
+                        textAlign: pw.TextAlign.center,
                       ),
-                      textDirection: dir,
-                    ),
-                ],
+                    ],
+                  ],
+                ),
+              ),
+              pw.SizedBox(width: 12),
+              pw.Expanded(
+                flex: 4,
+                child: clientCompany == null
+                    ? pw.SizedBox()
+                    : _brandIdentityPanel(
+                        identity: clientCompany,
+                        font: font,
+                        dir: dir,
+                        alignEnd: true,
+                      ),
               ),
             ],
           ),
@@ -293,7 +415,14 @@ class PdfGenerator {
     pw.Context ctx, {
     required pw.Font? font,
     required pw.TextDirection dir,
+    ReportBrandingContext? reportBranding,
   }) {
+    final serviceCompany = reportBranding?.serviceCompany;
+    final clientCompany = reportBranding?.clientCompany;
+    final leadText = serviceCompany == null
+        ? '${AppConstants.appName} — Confidential'
+        : '${serviceCompany.name.trim().isEmpty ? AppConstants.appName : serviceCompany.name}${serviceCompany.phoneNumber.trim().isEmpty ? '' : ' • ${serviceCompany.phoneNumber}'}';
+
     return pw.Column(
       children: [
         pw.Divider(color: PdfColors.grey300, thickness: 0.5),
@@ -301,7 +430,7 @@ class PdfGenerator {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              'AC Techs — Confidential',
+              leadText,
               style: pw.TextStyle(
                 font: font,
                 fontSize: 7,
@@ -309,6 +438,22 @@ class PdfGenerator {
               ),
               textDirection: dir,
             ),
+            if (clientCompany != null)
+              pw.Expanded(
+                child: pw.Center(
+                  child: pw.Text(
+                    clientCompany.name,
+                    style: pw.TextStyle(
+                      font: font,
+                      fontSize: 7,
+                      color: PdfColors.grey600,
+                    ),
+                    textDirection: dir,
+                  ),
+                ),
+              )
+            else
+              pw.SizedBox(),
             pw.Text(
               'Page ${ctx.pageNumber} of ${ctx.pagesCount}'
               '  |  ${AppFormatters.dateTime(DateTime.now())}',
@@ -483,6 +628,7 @@ class PdfGenerator {
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -549,8 +695,14 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: dateRange,
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           // Technician / date meta
           if (technicianName != null)
@@ -1337,6 +1489,7 @@ class PdfGenerator {
     String? reportTitle,
     String? periodLabel,
     String companyLogoBase64 = '',
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -1403,9 +1556,15 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: periodLabel ?? AppFormatters.date(today),
+          reportBranding: reportBranding,
           logoBase64: companyLogoBase64.isNotEmpty ? companyLogoBase64 : null,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           _statsBox(
             firstLabel: locale == 'ur'
@@ -1498,6 +1657,7 @@ class PdfGenerator {
     DateTime? fromDate,
     DateTime? toDate,
     int maxPages = 2000,
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -1647,9 +1807,14 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: dateRange,
-          brandName: technicianName,
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           if (technicianName != null) ...[
             pw.Text(technicianName, style: cellStyle, textDirection: dir),
@@ -1726,13 +1891,26 @@ class PdfGenerator {
                     : (j.charges != null
                           ? AppFormatters.safeText(j.charges!.deliveryNote)
                           : '');
-                final description = [baseDescription, uninstallDetail]
-                    .where((p) => p.isNotEmpty)
-                    .join(
-                      baseDescription.isNotEmpty && uninstallDetail.isNotEmpty
-                          ? ' | '
-                          : '',
-                    );
+                final sharedInstallDescription = j.isSharedInstall
+                    ? (locale == 'ur'
+                          ? 'شیئرڈ: ${j.techName}'
+                          : locale == 'ar'
+                          ? 'مشترك: ${j.techName}'
+                          : 'Shared: ${j.techName}')
+                    : '';
+                final description =
+                    [baseDescription, sharedInstallDescription, uninstallDetail]
+                        .where((p) => p.isNotEmpty)
+                        .join(
+                          [
+                                    baseDescription,
+                                    sharedInstallDescription,
+                                    uninstallDetail,
+                                  ].where((p) => p.isNotEmpty).length >
+                                  1
+                              ? ' | '
+                              : '',
+                        );
                 return [
                   AppFormatters.date(j.date),
                   _safeTableCellText(j.invoiceNumber, maxLength: 24),
@@ -2063,6 +2241,7 @@ class PdfGenerator {
     DateTime? reportDate,
     String? periodLabel,
     bool monthlyMode = false,
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -2268,8 +2447,14 @@ class PdfGenerator {
               (monthlyMode
                   ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
                   : AppFormatters.date(periodDate)),
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           if (technicianName != null) ...[
             pw.Text(technicianName, style: cellStyle, textDirection: dir),
@@ -2321,6 +2506,7 @@ class PdfGenerator {
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -2378,8 +2564,14 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: dateRange,
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           if (technicianName != null) ...[
             pw.Text(technicianName, style: subStyle, textDirection: dir),
@@ -2492,6 +2684,7 @@ class PdfGenerator {
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
+    ReportBrandingContext? reportBranding,
   }) async {
     const workExpenseType = 'work';
     final font = await _getLocaleFont(locale);
@@ -2575,8 +2768,14 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: dateRange,
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           if (technicianName != null) ...[
             pw.Text(technicianName, style: cellStyle, textDirection: dir),
@@ -2871,6 +3070,7 @@ class PdfGenerator {
     BuildContext context,
     List<JobModel> jobs,
     String locale,
+    ReportBrandingContext? reportBranding,
   ) async {
     if (!context.mounted) return;
 
@@ -2891,6 +3091,7 @@ class PdfGenerator {
           locale: locale,
           useDetails: true,
           maxPages: 2000,
+          reportBranding: reportBranding,
         );
       } else {
         // Small reports can be generated on main thread
@@ -2899,6 +3100,7 @@ class PdfGenerator {
           maxPages: 2000,
           title: reportTitle,
           locale: locale,
+          reportBranding: reportBranding,
         );
       }
     } catch (_) {
@@ -2909,6 +3111,7 @@ class PdfGenerator {
           title: reportTitle,
           locale: locale,
           useDetails: false,
+          reportBranding: reportBranding,
         );
       } else {
         // Fallback for small reports
@@ -2916,6 +3119,7 @@ class PdfGenerator {
           jobs: jobs,
           title: reportTitle,
           locale: locale,
+          reportBranding: reportBranding,
         );
       }
     }
@@ -2932,6 +3136,7 @@ class PdfGenerator {
     required String locale,
     required bool useDetails,
     int maxPages = 2000,
+    ReportBrandingContext? reportBranding,
   }) async {
     return compute(
       _isolatePdfGeneration,
@@ -2941,6 +3146,14 @@ class PdfGenerator {
         locale: locale,
         useDetails: useDetails,
         maxPages: maxPages,
+        serviceCompanyName: reportBranding?.serviceCompany.name ?? '',
+        serviceCompanyLogoBase64:
+            reportBranding?.serviceCompany.logoBase64 ?? '',
+        serviceCompanyPhoneNumber:
+            reportBranding?.serviceCompany.phoneNumber ?? '',
+        clientCompanyName: reportBranding?.clientCompany?.name ?? '',
+        clientCompanyLogoBase64:
+            reportBranding?.clientCompany?.logoBase64 ?? '',
       ),
     );
   }

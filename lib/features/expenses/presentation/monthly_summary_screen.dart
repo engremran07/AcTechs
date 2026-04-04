@@ -5,11 +5,14 @@ import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
@@ -225,7 +228,10 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
   }
 
   String _monthLabel() {
-    return AppFormatters.monthLabel(AppLocalizations.of(context)!, _selectedMonth);
+    return AppFormatters.monthLabel(
+      AppLocalizations.of(context)!,
+      _selectedMonth,
+    );
   }
 
   DateTimeRange _activeExportRange() =>
@@ -303,6 +309,52 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     }).toList();
   }
 
+  ReportBrandingContext _appOnlyReportBranding(AppLocalizations l) {
+    final appBranding =
+        ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
+    return ReportBrandingContext.fromAppBranding(
+      appBranding: appBranding,
+      fallbackServiceName: l.ambiguousCompanyName,
+    );
+  }
+
+  ReportBrandingContext _jobsReportBranding(
+    AppLocalizations l,
+    List<JobModel> jobs,
+  ) {
+    final appBranding =
+        ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
+    final companies = ref.read(activeCompaniesProvider).value ?? const [];
+    final companyKeys = jobs
+        .map(
+          (job) => job.companyId.trim().isNotEmpty ? job.companyId.trim() : '',
+        )
+        .where((key) => key.isNotEmpty)
+        .toSet();
+
+    final clientCompany = companyKeys.length == 1
+        ? companies
+              .where((company) => company.id == companyKeys.first)
+              .firstOrNull
+        : null;
+    final fallbackClientName =
+        jobs
+                .map((job) => job.companyName.trim())
+                .where((name) => name.isNotEmpty)
+                .toSet()
+                .length ==
+            1
+        ? jobs.first.companyName.trim()
+        : null;
+
+    return ReportBrandingContext.fromAppBranding(
+      appBranding: appBranding,
+      fallbackServiceName: l.ambiguousCompanyName,
+      clientCompany: clientCompany,
+      fallbackClientName: fallbackClientName,
+    );
+  }
+
   Future<void> _exportJobsPdf() async {
     setState(() => _isExportingPdf = true);
     final l = AppLocalizations.of(context)!;
@@ -323,6 +375,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
         technicianName: user?.name,
         fromDate: range.start,
         toDate: range.end,
+        reportBranding: _jobsReportBranding(l, jobs),
       );
       await PdfGenerator.sharePdfBytes(
         bytes,
@@ -356,6 +409,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
         technicianName: user?.name,
         fromDate: range.start,
         toDate: range.end,
+        reportBranding: _appOnlyReportBranding(l),
       );
       await PdfGenerator.sharePdfBytes(
         bytes,
@@ -389,6 +443,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
         technicianName: user?.name,
         fromDate: range.start,
         toDate: range.end,
+        reportBranding: _appOnlyReportBranding(l),
       );
       await PdfGenerator.sharePdfBytes(
         bytes,
@@ -415,6 +470,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       await ExcelExport.exportJobsToExcel(
         jobs: jobs,
         technicianName: user?.name,
+        reportBranding: _jobsReportBranding(l, jobs),
       );
     } catch (_) {
       if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
@@ -441,6 +497,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       await ExcelExport.exportEarningsToExcel(
         earnings: earnings,
         technicianName: user?.name,
+        reportBranding: _appOnlyReportBranding(l),
       );
     } catch (_) {
       if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);
@@ -467,6 +524,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
       await ExcelExport.exportExpensesToExcel(
         expenses: expenses,
         technicianName: user?.name,
+        reportBranding: _appOnlyReportBranding(l),
       );
     } catch (_) {
       if (mounted) ErrorSnackbar.show(context, message: l.couldNotExport);

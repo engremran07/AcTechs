@@ -4,4 +4,5 @@ export 'expense_model.dart';
 export 'earning_model.dart';
 export 'ac_install_model.dart';
 export 'company_model.dart';
+export 'app_branding_config.dart';
 export 'app_exception.dart';

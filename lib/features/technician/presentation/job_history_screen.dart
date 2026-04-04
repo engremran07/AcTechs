@@ -12,11 +12,14 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 
 enum _JobsReportPeriodType { month, range }
 
@@ -48,6 +51,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   late final TabController _tabController;
   String _search = '';
   String _statusFilter = 'all';
+  String _sharedInstallFilter = 'all';
   bool _sortNewest = true;
   bool _isExportingExcel = false;
   String _periodFilter = 'all';
@@ -121,6 +125,45 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     if (_periodFilter == 'today') return l.today;
     if (_periodFilter == 'month') return l.thisMonth;
     return '${AppFormatters.date(range.start)} - ${AppFormatters.date(range.end)}';
+  }
+
+  ReportBrandingContext _jobsReportBranding(
+    AppLocalizations l, {
+    required List<JobModel> jobs,
+    String? companyKey,
+    String? companyName,
+  }) {
+    final appBranding =
+        ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
+    final companies = ref.read(activeCompaniesProvider).value ?? const [];
+
+    var resolvedCompanyKey = companyKey ?? '';
+    var resolvedCompanyName = companyName ?? '';
+
+    if ((resolvedCompanyKey.isEmpty || resolvedCompanyKey == '__all__') &&
+        jobs.isNotEmpty) {
+      final companyKeys = jobs.map(_jobCompanyKey).toSet();
+      if (companyKeys.length == 1) {
+        resolvedCompanyKey = companyKeys.first;
+        resolvedCompanyName = _jobCompanyName(l, jobs.first);
+      }
+    }
+
+    final clientCompany =
+        resolvedCompanyKey.isEmpty ||
+            resolvedCompanyKey == '__all__' ||
+            resolvedCompanyKey == '__no_company__'
+        ? null
+        : companies
+              .where((company) => company.id == resolvedCompanyKey)
+              .firstOrNull;
+
+    return ReportBrandingContext.fromAppBranding(
+      appBranding: appBranding,
+      fallbackServiceName: l.ambiguousCompanyName,
+      clientCompany: clientCompany,
+      fallbackClientName: resolvedCompanyName,
+    );
   }
 
   List<DateTime> _jobsReportMonths(List<JobModel> jobs) {
@@ -455,6 +498,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         fromDate: fromDate,
         toDate: toDate,
         maxPages: 2000,
+        reportBranding: _jobsReportBranding(
+          l,
+          jobs: filtered,
+          companyKey: options.companyKey,
+          companyName: options.companyName,
+        ),
       );
 
       final personToken = AppFormatters.slugify(personName).isEmpty
@@ -510,13 +559,18 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
           .where(
             (j) =>
                 j.clientName.toLowerCase().contains(q) ||
-                j.invoiceNumber.toLowerCase().contains(q),
+                j.invoiceNumber.toLowerCase().contains(q) ||
+                j.sharedInstallGroupKey.toLowerCase().contains(q),
           )
           .toList();
     }
 
     if (_statusFilter != 'all') {
       filtered = filtered.where((j) => j.status.name == _statusFilter).toList();
+    }
+
+    if (_sharedInstallFilter == 'shared') {
+      filtered = filtered.where((j) => j.isSharedInstall).toList();
     }
 
     filtered.sort((a, b) {
@@ -627,6 +681,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         final pendingCount = jobList.where((j) => j.isPending).length;
         final approvedCount = jobList.where((j) => j.isApproved).length;
         final rejectedCount = jobList.where((j) => j.isRejected).length;
+        final sharedCount = jobList.where((j) => j.isSharedInstall).length;
         final filtered = _applyFilters(jobList);
         final totalUnits = filtered.fold<int>(
           0,
@@ -690,6 +745,29 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                 rejectedCount: rejectedCount,
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: Text(l.all),
+                    selected: _sharedInstallFilter == 'all',
+                    onSelected: (_) =>
+                        setState(() => _sharedInstallFilter = 'all'),
+                  ),
+                  ChoiceChip(
+                    avatar: const Icon(Icons.groups_rounded, size: 16),
+                    label: Text('${l.sharedInstall} ($sharedCount)'),
+                    selected: _sharedInstallFilter == 'shared',
+                    onSelected: (_) =>
+                        setState(() => _sharedInstallFilter = 'shared'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Align(
@@ -769,6 +847,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                         technicianName: job.techName,
                                         fromDate: job.date,
                                         toDate: job.date,
+                                        reportBranding: _jobsReportBranding(
+                                          l,
+                                          jobs: [job],
+                                          companyKey: _jobCompanyKey(job),
+                                          companyName: _jobCompanyName(l, job),
+                                        ),
                                       );
                                   final invoiceToken =
                                       AppFormatters.slugify(
@@ -1062,7 +1146,13 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                         final filtered = _applyFilters(jobList);
                         setState(() => _isExportingExcel = true);
                         try {
-                          await ExcelExport.exportJobsToExcel(jobs: filtered);
+                          await ExcelExport.exportJobsToExcel(
+                            jobs: filtered,
+                            reportBranding: _jobsReportBranding(
+                              l,
+                              jobs: filtered,
+                            ),
+                          );
                         } finally {
                           if (mounted) {
                             setState(() => _isExportingExcel = false);
@@ -1176,6 +1266,11 @@ class _HistoryJobCard extends StatelessWidget {
                         '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
                     color: ArcticTheme.arcticWarning,
                   ),
+                _InfoChip(
+                  icon: Icons.tag_rounded,
+                  label: job.sharedInstallGroupKey,
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
               ],
             ),
           ],

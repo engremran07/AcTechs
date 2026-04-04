@@ -76,6 +76,5 @@ extension AcInstallModelX on AcInstallModel {
   int get totalPersonalUnits => splitShare + windowShare + freestandingShare;
 
   /// Total units on the full invoice (all technicians combined).
-  int get totalInvoiceUnits =>
-      splitTotal + windowTotal + freestandingTotal;
+  int get totalInvoiceUnits => splitTotal + windowTotal + freestandingTotal;
 }

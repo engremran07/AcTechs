@@ -8,45 +8,45 @@ class _C {
   _C._();
 
   // — Technician vest (safety-orange gradient) —
-  static const vestAmber  = Color(0xFFFF9800);
+  static const vestAmber = Color(0xFFFF9800);
   static const vestOrange = Color(0xFFF57C00);
-  static const vestBurnt  = Color(0xFFE65100);
+  static const vestBurnt = Color(0xFFE65100);
 
   // — Reflective stripe glow —
   static const stripeEdge = Color(0x00FFE082);
   static const stripeGlow = Color(0xCCFFE082);
 
   // — Skin tone —
-  static const skin       = Color(0xFFDEB887);
+  static const skin = Color(0xFFDEB887);
 
   // — Safety helmet (red gradient) —
-  static const helmetRed  = Color(0xFFEF5350);
-  static const helmetMid  = Color(0xFFD32F2F);
+  static const helmetRed = Color(0xFFEF5350);
+  static const helmetMid = Color(0xFFD32F2F);
   static const helmetDark = Color(0xFF8B0000);
 
   // — Trousers & boots —
-  static const trouserBlue  = Color(0xFF1A237E);
-  static const trouserNavy  = Color(0xFF1A2744);
-  static const darkBrown    = Color(0xFF3E2723);
+  static const trouserBlue = Color(0xFF1A237E);
+  static const trouserNavy = Color(0xFF1A2744);
+  static const darkBrown = Color(0xFF3E2723);
 
   // — Tool belt & pouches —
-  static const beltBrown  = Color(0xFF5D4037);
+  static const beltBrown = Color(0xFF5D4037);
   static const pouchBrown = Color(0xFF4E342E);
 
   // — Metal / tools —
-  static const silver     = Color(0xFFBDBDBD);
-  static const metalMid   = Color(0xFF757575);
-  static const metalDark  = Color(0xFF616161);
-  static const metalDeep  = Color(0xFF424242);
+  static const silver = Color(0xFFBDBDBD);
+  static const metalMid = Color(0xFF757575);
+  static const metalDark = Color(0xFF616161);
+  static const metalDeep = Color(0xFF424242);
 
   // — Sparks & arcs —
   static const sparkYellow = Color(0xFFFFFF00);
-  static const sparkHot    = Color(0xFFFF6D00);
-  static const sparkGlow   = Color(0xFFFFAB00);
+  static const sparkHot = Color(0xFFFF6D00);
+  static const sparkGlow = Color(0xFFFFAB00);
 
   // — LED diagnostics —
   static const ledOrange = Color(0xFFFF5722);
-  static const ledGreen  = Color(0xFF4CAF50);
+  static const ledGreen = Color(0xFF4CAF50);
 }
 
 /// Peak-level custom-painted splash animation for AC Techs.
@@ -662,11 +662,7 @@ class AcSplashPainter extends CustomPainter {
       ..shader = ui.Gradient.linear(
         Offset(-w / 2, -h * 0.45),
         Offset(w / 2, -h * 0.15),
-        [
-          _C.vestAmber,
-          _C.vestOrange,
-          _C.vestBurnt,
-        ],
+        [_C.vestAmber, _C.vestOrange, _C.vestBurnt],
         [0.0, 0.5, 1.0],
       );
     canvas.drawRRect(
@@ -689,11 +685,7 @@ class AcSplashPainter extends CustomPainter {
           ..shader = ui.Gradient.linear(
             Offset(-w * 0.4, sy),
             Offset(w * 0.4, sy),
-            [
-              _C.stripeEdge,
-              _C.stripeGlow,
-              _C.stripeEdge,
-            ],
+            [_C.stripeEdge, _C.stripeGlow, _C.stripeEdge],
             [0.0, 0.5, 1.0],
           ),
       );
@@ -747,11 +739,7 @@ class AcSplashPainter extends CustomPainter {
     final headR = w * 0.38;
     final headY = -h * 0.56;
 
-    canvas.drawCircle(
-      Offset(0, headY),
-      headR,
-      Paint()..color = _C.skin,
-    );
+    canvas.drawCircle(Offset(0, headY), headR, Paint()..color = _C.skin);
 
     // ── safety helmet (with shine) ───────────────────────────
     canvas.drawArc(
@@ -767,11 +755,7 @@ class AcSplashPainter extends CustomPainter {
         ..shader = ui.Gradient.radial(
           Offset(headR * 0.3, headY - headR * 0.3),
           headR * 1.8,
-          [
-            _C.helmetRed,
-            _C.helmetMid,
-            _C.helmetDark,
-          ],
+          [_C.helmetRed, _C.helmetMid, _C.helmetDark],
           [0.0, 0.5, 1.0],
         ),
     );
@@ -919,11 +903,7 @@ class AcSplashPainter extends CustomPainter {
     );
 
     // Hand
-    canvas.drawCircle(
-      Offset(0, h * 0.19),
-      w * 0.10,
-      Paint()..color = _C.skin,
-    );
+    canvas.drawCircle(Offset(0, h * 0.19), w * 0.10, Paint()..color = _C.skin);
 
     if (holdingTool) {
       // Wrench handle
@@ -940,20 +920,12 @@ class AcSplashPainter extends CustomPainter {
           ..shader = ui.Gradient.linear(
             Offset(-2, h * 0.20),
             Offset(4, h * 0.20),
-            [
-              _C.metalMid,
-              _C.silver,
-              _C.metalMid,
-            ],
+            [_C.metalMid, _C.silver, _C.metalMid],
             [0.0, 0.5, 1.0],
           ),
       );
       // Wrench head
-      canvas.drawCircle(
-        Offset(1, h * 0.33),
-        5,
-        Paint()..color = _C.metalDark,
-      );
+      canvas.drawCircle(Offset(1, h * 0.33), 5, Paint()..color = _C.metalDark);
       canvas.drawCircle(
         Offset(1, h * 0.33),
         2.5,
@@ -1119,11 +1091,7 @@ class AcSplashPainter extends CustomPainter {
       ledColor = _C.vestAmber;
     } else if (p < 0.7) {
       ledAlpha = (math.sin(p * 30) * 0.5 + 0.5).clamp(0.0, 1.0);
-      ledColor = Color.lerp(
-        _C.ledOrange,
-        _C.ledGreen,
-        _c((p - 0.3) / 0.4),
-      )!;
+      ledColor = Color.lerp(_C.ledOrange, _C.ledGreen, _c((p - 0.3) / 0.4))!;
     } else {
       ledAlpha = 1.0;
       ledColor = _C.ledGreen;

@@ -8,12 +8,14 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
+import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 
 enum _AdminInOutPeriodType { month, range }
 
@@ -423,6 +425,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         reportDate: normalizedRange?.start ?? normalizedMonth,
         periodLabel: periodLabel,
         monthlyMode: true,
+        reportBranding: _appOnlyReportBranding(l),
       );
 
       final techToken = AppFormatters.slugify(options.techName).isEmpty
@@ -688,10 +691,45 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return '${AppFormatters.date(range.start)} - ${AppFormatters.date(range.end)}';
   }
 
+  ReportBrandingContext _appOnlyReportBranding(AppLocalizations l) {
+    final appBranding =
+        ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
+    return ReportBrandingContext.fromAppBranding(
+      appBranding: appBranding,
+      fallbackServiceName: l.ambiguousCompanyName,
+    );
+  }
+
+  ReportBrandingContext _companyInvoiceBranding(
+    AppLocalizations l, {
+    required String companyKey,
+    required String companyName,
+  }) {
+    final appBranding =
+        ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
+    final companies = ref.read(allCompaniesProvider).value ?? const [];
+    final clientCompany =
+        companyKey == '__all__' || companyKey == '__no_company__'
+        ? null
+        : companies.where((company) => company.id == companyKey).firstOrNull;
+
+    return ReportBrandingContext.fromAppBranding(
+      appBranding: appBranding,
+      fallbackServiceName: l.ambiguousCompanyName,
+      clientCompany: clientCompany,
+      fallbackClientName: companyName,
+    );
+  }
+
   Future<void> _exportToPdf(List<JobModel> jobs) async {
     final locale = ref.read(appLocaleProvider);
     try {
-      await PdfGenerator.previewPdf(context, jobs, locale);
+      await PdfGenerator.previewPdf(
+        context,
+        jobs,
+        locale,
+        _appOnlyReportBranding(AppLocalizations.of(context)!),
+      );
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(
@@ -720,7 +758,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         return;
       }
 
-      await ExcelExport.exportJobsToExcel(jobs: jobs);
+      await ExcelExport.exportJobsToExcel(
+        jobs: jobs,
+        reportBranding: _appOnlyReportBranding(AppLocalizations.of(context)!),
+      );
 
       if (mounted) {
         SuccessSnackbar.show(
@@ -781,20 +822,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
       final periodLabel = AppFormatters.monthLabel(l, month);
 
-      // Look up the company logo if a specific company is selected
-      String companyLogoBase64 = '';
-      if (companyKey != '__all__' && companyKey != '__no_company__') {
-        final companies = ref.read(allCompaniesProvider).value ?? const [];
-        final match = companies.where((c) => c.id == companyKey).firstOrNull;
-        companyLogoBase64 = match?.logoBase64 ?? '';
-      }
-
       final bytes = await PdfGenerator.generateTodayCompanyInvoicesReport(
         jobs: scopedJobs,
         locale: locale,
         reportTitle: reportTitle,
         periodLabel: periodLabel,
-        companyLogoBase64: companyLogoBase64,
+        reportBranding: _companyInvoiceBranding(
+          l,
+          companyKey: companyKey,
+          companyName: companyName,
+        ),
       );
 
       final companyToken = AppFormatters.slugify(

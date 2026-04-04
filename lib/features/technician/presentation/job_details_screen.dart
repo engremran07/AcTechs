@@ -104,10 +104,21 @@ class JobDetailsScreen extends ConsumerWidget {
                         value: AppFormatters.date(job.date),
                       ),
                       _DetailRow(
+                        icon: Icons.badge_outlined,
+                        label: l.technicianUidLabel,
+                        value: job.techId,
+                      ),
+                      _DetailRow(
                         icon: Icons.calculate_outlined,
                         label: l.expenses,
                         value: AppFormatters.currency(job.expenses),
                       ),
+                      if ((job.approvedBy ?? '').trim().isNotEmpty)
+                        _DetailRow(
+                          icon: Icons.verified_user_outlined,
+                          label: l.approverUidLabel,
+                          value: job.approvedBy!.trim(),
+                        ),
                       if (job.expenseNote.trim().isNotEmpty)
                         _DetailRow(
                           icon: Icons.note_alt_outlined,
@@ -137,6 +148,11 @@ class JobDetailsScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 10),
+                        _DetailRow(
+                          icon: Icons.tag_rounded,
+                          label: l.sharedGroup,
+                          value: job.sharedInstallGroupKey,
+                        ),
                         _DetailRow(
                           icon: Icons.receipt_long_outlined,
                           label: l.totalOnInvoice,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -12,12 +13,13 @@ import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
-import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/features/settings/data/approval_config_repository.dart';
+import 'package:ac_techs/features/settings/data/app_branding_repository.dart';
 import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -34,11 +36,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   static const String _supportPhoneSaudi = '00966530421571';
   static const String _supportPhonePakistan = '00923067863310';
 
-  CompanyModel? _primaryCompany(List<CompanyModel> companies) {
-    for (final company in companies) {
-      if (company.isActive) return company;
-    }
-    return companies.isEmpty ? null : companies.first;
+  String _displayAppBrandingName(
+    AppLocalizations l,
+    AppBrandingConfig branding,
+  ) {
+    final name = branding.companyName.trim();
+    return name.isEmpty ? l.ambiguousCompanyName : name;
   }
 
   Future<void> _launchCall(String rawPhone) async {
@@ -54,19 +57,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(appThemeModeProvider);
     final locale = ref.watch(appLocaleProvider);
     final approvalConfigAsync = ref.watch(approvalConfigProvider);
+    final appBrandingAsync = ref.watch(appBrandingProvider);
     final appBuildAsync = ref.watch(appBuildNumberProvider);
     final appVersionAsync = ref.watch(appVersionLabelProvider);
     final l = AppLocalizations.of(context)!;
-    final companiesAsync = (user?.isAdmin ?? false)
-        ? ref.watch(allCompaniesProvider)
-        : ref.watch(activeCompaniesProvider);
-    final companyDisplayName = companiesAsync.maybeWhen(
-      data: (companies) {
-        final company = _primaryCompany(companies);
-        return company?.name.trim().isNotEmpty ?? false
-            ? company!.name.trim()
-            : l.ambiguousCompanyName;
-      },
+    final companyDisplayName = appBrandingAsync.maybeWhen(
+      data: (branding) => _displayAppBrandingName(l, branding),
       orElse: () => l.ambiguousCompanyName,
     );
 
@@ -167,113 +163,143 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.03),
           const SizedBox(height: 24),
 
-          if (user?.isAdmin ?? false) ...[
-            _SectionTitle(title: l.companyBranding),
-            const SizedBox(height: 8),
-            ArcticCard(
-              child: companiesAsync.when(
-                data: (companies) {
-                  final company = _primaryCompany(companies);
-                  final displayName = company?.name.trim().isNotEmpty ?? false
-                      ? company!.name.trim()
-                      : l.ambiguousCompanyName;
-                  final logoBase64 = company?.logoBase64 ?? '';
+          _SectionTitle(title: l.companyBranding),
+          const SizedBox(height: 8),
+          ArcticCard(
+            child: appBrandingAsync.when(
+              data: (branding) {
+                final displayName = _displayAppBrandingName(l, branding);
+                final logoBase64 = branding.logoBase64.trim();
+                final phoneNumber = branding.phoneNumber.trim();
 
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: ArcticTheme.arcticBlue.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticBlue.withValues(
+                              alpha: 0.12,
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: logoBase64.isNotEmpty
-                                ? _BrandLogoPreview(logoBase64: logoBase64)
-                                : const Icon(
-                                    Icons.apartment_rounded,
-                                    color: ArcticTheme.arcticBlue,
-                                  ),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  displayName,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
+                          clipBehavior: Clip.antiAlias,
+                          child: logoBase64.isNotEmpty
+                              ? _BrandLogoPreview(logoBase64: logoBase64)
+                              : const Icon(
+                                  Icons.apartment_rounded,
+                                  color: ArcticTheme.arcticBlue,
                                 ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${l.region}: ${l.pakistan}',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: ArcticTheme.arcticTextSecondary,
+                                    ),
+                              ),
+                              if (phoneNumber.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${l.region}: ${l.pakistan}',
+                                  phoneNumber,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: ArcticTheme.arcticTextSecondary,
                                       ),
                                 ),
                               ],
-                            ),
-                          ),
-                          const _PakistanFlagBadge(),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () => context.go('/admin/companies'),
-                          icon: const Icon(Icons.image_outlined),
-                          label: Text(l.manageLogoAndBranding),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, _) => Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.apartment_rounded,
-                          color: ArcticTheme.arcticBlue,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            l.ambiguousCompanyName,
-                            style: Theme.of(context).textTheme.titleMedium,
+                            ],
                           ),
                         ),
                         const _PakistanFlagBadge(),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => context.go('/admin/companies'),
-                        icon: const Icon(Icons.image_outlined),
-                        label: Text(l.manageLogoAndBranding),
+                    if (user?.isAdmin ?? false) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => _showAppBrandingDialog(branding),
+                            icon: const Icon(Icons.business_rounded),
+                            label: Text(l.editOwnCompanyBranding),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => context.go('/admin/companies'),
+                            icon: const Icon(Icons.image_outlined),
+                            label: Text(l.manageClientCompanyBranding),
+                          ),
+                        ],
                       ),
+                    ],
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, _) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.apartment_rounded,
+                        color: ArcticTheme.arcticBlue,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          l.ambiguousCompanyName,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const _PakistanFlagBadge(),
+                    ],
+                  ),
+                  if (user?.isAdmin ?? false) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _showAppBrandingDialog(
+                            AppBrandingConfig.defaults(),
+                          ),
+                          icon: const Icon(Icons.business_rounded),
+                          label: Text(l.editOwnCompanyBranding),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => context.go('/admin/companies'),
+                          icon: const Icon(Icons.image_outlined),
+                          label: Text(l.manageClientCompanyBranding),
+                        ),
+                      ],
                     ),
                   ],
-                ),
+                ],
               ),
-            ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.03),
-            const SizedBox(height: 24),
+            ),
+          ).animate().fadeIn(delay: 220.ms).slideY(begin: 0.03),
+          const SizedBox(height: 24),
 
+          if (user?.isAdmin ?? false) ...[
             _SectionTitle(title: '${l.approvals} ${l.settings}'),
             const SizedBox(height: 8),
             ArcticCard(
@@ -385,27 +411,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        '${l.region}: ${l.pakistan}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: ArcticTheme.arcticBlue.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: appBrandingAsync.maybeWhen(
+                              data: (branding) =>
+                                  branding.logoBase64.trim().isNotEmpty
+                                  ? _BrandLogoPreview(
+                                      logoBase64: branding.logoBase64,
+                                    )
+                                  : const Icon(
+                                      Icons.apartment_rounded,
+                                      color: ArcticTheme.arcticBlue,
+                                    ),
+                              orElse: () => const Icon(
+                                Icons.apartment_rounded,
+                                color: ArcticTheme.arcticBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const _PakistanFlagBadge(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  companyDisplayName,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${l.region}: ${l.pakistan}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
                         l.adminAboutBuiltBy,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 8),
                       _DevelopedBySignature(label: l.developedByMuhammadImran),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const _PakistanFlagBadge(),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              '${l.region}: ${l.pakistan}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: ArcticTheme.arcticTextSecondary,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 12),
                       _SupportContactRow(
                         countryLabel: l.saudiArabia,
@@ -950,6 +1021,173 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ) ??
         false;
+  }
+
+  Future<void> _showAppBrandingDialog(AppBrandingConfig branding) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final nameCtrl = TextEditingController(text: branding.companyName);
+    final phoneCtrl = TextEditingController(text: branding.phoneNumber);
+    final formKey = GlobalKey<FormState>();
+    String pendingLogo = branding.logoBase64;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l.editOwnCompanyBranding),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                        withData: true,
+                      );
+                      if (result == null) return;
+                      final bytes = result.files.first.bytes;
+                      if (bytes == null) return;
+                      if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
+                        bytes,
+                      )) {
+                        if (ctx.mounted) {
+                          AppFeedback.error(ctx, message: l.logoTooLarge);
+                        }
+                        return;
+                      }
+                      setDialogState(
+                        () => pendingLogo = Base64ImageCodec.encode(bytes),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: ArcticTheme.arcticCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: pendingLogo.isEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  color: ArcticTheme.arcticBlue,
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l.tapToUploadLogo,
+                                  style: Theme.of(ctx).textTheme.bodySmall,
+                                ),
+                              ],
+                            )
+                          : Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(11),
+                                  child: _BrandLogoPreview(
+                                    logoBase64: pendingLogo,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () =>
+                                        setDialogState(() => pendingLogo = ''),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: ArcticTheme.arcticError,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: nameCtrl,
+                    textInputAction: TextInputAction.next,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.companyName,
+                      prefixIcon: const Icon(Icons.business_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: phoneCtrl,
+                    textInputAction: TextInputAction.done,
+                    keyboardType: TextInputType.phone,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.companyPhoneNumber,
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                    ),
+                    validator: (value) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isEmpty) return null;
+                      return trimmed.length < 7 ? l.enterValidPhone : null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(ctx, true);
+                }
+              },
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(appBrandingRepositoryProvider)
+          .saveConfig(
+            AppBrandingConfig(
+              companyName: nameCtrl.text.trim(),
+              phoneNumber: phoneCtrl.text.trim(),
+              logoBase64: pendingLogo,
+            ),
+          );
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.ownCompanyBrandingUpdated);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: error.message(locale));
+    }
   }
 }
 

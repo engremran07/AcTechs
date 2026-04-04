@@ -1687,8 +1687,14 @@ abstract class AppLocalizations {
   /// No description provided for @ambiguousCompanyName.
   ///
   /// In en, this message translates to:
-  /// **'Ambigous'**
+  /// **'Ambiguous'**
   String get ambiguousCompanyName;
+
+  /// No description provided for @companyPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Company Phone Number'**
+  String get companyPhoneNumber;
 
   /// No description provided for @invoicePrefix.
   ///
@@ -1767,6 +1773,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage Logo and Branding'**
   String get manageLogoAndBranding;
+
+  /// No description provided for @editOwnCompanyBranding.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit AC Techs Branding'**
+  String get editOwnCompanyBranding;
+
+  /// No description provided for @manageClientCompanyBranding.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Client Company Branding'**
+  String get manageClientCompanyBranding;
+
+  /// No description provided for @ownCompanyBrandingUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'AC Techs branding updated successfully!'**
+  String get ownCompanyBrandingUpdated;
 
   /// No description provided for @workExpenses.
   ///
@@ -2674,6 +2698,30 @@ abstract class AppLocalizations {
   /// **'Technician'**
   String get technicianLabel;
 
+  /// No description provided for @technicianUidLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Technician UID'**
+  String get technicianUidLabel;
+
+  /// No description provided for @approverUidLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approver UID'**
+  String get approverUidLabel;
+
+  /// No description provided for @sharedGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Group'**
+  String get sharedGroup;
+
+  /// No description provided for @approvedSharedInstalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved Shared Installs'**
+  String get approvedSharedInstalls;
+
   /// No description provided for @contactLabel.
   ///
   /// In en, this message translates to:
@@ -2859,6 +2907,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to upload logo'**
   String get tapToUploadLogo;
+
+  /// No description provided for @logoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Logo is too large. Please use a smaller image to keep Firestore storage clean.'**
+  String get logoTooLarge;
 
   /// No description provided for @removeLogo.
   ///

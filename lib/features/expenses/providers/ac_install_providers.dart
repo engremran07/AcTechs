@@ -14,19 +14,16 @@ final todaysAcInstallsProvider =
     });
 
 /// All AC installation records for the logged-in technician.
-final techAcInstallsProvider =
-    StreamProvider.autoDispose<List<AcInstallModel>>((ref) {
-      final user = ref.watch(currentUserProvider).value;
-      if (user == null) return Stream.value([]);
-      return ref
-          .watch(acInstallRepositoryProvider)
-          .watchTechInstalls(user.uid);
-    });
+final techAcInstallsProvider = StreamProvider.autoDispose<List<AcInstallModel>>(
+  (ref) {
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) return Stream.value([]);
+    return ref.watch(acInstallRepositoryProvider).watchTechInstalls(user.uid);
+  },
+);
 
 /// Admin: all pending AC installation records awaiting approval.
 final pendingAcInstallsProvider =
     StreamProvider.autoDispose<List<AcInstallModel>>((ref) {
-      return ref
-          .watch(acInstallRepositoryProvider)
-          .watchPendingInstalls();
+      return ref.watch(acInstallRepositoryProvider).watchPendingInstalls();
     });
