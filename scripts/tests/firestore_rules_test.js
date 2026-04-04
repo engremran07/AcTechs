@@ -119,6 +119,20 @@ async function main() {
       }),
     );
 
+    await assertSucceeds(
+      activeTech.firestore().doc('users/tech-1').update({
+        name: 'Tech One Updated',
+      }),
+    );
+
+    await assertFails(
+      activeTech.firestore().doc('users/tech-1').update({
+        email: 'other@example.com',
+      }),
+    );
+
+    await assertFails(activeTech.firestore().doc('users/tech-1').delete());
+
     await assertFails(
       activeTech.firestore().collection('jobs').add({
         techId: 'tech-1',

@@ -403,11 +403,10 @@ class AcInstallException extends AppException {
     'تعذر تحديث سجل التركيب. حاول مرة أخرى.',
   );
 
-  factory AcInstallException.approvedRecordLocked() =>
-      const AcInstallException(
-        'ac_install_approved_record_locked',
-        'Approved records are locked. Create a correction entry instead of editing this record.',
-        'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
-        'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
-      );
+  factory AcInstallException.approvedRecordLocked() => const AcInstallException(
+    'ac_install_approved_record_locked',
+    'Approved records are locked. Create a correction entry instead of editing this record.',
+    'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
+    'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
+  );
 }

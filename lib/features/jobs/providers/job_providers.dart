@@ -100,7 +100,7 @@ final approvedSharedInstallsProvider =
       return ref.watch(jobRepositoryProvider).approvedSharedInstalls();
     });
 
-final allJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+final allJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).allJobs();

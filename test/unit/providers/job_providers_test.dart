@@ -110,66 +110,64 @@ void main() {
     expect(summary.windowUnits, 1);
   });
 
-  test('adminJobSummaryProvider returns empty summary for technicians', () async {
-    final container = buildContainer(
-      const UserModel(
-        uid: 'tech-1',
-        name: 'Tech',
-        email: 'tech@example.com',
-      ),
-    );
+  test(
+    'adminJobSummaryProvider returns empty summary for technicians',
+    () async {
+      final container = buildContainer(
+        const UserModel(uid: 'tech-1', name: 'Tech', email: 'tech@example.com'),
+      );
 
-    final currentUserSub = container.listen(currentUserProvider, (_, _) {});
-    addTearDown(currentUserSub.close);
-    await container.read(currentUserProvider.future);
+      final currentUserSub = container.listen(currentUserProvider, (_, _) {});
+      addTearDown(currentUserSub.close);
+      await container.read(currentUserProvider.future);
 
-    final summary = await container.read(adminJobSummaryProvider.future);
-    expect(summary, AdminJobSummary.empty());
-  });
+      final summary = await container.read(adminJobSummaryProvider.future);
+      expect(summary, AdminJobSummary.empty());
+    },
+  );
 
-  test('techJobsByAcTypeProvider filters the technician stream by AC type', () async {
-    await seedJob(
-      techId: 'tech-1',
-      techName: 'Ali',
-      invoiceNumber: 'INV-001',
-      unitType: AppConstants.unitTypeSplitAc,
-    );
-    await seedJob(
-      techId: 'tech-1',
-      techName: 'Ali',
-      invoiceNumber: 'INV-002',
-      unitType: AppConstants.unitTypeWindowAc,
-    );
-    await seedJob(
-      techId: 'tech-2',
-      techName: 'Bilal',
-      invoiceNumber: 'INV-003',
-      unitType: AppConstants.unitTypeSplitAc,
-    );
+  test(
+    'techJobsByAcTypeProvider filters the technician stream by AC type',
+    () async {
+      await seedJob(
+        techId: 'tech-1',
+        techName: 'Ali',
+        invoiceNumber: 'INV-001',
+        unitType: AppConstants.unitTypeSplitAc,
+      );
+      await seedJob(
+        techId: 'tech-1',
+        techName: 'Ali',
+        invoiceNumber: 'INV-002',
+        unitType: AppConstants.unitTypeWindowAc,
+      );
+      await seedJob(
+        techId: 'tech-2',
+        techName: 'Bilal',
+        invoiceNumber: 'INV-003',
+        unitType: AppConstants.unitTypeSplitAc,
+      );
 
-    final container = buildContainer(
-      const UserModel(
-        uid: 'tech-1',
-        name: 'Ali',
-        email: 'ali@example.com',
-      ),
-    );
+      final container = buildContainer(
+        const UserModel(uid: 'tech-1', name: 'Ali', email: 'ali@example.com'),
+      );
 
-    final currentUserSub = container.listen(currentUserProvider, (_, _) {});
-    addTearDown(currentUserSub.close);
-    await container.read(currentUserProvider.future);
+      final currentUserSub = container.listen(currentUserProvider, (_, _) {});
+      addTearDown(currentUserSub.close);
+      await container.read(currentUserProvider.future);
 
-    final jobsSub = container.listen(technicianJobsProvider, (_, _) {});
-    addTearDown(jobsSub.close);
+      final jobsSub = container.listen(technicianJobsProvider, (_, _) {});
+      addTearDown(jobsSub.close);
 
-    final jobs = await container.read(technicianJobsProvider.future);
-    expect(jobs, hasLength(2));
+      final jobs = await container.read(technicianJobsProvider.future);
+      expect(jobs, hasLength(2));
 
-    final splitJobs = container.read(
-      techJobsByAcTypeProvider(JobAcTypeFilter.split),
-    );
+      final splitJobs = container.read(
+        techJobsByAcTypeProvider(JobAcTypeFilter.split),
+      );
 
-    expect(splitJobs, hasLength(1));
-    expect(splitJobs.single.invoiceNumber, 'INV-001');
-  });
+      expect(splitJobs, hasLength(1));
+      expect(splitJobs.single.invoiceNumber, 'INV-001');
+    },
+  );
 }

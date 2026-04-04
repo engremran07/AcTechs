@@ -69,7 +69,7 @@ Set-Content -Path $hookFileW -Value $ps1Content -Encoding UTF8
 [System.IO.File]::WriteAllText(
     $hookFile,
     $shContent.Replace("`r`n", "`n"),
-    [System.Text.Encoding]::UTF8
+    (New-Object System.Text.UTF8Encoding($false))
 )
 
 # Make the shell hook executable (needed on Linux/macOS; no-op on Windows)

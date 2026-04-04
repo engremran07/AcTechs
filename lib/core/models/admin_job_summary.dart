@@ -76,8 +76,9 @@ class AdminJobSummary {
     return UnmodifiableMapView({
       for (final item in technicianJobCounts)
         duplicateCounts[item.displayName] == 1
-            ? item.displayName
-            : '${item.displayName} (${item.techId})': item.jobCount,
+                ? item.displayName
+                : '${item.displayName} (${item.techId})':
+            item.jobCount,
     });
   }
 
@@ -139,6 +140,16 @@ class AdminJobSummary {
           rejectedJobs += 1;
       }
 
+      final existing = technicianJobs[job.techId];
+      technicianJobs[job.techId] = (
+        techName: job.techName.trim().isEmpty ? job.techId : job.techName,
+        jobCount: (existing?.jobCount ?? 0) + 1,
+      );
+
+      if (job.status == JobStatus.rejected) {
+        continue;
+      }
+
       splitUnits += job.unitsForType(AppConstants.unitTypeSplitAc);
       windowUnits += job.unitsForType(AppConstants.unitTypeWindowAc);
       freestandingUnits += job.unitsForType(
@@ -153,12 +164,6 @@ class AdminJobSummary {
       );
       uninstallStandingUnits += job.unitsForType(
         AppConstants.unitTypeUninstallFreestanding,
-      );
-
-      final existing = technicianJobs[job.techId];
-      technicianJobs[job.techId] = (
-        techName: job.techName.trim().isEmpty ? job.techId : job.techName,
-        jobCount: (existing?.jobCount ?? 0) + 1,
       );
 
       if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty) {

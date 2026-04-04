@@ -120,6 +120,77 @@ void main() {
     expect(jobHistorySnap.docs.single.data()['reason'], 'Mismatch');
   });
 
+  test('approving a shared job writes history entry', () async {
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-250',
+        splitShare: 1,
+      ),
+    );
+
+    final jobsSnap = await firestore
+        .collection(AppConstants.jobsCollection)
+        .get();
+    final jobId = jobsSnap.docs.single.id;
+
+    await repository.approveJob(jobId, 'admin-1');
+
+    final historySnap = await firestore
+        .collection(AppConstants.jobsCollection)
+        .doc(jobId)
+        .collection('history')
+        .get();
+
+    expect(historySnap.docs, hasLength(1));
+    expect(historySnap.docs.single.data()['previousStatus'], 'pending');
+    expect(historySnap.docs.single.data()['newStatus'], 'approved');
+  });
+
+  test('bulkApproveJobs approves pending jobs and writes history', () async {
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-260',
+        splitShare: 1,
+      ),
+    );
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-2',
+        techName: 'Tech Two',
+        invoiceNumber: 'INV-261',
+        splitShare: 1,
+      ),
+    );
+
+    final jobsSnap = await firestore
+        .collection(AppConstants.jobsCollection)
+        .get();
+    final jobIds = jobsSnap.docs.map((doc) => doc.id).toList(growable: false);
+
+    await repository.bulkApproveJobs(jobIds, 'admin-9');
+
+    for (final jobId in jobIds) {
+      final jobSnap = await firestore
+          .collection(AppConstants.jobsCollection)
+          .doc(jobId)
+          .get();
+      final historySnap = await firestore
+          .collection(AppConstants.jobsCollection)
+          .doc(jobId)
+          .collection('history')
+          .get();
+
+      expect(jobSnap.data()?['status'], 'approved');
+      expect(jobSnap.data()?['approvedBy'], 'admin-9');
+      expect(historySnap.docs, hasLength(1));
+      expect(historySnap.docs.single.data()['newStatus'], 'approved');
+    }
+  });
+
   test('rejecting an approved shared job is blocked by immutability', () async {
     final jobRef = await firestore.collection(AppConstants.jobsCollection).add({
       ...buildSharedJob(

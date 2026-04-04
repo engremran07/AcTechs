@@ -74,6 +74,21 @@ void main() {
     expect(redirect, '/splash');
   });
 
+  test('missing approval config holds on splash until config loads', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: '/tech',
+      isAuthLoading: false,
+      isLoggedIn: true,
+      currentUser: const AsyncData(
+        UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
+      ),
+      approvalConfig: null,
+      appBuild: 7,
+    );
+
+    expect(redirect, '/splash');
+  });
+
   test('minimum build gate redirects outdated builds', () {
     final redirect = resolveAppRedirect(
       matchedLocation: '/tech',

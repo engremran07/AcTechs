@@ -240,18 +240,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.done,
-                  enableInteractiveSelection: true,
+                  enabled: false,
                   decoration: InputDecoration(
                     hintText: l.email,
                     prefixIcon: const Icon(Icons.email_outlined),
                   ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return l.required;
-                    if (!v.contains('@')) return l.invalidEmail;
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -306,7 +299,6 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           .updateUser(
             uid: user.uid,
             name: nameCtrl.text.trim(),
-            email: emailCtrl.text.trim(),
             role: selectedRole,
           );
       if (!mounted) return;
@@ -402,6 +394,27 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       ref.invalidate(allUsersProvider);
       AppFeedback.success(context, message: l.userDeleted);
     } on AppException catch (e) {
+      AppFeedback.error(context, message: e.message(locale));
+    }
+  }
+
+  Future<void> _toggleUserStatus(UserModel user) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+
+    try {
+      await ref
+          .read(userRepositoryProvider)
+          .toggleUserActive(user.uid, !user.isActive);
+      if (!mounted) return;
+
+      ref.invalidate(allUsersProvider);
+      AppFeedback.success(
+        context,
+        message: user.isActive ? l.usersDeactivated : l.usersActivated,
+      );
+    } on AppException catch (e) {
+      if (!mounted) return;
       AppFeedback.error(context, message: e.message(locale));
     }
   }
@@ -583,6 +596,16 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           color: ArcticTheme.arcticWarning,
         ),
         ContextMenuItem(
+          id: 'toggleActive',
+          label: tech.isActive ? l.inactive : l.active,
+          icon: tech.isActive
+              ? Icons.person_off_rounded
+              : Icons.person_add_alt_1_rounded,
+          color: tech.isActive
+              ? ArcticTheme.arcticTextSecondary
+              : ArcticTheme.arcticSuccess,
+        ),
+        ContextMenuItem(
           id: 'delete',
           label: l.deleteTechnician,
           icon: Icons.delete_outline_rounded,
@@ -594,6 +617,8 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           _showEditDialog(tech);
         } else if (action == 'resetPassword') {
           _handlePasswordReset(tech);
+        } else if (action == 'toggleActive') {
+          _toggleUserStatus(tech);
         } else if (action == 'delete') {
           _handleDeleteUser(tech);
         }
@@ -608,6 +633,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           selected: isSelected,
           onEdit: () => _showEditDialog(tech),
           onResetPassword: () => _handlePasswordReset(tech),
+          onToggleActive: () => _toggleUserStatus(tech),
           onDelete: () => _handleDeleteUser(tech),
         ),
       ),
@@ -621,6 +647,7 @@ class _TechCard extends ConsumerWidget {
     this.selected = false,
     this.onEdit,
     this.onResetPassword,
+    this.onToggleActive,
     this.onDelete,
   });
 
@@ -628,6 +655,7 @@ class _TechCard extends ConsumerWidget {
   final bool selected;
   final VoidCallback? onEdit;
   final VoidCallback? onResetPassword;
+  final VoidCallback? onToggleActive;
   final VoidCallback? onDelete;
 
   @override
@@ -721,6 +749,8 @@ class _TechCard extends ConsumerWidget {
                   onEdit?.call();
                 } else if (action == 'reset') {
                   onResetPassword?.call();
+                } else if (action == 'toggle') {
+                  onToggleActive?.call();
                 } else if (action == 'delete') {
                   onDelete?.call();
                 }
@@ -728,6 +758,10 @@ class _TechCard extends ConsumerWidget {
               itemBuilder: (context) => [
                 PopupMenuItem(value: 'edit', child: Text(l.editTechnician)),
                 PopupMenuItem(value: 'reset', child: Text(l.resetPassword)),
+                PopupMenuItem(
+                  value: 'toggle',
+                  child: Text(user.isActive ? l.inactive : l.active),
+                ),
                 PopupMenuItem(value: 'delete', child: Text(l.deleteTechnician)),
               ],
               icon: const Icon(Icons.more_vert_rounded),

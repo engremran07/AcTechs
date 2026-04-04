@@ -65,9 +65,31 @@ class UserRepository {
     return users;
   }
 
+  Future<UserModel?> _findUserByEmail(String email) async {
+    final normalized = email.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+
+    final snap = await _usersRef.get();
+    for (final doc in snap.docs) {
+      final candidate = (doc.data()['email'] as String? ?? '')
+          .trim()
+          .toLowerCase();
+      if (candidate == normalized) {
+        return UserModel.fromFirestore(doc);
+      }
+    }
+
+    return null;
+  }
+
   Future<void> toggleUserActive(String uid, bool isActive) async {
     try {
-      await _usersRef.doc(uid).update({'isActive': isActive});
+      await _usersRef.doc(uid).update({
+        'isActive': isActive,
+        'archivedAt': isActive
+            ? FieldValue.delete()
+            : FieldValue.serverTimestamp(),
+      });
     } on FirebaseException catch (e) {
       debugPrint('toggleUserActive error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -141,6 +163,15 @@ class UserRepository {
 
       if (e is FirebaseAuthException) {
         if (e.code == 'email-already-in-use') {
+          final existingUser = await _findUserByEmail(email);
+          if (existingUser != null && !existingUser.isActive) {
+            throw const AdminException(
+              'user_inactive_reactivation_required',
+              'This email belongs to an inactive account. Edit that user, then reactivate it and send a password reset instead of creating a new account.',
+              'یہ ای میل ایک غیر فعال اکاؤنٹ سے منسلک ہے۔ نیا اکاؤنٹ بنانے کے بجائے اسی صارف کو ایڈٹ کریں، دوبارہ فعال کریں، اور پاس ورڈ ری سیٹ بھیجیں۔',
+              'هذا البريد مرتبط بحساب غير نشط. عدّل ذلك المستخدم ثم أعد تفعيله وأرسل إعادة تعيين كلمة المرور بدلاً من إنشاء حساب جديد.',
+            );
+          }
           throw const AdminException(
             'user_exists',
             'A user with this email already exists.',
@@ -165,11 +196,10 @@ class UserRepository {
   Future<void> updateUser({
     required String uid,
     required String name,
-    required String email,
     String? role,
   }) async {
     try {
-      final updates = <String, dynamic>{'name': name, 'email': email};
+      final updates = <String, dynamic>{'name': name};
       if (role != null) {
         updates['role'] = role.trim().toLowerCase() == AppConstants.roleAdmin
             ? AppConstants.roleAdmin
@@ -217,7 +247,12 @@ class UserRepository {
     try {
       final batch = firestore.batch();
       for (final uid in uids) {
-        batch.update(_usersRef.doc(uid), {'isActive': isActive});
+        batch.update(_usersRef.doc(uid), {
+          'isActive': isActive,
+          'archivedAt': isActive
+              ? FieldValue.delete()
+              : FieldValue.serverTimestamp(),
+        });
       }
       await batch.commit();
     } on FirebaseException catch (e) {

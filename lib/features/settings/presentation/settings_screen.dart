@@ -731,7 +731,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _clearLockedBeforeDate() async {
     try {
-      await ref.read(approvalConfigRepositoryProvider).setLockedBeforeDate(null);
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setLockedBeforeDate(null);
     } on Exception {
       if (!mounted) return;
       ErrorSnackbar.show(

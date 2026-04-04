@@ -144,9 +144,8 @@ service cloud.firestore {
       allow update: if isAdmin() ||
         (isOwner(userId) &&
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['language', 'name', 'email']));
-      allow delete: if isAdmin() ||
-        isOwner(userId);
+             .hasOnly(['language', 'name']));
+        allow delete: if isAdmin();
     }
 
     // ─── Jobs ───
@@ -291,14 +290,11 @@ service cloud.firestore {
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
-        (
-          (inOutApprovalRequired() &&
-            request.resource.data.status == 'pending' &&
-            request.resource.data.approvedBy == '' &&
-            request.resource.data.adminNote == '' &&
-            request.resource.data.reviewedAt == null) ||
-          (!inOutApprovalRequired() && false)
-        ) &&
+        inOutApprovalRequired() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.approvedBy == '' &&
+        request.resource.data.adminNote == '' &&
+        request.resource.data.reviewedAt == null &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'category',
@@ -371,14 +367,11 @@ service cloud.firestore {
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
-        (
-          (inOutApprovalRequired() &&
-            request.resource.data.status == 'pending' &&
-            request.resource.data.approvedBy == '' &&
-            request.resource.data.adminNote == '' &&
-            request.resource.data.reviewedAt == null) ||
-          (!inOutApprovalRequired() && false)
-        ) &&
+        inOutApprovalRequired() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.approvedBy == '' &&
+        request.resource.data.adminNote == '' &&
+        request.resource.data.reviewedAt == null &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'category',
@@ -495,15 +488,12 @@ service cloud.firestore {
         (request.resource.data.splitTotal + request.resource.data.windowTotal + request.resource.data.freestandingTotal) > 0 &&
         request.resource.data.techName is string &&
         request.resource.data.note is string &&
-        (
-          (inOutApprovalRequired() &&
-            resource.data.status == 'pending' &&
-            request.resource.data.status == 'pending' &&
-            request.resource.data.approvedBy == '' &&
-            request.resource.data.adminNote == '' &&
-            request.resource.data.reviewedAt == null) ||
-          (!inOutApprovalRequired() && false)
-        ) &&
+        inOutApprovalRequired() &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.approvedBy == '' &&
+        request.resource.data.adminNote == '' &&
+        request.resource.data.reviewedAt == null &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'splitTotal',

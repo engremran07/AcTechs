@@ -46,15 +46,15 @@ class ApprovalConfig {
       minSupportedBuildNumber: minSupportedBuildNumber < 1
           ? 1
           : minSupportedBuildNumber,
-        lockedBeforeDate: _timestampFromConfig(data?['lockedBefore']),
+      lockedBeforeDate: _timestampFromConfig(data?['lockedBefore']),
     );
   }
 
-      static DateTime? _timestampFromConfig(Object? value) {
-      if (value is Timestamp) return value.toDate();
-      if (value is DateTime) return value;
-      return null;
-      }
+  static DateTime? _timestampFromConfig(Object? value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return null;
+  }
 
   ApprovalConfig copyWith({
     bool? jobApprovalRequired,

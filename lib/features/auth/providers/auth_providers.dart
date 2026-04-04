@@ -56,7 +56,8 @@ class SignInNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> signOut() async {
-    // 1. Invalidate all data providers to stop Firestore listeners
+    // Add any new session-scoped data providers here so sign-out fully clears
+    // the previous user's cached listeners before the next login.
     ref.invalidate(technicianJobsProvider);
     ref.invalidate(todaysJobsProvider);
     ref.invalidate(pendingApprovalsProvider);

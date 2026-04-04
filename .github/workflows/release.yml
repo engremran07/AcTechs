@@ -67,10 +67,9 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter (3.41.6)
+      - name: Set up Flutter stable
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.6'
           channel: 'stable'
           cache: true
 
@@ -230,7 +229,7 @@ jobs:
             ${{ steps.changelog.outputs.log }}
 
             ---
-            Built with Flutter 3.41.6 · Firebase · Riverpod
+            Built with Flutter stable · Firebase · Riverpod
           files: |
             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-release.apk
             build/app/outputs/flutter-apk/ac-techs-${{ env.RELEASE_VERSION }}-debug.apk

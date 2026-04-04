@@ -40,9 +40,9 @@ on:
           - debug
           - release
       flutter_version:
-        description: 'Flutter version (leave default unless needed)'
+        description: 'Optional exact Flutter version. Leave empty to use latest stable.'
         required: false
-        default: '3.41.6'
+        default: ''
         type: string
 
 permissions:
@@ -66,7 +66,15 @@ jobs:
           java-version: '17'
 
       # ── Flutter ──────────────────────────────────────────────────────────
+      - name: Set up Flutter stable
+        if: ${{ inputs.flutter_version == '' }}
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
       - name: Set up Flutter ${{ inputs.flutter_version }}
+        if: ${{ inputs.flutter_version != '' }}
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ inputs.flutter_version }}

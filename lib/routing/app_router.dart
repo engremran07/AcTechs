@@ -62,14 +62,15 @@ String? resolveAppRedirect({
     return '/login';
   }
 
-  if (approvalConfig != null &&
-      approvalConfig.enforceMinimumBuild &&
-      appBuild == null) {
+  if (approvalConfig == null) {
     return isSplashRoute ? null : '/splash';
   }
 
-  if (approvalConfig != null &&
-      approvalConfig.enforceMinimumBuild &&
+  if (approvalConfig.enforceMinimumBuild && appBuild == null) {
+    return isSplashRoute ? null : '/splash';
+  }
+
+  if (approvalConfig.enforceMinimumBuild &&
       appBuild != null &&
       appBuild < approvalConfig.minSupportedBuildNumber) {
     return isUpdateRoute ? null : '/update-required';

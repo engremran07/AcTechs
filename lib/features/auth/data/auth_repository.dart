@@ -255,17 +255,17 @@ class AuthRepository {
         .snapshots()
         .listen(
           (doc) {
-              if (!doc.exists) {
-                controller.add(null);
-                return;
-              }
+            if (!doc.exists) {
+              controller.add(null);
+              return;
+            }
 
-              final userModel = UserModel.fromFirestore(doc);
-              controller.add(userModel);
+            final userModel = UserModel.fromFirestore(doc);
+            controller.add(userModel);
 
-              if (!userModel.isActive) {
-                unawaited(auth.signOut());
-              }
+            if (!userModel.isActive) {
+              unawaited(auth.signOut());
+            }
           },
           onError: (error, stackTrace) {
             if (error is FirebaseException &&

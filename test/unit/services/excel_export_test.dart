@@ -5,50 +5,57 @@ import 'package:ac_techs/core/services/excel_export.dart';
 
 void main() {
   String cellText(excel_pkg.Sheet sheet, String index) {
-    return sheet.cell(excel_pkg.CellIndex.indexByString(index)).value?.toString() ?? '';
+    return sheet
+            .cell(excel_pkg.CellIndex.indexByString(index))
+            .value
+            ?.toString() ??
+        '';
   }
 
   group('ExcelExport workbook builders', () {
-    test('buildJobsWorkbook includes shared install columns and summary totals', () {
-      final workbook = ExcelExport.buildJobsWorkbook(
-        jobs: [
-          JobModel(
-            techId: 'tech-1',
-            techName: 'Tech One',
-            companyId: 'company-1',
-            companyName: 'AC Co',
-            invoiceNumber: 'INV-100',
-            clientName: 'Client',
-            clientContact: '0500',
-            isSharedInstall: true,
-            sharedInstallGroupKey: 'company-1-inv-100',
-            sharedInvoiceTotalUnits: 4,
-            sharedContributionUnits: 2,
-            sharedInvoiceSplitUnits: 4,
-            sharedInvoiceBracketCount: 2,
-            sharedDeliveryTeamCount: 2,
-            techBracketShare: 1,
-            charges: const InvoiceCharges(
-              acBracket: true,
-              bracketCount: 1,
-              bracketAmount: 75,
+    test(
+      'buildJobsWorkbook includes shared install columns and summary totals',
+      () {
+        final workbook = ExcelExport.buildJobsWorkbook(
+          jobs: [
+            JobModel(
+              techId: 'tech-1',
+              techName: 'Tech One',
+              companyId: 'company-1',
+              companyName: 'AC Co',
+              invoiceNumber: 'INV-100',
+              clientName: 'Client',
+              clientContact: '0500',
+              isSharedInstall: true,
+              sharedInstallGroupKey: 'company-1-inv-100',
+              sharedInvoiceTotalUnits: 4,
+              sharedContributionUnits: 2,
+              sharedInvoiceSplitUnits: 4,
+              sharedInvoiceBracketCount: 2,
+              sharedDeliveryTeamCount: 2,
+              techBracketShare: 1,
+              charges: const InvoiceCharges(
+                acBracket: true,
+                bracketCount: 1,
+                bracketAmount: 75,
+              ),
+              acUnits: const [AcUnit(type: 'Split AC', quantity: 2)],
+              date: DateTime(2026, 4, 1),
             ),
-            acUnits: const [AcUnit(type: 'Split AC', quantity: 2)],
-            date: DateTime(2026, 4, 1),
-          ),
-        ],
-        generatedAt: DateTime(2026, 4, 2, 9),
-      );
+          ],
+          generatedAt: DateTime(2026, 4, 2, 9),
+        );
 
-      final sheet = workbook['Jobs'];
-      expect(cellText(sheet, 'A1'), 'Jobs Report');
-      expect(cellText(sheet, 'B5'), 'Invoice Number');
-      expect(cellText(sheet, 'C6'), 'Yes');
-      expect(cellText(sheet, 'D6'), 'company-1-inv-100');
-      expect(cellText(sheet, 'A8'), 'SUMMARY');
-      expect(cellText(sheet, 'D8'), '2');
-      expect(cellText(sheet, 'G8'), '1');
-    });
+        final sheet = workbook['Jobs'];
+        expect(cellText(sheet, 'A1'), 'Jobs Report');
+        expect(cellText(sheet, 'B5'), 'Invoice Number');
+        expect(cellText(sheet, 'C6'), 'Yes');
+        expect(cellText(sheet, 'D6'), 'company-1-inv-100');
+        expect(cellText(sheet, 'A8'), 'SUMMARY');
+        expect(cellText(sheet, 'D8'), '2');
+        expect(cellText(sheet, 'G8'), '1');
+      },
+    );
 
     test('buildExpensesWorkbook separates work and home totals', () {
       final workbook = ExcelExport.buildExpensesWorkbook(

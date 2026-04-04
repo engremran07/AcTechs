@@ -115,7 +115,10 @@ void main() {
     final doc = await firestore
         .collection(AppConstants.acInstallsCollection)
         .add({
-          ...buildInstall(status: 'approved', approvedBy: 'admin-1').toFirestore(),
+          ...buildInstall(
+            status: 'approved',
+            approvedBy: 'admin-1',
+          ).toFirestore(),
           'status': 'approved',
           'approvedBy': 'admin-1',
           'adminNote': '',
