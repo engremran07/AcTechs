@@ -328,6 +328,8 @@ class UserRepository {
         AppConstants.jobsCollection,
         AppConstants.expensesCollection,
         AppConstants.earningsCollection,
+        AppConstants.acInstallsCollection,
+        AppConstants.sharedInstallAggregatesCollection,
         AppConstants.companiesCollection,
       ]) {
         await _deleteCollectionInChunks(collection);
@@ -377,6 +379,11 @@ class UserRepository {
       );
       await _deleteCollectionByFieldInChunks(
         AppConstants.earningsCollection,
+        'techId',
+        techId,
+      );
+      await _deleteCollectionByFieldInChunks(
+        AppConstants.acInstallsCollection,
         'techId',
         techId,
       );

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
-import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
@@ -46,7 +44,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   }
 
   void refresh() {
-    ref.invalidate(allJobsProvider);
+    ref.invalidate(adminJobSummaryProvider);
     ref.invalidate(pendingApprovalsProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allCompaniesProvider);
@@ -56,7 +54,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider).value;
-    final allJobs = ref.watch(allJobsProvider);
+    final adminSummary = ref.watch(adminJobSummaryProvider);
     final pending = ref.watch(pendingApprovalsProvider);
     final technicians = ref.watch(allTechniciansProvider);
     final companies = ref.watch(allCompaniesProvider);
@@ -99,45 +97,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 24),
 
                   // Summary Cards
-                  allJobs.when(
-                    data: (jobs) {
-                      final pendingCount = jobs
-                          .where((j) => j.isPending)
-                          .length;
-                      final approvedCount = jobs
-                          .where((j) => j.isApproved)
-                          .length;
-                      final splitCount = jobs.fold<int>(
-                        0,
-                        (sum, job) =>
-                            sum +
-                            job.acUnits
-                                .where(
-                                  (u) => u.type == AppConstants.unitTypeSplitAc,
-                                )
-                                .fold<int>(0, (s, u) => s + u.quantity),
-                      );
-                      final windowCount = jobs.fold<int>(
-                        0,
-                        (sum, job) =>
-                            sum +
-                            job.acUnits
-                                .where((u) => u.type == 'Window AC')
-                                .fold<int>(0, (s, u) => s + u.quantity),
-                      );
-                      final freeStandingCount = jobs.fold<int>(
-                        0,
-                        (sum, job) =>
-                            sum +
-                            job.acUnits
-                                .where((u) => u.type == 'Freestanding AC')
-                                .fold<int>(0, (s, u) => s + u.quantity),
-                      );
-                      final totalExpenses = jobs.fold<double>(
-                        0,
-                        (s, j) => s + j.expenses,
-                      );
-
+                  adminSummary.when(
+                    data: (summary) {
                       return Column(
                         children: [
                           Row(
@@ -145,7 +106,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.totalJobs,
-                                  value: '${jobs.length}',
+                                  value: '${summary.totalJobs}',
                                   icon: Icons.work_outline,
                                   color: ArcticTheme.arcticBlue,
                                 ),
@@ -154,7 +115,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.pending,
-                                  value: '$pendingCount',
+                                  value: '${summary.pendingJobs}',
                                   icon: Icons.pending_outlined,
                                   color: ArcticTheme.arcticPending,
                                   onTap: () => context.go('/admin/approvals'),
@@ -168,7 +129,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.approved,
-                                  value: '$approvedCount',
+                                  value: '${summary.approvedJobs}',
                                   icon: Icons.check_circle_outline,
                                   color: ArcticTheme.arcticSuccess,
                                 ),
@@ -177,7 +138,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.expenses,
-                                  value: AppFormatters.currency(totalExpenses),
+                                  value: AppFormatters.currency(
+                                    summary.totalExpenses,
+                                  ),
                                   icon: Icons.payments_outlined,
                                   color: ArcticTheme.arcticWarning,
                                 ),
@@ -190,7 +153,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.splits,
-                                  value: '$splitCount',
+                                  value: '${summary.splitUnits}',
                                   icon: Icons.ac_unit_rounded,
                                   color: ArcticTheme.arcticBlue,
                                   onTap: () => context.push(
@@ -202,7 +165,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.windowAc,
-                                  value: '$windowCount',
+                                  value: '${summary.windowUnits}',
                                   icon: Icons.window_rounded,
                                   color: ArcticTheme.arcticSuccess,
                                   onTap: () => context.push(
@@ -214,7 +177,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               Expanded(
                                 child: _DashCard(
                                   title: l.standing,
-                                  value: '$freeStandingCount',
+                                  value: '${summary.freestandingUnits}',
                                   icon: Icons.kitchen_rounded,
                                   color: ArcticTheme.arcticWarning,
                                   onTap: () => context.push(

@@ -799,6 +799,7 @@ class PdfGenerator {
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
+    ReportBrandingContext? reportBranding,
   }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
@@ -881,8 +882,14 @@ class PdfGenerator {
           font: font,
           dir: dir,
           dateRange: dateRange,
+          reportBranding: reportBranding,
         ),
-        footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
         build: (context) => [
           // Technician / date meta
           if (technicianName != null) ...[

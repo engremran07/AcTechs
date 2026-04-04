@@ -158,6 +158,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   void _refreshApprovals() {
     ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(approvedSharedInstallsProvider);
     ref.invalidate(pendingEarningsProvider);
     ref.invalidate(pendingExpensesProvider);
   }
@@ -233,33 +234,50 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     bool allowActions = true,
   }) async {
     final l = AppLocalizations.of(context)!;
+    final historyFuture = ref
+        .read(jobRepositoryProvider)
+        .fetchJobHistory(job.id);
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(job.invoiceNumber),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${l.technician}: ${job.techName}'),
-            Text('${l.technicianUidLabel}: ${job.techId}'),
-            Text('${l.client}: ${job.clientName}'),
-            Text('${l.totalUnits}: ${job.totalUnits}'),
-            if (job.isSharedInstall)
-              Text(
-                '${l.sharedInstall}: ${l.totalOnInvoice} ${AppFormatters.units(job.sharedInvoiceTotalUnits)} • ${l.myShare} ${AppFormatters.units(_jobContributionUnits(job))}',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${l.technician}: ${job.techName}'),
+              Text('${l.technicianUidLabel}: ${job.techId}'),
+              Text('${l.client}: ${job.clientName}'),
+              Text('${l.totalUnits}: ${job.totalUnits}'),
+              if (job.isSharedInstall)
+                Text(
+                  '${l.sharedInstall}: ${l.totalOnInvoice} ${AppFormatters.units(job.sharedInvoiceTotalUnits)} • ${l.myShare} ${AppFormatters.units(_jobContributionUnits(job))}',
+                ),
+              if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty)
+                Text('${l.sharedGroup}: ${job.sharedInstallGroupKey}'),
+              if (job.isSharedInstall && job.sharedInvoiceBracketCount > 0)
+                Text(
+                  '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                ),
+              if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
+              if ((job.approvedBy ?? '').trim().isNotEmpty)
+                Text('${l.approverUidLabel}: ${job.approvedBy!.trim()}'),
+              if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
+              const SizedBox(height: 12),
+              _ApprovalHistorySection(
+                future: historyFuture,
+                title: l.history,
+                statusLabel: l.statusLabel,
+                dateLabel: l.date,
+                actorLabel: l.approverUidLabel,
+                reasonLabel: l.rejectReason,
+                approvedLabel: l.approved,
+                rejectedLabel: l.rejected,
+                pendingLabel: l.pending,
               ),
-            if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty)
-              Text('${l.sharedGroup}: ${job.sharedInstallGroupKey}'),
-            if (job.isSharedInstall && job.sharedInvoiceBracketCount > 0)
-              Text(
-                '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
-              ),
-            if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
-            if ((job.approvedBy ?? '').trim().isNotEmpty)
-              Text('${l.approverUidLabel}: ${job.approvedBy!.trim()}'),
-            if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -299,19 +317,36 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   Future<void> _showInOutVerificationDialog(_PendingInOutEntry entry) async {
     final l = AppLocalizations.of(context)!;
+    final historyFuture = entry.isEarning
+        ? ref.read(earningRepositoryProvider).fetchHistory(entry.id)
+        : ref.read(expenseRepositoryProvider).fetchHistory(entry.id);
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(entry.isEarning ? l.inEarned : l.outSpent),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${l.technician}: ${entry.techName}'),
-            Text('${l.category}: ${entry.category}'),
-            Text('${l.amountSar}: ${AppFormatters.currency(entry.amount)}'),
-            if (entry.note.trim().isNotEmpty) Text(entry.note),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${l.technician}: ${entry.techName}'),
+              Text('${l.category}: ${entry.category}'),
+              Text('${l.amountSar}: ${AppFormatters.currency(entry.amount)}'),
+              if (entry.note.trim().isNotEmpty) Text(entry.note),
+              const SizedBox(height: 12),
+              _ApprovalHistorySection(
+                future: historyFuture,
+                title: l.history,
+                statusLabel: l.statusLabel,
+                dateLabel: l.date,
+                actorLabel: l.approverUidLabel,
+                reasonLabel: l.rejectReason,
+                approvedLabel: l.approved,
+                rejectedLabel: l.rejected,
+                pendingLabel: l.pending,
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -362,7 +397,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   @override
   Widget build(BuildContext context) {
     final pending = ref.watch(pendingApprovalsProvider);
-    final allJobs = ref.watch(allJobsProvider);
+    final approvedSharedAsync = ref.watch(approvedSharedInstallsProvider);
     final pendingEarnings = ref.watch(pendingEarningsProvider);
     final pendingExpenses = ref.watch(pendingExpensesProvider);
     final pendingInOut =
@@ -410,9 +445,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   .where((job) => job.isSharedInstall)
                   .length;
               final sharedInvoiceUnits = _sharedInvoiceUnits(sharedGroups);
-              final approvedShared = (allJobs.value ?? const <JobModel>[])
-                  .where((job) => job.isSharedInstall && job.isApproved)
-                  .toList();
+              final approvedShared =
+                  approvedSharedAsync.value ?? const <JobModel>[];
               final approvedSharedGroups = _sharedJobGroups(approvedShared);
               final filteredApprovedShared = _filter(approvedShared);
               _selected.removeWhere((id) => !filtered.any((j) => j.id == id));
@@ -1209,6 +1243,104 @@ class _PendingInOutEntry {
   final double amount;
   final String note;
   final DateTime? date;
+}
+
+class _ApprovalHistorySection extends StatelessWidget {
+  const _ApprovalHistorySection({
+    required this.future,
+    required this.title,
+    required this.statusLabel,
+    required this.dateLabel,
+    required this.actorLabel,
+    required this.reasonLabel,
+    required this.approvedLabel,
+    required this.rejectedLabel,
+    required this.pendingLabel,
+  });
+
+  final Future<List<ApprovalHistoryEntry>> future;
+  final String title;
+  final String statusLabel;
+  final String dateLabel;
+  final String actorLabel;
+  final String reasonLabel;
+  final String approvedLabel;
+  final String rejectedLabel;
+  final String pendingLabel;
+
+  String _statusText(String status) {
+    switch (status) {
+      case 'approved':
+        return approvedLabel;
+      case 'rejected':
+        return rejectedLabel;
+      case 'pending':
+        return pendingLabel;
+      default:
+        return status;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<ApprovalHistoryEntry>>(
+      future: future,
+      builder: (context, snapshot) {
+        final entries = snapshot.data;
+        if (entries == null || entries.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            ...entries.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ArcticTheme.arcticCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: ArcticTheme.arcticDivider.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$statusLabel: ${_statusText(entry.previousStatus)} -> ${_statusText(entry.newStatus)}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      if (entry.changedBy.trim().isNotEmpty)
+                        Text(
+                          '$actorLabel: ${entry.changedBy}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      if (entry.changedAt != null)
+                        Text(
+                          '$dateLabel: ${AppFormatters.dateTime(entry.changedAt)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      if (entry.reason.trim().isNotEmpty)
+                        Text(
+                          '$reasonLabel: ${entry.reason}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _InOutPendingCard extends StatelessWidget {

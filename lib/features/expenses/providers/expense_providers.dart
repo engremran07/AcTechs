@@ -106,32 +106,41 @@ final todaysEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
 /// Monthly earnings for the logged-in tech.
 final monthlyEarningsProvider = StreamProvider.autoDispose
     .family<List<EarningModel>, DateTime>((ref, month) {
+      final normalized = DateTime(month.year, month.month);
       final user = ref.watch(currentUserProvider).value;
       if (user == null) return Stream.value([]);
       return ref
           .watch(earningRepositoryProvider)
-          .monthlyEarnings(user.uid, month);
+          .monthlyEarnings(user.uid, normalized);
     });
 
-final pendingExpensesProvider = StreamProvider<List<ExpenseModel>>((ref) {
+final pendingExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(expenseRepositoryProvider).pendingExpenses();
 });
 
-final pendingEarningsProvider = StreamProvider<List<EarningModel>>((ref) {
+final pendingEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(earningRepositoryProvider).pendingEarnings();
 });
 
-final allExpensesProvider = StreamProvider<List<ExpenseModel>>((ref) {
+final allExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(expenseRepositoryProvider).allExpenses();
 });
 
-final allEarningsProvider = StreamProvider<List<EarningModel>>((ref) {
+final allEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(earningRepositoryProvider).allEarnings();

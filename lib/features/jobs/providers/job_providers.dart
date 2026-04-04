@@ -5,6 +5,26 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
 enum JobAcTypeFilter { split, window, freestanding }
 
+class AdminJobsQuery {
+  const AdminJobsQuery({this.start, this.end, this.techId});
+
+  final DateTime? start;
+  final DateTime? end;
+  final String? techId;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AdminJobsQuery &&
+        other.start == start &&
+        other.end == end &&
+        other.techId == techId;
+  }
+
+  @override
+  int get hashCode => Object.hash(start, end, techId);
+}
+
 String jobAcTypeFilterToPath(JobAcTypeFilter filter) {
   switch (filter) {
     case JobAcTypeFilter.split:
@@ -51,29 +71,63 @@ List<JobModel> _jobsByType(List<JobModel> jobs, JobAcTypeFilter filter) {
       .toList(growable: false);
 }
 
-final technicianJobsProvider = StreamProvider<List<JobModel>>((ref) {
+final technicianJobsProvider = StreamProvider.autoDispose<List<JobModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).technicianJobs(user.uid);
 });
 
-final todaysJobsProvider = StreamProvider<List<JobModel>>((ref) {
+final todaysJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).todaysJobs(user.uid);
 });
 
-final pendingApprovalsProvider = StreamProvider<List<JobModel>>((ref) {
+final pendingApprovalsProvider = StreamProvider.autoDispose<List<JobModel>>((
+  ref,
+) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).pendingApprovals();
 });
 
-final allJobsProvider = StreamProvider<List<JobModel>>((ref) {
+final approvedSharedInstallsProvider =
+    StreamProvider.autoDispose<List<JobModel>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return Stream.value([]);
+      return ref.watch(jobRepositoryProvider).approvedSharedInstalls();
+    });
+
+final allJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(jobRepositoryProvider).allJobs();
 });
+
+final adminJobSummaryProvider = FutureProvider.autoDispose<AdminJobSummary>((
+  ref,
+) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) {
+    return Future.value(AdminJobSummary.empty());
+  }
+  return ref.watch(jobRepositoryProvider).fetchAdminJobSummary();
+});
+
+final filteredAdminJobsProvider = FutureProvider.autoDispose
+    .family<List<JobModel>, AdminJobsQuery>((ref, query) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return Future.value(const []);
+      return ref
+          .watch(jobRepositoryProvider)
+          .jobsForAdminFilter(
+            start: query.start,
+            end: query.end,
+            techId: query.techId,
+          );
+    });
 
 final techJobsByAcTypeProvider = Provider.autoDispose
     .family<List<JobModel>, JobAcTypeFilter>((ref, filter) {

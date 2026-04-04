@@ -12,6 +12,7 @@ import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
@@ -624,63 +625,51 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return null;
   }
 
-  List<JobModel> _applyPeriodFilter(List<JobModel> jobs) {
+  AdminJobsQuery? _activeAdminQuery() {
     final range = _activeRange();
-    if (range == null) return jobs;
-    final start = DateTime(
-      range.start.year,
-      range.start.month,
-      range.start.day,
-    );
-    final end = DateTime(
-      range.end.year,
-      range.end.month,
-      range.end.day,
-      23,
-      59,
-      59,
-    );
-    return jobs.where((j) {
-      final d = j.date;
-      if (d == null) return false;
-      return !d.isBefore(start) && !d.isAfter(end);
-    }).toList();
-  }
-
-  List<JobModel> _applyTechnicianFilter(List<JobModel> jobs) {
-    if (_technicianFilter == 'all') return jobs;
-    return jobs.where((j) => j.techId == _technicianFilter).toList();
-  }
-
-  List<JobModel> _effectiveJobs(List<JobModel> jobs) {
-    final periodScoped = _applyPeriodFilter(jobs);
-    if (_reportPreset == 'byTech') {
-      return _applyTechnicianFilter(periodScoped);
+    final techId = _technicianFilter == 'all' ? null : _technicianFilter;
+    if (range == null && techId == null) {
+      return null;
     }
-    return periodScoped;
-  }
 
-  Map<String, List<JobModel>> _sharedGroups(List<JobModel> jobs) {
-    final groups = <String, List<JobModel>>{};
-    for (final job in jobs) {
-      if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) continue;
-      groups
-          .putIfAbsent(job.sharedInstallGroupKey, () => <JobModel>[])
-          .add(job);
-    }
-    return groups;
-  }
-
-  int _invoiceAwareUnitTotal(List<JobModel> jobs) {
-    final groups = _sharedGroups(jobs);
-    final groupedUnits = groups.values.fold<int>(
-      0,
-      (sum, entries) => sum + entries.first.sharedInvoiceTotalUnits,
+    return AdminJobsQuery(
+      start: range == null
+          ? null
+          : DateTime(range.start.year, range.start.month, range.start.day),
+      end: range == null
+          ? null
+          : DateTime(
+              range.end.year,
+              range.end.month,
+              range.end.day,
+              23,
+              59,
+              59,
+            ),
+      techId: techId,
     );
-    final soloUnits = jobs
-        .where((job) => !job.isSharedInstall)
-        .fold<int>(0, (sum, job) => sum + job.totalUnits);
-    return soloUnits + groupedUnits;
+  }
+
+  AsyncValue<List<JobModel>> _jobsAsync() {
+    final query = _activeAdminQuery();
+    if (query == null) return const AsyncData(<JobModel>[]);
+    return ref.watch(filteredAdminJobsProvider(query));
+  }
+
+  AsyncValue<AdminJobSummary> _summaryAsync() {
+    final query = _activeAdminQuery();
+    if (query == null) {
+      return ref.watch(adminJobSummaryProvider);
+    }
+    return _jobsAsync().whenData(AdminJobSummary.fromJobs);
+  }
+
+  Future<List<JobModel>> _fetchJobsForCurrentScope() {
+    final query = _activeAdminQuery();
+    if (query == null) {
+      return ref.read(jobRepositoryProvider).fetchAllAdminJobs();
+    }
+    return ref.read(filteredAdminJobsProvider(query).future);
   }
 
   String _periodLabel(AppLocalizations l) {
@@ -740,14 +729,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     }
   }
 
-  Future<void> _exportToExcel() async {
+  Future<void> _exportToExcel(List<JobModel> jobs) async {
     setState(() => _isExporting = true);
     try {
-      final scopedJobs = _applyTechnicianFilter(
-        _applyPeriodFilter(ref.read(allJobsProvider).value ?? const []),
-      );
-      final jobs = scopedJobs;
-
       if (jobs.isEmpty) {
         if (mounted) {
           ErrorSnackbar.show(
@@ -855,7 +839,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final allJobs = ref.watch(allJobsProvider);
+    final summaryAsync = _summaryAsync();
     final usersAsync = ref.watch(allUsersProvider);
     final allEarningsAsync = ref.watch(allEarningsProvider);
     final allExpensesAsync = ref.watch(allExpensesProvider);
@@ -940,17 +924,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             onPressed: _isExportingTodayCompanyPdf
                 ? null
                 : () async {
-                    final jobs = ref.read(allJobsProvider).value;
-                    if (jobs != null) {
-                      final picked = await _pickInvoiceReportOptions(jobs);
-                      if (picked == null) return;
-                      _exportTodayCompanyInvoicesPdf(
-                        jobs: jobs,
-                        month: picked.month,
-                        companyKey: picked.companyKey,
-                        companyName: picked.companyName,
-                      );
-                    }
+                    final jobs = await _fetchJobsForCurrentScope();
+                    if (!mounted || jobs.isEmpty) return;
+                    final picked = await _pickInvoiceReportOptions(jobs);
+                    if (picked == null) return;
+                    _exportTodayCompanyInvoicesPdf(
+                      jobs: jobs,
+                      month: picked.month,
+                      companyKey: picked.companyKey,
+                      companyName: picked.companyName,
+                    );
                   },
             icon: _isExportingTodayCompanyPdf
                 ? const SizedBox(
@@ -962,17 +945,23 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             tooltip: l.exportTodayCompanyInvoices,
           ),
           IconButton(
-            onPressed: () {
-              final jobs = ref.read(allJobsProvider).value;
-              if (jobs != null && jobs.isNotEmpty) {
-                _exportToPdf(_applyTechnicianFilter(_applyPeriodFilter(jobs)));
-              }
+            onPressed: () async {
+              final jobs = await _fetchJobsForCurrentScope();
+              if (!mounted || jobs.isEmpty) return;
+              await _exportToPdf(jobs);
             },
             icon: const Icon(Icons.picture_as_pdf_outlined),
             tooltip: l.exportToPdf,
           ),
           IconButton(
-            onPressed: _isExporting ? null : _exportToExcel,
+            onPressed:
+                _isExporting || ((summaryAsync.value?.totalJobs ?? 0) == 0)
+                ? null
+                : () async {
+                    final jobs = await _fetchJobsForCurrentScope();
+                    if (!mounted || jobs.isEmpty) return;
+                    await _exportToExcel(jobs);
+                  },
             icon: _isExporting
                 ? const SizedBox(
                     width: 20,
@@ -985,73 +974,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ],
       ),
       body: SafeArea(
-        child: allJobs.when(
-          data: (jobs) {
-            final scopedJobs = _effectiveJobs(jobs);
-            final sharedGroups = _sharedGroups(scopedJobs);
-            final approved = scopedJobs.where((j) => j.isApproved).length;
-            final pending = scopedJobs.where((j) => j.isPending).length;
-            final rejected = scopedJobs.where((j) => j.isRejected).length;
-            final sharedJobsCount = scopedJobs
-                .where((j) => j.isSharedInstall)
-                .length;
-            final sharedInvoiceUnits = sharedGroups.values.fold<int>(
-              0,
-              (sum, entries) => sum + entries.first.sharedInvoiceTotalUnits,
-            );
-            final sharedInvoiceBrackets = sharedGroups.values.fold<int>(
-              0,
-              (sum, entries) => sum + entries.first.sharedInvoiceBracketCount,
-            );
-            final totalExpenses = scopedJobs.fold<double>(
-              0,
-              (s, j) => s + j.expenses,
-            );
-
-            final uninstallOld = scopedJobs.fold<int>(
-              0,
-              (s, j) =>
-                  s +
-                  j.acUnits
-                      .where((u) => u.type == 'Uninstallation (Old AC)')
-                      .fold<int>(0, (x, u) => x + u.quantity),
-            );
-            final uninstallSplit = scopedJobs.fold<int>(
-              0,
-              (s, j) =>
-                  s +
-                  j.acUnits
-                      .where((u) => u.type == 'Uninstallation Split')
-                      .fold<int>(0, (x, u) => x + u.quantity),
-            );
-            final uninstallWindow = scopedJobs.fold<int>(
-              0,
-              (s, j) =>
-                  s +
-                  j.acUnits
-                      .where((u) => u.type == 'Uninstallation Window')
-                      .fold<int>(0, (x, u) => x + u.quantity),
-            );
-            final uninstallStanding = scopedJobs.fold<int>(
-              0,
-              (s, j) =>
-                  s +
-                  j.acUnits
-                      .where((u) => u.type == 'Uninstallation Freestanding')
-                      .fold<int>(0, (x, u) => x + u.quantity),
-            );
-            final uninstallTotal =
-                uninstallOld +
-                uninstallSplit +
-                uninstallWindow +
-                uninstallStanding;
-
-            // Jobs per technician
-            final techJobs = <String, int>{};
-            for (final job in scopedJobs) {
-              techJobs[job.techName] = (techJobs[job.techName] ?? 0) + 1;
-            }
-
+        child: summaryAsync.when(
+          data: (summary) {
+            final techJobs = summary.technicianJobsMap;
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -1124,30 +1049,30 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         _SummaryRow(
                           label: l.uninstallSplit,
                           value:
-                              '$uninstallSplit (${uninstallTotal == 0 ? 0 : ((uninstallSplit / uninstallTotal) * 100).toStringAsFixed(1)}%)',
+                              '${summary.uninstallSplitUnits} (${summary.uninstallTotal == 0 ? 0 : ((summary.uninstallSplitUnits / summary.uninstallTotal) * 100).toStringAsFixed(1)}%)',
                         ),
                         const Divider(height: 16),
                         _SummaryRow(
                           label: l.uninstallWindow,
                           value:
-                              '$uninstallWindow (${uninstallTotal == 0 ? 0 : ((uninstallWindow / uninstallTotal) * 100).toStringAsFixed(1)}%)',
+                              '${summary.uninstallWindowUnits} (${summary.uninstallTotal == 0 ? 0 : ((summary.uninstallWindowUnits / summary.uninstallTotal) * 100).toStringAsFixed(1)}%)',
                         ),
                         const Divider(height: 16),
                         _SummaryRow(
                           label: l.uninstallStanding,
                           value:
-                              '$uninstallStanding (${uninstallTotal == 0 ? 0 : ((uninstallStanding / uninstallTotal) * 100).toStringAsFixed(1)}%)',
+                              '${summary.uninstallStandingUnits} (${summary.uninstallTotal == 0 ? 0 : ((summary.uninstallStandingUnits / summary.uninstallTotal) * 100).toStringAsFixed(1)}%)',
                         ),
                         const Divider(height: 16),
                         _SummaryRow(
                           label: l.catUninstallOldAc,
                           value:
-                              '$uninstallOld (${uninstallTotal == 0 ? 0 : ((uninstallOld / uninstallTotal) * 100).toStringAsFixed(1)}%)',
+                              '${summary.uninstallOldUnits} (${summary.uninstallTotal == 0 ? 0 : ((summary.uninstallOldUnits / summary.uninstallTotal) * 100).toStringAsFixed(1)}%)',
                         ),
                         const Divider(height: 16),
                         _SummaryRow(
                           label: l.uninstalls,
-                          value: '$uninstallTotal',
+                          value: '${summary.uninstallTotal}',
                         ),
                       ],
                     ),
@@ -1176,9 +1101,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                     centerSpaceRadius: 40,
                                     sections: [
                                       PieChartSectionData(
-                                        value: approved.toDouble(),
+                                        value: summary.approvedJobs.toDouble(),
                                         color: ArcticTheme.arcticSuccess,
-                                        title: '$approved',
+                                        title: '${summary.approvedJobs}',
                                         titleStyle: Theme.of(context)
                                             .textTheme
                                             .labelSmall
@@ -1189,9 +1114,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                         radius: 50,
                                       ),
                                       PieChartSectionData(
-                                        value: pending.toDouble(),
+                                        value: summary.pendingJobs.toDouble(),
                                         color: ArcticTheme.arcticPending,
-                                        title: '$pending',
+                                        title: '${summary.pendingJobs}',
                                         titleStyle: Theme.of(context)
                                             .textTheme
                                             .labelSmall
@@ -1202,9 +1127,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                         radius: 50,
                                       ),
                                       PieChartSectionData(
-                                        value: rejected.toDouble(),
+                                        value: summary.rejectedJobs.toDouble(),
                                         color: ArcticTheme.arcticError,
-                                        title: '$rejected',
+                                        title: '${summary.rejectedJobs}',
                                         titleStyle: Theme.of(context)
                                             .textTheme
                                             .labelSmall
@@ -1348,45 +1273,45 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     children: [
                       _SummaryRow(
                         label: AppLocalizations.of(context)!.totalJobs,
-                        value: '${scopedJobs.length}',
+                        value: '${summary.totalJobs}',
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: AppLocalizations.of(context)!.totalUnits,
                         value: AppFormatters.units(
-                          _invoiceAwareUnitTotal(scopedJobs),
+                          summary.invoiceAwareUnitTotal,
                         ),
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: '${l.sharedInstall} ${l.jobs}',
-                        value: '$sharedJobsCount',
+                        value: '${summary.sharedJobsCount}',
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label:
                             '${l.sharedInstall} ${l.invoice} ${l.totalUnits}',
-                        value: AppFormatters.units(sharedInvoiceUnits),
+                        value: AppFormatters.units(summary.sharedInvoiceUnits),
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: '${l.sharedInstall} ${l.invoice}',
-                        value: '${sharedGroups.length}',
+                        value: '${summary.sharedInvoiceCount}',
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: '${l.sharedInstall} ${l.acOutdoorBracket}',
-                        value: '$sharedInvoiceBrackets',
+                        value: '${summary.sharedInvoiceBrackets}',
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: AppLocalizations.of(context)!.totalExpenses,
-                        value: AppFormatters.currency(totalExpenses),
+                        value: AppFormatters.currency(summary.totalExpenses),
                       ),
                       const Divider(height: 16),
                       _SummaryRow(
                         label: AppLocalizations.of(context)!.technicians,
-                        value: '${techJobs.length}',
+                        value: '${summary.technicianCount}',
                       ),
                     ],
                   ),

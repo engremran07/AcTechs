@@ -16,6 +16,22 @@ class EarningRepository {
   CollectionReference<Map<String, dynamic>> get _ref =>
       firestore.collection(AppConstants.earningsCollection);
 
+  CollectionReference<Map<String, dynamic>> _historyRef(String earningId) {
+    return _ref.doc(earningId).collection('history');
+  }
+
+  Future<List<ApprovalHistoryEntry>> fetchHistory(
+    String earningId, {
+    int limit = 10,
+  }) async {
+    final snap = await _historyRef(
+      earningId,
+    ).orderBy('changedAt', descending: true).limit(limit).get();
+    return snap.docs
+        .map((doc) => ApprovalHistoryEntry.fromMap(doc.data()))
+        .toList(growable: false);
+  }
+
   Future<void> addEarning(EarningModel earning) async {
     try {
       await _ref.add(earning.toFirestore());
@@ -54,10 +70,21 @@ class EarningRepository {
 
   Future<void> approveEarning(String id, String adminUid) async {
     try {
-      await _ref.doc(id).update({
-        'status': 'approved',
-        'approvedBy': adminUid,
-        'reviewedAt': FieldValue.serverTimestamp(),
+      await firestore.runTransaction((tx) async {
+        final docRef = _ref.doc(id);
+        final snap = await tx.get(docRef);
+        final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        tx.update(docRef, {
+          'status': 'approved',
+          'approvedBy': adminUid,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+        tx.set(_historyRef(id).doc(), {
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': prevStatus,
+          'newStatus': 'approved',
+        });
       });
     } on FirebaseException catch (e) {
       debugPrint('approveEarning error: ${e.code} — ${e.message}');
@@ -70,11 +97,23 @@ class EarningRepository {
 
   Future<void> rejectEarning(String id, String adminUid, String reason) async {
     try {
-      await _ref.doc(id).update({
-        'status': 'rejected',
-        'approvedBy': adminUid,
-        'adminNote': reason,
-        'reviewedAt': FieldValue.serverTimestamp(),
+      await firestore.runTransaction((tx) async {
+        final docRef = _ref.doc(id);
+        final snap = await tx.get(docRef);
+        final prevStatus = snap.data()?['status'] as String? ?? 'pending';
+        tx.update(docRef, {
+          'status': 'rejected',
+          'approvedBy': adminUid,
+          'adminNote': reason,
+          'reviewedAt': FieldValue.serverTimestamp(),
+        });
+        tx.set(_historyRef(id).doc(), {
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': prevStatus,
+          'newStatus': 'rejected',
+          'reason': reason,
+        });
       });
     } on FirebaseException catch (e) {
       debugPrint('rejectEarning error: ${e.code} — ${e.message}');

@@ -207,6 +207,12 @@ service cloud.firestore {
       allow read: if isAuth() &&
         (resource.data.techId == request.auth.uid || isAdmin());
 
+      match /history/{historyId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
+
       allow create: if (isAuth() &&
         request.resource.data.techId == request.auth.uid &&
         request.resource.data.status == (
@@ -228,6 +234,7 @@ service cloud.firestore {
           : resource.data.status in ['pending', 'approved']) &&
         request.resource.data.status == resource.data.status &&
         request.resource.data.techId == resource.data.techId &&
+        request.resource.data.submittedAt == resource.data.submittedAt &&
         request.resource.data.approvedBy == resource.data.approvedBy &&
         request.resource.data.reviewedAt == resource.data.reviewedAt &&
         request.resource.data.adminNote == resource.data.adminNote &&
@@ -263,12 +270,14 @@ service cloud.firestore {
       );
 
       allow delete: if isAdmin() ||
-        (isAuth() && resource.data.techId == request.auth.uid);
+        (isAuth() &&
+         resource.data.techId == request.auth.uid &&
+         !(resource.data.isSharedInstall is bool && resource.data.isSharedInstall));
     }
 
     match /shared_install_aggregates/{aggregateId} {
       allow get: if isAuth();
-      allow list: if false;
+      allow list: if isAdmin();
 
       allow create: if isAdmin() || (
         isAuth() &&
@@ -286,6 +295,12 @@ service cloud.firestore {
 
     // ─── Expenses ───
     match /expenses/{expenseId} {
+      match /history/{historyId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
+
       // Techs read own; admins read all
       allow read: if isAuth() &&
         (resource.data.techId == request.auth.uid || isAdmin());
@@ -353,6 +368,12 @@ service cloud.firestore {
 
     // ─── Earnings ───
     match /earnings/{earningId} {
+      match /history/{historyId} {
+        allow read: if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
+
       // Techs read own; admins read all
       allow read: if isAuth() &&
         (resource.data.techId == request.auth.uid || isAdmin());
@@ -442,7 +463,7 @@ service cloud.firestore {
           'reviewedAt'
         ]) &&
         request.resource.data.date is timestamp &&
-        request.resource.data.status in ['pending', 'approved'];
+        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved');
 
       allow update: if isAdmin() || (
         isAuth() &&

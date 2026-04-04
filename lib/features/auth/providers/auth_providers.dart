@@ -8,7 +8,14 @@ import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
+import 'package:ac_techs/features/settings/data/approval_config_repository.dart';
+import 'package:ac_techs/features/settings/data/app_branding_repository.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/expenses/data/ac_install_repository.dart';
+import 'package:ac_techs/features/expenses/providers/ac_install_providers.dart';
+import 'package:ac_techs/core/providers/app_build_provider.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
@@ -68,6 +75,14 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(techEarningsProvider);
     ref.invalidate(todaysEarningsProvider);
     ref.invalidate(monthlyEarningsProvider);
+    ref.invalidate(todaysAcInstallsProvider);
+    ref.invalidate(techAcInstallsProvider);
+    ref.invalidate(pendingAcInstallsProvider);
+    ref.invalidate(approvalConfigProvider);
+    ref.invalidate(appBrandingProvider);
+    ref.invalidate(appPackageInfoProvider);
+    ref.invalidate(appBuildNumberProvider);
+    ref.invalidate(appVersionLabelProvider);
     ref.invalidate(currentUserProvider);
 
     // 2. Sign out from Firebase Auth
@@ -77,6 +92,9 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(jobRepositoryProvider);
     ref.invalidate(userRepositoryProvider);
     ref.invalidate(authRepositoryProvider);
+    ref.invalidate(acInstallRepositoryProvider);
+    ref.invalidate(approvalConfigRepositoryProvider);
+    ref.invalidate(appBrandingRepositoryProvider);
     ref.invalidate(authStateProvider);
   }
 }

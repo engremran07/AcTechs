@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
@@ -24,13 +27,40 @@ class JobTypeFilterScreen extends ConsumerStatefulWidget {
 
 class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
   static const int _pageSize = 20;
+  static const int _adminQueryPageSize = 60;
   final ScrollController _scrollController = ScrollController();
   int _visibleCount = _pageSize;
+  final List<JobModel> _adminJobs = <JobModel>[];
+  DocumentSnapshot<Map<String, dynamic>>? _adminCursor;
+  bool _hasMoreAdminJobs = true;
+  bool _isLoadingAdminJobs = false;
+
+  bool _jobMatchesFilter(JobModel job) {
+    switch (widget.filter) {
+      case JobAcTypeFilter.split:
+        return job.acUnits.any(
+          (unit) => unit.type == 'Split AC' && unit.quantity > 0,
+        );
+      case JobAcTypeFilter.window:
+        return job.acUnits.any(
+          (unit) => unit.type == 'Window AC' && unit.quantity > 0,
+        );
+      case JobAcTypeFilter.freestanding:
+        return job.acUnits.any(
+          (unit) => unit.type == 'Freestanding AC' && unit.quantity > 0,
+        );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.isAdminScope) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadMoreAdminJobs(reset: true);
+      });
+    }
   }
 
   @override
@@ -46,6 +76,11 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     final offset = _scrollController.offset;
     if (max - offset > 180) return;
 
+    if (widget.isAdminScope) {
+      _loadMoreAdminJobs();
+      return;
+    }
+
     final jobs = widget.isAdminScope
         ? ref.read(adminJobsByAcTypeProvider(widget.filter))
         : ref.read(techJobsByAcTypeProvider(widget.filter));
@@ -54,6 +89,61 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     setState(() {
       _visibleCount = (_visibleCount + _pageSize).clamp(0, jobs.length);
     });
+  }
+
+  Future<void> _loadMoreAdminJobs({bool reset = false}) async {
+    if (_isLoadingAdminJobs) return;
+    if (!reset && !_hasMoreAdminJobs) return;
+
+    setState(() {
+      _isLoadingAdminJobs = true;
+      if (reset) {
+        _adminJobs.clear();
+        _adminCursor = null;
+        _hasMoreAdminJobs = true;
+        _visibleCount = _pageSize;
+      }
+    });
+
+    try {
+      final repo = ref.read(jobRepositoryProvider);
+      var cursor = _adminCursor;
+      var hasMore = _hasMoreAdminJobs;
+      final matchedJobs = <JobModel>[];
+
+      while (hasMore && matchedJobs.length < _pageSize) {
+        final page = await repo.fetchAdminJobsPage(
+          startAfter: cursor,
+          limit: _adminQueryPageSize,
+        );
+        cursor = page.cursor;
+        hasMore = page.hasMore;
+        matchedJobs.addAll(
+          page.jobs
+              .where(_jobMatchesFilter)
+              .where(
+                (job) => !_adminJobs.any((existing) => existing.id == job.id),
+              ),
+        );
+        if (page.jobs.isEmpty) {
+          hasMore = false;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _adminJobs.addAll(matchedJobs);
+        _adminCursor = cursor;
+        _hasMoreAdminJobs = hasMore;
+        _isLoadingAdminJobs = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _hasMoreAdminJobs = false;
+        _isLoadingAdminJobs = false;
+      });
+    }
   }
 
   String _title(AppLocalizations l) {
@@ -82,6 +172,8 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final jobs = widget.isAdminScope
+        ? _adminJobs
+        : widget.isAdminScope
         ? ref.watch(adminJobsByAcTypeProvider(widget.filter))
         : ref.watch(techJobsByAcTypeProvider(widget.filter));
 
@@ -93,7 +185,9 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_title(l))),
       body: SafeArea(
-        child: jobs.isEmpty
+        child: widget.isAdminScope && _adminJobs.isEmpty && _isLoadingAdminJobs
+            ? const Center(child: CircularProgressIndicator())
+            : jobs.isEmpty
             ? Center(
                 child: Text(
                   l.noMatchingJobs,
@@ -105,7 +199,9 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
                 padding: const EdgeInsets.all(16),
                 itemCount:
                     visibleJobs.length +
-                    (visibleJobs.length < jobs.length ? 1 : 0),
+                    (widget.isAdminScope
+                        ? ((_isLoadingAdminJobs || _hasMoreAdminJobs) ? 1 : 0)
+                        : (visibleJobs.length < jobs.length ? 1 : 0)),
                 itemBuilder: (context, index) {
                   if (index >= visibleJobs.length) {
                     return const Padding(

@@ -21,6 +21,58 @@ class JobRepository {
   CollectionReference<Map<String, dynamic>> get _sharedAggregatesRef =>
       firestore.collection(AppConstants.sharedInstallAggregatesCollection);
 
+  Future<
+    ({
+      List<JobModel> jobs,
+      DocumentSnapshot<Map<String, dynamic>>? cursor,
+      bool hasMore,
+    })
+  >
+  fetchAdminJobsPage({
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+    int limit = 50,
+  }) async {
+    Query<Map<String, dynamic>> query = _jobsRef
+        .orderBy('submittedAt', descending: true)
+        .limit(limit);
+
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    final snap = await query.get();
+    return (
+      jobs: snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+      cursor: snap.docs.isEmpty ? startAfter : snap.docs.last,
+      hasMore: snap.docs.length == limit,
+    );
+  }
+
+  Future<List<JobModel>> fetchAllAdminJobs() async {
+    final snap = await _jobsRef.orderBy('date', descending: true).get();
+    return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+  }
+
+  Future<AdminJobSummary> fetchAdminJobSummary() async {
+    final jobs = await fetchAllAdminJobs();
+    return AdminJobSummary.fromJobs(jobs);
+  }
+
+  Future<List<ApprovalHistoryEntry>> fetchJobHistory(
+    String jobId, {
+    int limit = 10,
+  }) async {
+    final snap = await _jobsRef
+        .doc(jobId)
+        .collection('history')
+        .orderBy('changedAt', descending: true)
+        .limit(limit)
+        .get();
+    return snap.docs
+        .map((doc) => ApprovalHistoryEntry.fromMap(doc.data()))
+        .toList(growable: false);
+  }
+
   int _unitsForType(JobModel job, String type) => job.acUnits
       .where((unit) => unit.type == type)
       .fold(0, (total, unit) => total + unit.quantity);
@@ -28,10 +80,16 @@ class JobRepository {
   int _bracketCount(JobModel job) => job.charges?.bracketCount ?? 0;
 
   String _safeImportDocId(JobModel job) {
+    final techId = job.techId.trim().toLowerCase();
+    final companyId = job.companyId.trim().toLowerCase();
     final invoice = InvoiceUtils.normalize(job.invoiceNumber).toLowerCase();
-    final safe = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
-    final scoped =
-        'inv_${safe.isEmpty ? DateTime.now().millisecondsSinceEpoch : safe}';
+    final safeInvoice = invoice.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    final safeTechId = techId.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    final safeCompanyId = companyId.replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
+    final invoiceToken = safeInvoice.isEmpty
+        ? DateTime.now().millisecondsSinceEpoch.toString()
+        : safeInvoice;
+    final scoped = 'inv_${safeTechId}_${safeCompanyId}_$invoiceToken';
     return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
   }
 
@@ -152,9 +210,10 @@ class JobRepository {
       final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
           ? ''
           : InvoiceUtils.normalize(job.sharedInstallGroupKey).toLowerCase();
+      final normalizedInvoiceKey = normalizedInvoice.toLowerCase();
       final resolvedGroupKey = normalizedGroupKey.isNotEmpty
           ? normalizedGroupKey
-          : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoice';
+          : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoiceKey';
       final duplicateSnap = await _jobsRef
           .where('techId', isEqualTo: job.techId)
           .where('companyId', isEqualTo: job.companyId)
@@ -456,6 +515,12 @@ class JobRepository {
             'approvedBy': adminUid,
             'reviewedAt': FieldValue.serverTimestamp(),
           });
+          batch.set(_jobsRef.doc(id).collection('history').doc(), {
+            'changedBy': adminUid,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': 'pending',
+            'newStatus': 'approved',
+          });
         }
         await batch.commit();
       }
@@ -506,6 +571,18 @@ class JobRepository {
         );
   }
 
+  Stream<List<JobModel>> approvedSharedInstalls() {
+    return _jobsRef
+        .where('status', isEqualTo: 'approved')
+        .where('isSharedInstall', isEqualTo: true)
+        .orderBy('submittedAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+        );
+  }
+
   Stream<List<JobModel>> allJobs() {
     return _jobsRef
         .orderBy('submittedAt', descending: true)
@@ -539,6 +616,30 @@ class JobRepository {
         .orderBy('date', descending: true)
         .get();
 
+    return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+  }
+
+  Future<List<JobModel>> jobsForAdminFilter({
+    DateTime? start,
+    DateTime? end,
+    String? techId,
+  }) async {
+    Query<Map<String, dynamic>> query = _jobsRef;
+
+    if (techId != null && techId.trim().isNotEmpty) {
+      query = query.where('techId', isEqualTo: techId.trim());
+    }
+    if (start != null) {
+      query = query.where(
+        'date',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+      );
+    }
+    if (end != null) {
+      query = query.where('date', isLessThanOrEqualTo: Timestamp.fromDate(end));
+    }
+
+    final snap = await query.orderBy('date', descending: true).get();
     return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
   }
 
