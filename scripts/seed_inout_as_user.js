@@ -11,20 +11,12 @@ const {
   writeBatch,
   Timestamp,
 } = require('firebase/firestore');
+const { getFirebaseWebConfig, requireEnv } = require('./firebase_client_env');
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyDETPeEA7INduyW_3mo7pvCJ7QOPaaGrWw',
-  authDomain: 'actechs-d415e.firebaseapp.com',
-  projectId: 'actechs-d415e',
-  storageBucket: 'actechs-d415e.firebasestorage.app',
-  messagingSenderId: '493110256900',
-  appId: '1:493110256900:web:8aa96a3450fad9c1569c51',
-};
+const USER_EMAIL = requireEnv('ACTECHS_USER_EMAIL');
+const USER_PASSWORD = requireEnv('ACTECHS_USER_PASSWORD');
 
-const USER_EMAIL = process.env.ACTECHS_USER_EMAIL || 'engremran89@gmail.com';
-const USER_PASSWORD = process.env.ACTECHS_USER_PASSWORD || 'Aa100100a';
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(getFirebaseWebConfig());
 const auth = getAuth(app);
 const db = getFirestore(app);
 

@@ -93,15 +93,13 @@ jobs:
             exit 1
           fi
 
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
-            echo "Using google-services.json from secret"
-          elif [ -f android/app/google-services.json ]; then
-            echo "Secret not set; using repository google-services.json"
-          else
-            echo "Secret not set and file missing; using CI fallback google-services.json"
-            printf '%s' "{\"project_info\":{\"project_number\":\"000000000000\",\"project_id\":\"ci-fallback\",\"storage_bucket\":\"ci-fallback.appspot.com\"},\"client\":[{\"client_info\":{\"mobilesdk_app_id\":\"1:000000000000:android:ci-fallback\",\"android_client_info\":{\"package_name\":\"$APP_ID\"}},\"oauth_client\":[],\"api_key\":[{\"current_key\":\"CI_FALLBACK_API_KEY\"}],\"services\":{\"appinvite_service\":{\"other_platform_oauth_client\":[]}}}],\"configuration_version\":\"1\"}" > android/app/google-services.json
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "GOOGLE_SERVICES_JSON secret is required for this workflow"
+            exit 1
           fi
+
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+          echo "Using google-services.json from secret"
 
           if ! grep -q "\"package_name\":\"$APP_ID\"" android/app/google-services.json; then
             echo "google-services.json is invalid or does not match applicationId $APP_ID"
@@ -112,15 +110,13 @@ jobs:
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
-          if [ -n "$FIREBASE_OPTIONS_DART" ]; then
-            echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
-            echo "Using firebase_options.dart from FIREBASE_OPTIONS_DART secret"
-          elif [ -f lib/firebase_options.dart ]; then
-            echo "FIREBASE_OPTIONS_DART secret not set; using repository firebase_options.dart"
-          else
-            echo "FIREBASE_OPTIONS_DART secret not set and repository file missing; generating CI fallback"
-            echo "Ly8gaWdub3JlX2Zvcl9maWxlOiB0eXBlPWxpbnQKaW1wb3J0ICdwYWNrYWdlOmZpcmViYXNlX2NvcmUvZmlyZWJhc2VfY29yZS5kYXJ0JyBzaG93IEZpcmViYXNlT3B0aW9uczsKaW1wb3J0ICdwYWNrYWdlOmZsdXR0ZXIvZm91bmRhdGlvbi5kYXJ0JwogICAgc2hvdyBkZWZhdWx0VGFyZ2V0UGxhdGZvcm0sIGtJc1dlYiwgVGFyZ2V0UGxhdGZvcm07CgpjbGFzcyBEZWZhdWx0RmlyZWJhc2VPcHRpb25zIHsKICBzdGF0aWMgRmlyZWJhc2VPcHRpb25zIGdldCBjdXJyZW50UGxhdGZvcm0gewogICAgaWYgKGtJc1dlYikgewogICAgICByZXR1cm4gd2ViOwogICAgfQogICAgc3dpdGNoIChkZWZhdWx0VGFyZ2V0UGxhdGZvcm0pIHsKICAgICAgY2FzZSBUYXJnZXRQbGF0Zm9ybS5hbmRyb2lkOgogICAgICAgIHJldHVybiBhbmRyb2lkOwogICAgICBkZWZhdWx0OgogICAgICAgIHRocm93IFVuc3VwcG9ydGVkRXJyb3IoJ1BsYXRmb3JtIG5vdCBjb25maWd1cmVkIGluIENJIGZhbGxiYWNrJyk7CiAgICB9CiAgfQoKICBzdGF0aWMgY29uc3QgRmlyZWJhc2VPcHRpb25zIGFuZHJvaWQgPSBGaXJlYmFzZU9wdGlvbnMoCiAgICBhcGlLZXk6ICdDSV9GQUxMQkFDS19BUElfS0VZJywKICAgIGFwcElkOiAnMTowMDAwMDAwMDAwMDA6YW5kcm9pZDpjaS1mYWxsYmFjaycsCiAgICBtZXNzYWdpbmdTZW5kZXJJZDogJzAwMDAwMDAwMDAwMCcsCiAgICBwcm9qZWN0SWQ6ICdjaS1mYWxsYmFjaycsCiAgICBzdG9yYWdlQnVja2V0OiAnY2ktZmFsbGJhY2suYXBwc3BvdC5jb20nLAogICk7CgogIHN0YXRpYyBjb25zdCBGaXJlYmFzZU9wdGlvbnMgd2ViID0gRmlyZWJhc2VPcHRpb25zKAogICAgYXBpS2V5OiAnQ0lfRkFMTEJBQ0tfV0VCX0FQSV9LRVknLAogICAgYXBwSWQ6ICcxOjAwMDAwMDAwMDAwMDp3ZWI6Y2ktZmFsbGJhY2snLAogICAgbWVzc2FnaW5nU2VuZGVySWQ6ICcwMDAwMDAwMDAwMDAnLAogICAgcHJvamVjdElkOiAnY2ktZmFsbGJhY2snLAogICAgYXV0aERvbWFpbjogJ2NpLWZhbGxiYWNrLmZpcmViYXNlYXBwLmNvbScsCiAgICBzdG9yYWdlQnVja2V0OiAnY2ktZmFsbGJhY2suYXBwc3BvdC5jb20nLAogICk7Cn0K" | base64 --decode > lib/firebase_options.dart
+          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "FIREBASE_OPTIONS_DART secret is required for this workflow"
+            exit 1
           fi
+
+          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
+          echo "Using firebase_options.dart from FIREBASE_OPTIONS_DART secret"
 
           if ! grep -q "class DefaultFirebaseOptions" lib/firebase_options.dart; then
             echo "firebase_options.dart is invalid or missing DefaultFirebaseOptions"

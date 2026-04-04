@@ -89,7 +89,6 @@ This design fixes the earlier permission issue caused by querying other technici
 - App name: `AC Techs`
 - Android package: `com.actechs.pk`
 - Firebase project: `actechs-d415e`
-- Current app version source: [pubspec.yaml](pubspec.yaml)
 
 ## Architecture
 
@@ -97,10 +96,10 @@ The project uses a feature-first clean structure:
 
 ```text
 lib/
-	core/        shared constants, widgets, utilities, theme, models
-	features/    feature modules split by data/domain/presentation/providers
-	l10n/        ARB and generated localization files
-	routing/     app router and shells
+  core/        shared constants, widgets, utilities, theme, models
+  features/    feature modules split by data/domain/presentation/providers
+  l10n/        ARB and generated localization files
+  routing/     app router and shells
 ```
 
 Key architectural rules:

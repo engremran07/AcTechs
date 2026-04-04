@@ -39,6 +39,8 @@ lib/**/*.g.dart
 analyze_output.txt
 android/app/google-services.json
 lib/firebase_options.dart
+scripts/.env
+scripts/.env.local
 scripts/node_modules/
 logs/
 

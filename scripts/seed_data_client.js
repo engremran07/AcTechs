@@ -13,22 +13,14 @@ const {
   where,
   Timestamp,
 } = require('firebase/firestore');
+const { getFirebaseWebConfig, requireEnv } = require('./firebase_client_env');
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyDETPeEA7INduyW_3mo7pvCJ7QOPaaGrWw',
-  authDomain: 'actechs-d415e.firebaseapp.com',
-  projectId: 'actechs-d415e',
-  storageBucket: 'actechs-d415e.firebasestorage.app',
-  messagingSenderId: '493110256900',
-  appId: '1:493110256900:web:8aa96a3450fad9c1569c51',
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(getFirebaseWebConfig());
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const ADMIN_EMAIL = process.env.ACTECHS_ADMIN_EMAIL || 'admin@actechs.pk';
-const ADMIN_PASSWORD = process.env.ACTECHS_ADMIN_PASSWORD || 'Admin@123';
+const ADMIN_EMAIL = requireEnv('ACTECHS_ADMIN_EMAIL');
+const ADMIN_PASSWORD = requireEnv('ACTECHS_ADMIN_PASSWORD');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysAgo = (n) => Timestamp.fromDate(new Date(Date.now() - n * DAY_MS));
