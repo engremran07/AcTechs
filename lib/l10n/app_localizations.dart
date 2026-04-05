@@ -1876,6 +1876,24 @@ abstract class AppLocalizations {
   /// **'Upload Excel'**
   String get uploadExcel;
 
+  /// No description provided for @importDropFilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag and drop Excel files here'**
+  String get importDropFilesTitle;
+
+  /// No description provided for @importDropFilesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports .xlsx and .xls files, or use Upload Excel.'**
+  String get importDropFilesSubtitle;
+
+  /// No description provided for @importUnsupportedFileType.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Excel .xlsx or .xls files are supported.'**
+  String get importUnsupportedFileType;
+
   /// No description provided for @deleteSourceAfterImport.
   ///
   /// In en, this message translates to:
@@ -2462,6 +2480,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many reset requests. Please wait a few minutes and try again.'**
   String get passwordResetRateLimit;
+
+  /// No description provided for @capsLockWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Caps Lock is on. Passwords are case-sensitive.'**
+  String get capsLockWarning;
+
+  /// No description provided for @passwordManagerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your browser or device can save this password after sign in.'**
+  String get passwordManagerHint;
 
   /// No description provided for @send.
   ///

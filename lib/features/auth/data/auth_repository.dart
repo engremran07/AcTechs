@@ -254,6 +254,30 @@ class AuthRepository {
     }
   }
 
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      final settings = ActionCodeSettings(
+        url: 'https://actechs-d415e.web.app',
+        handleCodeInApp: false,
+        androidPackageName: 'com.actechs.pk',
+        androidInstallApp: false,
+        androidMinimumVersion: '29',
+      );
+      await auth.sendPasswordResetEmail(
+        email: email,
+        actionCodeSettings: settings,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'network-request-failed') {
+        throw AuthException.resetNetworkError();
+      }
+      if (e.code == 'too-many-requests') {
+        throw AuthException.resetRateLimit();
+      }
+      throw AuthException.resetFailed();
+    }
+  }
+
   Future<void> signOut() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kRememberMeKey);

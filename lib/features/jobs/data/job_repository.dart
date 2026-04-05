@@ -204,10 +204,35 @@ class JobRepository {
   String _invoiceReuseModeFor(JobModel job) =>
       job.isSharedInstall ? _invoiceReuseModeShared : _invoiceReuseModeSolo;
 
-  bool _allowsInvoiceReuse(JobModel submittedJob, List<JobModel> existingJobs) {
-    if (existingJobs.isEmpty) return true;
-    if (!submittedJob.isSharedInstall) return false;
-    return existingJobs.every((job) => job.isSharedInstall);
+  Future<Map<String, dynamic>?> _fetchInvoiceClaim(
+    String normalizedInvoice,
+  ) async {
+    final claimSnap = await _invoiceClaimsRef.doc(
+      _invoiceClaimDocId(normalizedInvoice),
+    ).get();
+    return claimSnap.data();
+  }
+
+  void _validateInvoiceClaimReuse(
+    JobModel submittedJob,
+    Map<String, dynamic>? existingClaim,
+  ) {
+    if (existingClaim == null) {
+      return;
+    }
+
+    final claimedCompanyId =
+        (existingClaim['companyId'] as String? ?? '').trim();
+    final reuseMode = (existingClaim['reuseMode'] as String? ?? '').trim();
+
+    if (claimedCompanyId.isNotEmpty &&
+        claimedCompanyId != submittedJob.companyId) {
+      throw JobException.duplicateInvoice();
+    }
+
+    if (!submittedJob.isSharedInstall || reuseMode != _invoiceReuseModeShared) {
+      throw JobException.duplicateInvoice();
+    }
   }
 
   int _readInvoiceClaimCount(Map<String, dynamic> data) {
@@ -430,27 +455,8 @@ class JobRepository {
         cachedLockedBefore: lockedBeforeDate,
       );
       final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
-      final sameInvoiceSnap = await _jobsRef
-          .where('invoiceNumber', isEqualTo: normalizedInvoice)
-          .limit(25)
-          .get();
-
-      final existingInvoiceJobs = sameInvoiceSnap.docs
-          .map((doc) => JobModel.fromFirestore(doc))
-          .toList(growable: false);
-      final sameCompanyInvoiceJobs = existingInvoiceJobs
-          .where((existing) => existing.companyId == job.companyId)
-          .toList(growable: false);
-      final crossCompanyInvoiceJobs = existingInvoiceJobs
-          .where((existing) => existing.companyId != job.companyId)
-          .toList(growable: false);
-
-      if (!_allowsInvoiceReuse(job, sameCompanyInvoiceJobs)) {
-        throw JobException.duplicateInvoice();
-      }
-      if (crossCompanyInvoiceJobs.isNotEmpty) {
-        throw JobException.duplicateInvoice();
-      }
+      final existingClaim = await _fetchInvoiceClaim(normalizedInvoice);
+      _validateInvoiceClaimReuse(job, existingClaim);
 
       final resolvedStatus = job.status;
 

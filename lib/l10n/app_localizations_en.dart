@@ -938,6 +938,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadExcel => 'Upload Excel';
 
   @override
+  String get importDropFilesTitle => 'Drag and drop Excel files here';
+
+  @override
+  String get importDropFilesSubtitle =>
+      'Supports .xlsx and .xls files, or use Upload Excel.';
+
+  @override
+  String get importUnsupportedFileType =>
+      'Only Excel .xlsx or .xls files are supported.';
+
+  @override
   String get deleteSourceAfterImport =>
       'Delete source file after import (best effort)';
 
@@ -1274,6 +1285,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get passwordResetRateLimit =>
       'Too many reset requests. Please wait a few minutes and try again.';
+
+  @override
+  String get capsLockWarning =>
+      'Caps Lock is on. Passwords are case-sensitive.';
+
+  @override
+  String get passwordManagerHint =>
+      'Your browser or device can save this password after sign in.';
 
   @override
   String get send => 'Send';

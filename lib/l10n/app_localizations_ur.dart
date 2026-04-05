@@ -936,6 +936,17 @@ class AppLocalizationsUr extends AppLocalizations {
   String get uploadExcel => 'ایکسل اپ لوڈ کریں';
 
   @override
+  String get importDropFilesTitle => 'Excel فائلیں یہاں ڈریگ اینڈ ڈراپ کریں';
+
+  @override
+  String get importDropFilesSubtitle =>
+      '.xlsx اور .xls فائلیں سپورٹڈ ہیں، یا ایکسل اپ لوڈ بٹن استعمال کریں۔';
+
+  @override
+  String get importUnsupportedFileType =>
+      'صرف Excel کی .xlsx یا .xls فائلیں سپورٹڈ ہیں۔';
+
+  @override
   String get deleteSourceAfterImport =>
       'امپورٹ کے بعد سورس فائل حذف کریں (جہاں ممکن ہو)';
 
@@ -1274,6 +1285,14 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get passwordResetRateLimit =>
       'بہت زیادہ ری سیٹ درخواستیں۔ براہ کرم چند منٹ انتظار کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get capsLockWarning =>
+      'Caps Lock آن ہے۔ پاس ورڈ بڑے اور چھوٹے حروف کو الگ سمجھتے ہیں۔';
+
+  @override
+  String get passwordManagerHint =>
+      'سائن اِن کے بعد آپ کا براؤزر یا ڈیوائس یہ پاس ورڈ محفوظ کر سکتا ہے۔';
 
   @override
   String get send => 'بھیجیں';

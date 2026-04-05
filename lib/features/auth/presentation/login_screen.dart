@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/widgets/snackbars.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -23,14 +25,18 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _sendingReset = false;
   bool _rememberMe = false;
+  bool _capsLockOn = false;
 
   @override
   void initState() {
     super.initState();
+    _passwordFocusNode.addListener(_refreshCapsLockState);
     _loadSavedCredentials();
   }
 
@@ -52,7 +58,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode
+      ..removeListener(_refreshCapsLockState)
+      ..dispose();
     super.dispose();
+  }
+
+  void _refreshCapsLockState() {
+    final shouldShow =
+        _passwordFocusNode.hasFocus &&
+        HardwareKeyboard.instance.lockModesEnabled.contains(
+          KeyboardLockMode.capsLock,
+        );
+
+    if (!mounted || _capsLockOn == shouldShow) {
+      return;
+    }
+
+    setState(() => _capsLockOn = shouldShow);
+  }
+
+  KeyEventResult _handlePasswordKeyEvent(FocusNode _, KeyEvent event) {
+    _refreshCapsLockState();
+    return KeyEventResult.ignored;
   }
 
   Future<void> _handleSignIn() async {
@@ -74,6 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref
           .read(signInProvider.notifier)
           .signIn(_emailController.text.trim(), _passwordController.text);
+      TextInput.finishAutofillContext(shouldSave: true);
     } on AppException catch (e) {
       if (mounted) {
         final locale = Localizations.localeOf(context).languageCode;
@@ -81,6 +110,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handlePasswordReset() async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      ErrorSnackbar.show(context, message: l.enterEmail);
+      return;
+    }
+    if (!email.contains('@')) {
+      ErrorSnackbar.show(context, message: l.enterValidEmail);
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.passwordResetConfirmTitle),
+        content: Text(l.passwordResetConfirmBody(email)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.send),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _sendingReset = true);
+    try {
+      await ref.read(authRepositoryProvider).sendPasswordReset(email);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.mark_email_read_outlined, size: 48),
+          title: Text(l.passwordResetEmailSentTitle),
+          content: Text(l.passwordResetEmailSentBody(email)),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.confirm),
+            ),
+          ],
+        ),
+      );
+    } on AppException catch (e) {
+      if (!mounted) return;
+      ErrorSnackbar.show(context, message: e.message(locale));
+    } finally {
+      if (mounted) setState(() => _sendingReset = false);
     }
   }
 
@@ -257,6 +346,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
+                      textCapitalization: TextCapitalization.none,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       autofillHints: const [
                         AutofillHints.username,
                         AutofillHints.email,
@@ -281,38 +373,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 16),
 
                     // Password Field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: InputDecoration(
-                        hintText: l.password,
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
+                    Focus(
+                      onKeyEvent: _handlePasswordKeyEvent,
+                      child: TextFormField(
+                        controller: _passwordController,
+                        focusNode: _passwordFocusNode,
+                        obscureText: _obscurePassword,
+                        keyboardType: TextInputType.visiblePassword,
+                        textInputAction: TextInputAction.done,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          hintText: l.password,
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
                             color: ArcticTheme.arcticTextSecondary,
                           ),
-                          onPressed: () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
-                          },
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: ArcticTheme.arcticTextSecondary,
+                            ),
+                            onPressed: () {
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
+                            },
+                          ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return l.enterPassword;
+                          }
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _handleSignIn(),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return l.enterPassword;
-                        }
-                        return null;
-                      },
-                      onFieldSubmitted: (_) => _handleSignIn(),
                     ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.1),
+                    if (_capsLockOn)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.keyboard_capslock_rounded,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                l.capsLockWarning,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(duration: 180.ms),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: (_isLoading || _sendingReset)
+                            ? null
+                            : _handlePasswordReset,
+                        child: _sendingReset
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            : Text(l.resetPassword),
+                      ),
+                    ).animate().fadeIn(delay: 625.ms),
                     const SizedBox(height: 12),
 
                     // Remember Me
@@ -339,6 +482,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ],
                     ).animate().fadeIn(delay: 650.ms),
+                    const SizedBox(height: 8),
+                    Text(
+                      l.passwordManagerHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: ArcticTheme.arcticTextSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ).animate().fadeIn(delay: 675.ms),
                     const SizedBox(height: 24),
 
                     // Sign In Button

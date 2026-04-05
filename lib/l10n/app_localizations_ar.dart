@@ -934,6 +934,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get uploadExcel => 'رفع Excel';
 
   @override
+  String get importDropFilesTitle => 'اسحب ملفات Excel وأفلتها هنا';
+
+  @override
+  String get importDropFilesSubtitle =>
+      'يدعم ملفات .xlsx و .xls، أو استخدم زر رفع Excel.';
+
+  @override
+  String get importUnsupportedFileType =>
+      'الملفات المدعومة فقط هي Excel من نوع .xlsx أو .xls.';
+
+  @override
   String get deleteSourceAfterImport =>
       'حذف الملف المصدر بعد الاستيراد (عند الإمكان)';
 
@@ -1272,6 +1283,14 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get passwordResetRateLimit =>
       'طلبات إعادة تعيين كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.';
+
+  @override
+  String get capsLockWarning =>
+      'مفتاح Caps Lock مفعّل. كلمات المرور حساسة لحالة الأحرف.';
+
+  @override
+  String get passwordManagerHint =>
+      'يمكن للمتصفح أو الجهاز حفظ كلمة المرور هذه بعد تسجيل الدخول.';
 
   @override
   String get send => 'إرسال';

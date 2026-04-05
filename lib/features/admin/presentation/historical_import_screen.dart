@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:cross_file/cross_file.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
@@ -25,6 +29,7 @@ class HistoricalImportScreen extends ConsumerStatefulWidget {
 class _HistoricalImportScreenState
     extends ConsumerState<HistoricalImportScreen> {
   bool _isImporting = false;
+  bool _isDraggingFiles = false;
   bool _isLoadingTechnicians = true;
   List<UserModel> _technicians = const [];
   UserModel? _selectedTechnician;
@@ -269,6 +274,11 @@ class _HistoricalImportScreenState
         '${l.importUninstallBreakdown(sheet.uninstallSplit, sheet.uninstallWindow, sheet.uninstallFreestanding, sheet.uninstallOld)}';
   }
 
+  bool _isSupportedImportFileName(String name) {
+    final lower = name.toLowerCase();
+    return lower.endsWith('.xlsx') || lower.endsWith('.xls');
+  }
+
   Future<void> _importFiles() async {
     final l = AppLocalizations.of(context)!;
     final picked = await FilePicker.platform.pickFiles(
@@ -285,10 +295,29 @@ class _HistoricalImportScreenState
       return;
     }
 
-    await _runImport(sources: picked.files);
+    await _runImport(
+      sources: picked.files
+          .map(_ImportSource.platformFile)
+          .toList(growable: false),
+    );
   }
 
-  Future<void> _runImport({required List<PlatformFile> sources}) async {
+  Future<void> _importDroppedFiles(List<XFile> files) async {
+    final l = AppLocalizations.of(context)!;
+    final sources = files
+        .where((file) => _isSupportedImportFileName(file.name))
+        .map(_ImportSource.xFile)
+        .toList(growable: false);
+
+    if (sources.isEmpty) {
+      ErrorSnackbar.show(context, message: l.importUnsupportedFileType);
+      return;
+    }
+
+    await _runImport(sources: sources);
+  }
+
+  Future<void> _runImport({required List<_ImportSource> sources}) async {
     final l = AppLocalizations.of(context)!;
     final currentUser = ref.read(currentUserProvider).value;
     if (currentUser == null || !currentUser.isAdmin) return;
@@ -325,7 +354,7 @@ class _HistoricalImportScreenState
       final preparedBatches = <_PreparedImportBatch>[];
 
       for (final source in sources) {
-        final bytes = await loadPickedFileBytes(source);
+        final bytes = await source.loadBytes();
         if (bytes == null || bytes.isEmpty) continue;
 
         final parsedMap =
@@ -406,7 +435,7 @@ class _HistoricalImportScreenState
         skippedRows += parsed.skippedRows;
         unresolvedTechs += parsed.unresolvedTechnicians;
 
-        await cleanupPickedFile(prepared.source);
+        await prepared.source.cleanup();
       }
 
       if (!mounted) return;
@@ -563,6 +592,70 @@ class _HistoricalImportScreenState
                       ),
                     ),
                     const SizedBox(height: 12),
+                    DropTarget(
+                      onDragDone: (detail) async {
+                        if (_isDraggingFiles && mounted) {
+                          setState(() => _isDraggingFiles = false);
+                        }
+                        await _importDroppedFiles(detail.files);
+                      },
+                      onDragEntered: (_) {
+                        if (!_isImporting && mounted) {
+                          setState(() => _isDraggingFiles = true);
+                        }
+                      },
+                      onDragExited: (_) {
+                        if (_isDraggingFiles && mounted) {
+                          setState(() => _isDraggingFiles = false);
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: _isDraggingFiles
+                                ? ArcticTheme.arcticBlue
+                                : ArcticTheme.arcticDivider,
+                            width: _isDraggingFiles ? 2 : 1,
+                          ),
+                          color: _isDraggingFiles
+                              ? ArcticTheme.arcticBlue.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              _isDraggingFiles
+                                  ? Icons.file_download_done_rounded
+                                  : Icons.upload_file_rounded,
+                              size: 30,
+                              color: _isDraggingFiles
+                                  ? ArcticTheme.arcticBlue
+                                  : ArcticTheme.arcticTextSecondary,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              l.importDropFilesTitle,
+                              style: Theme.of(context).textTheme.titleSmall,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l.importDropFilesSubtitle,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                   ],
                   SizedBox(
                     width: double.infinity,
@@ -618,6 +711,34 @@ class _PreparedImportBatch {
   });
 
   final String fileName;
-  final PlatformFile source;
+  final _ImportSource source;
   final HistoricalImportResult parsed;
+}
+
+class _ImportSource {
+  const _ImportSource._({
+    required this.name,
+    required this.loadBytes,
+    required this.cleanup,
+  });
+
+  factory _ImportSource.platformFile(PlatformFile source) {
+    return _ImportSource._(
+      name: source.name,
+      loadBytes: () => loadPickedFileBytes(source),
+      cleanup: () => cleanupPickedFile(source),
+    );
+  }
+
+  factory _ImportSource.xFile(XFile source) {
+    return _ImportSource._(
+      name: source.name,
+      loadBytes: source.readAsBytes,
+      cleanup: () async {},
+    );
+  }
+
+  final String name;
+  final Future<Uint8List?> Function() loadBytes;
+  final Future<void> Function() cleanup;
 }
