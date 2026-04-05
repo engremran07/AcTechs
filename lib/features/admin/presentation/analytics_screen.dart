@@ -62,6 +62,27 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return (earnings: earnings, expenses: expenses);
   }
 
+  Future<Map<String, List<String>>> _sharedInstallerNamesByGroup(
+    List<JobModel> jobs,
+  ) async {
+    final groupKeys = jobs
+        .where((job) => job.isSharedInstall)
+        .map((job) => job.sharedInstallGroupKey.trim())
+        .where((key) => key.isNotEmpty)
+        .toSet();
+    if (groupKeys.isEmpty) {
+      return const <String, List<String>>{};
+    }
+
+    try {
+      return await ref
+          .read(jobRepositoryProvider)
+          .fetchSharedInstallerNamesByGroup(groupKeys);
+    } catch (_) {
+      return const <String, List<String>>{};
+    }
+  }
+
   List<DateTime> _invoiceReportMonths(List<JobModel> jobs) {
     final months = <DateTime>{};
     final now = DateTime.now();
@@ -739,33 +760,40 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   Future<void> _exportToExcel(List<JobModel> jobs) async {
     setState(() => _isExporting = true);
+    final localizations = AppLocalizations.of(context)!;
+
     try {
       if (jobs.isEmpty) {
         if (mounted) {
           ErrorSnackbar.show(
             context,
-            message: AppLocalizations.of(context)!.noJobsForPeriod,
+            message: localizations.noJobsForPeriod,
           );
         }
         return;
       }
 
+      final sharedInstallerNamesByGroup = await _sharedInstallerNamesByGroup(
+        jobs,
+      );
+
       await ExcelExport.exportJobsToExcel(
         jobs: jobs,
-        reportBranding: _appOnlyReportBranding(AppLocalizations.of(context)!),
+        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
+        reportBranding: _appOnlyReportBranding(localizations),
       );
 
       if (mounted) {
         SuccessSnackbar.show(
           context,
-          message: AppLocalizations.of(context)!.exportReady(jobs.length),
+          message: localizations.exportReady(jobs.length),
         );
       }
     } catch (e) {
       if (mounted) {
         ErrorSnackbar.show(
           context,
-          message: AppLocalizations.of(context)!.couldNotExport,
+          message: localizations.couldNotExport,
         );
       }
     } finally {

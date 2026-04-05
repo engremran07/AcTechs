@@ -1004,6 +1004,25 @@ class AppLocalizationsUr extends AppLocalizations {
       'تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں';
 
   @override
+  String get normalizeStoredInvoices => 'پرانے انوائس نارملائز کریں';
+
+  @override
+  String get normalizeStoredInvoicesSubtitle =>
+      'مکمل فلش کے بغیر محفوظ شدہ انوائس نمبرز سے کمپنی پریفکس ہٹا کر لیجرز دوبارہ بنائیں۔';
+
+  @override
+  String get normalizeStoredInvoicesDescription =>
+      'یہ ایک مرتبہ چلنے والی مائیگریشن محفوظ شدہ job invoices کو درست کرتی ہے، shared group keys کو تازہ کرتی ہے، اور operational data حذف کیے بغیر invoice claims دوبارہ بناتی ہے۔';
+
+  @override
+  String get normalizeStoredInvoicesAction => 'مائیگریشن چلائیں';
+
+  @override
+  String normalizeStoredInvoicesSuccess(int jobs, int conflicts) {
+    return 'انوائس مائیگریشن مکمل ہو گئی۔ $jobs jobs اپ ڈیٹ ہوئیں اور $conflicts متصادم invoice groups نشان زد ہوئے۔';
+  }
+
+  @override
   String get flushScope => 'فلش اسکوپ';
 
   @override

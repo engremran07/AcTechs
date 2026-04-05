@@ -166,11 +166,7 @@ class JobRepository {
   }
 
   String _invoiceClaimDocId(String normalizedInvoice) {
-    final safe = normalizedInvoice.trim().toLowerCase().replaceAll(
-      RegExp(r'[^a-z0-9_-]'),
-      '_',
-    );
-    return safe.isEmpty ? 'unknown_invoice' : safe;
+    return InvoiceUtils.invoiceClaimDocumentId(normalizedInvoice);
   }
 
   String _invoiceReuseModeFor(JobModel job) =>
@@ -429,10 +425,12 @@ class JobRepository {
       final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
           ? ''
           : InvoiceUtils.normalize(job.sharedInstallGroupKey).toLowerCase();
-      final normalizedInvoiceKey = normalizedInvoice.toLowerCase();
       final resolvedGroupKey = normalizedGroupKey.isNotEmpty
           ? normalizedGroupKey
-          : '${(job.companyId.isEmpty ? 'no-company' : job.companyId).toLowerCase()}-$normalizedInvoiceKey';
+          : InvoiceUtils.sharedInstallGroupKey(
+              companyId: job.companyId,
+              invoiceNumber: normalizedInvoice,
+            );
 
       if (job.isSharedInstall) {
         final splitContribution = _unitsForType(

@@ -54,6 +54,8 @@ class ExcelExport {
 
   static excel_pkg.Excel buildJobsWorkbook({
     required List<JobModel> jobs,
+    Map<String, List<String>> sharedInstallerNamesByGroup =
+        const <String, List<String>>{},
     ReportBrandingContext? reportBranding,
     DateTime? generatedAt,
   }) {
@@ -73,7 +75,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Invoice Number'),
       excel_pkg.TextCellValue('Shared Install'),
-      excel_pkg.TextCellValue('Shared Group Key'),
+      excel_pkg.TextCellValue('Shared Technicians'),
       excel_pkg.TextCellValue('Invoice Total Units'),
       excel_pkg.TextCellValue('My Share Units'),
       excel_pkg.TextCellValue('Contact'),
@@ -194,7 +196,11 @@ class ExcelExport {
         excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
         excel_pkg.TextCellValue(job.isSharedInstall ? 'Yes' : 'No'),
         excel_pkg.TextCellValue(
-          AppFormatters.safeText(job.sharedInstallGroupKey),
+          AppFormatters.safeText(
+            (sharedInstallerNamesByGroup[job.sharedInstallGroupKey] ??
+                    const <String>[])
+                .join(', '),
+          ),
         ),
         excel_pkg.IntCellValue(job.sharedInvoiceTotalUnits),
         excel_pkg.IntCellValue(contributionUnits),
@@ -423,11 +429,14 @@ class ExcelExport {
   /// Export jobs to Excel with bracket/delivery details.
   static Future<void> exportJobsToExcel({
     required List<JobModel> jobs,
+    Map<String, List<String>> sharedInstallerNamesByGroup =
+        const <String, List<String>>{},
     String? technicianName,
     ReportBrandingContext? reportBranding,
   }) async {
     final excelFile = buildJobsWorkbook(
       jobs: jobs,
+      sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
       reportBranding: reportBranding,
     );
 

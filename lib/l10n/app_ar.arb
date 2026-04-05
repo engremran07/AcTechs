@@ -369,6 +369,21 @@
   "dangerZone": "منطقة الخطر",
   "flushDatabase": "مسح قاعدة البيانات",
   "flushDatabaseSubtitle": "إعادة تعيين جميع البيانات إلى حالة نظيفة",
+  "normalizeStoredInvoices": "توحيد الفواتير القديمة",
+  "normalizeStoredInvoicesSubtitle": "إزالة بادئات الشركات المخزنة من أرقام الفواتير وإعادة بناء سجلات الفواتير دون مسح كامل.",
+  "normalizeStoredInvoicesDescription": "هذا ترحيل لمرة واحدة يعيد كتابة أرقام فواتير الوظائف المخزنة، ويحدّث مفاتيح المجموعات المشتركة، ويعيد بناء مطالبات الفواتير دون حذف البيانات التشغيلية.",
+  "normalizeStoredInvoicesAction": "تشغيل الترحيل",
+  "normalizeStoredInvoicesSuccess": "اكتمل ترحيل الفواتير. تم تحديث {jobs} وظيفة وتم وضع علامة على {conflicts} مجموعات فواتير متعارضة.",
+  "@normalizeStoredInvoicesSuccess": {
+    "placeholders": {
+      "jobs": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
   "flushScope": "نطاق التفريغ",
   "flushAllData": "كل البيانات",
   "flushOnlySelectedTechnician": "سيتم تفريغ بيانات الفني المحدد فقط (الأعمال والدخول/الخروج).",

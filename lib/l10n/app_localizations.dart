@@ -1984,6 +1984,36 @@ abstract class AppLocalizations {
   /// **'Reset all data to a clean state'**
   String get flushDatabaseSubtitle;
 
+  /// No description provided for @normalizeStoredInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Normalize Legacy Invoices'**
+  String get normalizeStoredInvoices;
+
+  /// No description provided for @normalizeStoredInvoicesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove stored company prefixes from invoices and rebuild invoice ledgers without a full flush.'**
+  String get normalizeStoredInvoicesSubtitle;
+
+  /// No description provided for @normalizeStoredInvoicesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This one-time migration rewrites stored job invoice numbers, refreshes shared group keys, and rebuilds invoice claims without deleting operational data.'**
+  String get normalizeStoredInvoicesDescription;
+
+  /// No description provided for @normalizeStoredInvoicesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Migration'**
+  String get normalizeStoredInvoicesAction;
+
+  /// No description provided for @normalizeStoredInvoicesSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice migration finished. Updated {jobs} jobs and flagged {conflicts} conflicting invoice groups.'**
+  String normalizeStoredInvoicesSuccess(int jobs, int conflicts);
+
   /// No description provided for @flushScope.
   ///
   /// In en, this message translates to:

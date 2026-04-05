@@ -56,6 +56,24 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     );
   }
 
+  String _sharedTechnicianNames(
+    JobModel job,
+    Map<String, List<JobModel>> groups,
+  ) {
+    if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) {
+      return job.techName;
+    }
+
+    final names =
+        (groups[job.sharedInstallGroupKey] ?? const <JobModel>[])
+            .map((entry) => entry.techName.trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+    return names.join(', ');
+  }
+
   Widget _buildInvoiceConflictWarning(JobModel job, AppLocalizations l) {
     final companies = job.invoiceConflictCompanies.join(', ');
     return Container(
@@ -278,6 +296,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   Future<void> _showJobVerificationDialog(
     JobModel job, {
     required int groupSize,
+    required String sharedTechnicianNames,
     bool allowActions = true,
   }) async {
     final l = AppLocalizations.of(context)!;
@@ -295,15 +314,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             children: [
               if (job.hasInvoiceConflict) _buildInvoiceConflictWarning(job, l),
               Text('${l.technician}: ${job.techName}'),
-              Text('${l.technicianUidLabel}: ${job.techId}'),
               Text('${l.client}: ${job.clientName}'),
               Text('${l.totalUnits}: ${job.totalUnits}'),
               if (job.isSharedInstall)
                 Text(
                   '${l.sharedInstall}: ${l.totalOnInvoice} ${AppFormatters.units(job.sharedInvoiceTotalUnits)} • ${l.myShare} ${AppFormatters.units(_jobContributionUnits(job))}',
                 ),
-              if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty)
-                Text('${l.sharedGroup}: ${job.sharedInstallGroupKey}'),
               if (job.isSharedInstall &&
                   job.sharedInvoiceUninstallSplitUnits > 0)
                 Text(
@@ -324,8 +340,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
                 ),
               if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
-              if ((job.approvedBy ?? '').trim().isNotEmpty)
-                Text('${l.approverUidLabel}: ${job.approvedBy!.trim()}'),
+              if (job.isSharedInstall && sharedTechnicianNames.isNotEmpty)
+                Text('${l.technicians}: $sharedTechnicianNames'),
               if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
               const SizedBox(height: 12),
               _ApprovalHistorySection(
@@ -333,7 +349,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 title: l.history,
                 statusLabel: l.statusLabel,
                 dateLabel: l.date,
-                actorLabel: l.approverUidLabel,
                 reasonLabel: l.rejectReason,
                 approvedLabel: l.approved,
                 rejectedLabel: l.rejected,
@@ -402,7 +417,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 title: l.history,
                 statusLabel: l.statusLabel,
                 dateLabel: l.date,
-                actorLabel: l.approverUidLabel,
                 reasonLabel: l.rejectReason,
                 approvedLabel: l.approved,
                 rejectedLabel: l.rejected,
@@ -472,7 +486,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${l.technician}: ${install.techName}'),
-              Text('${l.technicianUidLabel}: ${install.techId}'),
               Text(
                 '${l.totalOnInvoice}: ${AppFormatters.units(install.totalInvoiceUnits)}',
               ),
@@ -488,7 +501,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 title: l.history,
                 statusLabel: l.statusLabel,
                 dateLabel: l.date,
-                actorLabel: l.approverUidLabel,
                 reasonLabel: l.rejectReason,
                 approvedLabel: l.approved,
                 rejectedLabel: l.rejected,
@@ -823,6 +835,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                       onTap: () => _showJobVerificationDialog(
                                         job,
                                         groupSize: groupSize,
+                                        sharedTechnicianNames:
+                                            _sharedTechnicianNames(
+                                              job,
+                                              sharedGroups,
+                                            ),
                                       ),
                                       onSelect: (v) {
                                         setState(() {
@@ -861,6 +878,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                   onTap: () => _showJobVerificationDialog(
                                     job,
                                     groupSize: approvedGroupSize,
+                                    sharedTechnicianNames:
+                                        _sharedTechnicianNames(
+                                          job,
+                                          approvedSharedGroups,
+                                        ),
                                     allowActions: false,
                                   ),
                                   child: Column(
@@ -909,17 +931,21 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                                 MaterialTapTargetSize
                                                     .shrinkWrap,
                                           ),
-                                          Chip(
-                                            label: Text(
-                                              '${AppLocalizations.of(context)!.sharedGroup}: ${job.sharedInstallGroupKey}',
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelSmall,
+                                          if (_sharedTechnicianNames(
+                                            job,
+                                            approvedSharedGroups,
+                                          ).isNotEmpty)
+                                            Chip(
+                                              label: Text(
+                                                '${AppLocalizations.of(context)!.technicians}: ${_sharedTechnicianNames(job, approvedSharedGroups)}',
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.labelSmall,
+                                              ),
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
                                             ),
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
                                         ],
                                       ),
                                     ],
@@ -1614,7 +1640,6 @@ class _ApprovalHistorySection extends StatelessWidget {
     required this.title,
     required this.statusLabel,
     required this.dateLabel,
-    required this.actorLabel,
     required this.reasonLabel,
     required this.approvedLabel,
     required this.rejectedLabel,
@@ -1625,7 +1650,6 @@ class _ApprovalHistorySection extends StatelessWidget {
   final String title;
   final String statusLabel;
   final String dateLabel;
-  final String actorLabel;
   final String reasonLabel;
   final String approvedLabel;
   final String rejectedLabel;
@@ -1679,11 +1703,6 @@ class _ApprovalHistorySection extends StatelessWidget {
                         '$statusLabel: ${_statusText(entry.previousStatus)} -> ${_statusText(entry.newStatus)}',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      if (entry.changedBy.trim().isNotEmpty)
-                        Text(
-                          '$actorLabel: ${entry.changedBy}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
                       if (entry.changedAt != null)
                         Text(
                           '$dateLabel: ${AppFormatters.dateTime(entry.changedAt)}',

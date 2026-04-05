@@ -369,6 +369,21 @@
   "dangerZone": "خطرناک علاقہ",
   "flushDatabase": "ڈیٹا بیس فلش کریں",
   "flushDatabaseSubtitle": "تمام ڈیٹا صاف کر کے نئے سرے سے شروع کریں",
+  "normalizeStoredInvoices": "پرانے انوائس نارملائز کریں",
+  "normalizeStoredInvoicesSubtitle": "مکمل فلش کے بغیر محفوظ شدہ انوائس نمبرز سے کمپنی پریفکس ہٹا کر لیجرز دوبارہ بنائیں۔",
+  "normalizeStoredInvoicesDescription": "یہ ایک مرتبہ چلنے والی مائیگریشن محفوظ شدہ job invoices کو درست کرتی ہے، shared group keys کو تازہ کرتی ہے، اور operational data حذف کیے بغیر invoice claims دوبارہ بناتی ہے۔",
+  "normalizeStoredInvoicesAction": "مائیگریشن چلائیں",
+  "normalizeStoredInvoicesSuccess": "انوائس مائیگریشن مکمل ہو گئی۔ {jobs} jobs اپ ڈیٹ ہوئیں اور {conflicts} متصادم invoice groups نشان زد ہوئے۔",
+  "@normalizeStoredInvoicesSuccess": {
+    "placeholders": {
+      "jobs": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
   "flushScope": "فلش اسکوپ",
   "flushAllData": "تمام ڈیٹا",
   "flushOnlySelectedTechnician": "صرف منتخب ٹیکنیشن کا ڈیٹا (کام اور ان/آؤٹ) فلش ہوگا۔",

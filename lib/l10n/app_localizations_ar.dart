@@ -1003,6 +1003,25 @@ class AppLocalizationsAr extends AppLocalizations {
       'إعادة تعيين جميع البيانات إلى حالة نظيفة';
 
   @override
+  String get normalizeStoredInvoices => 'توحيد الفواتير القديمة';
+
+  @override
+  String get normalizeStoredInvoicesSubtitle =>
+      'إزالة بادئات الشركات المخزنة من أرقام الفواتير وإعادة بناء سجلات الفواتير دون مسح كامل.';
+
+  @override
+  String get normalizeStoredInvoicesDescription =>
+      'هذا ترحيل لمرة واحدة يعيد كتابة أرقام فواتير الوظائف المخزنة، ويحدّث مفاتيح المجموعات المشتركة، ويعيد بناء مطالبات الفواتير دون حذف البيانات التشغيلية.';
+
+  @override
+  String get normalizeStoredInvoicesAction => 'تشغيل الترحيل';
+
+  @override
+  String normalizeStoredInvoicesSuccess(int jobs, int conflicts) {
+    return 'اكتمل ترحيل الفواتير. تم تحديث $jobs وظيفة وتم وضع علامة على $conflicts مجموعات فواتير متعارضة.';
+  }
+
+  @override
   String get flushScope => 'نطاق التفريغ';
 
   @override

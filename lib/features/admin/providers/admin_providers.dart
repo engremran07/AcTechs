@@ -23,6 +23,11 @@ final flushDatabaseProvider =
       FlushDatabaseNotifier.new,
     );
 
+final invoicePrefixMigrationProvider =
+    AsyncNotifierProvider<InvoicePrefixMigrationNotifier, void>(
+      InvoicePrefixMigrationNotifier.new,
+    );
+
 class FlushDatabaseNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
@@ -43,6 +48,25 @@ class FlushDatabaseNotifier extends AsyncNotifier<void> {
         await repo.flushDatabase(deleteNonAdminUsers: deleteNonAdminUsers);
       }
       state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+class InvoicePrefixMigrationNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<InvoicePrefixNormalizationResult> run(String password) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(userRepositoryProvider);
+      await repo.verifyAdminPassword(password);
+      final result = await repo.normalizeStoredInvoicePrefixes();
+      state = const AsyncData(null);
+      return result;
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;

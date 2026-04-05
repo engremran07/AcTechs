@@ -369,6 +369,21 @@
   "dangerZone": "Danger Zone",
   "flushDatabase": "Flush Database",
   "flushDatabaseSubtitle": "Reset all data to a clean state",
+  "normalizeStoredInvoices": "Normalize Legacy Invoices",
+  "normalizeStoredInvoicesSubtitle": "Remove stored company prefixes from invoices and rebuild invoice ledgers without a full flush.",
+  "normalizeStoredInvoicesDescription": "This one-time migration rewrites stored job invoice numbers, refreshes shared group keys, and rebuilds invoice claims without deleting operational data.",
+  "normalizeStoredInvoicesAction": "Run Migration",
+  "normalizeStoredInvoicesSuccess": "Invoice migration finished. Updated {jobs} jobs and flagged {conflicts} conflicting invoice groups.",
+  "@normalizeStoredInvoicesSuccess": {
+    "placeholders": {
+      "jobs": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
   "flushScope": "Flush Scope",
   "flushAllData": "All Data",
   "flushOnlySelectedTechnician": "Only selected technician data (jobs and in/out) will be flushed.",

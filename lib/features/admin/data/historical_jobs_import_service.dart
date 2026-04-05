@@ -338,9 +338,9 @@ class HistoricalJobsImportService {
           'invoice number',
           'invoice',
         ]);
-        final invoice = _normalizeImportedInvoice(
+        final invoice = InvoiceUtils.normalizeWithCompanyPrefix(
           rawInvoice,
-          targetCompany?.invoicePrefix,
+          companyPrefix: targetCompany?.invoicePrefix,
         );
         if (invoice.isEmpty) {
           skipped++;
@@ -586,37 +586,6 @@ class HistoricalJobsImportService {
     if (a.isEmpty) return b;
     if (b.isEmpty || a == b) return a;
     return '$a | $b';
-  }
-
-  static String _normalizeImportedInvoice(
-    String rawInvoice,
-    String? companyPrefix,
-  ) {
-    var normalized = InvoiceUtils.normalize(rawInvoice);
-    if (normalized.isEmpty) return normalized;
-
-    final trimmedPrefix = companyPrefix?.trim() ?? '';
-    if (trimmedPrefix.isEmpty) {
-      return normalized;
-    }
-
-    final upperInvoice = normalized.toUpperCase();
-    final upperPrefix = trimmedPrefix.toUpperCase();
-    final prefixVariants = <String>[
-      upperPrefix,
-      '$upperPrefix-',
-      '$upperPrefix ',
-      '$upperPrefix/',
-    ];
-
-    for (final variant in prefixVariants) {
-      if (upperInvoice.startsWith(variant)) {
-        normalized = normalized.substring(variant.length).trim();
-        break;
-      }
-    }
-
-    return InvoiceUtils.normalize(normalized);
   }
 
   static InvoiceCharges _mergeCharges(

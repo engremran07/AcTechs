@@ -7,6 +7,7 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
@@ -20,6 +21,26 @@ class JobDetailsScreen extends ConsumerWidget {
     return job.sharedContributionUnits > 0
         ? job.sharedContributionUnits
         : job.totalUnits;
+  }
+
+  Future<List<String>> _sharedTechnicianNames(
+    WidgetRef ref,
+    JobModel job,
+  ) async {
+    if (!job.isSharedInstall || job.sharedInstallGroupKey.trim().isEmpty) {
+      return const <String>[];
+    }
+
+    try {
+      final namesByGroup = await ref
+          .read(jobRepositoryProvider)
+          .fetchSharedInstallerNamesByGroup([job.sharedInstallGroupKey]);
+      return (namesByGroup[job.sharedInstallGroupKey] ?? const <String>[])
+          .where((name) => name.trim().isNotEmpty)
+          .toList(growable: false);
+    } catch (_) {
+      return const <String>[];
+    }
   }
 
   @override
@@ -104,21 +125,15 @@ class JobDetailsScreen extends ConsumerWidget {
                         value: AppFormatters.date(job.date),
                       ),
                       _DetailRow(
-                        icon: Icons.badge_outlined,
-                        label: l.technicianUidLabel,
-                        value: job.techId,
+                        icon: Icons.person_outline_rounded,
+                        label: l.technician,
+                        value: job.techName,
                       ),
                       _DetailRow(
                         icon: Icons.calculate_outlined,
                         label: l.expenses,
                         value: AppFormatters.currency(job.expenses),
                       ),
-                      if ((job.approvedBy ?? '').trim().isNotEmpty)
-                        _DetailRow(
-                          icon: Icons.verified_user_outlined,
-                          label: l.approverUidLabel,
-                          value: job.approvedBy!.trim(),
-                        ),
                       if (job.expenseNote.trim().isNotEmpty)
                         _DetailRow(
                           icon: Icons.note_alt_outlined,
@@ -148,10 +163,19 @@ class JobDetailsScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 10),
-                        _DetailRow(
-                          icon: Icons.tag_rounded,
-                          label: l.sharedGroup,
-                          value: job.sharedInstallGroupKey,
+                        FutureBuilder<List<String>>(
+                          future: _sharedTechnicianNames(ref, job),
+                          builder: (context, snapshot) {
+                            final names = snapshot.data ?? const <String>[];
+                            if (names.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return _DetailRow(
+                              icon: Icons.groups_rounded,
+                              label: l.technicians,
+                              value: names.join(', '),
+                            );
+                          },
                         ),
                         _DetailRow(
                           icon: Icons.receipt_long_outlined,

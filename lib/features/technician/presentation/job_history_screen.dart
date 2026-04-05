@@ -713,6 +713,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
           0,
           (sum, job) => sum + _jobDisplayUnits(job),
         );
+        final sharedNamesFuture = _sharedInstallerNamesByGroup(filtered);
 
         return Column(
           children: [
@@ -833,92 +834,108 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
               )
             else
               Expanded(
-                child: ArcticRefreshIndicator(
-                  onRefresh: () async => refresh(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final job = filtered[index];
-                      return ContextMenuRegion(
-                            menuItems: [
-                              ContextMenuItem(
-                                id: 'copy_invoice',
-                                label: l.copyInvoice,
-                                icon: Icons.copy_rounded,
-                              ),
-                              ContextMenuItem(
-                                id: 'export_pdf',
-                                label: l.exportAsPdf,
-                                icon: Icons.picture_as_pdf_rounded,
-                              ),
-                            ],
-                            onSelected: (action) async {
-                              if (action == 'copy_invoice') {
-                                Clipboard.setData(
-                                  ClipboardData(text: job.invoiceNumber),
-                                );
-                                SuccessSnackbar.show(
-                                  context,
-                                  message: l.invoiceCopied,
-                                );
-                              } else if (action == 'export_pdf') {
-                                try {
-                                  final l = AppLocalizations.of(context)!;
-                                  final sharedInstallerNamesByGroup =
-                                      await _sharedInstallerNamesByGroup([job]);
-                                  final bytes =
-                                      await PdfGenerator.generateJobsDetailsReport(
-                                        jobs: [job],
-                                        title: l.jobs,
-                                        locale: locale,
-                                        sharedInstallerNamesByGroup:
-                                            sharedInstallerNamesByGroup,
-                                        technicianName: job.techName,
-                                        fromDate: job.date,
-                                        toDate: job.date,
-                                        reportBranding: _jobsReportBranding(
-                                          l,
-                                          jobs: [job],
-                                          companyKey: _jobCompanyKey(job),
-                                          companyName: _jobCompanyName(l, job),
-                                        ),
-                                      );
-                                  final invoiceToken =
-                                      AppFormatters.slugify(
-                                        job.invoiceNumber,
-                                      ).isEmpty
-                                      ? 'invoice'
-                                      : AppFormatters.slugify(
-                                          job.invoiceNumber,
-                                        );
-                                  await PdfGenerator.sharePdfBytes(
-                                    bytes,
-                                    '$invoiceToken-$locale-job.pdf',
-                                  );
-                                } catch (_) {
-                                  if (context.mounted) {
-                                    ErrorSnackbar.show(
-                                      context,
-                                      message: l.couldNotExport,
+                child: FutureBuilder<Map<String, List<String>>>(
+                  future: sharedNamesFuture,
+                  builder: (context, snapshot) {
+                    final sharedInstallerNamesByGroup =
+                        snapshot.data ?? const <String, List<String>>{};
+                    return ArcticRefreshIndicator(
+                      onRefresh: () async => refresh(),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final job = filtered[index];
+                          return ContextMenuRegion(
+                                menuItems: [
+                                  ContextMenuItem(
+                                    id: 'copy_invoice',
+                                    label: l.copyInvoice,
+                                    icon: Icons.copy_rounded,
+                                  ),
+                                  ContextMenuItem(
+                                    id: 'export_pdf',
+                                    label: l.exportAsPdf,
+                                    icon: Icons.picture_as_pdf_rounded,
+                                  ),
+                                ],
+                                onSelected: (action) async {
+                                  if (action == 'copy_invoice') {
+                                    Clipboard.setData(
+                                      ClipboardData(text: job.invoiceNumber),
                                     );
+                                    SuccessSnackbar.show(
+                                      context,
+                                      message: l.invoiceCopied,
+                                    );
+                                  } else if (action == 'export_pdf') {
+                                    try {
+                                      final l = AppLocalizations.of(context)!;
+                                      final sharedInstallerNamesByGroup =
+                                          await _sharedInstallerNamesByGroup([
+                                            job,
+                                          ]);
+                                      final bytes =
+                                          await PdfGenerator.generateJobsDetailsReport(
+                                            jobs: [job],
+                                            title: l.jobs,
+                                            locale: locale,
+                                            sharedInstallerNamesByGroup:
+                                                sharedInstallerNamesByGroup,
+                                            technicianName: job.techName,
+                                            fromDate: job.date,
+                                            toDate: job.date,
+                                            reportBranding: _jobsReportBranding(
+                                              l,
+                                              jobs: [job],
+                                              companyKey: _jobCompanyKey(job),
+                                              companyName: _jobCompanyName(
+                                                l,
+                                                job,
+                                              ),
+                                            ),
+                                          );
+                                      final invoiceToken =
+                                          AppFormatters.slugify(
+                                            job.invoiceNumber,
+                                          ).isEmpty
+                                          ? 'invoice'
+                                          : AppFormatters.slugify(
+                                              job.invoiceNumber,
+                                            );
+                                      await PdfGenerator.sharePdfBytes(
+                                        bytes,
+                                        '$invoiceToken-$locale-job.pdf',
+                                      );
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        ErrorSnackbar.show(
+                                          context,
+                                          message: l.couldNotExport,
+                                        );
+                                      }
+                                    }
                                   }
-                                }
-                              }
-                            },
-                            child: _HistoryJobCard(
-                              job: job,
-                              onTap: () => context.push(
-                                '/tech/job/${job.id}',
-                                extra: job,
-                              ),
-                            ),
-                          )
-                          .animate(delay: (index * 80).ms)
-                          .fadeIn()
-                          .slideX(begin: 0.05);
-                    },
-                  ),
+                                },
+                                child: _HistoryJobCard(
+                                  job: job,
+                                  sharedTechnicianNames:
+                                      sharedInstallerNamesByGroup[job
+                                          .sharedInstallGroupKey] ??
+                                      const <String>[],
+                                  onTap: () => context.push(
+                                    '/tech/job/${job.id}',
+                                    extra: job,
+                                  ),
+                                ),
+                              )
+                              .animate(delay: (index * 80).ms)
+                              .fadeIn()
+                              .slideX(begin: 0.05);
+                        },
+                      ),
+                    );
+                  },
                 ),
               ),
           ],
@@ -1176,8 +1193,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                         final filtered = _applyFilters(jobList);
                         setState(() => _isExportingExcel = true);
                         try {
+                          final sharedInstallerNamesByGroup =
+                              await _sharedInstallerNamesByGroup(filtered);
                           await ExcelExport.exportJobsToExcel(
                             jobs: filtered,
+                            sharedInstallerNamesByGroup:
+                                sharedInstallerNamesByGroup,
                             reportBranding: _jobsReportBranding(
                               l,
                               jobs: filtered,
@@ -1208,9 +1229,14 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
 }
 
 class _HistoryJobCard extends StatelessWidget {
-  const _HistoryJobCard({required this.job, required this.onTap});
+  const _HistoryJobCard({
+    required this.job,
+    required this.sharedTechnicianNames,
+    required this.onTap,
+  });
 
   final JobModel job;
+  final List<String> sharedTechnicianNames;
   final VoidCallback onTap;
 
   @override
@@ -1317,11 +1343,12 @@ class _HistoryJobCard extends StatelessWidget {
                         '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
                     color: ArcticTheme.arcticWarning,
                   ),
-                _InfoChip(
-                  icon: Icons.tag_rounded,
-                  label: job.sharedInstallGroupKey,
-                  color: ArcticTheme.arcticTextSecondary,
-                ),
+                if (sharedTechnicianNames.isNotEmpty)
+                  _InfoChip(
+                    icon: Icons.groups_rounded,
+                    label: sharedTechnicianNames.join(', '),
+                    color: ArcticTheme.arcticTextSecondary,
+                  ),
               ],
             ),
           ],

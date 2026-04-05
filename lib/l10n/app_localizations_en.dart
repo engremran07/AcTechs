@@ -1005,6 +1005,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flushDatabaseSubtitle => 'Reset all data to a clean state';
 
   @override
+  String get normalizeStoredInvoices => 'Normalize Legacy Invoices';
+
+  @override
+  String get normalizeStoredInvoicesSubtitle =>
+      'Remove stored company prefixes from invoices and rebuild invoice ledgers without a full flush.';
+
+  @override
+  String get normalizeStoredInvoicesDescription =>
+      'This one-time migration rewrites stored job invoice numbers, refreshes shared group keys, and rebuilds invoice claims without deleting operational data.';
+
+  @override
+  String get normalizeStoredInvoicesAction => 'Run Migration';
+
+  @override
+  String normalizeStoredInvoicesSuccess(int jobs, int conflicts) {
+    return 'Invoice migration finished. Updated $jobs jobs and flagged $conflicts conflicting invoice groups.';
+  }
+
+  @override
   String get flushScope => 'Flush Scope';
 
   @override

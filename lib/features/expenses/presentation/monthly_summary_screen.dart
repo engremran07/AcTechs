@@ -493,8 +493,12 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
         return;
       }
       final user = ref.read(currentUserProvider).value;
+      final sharedInstallerNamesByGroup = await _sharedInstallerNamesByGroup(
+        jobs,
+      );
       await ExcelExport.exportJobsToExcel(
         jobs: jobs,
+        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
         technicianName: user?.name,
         reportBranding: _jobsReportBranding(l, jobs),
       );

@@ -5,10 +5,55 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/core/utils/invoice_utils.dart';
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository(firestore: FirebaseFirestore.instance);
 });
+
+class InvoicePrefixNormalizationResult {
+  const InvoicePrefixNormalizationResult({
+    required this.scannedJobs,
+    required this.updatedJobs,
+    required this.conflictedInvoices,
+    required this.rebuiltInvoiceClaims,
+    required this.rebuiltSharedAggregates,
+  });
+
+  final int scannedJobs;
+  final int updatedJobs;
+  final int conflictedInvoices;
+  final int rebuiltInvoiceClaims;
+  final int rebuiltSharedAggregates;
+}
+
+class _InvoiceMigrationJobState {
+  _InvoiceMigrationJobState({
+    required this.reference,
+    required this.invoiceNumber,
+    required this.companyId,
+    required this.companyName,
+    required this.techId,
+    required this.status,
+    required this.isSharedInstall,
+    required this.sharedInstallGroupKey,
+    required this.data,
+    this.submittedAt,
+  });
+
+  final DocumentReference<Map<String, dynamic>> reference;
+  final String invoiceNumber;
+  final String companyId;
+  final String companyName;
+  final String techId;
+  final String status;
+  final bool isSharedInstall;
+  final String sharedInstallGroupKey;
+  final Map<String, dynamic> data;
+  final DateTime? submittedAt;
+
+  bool get isRejected => status.trim().toLowerCase() == JobStatus.rejected.name;
+}
 
 class UserRepository {
   UserRepository({required this.firestore});
@@ -17,6 +62,12 @@ class UserRepository {
 
   CollectionReference<Map<String, dynamic>> get _usersRef =>
       firestore.collection(AppConstants.usersCollection);
+
+  CollectionReference<Map<String, dynamic>> get _jobsRef =>
+      firestore.collection(AppConstants.jobsCollection);
+
+  CollectionReference<Map<String, dynamic>> get _companiesRef =>
+      firestore.collection(AppConstants.companiesCollection);
 
   Query<Map<String, dynamic>> get _activeTechniciansQuery => _usersRef
       .where('role', isEqualTo: AppConstants.roleTechnician)
@@ -425,6 +476,154 @@ class UserRepository {
     }
   }
 
+  Future<InvoicePrefixNormalizationResult>
+  normalizeStoredInvoicePrefixes() async {
+    try {
+      final companyPrefixes = await _loadCompanyPrefixes();
+      final jobsSnap = await _jobsRef.get();
+      final jobUpdates =
+          <DocumentReference<Map<String, dynamic>>, Map<String, dynamic>>{};
+      final migratedJobs = <_InvoiceMigrationJobState>[];
+
+      for (final doc in jobsSnap.docs) {
+        final data = Map<String, dynamic>.from(doc.data());
+        final companyId = (data['companyId'] as String? ?? '').trim();
+        final companyName = (data['companyName'] as String? ?? '').trim();
+        final techId = (data['techId'] as String? ?? '').trim();
+        final rawInvoice = (data['invoiceNumber'] as String? ?? '').trim();
+        final normalizedInvoice = InvoiceUtils.normalizeWithCompanyPrefix(
+          rawInvoice,
+          companyPrefix: companyPrefixes[companyId],
+        );
+        final isSharedInstall = data['isSharedInstall'] == true;
+        final nextGroupKey = isSharedInstall
+            ? InvoiceUtils.sharedInstallGroupKey(
+                companyId: companyId,
+                invoiceNumber: normalizedInvoice,
+              )
+            : '';
+        final currentGroupKey = (data['sharedInstallGroupKey'] as String? ?? '')
+            .trim();
+        final nextData = <String, dynamic>{};
+
+        if (normalizedInvoice != rawInvoice) {
+          nextData['invoiceNumber'] = normalizedInvoice;
+          data['invoiceNumber'] = normalizedInvoice;
+        }
+
+        if (isSharedInstall && nextGroupKey != currentGroupKey) {
+          nextData['sharedInstallGroupKey'] = nextGroupKey;
+          data['sharedInstallGroupKey'] = nextGroupKey;
+        }
+
+        if (nextData.isNotEmpty) {
+          jobUpdates[doc.reference] = nextData;
+        }
+
+        migratedJobs.add(
+          _InvoiceMigrationJobState(
+            reference: doc.reference,
+            invoiceNumber: (data['invoiceNumber'] as String? ?? '').trim(),
+            companyId: companyId,
+            companyName: companyName,
+            techId: techId,
+            status: (data['status'] as String? ?? '').trim(),
+            isSharedInstall: isSharedInstall,
+            sharedInstallGroupKey:
+                (data['sharedInstallGroupKey'] as String? ?? '').trim(),
+            data: data,
+            submittedAt: _timestampToDate(data['submittedAt'] ?? data['date']),
+          ),
+        );
+      }
+
+      final activeJobs = migratedJobs
+          .where((job) => !job.isRejected && job.invoiceNumber.isNotEmpty)
+          .toList(growable: false);
+      final invoiceBuckets = <String, List<_InvoiceMigrationJobState>>{};
+      for (final job in activeJobs) {
+        (invoiceBuckets[job.invoiceNumber] ??= <_InvoiceMigrationJobState>[])
+            .add(job);
+      }
+
+      var conflictedInvoices = 0;
+      for (final entry in invoiceBuckets.entries) {
+        final jobs = entry.value;
+        final companyNames =
+            jobs
+                .map((job) => job.companyName.trim())
+                .where((name) => name.isNotEmpty)
+                .toSet()
+                .toList(growable: false)
+              ..sort();
+        final companyIds = jobs
+            .map((job) => job.companyId.trim())
+            .where((id) => id.isNotEmpty)
+            .toSet();
+        final hasConflict = companyIds.length > 1;
+        if (hasConflict) {
+          conflictedInvoices++;
+        }
+
+        for (final job in jobs) {
+          final currentImportMeta = _copyStringKeyMap(job.data['importMeta']);
+          final nextImportMeta = Map<String, dynamic>.from(currentImportMeta);
+          if (hasConflict) {
+            nextImportMeta['invoiceConflict'] = true;
+            nextImportMeta['invoiceConflictCompanies'] = companyNames;
+          } else {
+            nextImportMeta.remove('invoiceConflict');
+            nextImportMeta.remove('invoiceConflictCompanies');
+          }
+
+          if (!_mapEquals(currentImportMeta, nextImportMeta)) {
+            final pendingUpdate =
+                jobUpdates[job.reference] ?? <String, dynamic>{};
+            pendingUpdate['importMeta'] = nextImportMeta;
+            jobUpdates[job.reference] = pendingUpdate;
+          }
+        }
+      }
+
+      await _applyUpdatesInChunks(jobUpdates);
+
+      final rebuiltClaims = _buildInvoiceClaimDocs(invoiceBuckets);
+      final rebuiltAggregates = _buildSharedAggregateDocs(activeJobs);
+
+      await _deleteCollectionInChunks(AppConstants.invoiceClaimsCollection);
+      await _deleteCollectionInChunks(
+        AppConstants.sharedInstallAggregatesCollection,
+      );
+      await _setDocumentsInChunks(
+        AppConstants.invoiceClaimsCollection,
+        rebuiltClaims,
+      );
+      await _setDocumentsInChunks(
+        AppConstants.sharedInstallAggregatesCollection,
+        rebuiltAggregates,
+      );
+
+      return InvoicePrefixNormalizationResult(
+        scannedJobs: jobsSnap.docs.length,
+        updatedJobs: jobUpdates.length,
+        conflictedInvoices: conflictedInvoices,
+        rebuiltInvoiceClaims: rebuiltClaims.length,
+        rebuiltSharedAggregates: rebuiltAggregates.length,
+      );
+    } on FirebaseException catch (e) {
+      debugPrint('normalizeStoredInvoicePrefixes error code: ${e.code}');
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
+      }
+      throw const AdminException(
+        'admin_invoice_prefix_migration_failed',
+        'Could not normalize stored invoice numbers. Please try again.',
+        'محفوظ شدہ انوائس نمبرز نارملائز نہیں ہو سکے۔ دوبارہ کوشش کریں۔',
+        'تعذر توحيد أرقام الفواتير المخزنة. حاول مرة أخرى.',
+      );
+    }
+  }
+
   /// Deletes all documents in [collectionName] in chunks of 400.
   Future<void> _deleteCollectionInChunks(String collectionName) async {
     const chunkSize = 400;
@@ -461,5 +660,296 @@ class UserRepository {
       }
       await batch.commit();
     }
+  }
+
+  Future<Map<String, String>> _loadCompanyPrefixes() async {
+    final snap = await _companiesRef.get();
+    final prefixes = <String, String>{};
+    for (final doc in snap.docs) {
+      prefixes[doc.id] = (doc.data()['invoicePrefix'] as String? ?? '').trim();
+    }
+    return prefixes;
+  }
+
+  Future<void> _applyUpdatesInChunks(
+    Map<DocumentReference<Map<String, dynamic>>, Map<String, dynamic>> updates,
+  ) async {
+    if (updates.isEmpty) return;
+
+    const chunkSize = 350;
+    final entries = updates.entries.toList(growable: false);
+    for (var i = 0; i < entries.length; i += chunkSize) {
+      final end = (i + chunkSize > entries.length)
+          ? entries.length
+          : i + chunkSize;
+      final batch = firestore.batch();
+      for (final entry in entries.sublist(i, end)) {
+        batch.update(entry.key, entry.value);
+      }
+      await batch.commit();
+    }
+  }
+
+  Map<String, Map<String, dynamic>> _buildInvoiceClaimDocs(
+    Map<String, List<_InvoiceMigrationJobState>> invoiceBuckets,
+  ) {
+    final runAt = Timestamp.fromDate(DateTime.now());
+    final docs = <String, Map<String, dynamic>>{};
+
+    for (final entry in invoiceBuckets.entries) {
+      final jobs = entry.value;
+      if (jobs.isEmpty) continue;
+      final companyIds = jobs
+          .map((job) => job.companyId.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      if (companyIds.length > 1) {
+        continue;
+      }
+
+      final first = jobs.first;
+      docs[InvoiceUtils.invoiceClaimDocumentId(entry.key)] = {
+        'invoiceNumber': entry.key,
+        'companyId': first.companyId,
+        'companyName': first.companyName,
+        'reuseMode': jobs.every((job) => job.isSharedInstall)
+            ? 'shared'
+            : 'solo',
+        'activeJobCount': jobs.length,
+        'createdBy': first.techId,
+        'createdAt': _earliestTimestamp(jobs) ?? runAt,
+        'updatedAt': runAt,
+      };
+    }
+
+    return docs;
+  }
+
+  Map<String, Map<String, dynamic>> _buildSharedAggregateDocs(
+    List<_InvoiceMigrationJobState> activeJobs,
+  ) {
+    final runAt = Timestamp.fromDate(DateTime.now());
+    final sharedBuckets = <String, List<_InvoiceMigrationJobState>>{};
+    for (final job in activeJobs) {
+      if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) continue;
+      (sharedBuckets[job.sharedInstallGroupKey] ??=
+              <_InvoiceMigrationJobState>[])
+          .add(job);
+    }
+
+    final docs = <String, Map<String, dynamic>>{};
+    for (final entry in sharedBuckets.entries) {
+      final jobs = entry.value;
+      if (jobs.isEmpty) continue;
+
+      final first = jobs.first;
+      var consumedSplitUnits = 0;
+      var consumedWindowUnits = 0;
+      var consumedFreestandingUnits = 0;
+      var consumedUninstallSplitUnits = 0;
+      var consumedUninstallWindowUnits = 0;
+      var consumedUninstallFreestandingUnits = 0;
+      var consumedBracketCount = 0;
+      var consumedDeliveryAmount = 0.0;
+
+      for (final job in jobs) {
+        consumedSplitUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeSplitAc,
+        );
+        consumedWindowUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeWindowAc,
+        );
+        consumedFreestandingUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeFreestandingAc,
+        );
+        consumedUninstallSplitUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeUninstallSplit,
+        );
+        consumedUninstallWindowUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeUninstallWindow,
+        );
+        consumedUninstallFreestandingUnits += _unitsForType(
+          job.data,
+          AppConstants.unitTypeUninstallFreestanding,
+        );
+        consumedBracketCount += _bracketCount(job.data);
+        consumedDeliveryAmount += _deliveryAmount(job.data);
+      }
+
+      docs[_sharedAggregateDocId(entry.key)] = {
+        'groupKey': entry.key,
+        'sharedInvoiceSplitUnits': _readInt(
+          first.data,
+          'sharedInvoiceSplitUnits',
+        ),
+        'sharedInvoiceWindowUnits': _readInt(
+          first.data,
+          'sharedInvoiceWindowUnits',
+        ),
+        'sharedInvoiceFreestandingUnits': _readInt(
+          first.data,
+          'sharedInvoiceFreestandingUnits',
+        ),
+        'sharedInvoiceUninstallSplitUnits': _readInt(
+          first.data,
+          'sharedInvoiceUninstallSplitUnits',
+        ),
+        'sharedInvoiceUninstallWindowUnits': _readInt(
+          first.data,
+          'sharedInvoiceUninstallWindowUnits',
+        ),
+        'sharedInvoiceUninstallFreestandingUnits': _readInt(
+          first.data,
+          'sharedInvoiceUninstallFreestandingUnits',
+        ),
+        'sharedInvoiceBracketCount': _readInt(
+          first.data,
+          'sharedInvoiceBracketCount',
+        ),
+        'sharedDeliveryTeamCount': _readInt(
+          first.data,
+          'sharedDeliveryTeamCount',
+        ),
+        'sharedInvoiceDeliveryAmount': _readDouble(
+          first.data,
+          'sharedInvoiceDeliveryAmount',
+        ),
+        'consumedSplitUnits': consumedSplitUnits,
+        'consumedWindowUnits': consumedWindowUnits,
+        'consumedFreestandingUnits': consumedFreestandingUnits,
+        'consumedUninstallSplitUnits': consumedUninstallSplitUnits,
+        'consumedUninstallWindowUnits': consumedUninstallWindowUnits,
+        'consumedUninstallFreestandingUnits':
+            consumedUninstallFreestandingUnits,
+        'consumedBracketCount': consumedBracketCount,
+        'consumedDeliveryAmount': consumedDeliveryAmount,
+        'createdBy': first.techId,
+        'createdAt': _earliestTimestamp(jobs) ?? runAt,
+        'updatedAt': runAt,
+      };
+    }
+
+    return docs;
+  }
+
+  Future<void> _setDocumentsInChunks(
+    String collectionName,
+    Map<String, Map<String, dynamic>> docs,
+  ) async {
+    if (docs.isEmpty) return;
+
+    const chunkSize = 350;
+    final entries = docs.entries.toList(growable: false);
+    for (var i = 0; i < entries.length; i += chunkSize) {
+      final end = (i + chunkSize > entries.length)
+          ? entries.length
+          : i + chunkSize;
+      final batch = firestore.batch();
+      for (final entry in entries.sublist(i, end)) {
+        batch.set(
+          firestore.collection(collectionName).doc(entry.key),
+          entry.value,
+        );
+      }
+      await batch.commit();
+    }
+  }
+
+  Map<String, dynamic> _copyStringKeyMap(Object? value) {
+    if (value is! Map) return <String, dynamic>{};
+    return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
+  }
+
+  bool _mapEquals(Map<String, dynamic> left, Map<String, dynamic> right) {
+    if (left.length != right.length) return false;
+    for (final entry in left.entries) {
+      if (!_deepEquals(entry.value, right[entry.key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _deepEquals(Object? left, Object? right) {
+    if (left is List && right is List) {
+      if (left.length != right.length) return false;
+      for (var i = 0; i < left.length; i++) {
+        if (!_deepEquals(left[i], right[i])) return false;
+      }
+      return true;
+    }
+    if (left is Map && right is Map) {
+      return _mapEquals(_copyStringKeyMap(left), _copyStringKeyMap(right));
+    }
+    return left == right;
+  }
+
+  Timestamp? _earliestTimestamp(List<_InvoiceMigrationJobState> jobs) {
+    DateTime? earliest;
+    for (final job in jobs) {
+      final submittedAt = job.submittedAt;
+      if (submittedAt == null) continue;
+      if (earliest == null || submittedAt.isBefore(earliest)) {
+        earliest = submittedAt;
+      }
+    }
+    return earliest == null ? null : Timestamp.fromDate(earliest);
+  }
+
+  DateTime? _timestampToDate(Object? value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    return null;
+  }
+
+  int _unitsForType(Map<String, dynamic> data, String type) {
+    final units = data['acUnits'];
+    if (units is! List) return 0;
+    var total = 0;
+    for (final unit in units) {
+      if (unit is! Map) continue;
+      final unitType = (unit['type'] as String? ?? '').trim();
+      if (unitType != type) continue;
+      total += (unit['quantity'] as num?)?.toInt() ?? 0;
+    }
+    return total;
+  }
+
+  int _bracketCount(Map<String, dynamic> data) {
+    final charges = data['charges'];
+    if (charges is! Map) return 0;
+    final explicitCount = (charges['bracketCount'] as num?)?.toInt() ?? 0;
+    if (explicitCount > 0) return explicitCount;
+    final acBracket = charges['acBracket'] == true;
+    final bracketAmount = (charges['bracketAmount'] as num?)?.toDouble() ?? 0;
+    return (acBracket || bracketAmount > 0) ? 1 : 0;
+  }
+
+  double _deliveryAmount(Map<String, dynamic> data) {
+    final charges = data['charges'];
+    if (charges is! Map) return 0;
+    return (charges['deliveryAmount'] as num?)?.toDouble() ?? 0;
+  }
+
+  int _readInt(Map<String, dynamic> data, String key) {
+    return (data[key] as num?)?.toInt() ?? 0;
+  }
+
+  double _readDouble(Map<String, dynamic> data, String key) {
+    return (data[key] as num?)?.toDouble() ?? 0;
+  }
+
+  String _sharedAggregateDocId(String groupKey) {
+    final safe = groupKey.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9_-]'),
+      '_',
+    );
+    final scoped = 'shared_${safe.isEmpty ? 'unknown_group' : safe}';
+    return scoped.length > 140 ? scoped.substring(0, 140) : scoped;
   }
 }
