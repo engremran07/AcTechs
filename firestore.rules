@@ -105,23 +105,12 @@ service cloud.firestore {
         invoiceClaimAfterData().invoiceNumber == request.resource.data.invoiceNumber &&
         invoiceClaimAfterData().companyId == request.resource.data.companyId &&
         invoiceClaimAfterData().companyName == request.resource.data.companyName &&
-        invoiceClaimAfterData().reuseMode in ['shared', 'solo'] &&
+        invoiceClaimAfterData().reuseMode == requestedInvoiceReuseMode() &&
         (invoiceClaimAfterData().createdBy == request.auth.uid || isAdmin()) &&
         invoiceClaimAfterData().activeJobCount is int &&
         invoiceClaimAfterData().activeJobCount > 0 &&
         invoiceClaimAfterData().createdAt is timestamp &&
-        invoiceClaimAfterData().updatedAt is timestamp &&
-        (
-          (!invoiceClaimBeforeExists() &&
-            invoiceClaimAfterData().reuseMode == requestedInvoiceReuseMode() &&
-            invoiceClaimAfterData().activeJobCount == 1) ||
-          (invoiceClaimBeforeExists() &&
-            get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.companyId == request.resource.data.companyId &&
-            get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.reuseMode == 'shared' &&
-            requestedInvoiceReuseMode() == 'shared' &&
-            invoiceClaimAfterData().reuseMode == 'shared' &&
-            invoiceClaimAfterData().activeJobCount == get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.activeJobCount + 1)
-        );
+        invoiceClaimAfterData().updatedAt is timestamp;
     }
 
     function isNonSharedJobCreate() {
@@ -273,7 +262,40 @@ service cloud.firestore {
         ]) &&
         request.resource.data.groupKey is string &&
         request.resource.data.groupKey.size() > 0 &&
-        validSharedAggregateTotals(request.resource.data) &&
+        request.resource.data.sharedInvoiceSplitUnits is int &&
+        request.resource.data.sharedInvoiceSplitUnits >= 0 &&
+        request.resource.data.sharedInvoiceWindowUnits is int &&
+        request.resource.data.sharedInvoiceWindowUnits >= 0 &&
+        request.resource.data.sharedInvoiceFreestandingUnits is int &&
+        request.resource.data.sharedInvoiceFreestandingUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallSplitUnits is int &&
+        request.resource.data.sharedInvoiceUninstallSplitUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallWindowUnits is int &&
+        request.resource.data.sharedInvoiceUninstallWindowUnits >= 0 &&
+        request.resource.data.sharedInvoiceUninstallFreestandingUnits is int &&
+        request.resource.data.sharedInvoiceUninstallFreestandingUnits >= 0 &&
+        request.resource.data.sharedInvoiceBracketCount is int &&
+        request.resource.data.sharedInvoiceBracketCount >= 0 &&
+        request.resource.data.sharedDeliveryTeamCount is int &&
+        request.resource.data.sharedDeliveryTeamCount >= 0 &&
+        request.resource.data.sharedInvoiceDeliveryAmount is number &&
+        request.resource.data.sharedInvoiceDeliveryAmount >= 0 &&
+        request.resource.data.consumedSplitUnits is int &&
+        request.resource.data.consumedSplitUnits >= 0 &&
+        request.resource.data.consumedWindowUnits is int &&
+        request.resource.data.consumedWindowUnits >= 0 &&
+        request.resource.data.consumedFreestandingUnits is int &&
+        request.resource.data.consumedFreestandingUnits >= 0 &&
+        request.resource.data.consumedUninstallSplitUnits is int &&
+        request.resource.data.consumedUninstallSplitUnits >= 0 &&
+        request.resource.data.consumedUninstallWindowUnits is int &&
+        request.resource.data.consumedUninstallWindowUnits >= 0 &&
+        request.resource.data.consumedUninstallFreestandingUnits is int &&
+        request.resource.data.consumedUninstallFreestandingUnits >= 0 &&
+        request.resource.data.consumedBracketCount is int &&
+        request.resource.data.consumedBracketCount >= 0 &&
+        request.resource.data.consumedDeliveryAmount is number &&
+        request.resource.data.consumedDeliveryAmount >= 0 &&
         request.resource.data.createdBy is string &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.createdAt is timestamp &&
@@ -320,7 +342,22 @@ service cloud.firestore {
           'updatedAt'
         ]) &&
         sharedAggregateStaticFieldsUnchanged() &&
-        validSharedAggregateTotals(request.resource.data) &&
+        request.resource.data.consumedSplitUnits is int &&
+        request.resource.data.consumedSplitUnits >= 0 &&
+        request.resource.data.consumedWindowUnits is int &&
+        request.resource.data.consumedWindowUnits >= 0 &&
+        request.resource.data.consumedFreestandingUnits is int &&
+        request.resource.data.consumedFreestandingUnits >= 0 &&
+        request.resource.data.consumedUninstallSplitUnits is int &&
+        request.resource.data.consumedUninstallSplitUnits >= 0 &&
+        request.resource.data.consumedUninstallWindowUnits is int &&
+        request.resource.data.consumedUninstallWindowUnits >= 0 &&
+        request.resource.data.consumedUninstallFreestandingUnits is int &&
+        request.resource.data.consumedUninstallFreestandingUnits >= 0 &&
+        request.resource.data.consumedBracketCount is int &&
+        request.resource.data.consumedBracketCount >= 0 &&
+        request.resource.data.consumedDeliveryAmount is number &&
+        request.resource.data.consumedDeliveryAmount >= 0 &&
         request.resource.data.updatedAt is timestamp;
     }
 

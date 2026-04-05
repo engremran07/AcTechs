@@ -70,6 +70,117 @@ async function createJobWithClaim(context, job) {
   await batch.commit();
 }
 
+function sharedAggregateDocId(groupKey) {
+  return `shared_${groupKey.replace(/[^a-z0-9_-]/g, '_')}`;
+}
+
+async function createSharedJobWithClaimAndAggregate(context, job) {
+  const batch = context.firestore().batch();
+  const invoiceNumber = normalizeInvoice(job.invoiceNumber);
+  const claimRef = context.firestore().doc(
+    `invoice_claims/${invoiceClaimDocId(invoiceNumber)}`,
+  );
+  const aggregateRef = context.firestore().doc(
+    `shared_install_aggregates/${sharedAggregateDocId(job.sharedInstallGroupKey)}`,
+  );
+  const jobRef = context.firestore().collection('jobs').doc();
+  const existingClaim = await claimRef.get();
+  const existingAggregate = await aggregateRef.get();
+  const now = job.submittedAt;
+  const persistedJob = {
+    ...job,
+    invoiceNumber,
+  };
+
+  if (!existingClaim.exists) {
+    batch.set(claimRef, {
+      invoiceNumber,
+      companyId: job.companyId,
+      companyName: job.companyName,
+      reuseMode: 'shared',
+      activeJobCount: 1,
+      createdBy: job.techId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const claim = existingClaim.data();
+    batch.update(claimRef, {
+      invoiceNumber,
+      companyId: claim.companyId,
+      companyName: claim.companyName,
+      reuseMode: claim.reuseMode,
+      activeJobCount: (claim.activeJobCount || 0) + 1,
+      createdBy: claim.createdBy,
+      createdAt: claim.createdAt,
+      updatedAt: now,
+    });
+  }
+
+  const splitContribution = job.techSplitShare || 0;
+  const windowContribution = job.techWindowShare || 0;
+  const freestandingContribution = job.techFreestandingShare || 0;
+  const uninstallSplitContribution = job.techUninstallSplitShare || 0;
+  const uninstallWindowContribution = job.techUninstallWindowShare || 0;
+  const uninstallFreestandingContribution = job.techUninstallFreestandingShare || 0;
+  const bracketContribution = job.techBracketShare || 0;
+  const deliveryContribution = (job.charges && job.charges.deliveryAmount) || 0;
+
+  if (!existingAggregate.exists) {
+    batch.set(aggregateRef, {
+      groupKey: job.sharedInstallGroupKey,
+      sharedInvoiceSplitUnits: job.sharedInvoiceSplitUnits,
+      sharedInvoiceWindowUnits: job.sharedInvoiceWindowUnits,
+      sharedInvoiceFreestandingUnits: job.sharedInvoiceFreestandingUnits,
+      sharedInvoiceUninstallSplitUnits: job.sharedInvoiceUninstallSplitUnits,
+      sharedInvoiceUninstallWindowUnits: job.sharedInvoiceUninstallWindowUnits,
+      sharedInvoiceUninstallFreestandingUnits: job.sharedInvoiceUninstallFreestandingUnits,
+      sharedInvoiceBracketCount: job.sharedInvoiceBracketCount,
+      sharedDeliveryTeamCount: job.sharedDeliveryTeamCount,
+      sharedInvoiceDeliveryAmount: job.sharedInvoiceDeliveryAmount,
+      consumedSplitUnits: splitContribution,
+      consumedWindowUnits: windowContribution,
+      consumedFreestandingUnits: freestandingContribution,
+      consumedUninstallSplitUnits: uninstallSplitContribution,
+      consumedUninstallWindowUnits: uninstallWindowContribution,
+      consumedUninstallFreestandingUnits: uninstallFreestandingContribution,
+      consumedBracketCount: bracketContribution,
+      consumedDeliveryAmount: deliveryContribution,
+      createdBy: job.techId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const aggregate = existingAggregate.data();
+    batch.update(aggregateRef, {
+      groupKey: aggregate.groupKey,
+      sharedInvoiceSplitUnits: aggregate.sharedInvoiceSplitUnits,
+      sharedInvoiceWindowUnits: aggregate.sharedInvoiceWindowUnits,
+      sharedInvoiceFreestandingUnits: aggregate.sharedInvoiceFreestandingUnits,
+      sharedInvoiceUninstallSplitUnits: aggregate.sharedInvoiceUninstallSplitUnits,
+      sharedInvoiceUninstallWindowUnits: aggregate.sharedInvoiceUninstallWindowUnits,
+      sharedInvoiceUninstallFreestandingUnits: aggregate.sharedInvoiceUninstallFreestandingUnits,
+      sharedInvoiceBracketCount: aggregate.sharedInvoiceBracketCount,
+      sharedDeliveryTeamCount: aggregate.sharedDeliveryTeamCount,
+      sharedInvoiceDeliveryAmount: aggregate.sharedInvoiceDeliveryAmount,
+      consumedSplitUnits: (aggregate.consumedSplitUnits || 0) + splitContribution,
+      consumedWindowUnits: (aggregate.consumedWindowUnits || 0) + windowContribution,
+      consumedFreestandingUnits: (aggregate.consumedFreestandingUnits || 0) + freestandingContribution,
+      consumedUninstallSplitUnits: (aggregate.consumedUninstallSplitUnits || 0) + uninstallSplitContribution,
+      consumedUninstallWindowUnits: (aggregate.consumedUninstallWindowUnits || 0) + uninstallWindowContribution,
+      consumedUninstallFreestandingUnits: (aggregate.consumedUninstallFreestandingUnits || 0) + uninstallFreestandingContribution,
+      consumedBracketCount: (aggregate.consumedBracketCount || 0) + bracketContribution,
+      consumedDeliveryAmount: (aggregate.consumedDeliveryAmount || 0) + deliveryContribution,
+      createdBy: aggregate.createdBy,
+      createdAt: aggregate.createdAt,
+      updatedAt: now,
+    });
+  }
+
+  batch.set(jobRef, persistedJob);
+  await batch.commit();
+}
+
 async function main() {
   const testEnv = await initializeTestEnvironment({
     projectId,
@@ -212,6 +323,40 @@ async function main() {
     );
 
     await assertSucceeds(
+      activeTech.firestore().collection('expenses').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Fuel',
+        amount: 25,
+        note: '',
+        expenseType: 'work',
+        status: 'pending',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T08:40:00Z'),
+        createdAt: new Date('2024-01-12T08:40:00Z'),
+        reviewedAt: null,
+      }),
+    );
+
+    await assertSucceeds(
+      activeTech.firestore().collection('earnings').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Other',
+        amount: 25,
+        note: '',
+        paymentType: 'regular',
+        status: 'pending',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T08:41:00Z'),
+        createdAt: new Date('2024-01-12T08:41:00Z'),
+        reviewedAt: null,
+      }),
+    );
+
+    await assertSucceeds(
       createJobWithClaim(activeTech, {
         techId: 'tech-1',
         techName: 'Tech One',
@@ -296,6 +441,88 @@ async function main() {
         charges: null,
         date: new Date('2024-01-12T09:00:00Z'),
         submittedAt: new Date('2024-01-12T09:00:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createSharedJobWithClaimAndAggregate(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-402',
+        clientName: 'Second Shared Client',
+        clientContact: '',
+        acUnits: [{ type: 'Window AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: true,
+        sharedInstallGroupKey: 'company-1-inv-402',
+        sharedInvoiceTotalUnits: 2,
+        sharedContributionUnits: 1,
+        sharedInvoiceSplitUnits: 1,
+        sharedInvoiceWindowUnits: 1,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceUninstallSplitUnits: 0,
+        sharedInvoiceUninstallWindowUnits: 0,
+        sharedInvoiceUninstallFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 0,
+        sharedInvoiceDeliveryAmount: 0,
+        techSplitShare: 1,
+        techWindowShare: 0,
+        techFreestandingShare: 0,
+        techUninstallSplitShare: 0,
+        techUninstallWindowShare: 0,
+        techUninstallFreestandingShare: 0,
+        techBracketShare: 0,
+        charges: null,
+        date: new Date('2024-01-12T09:02:00Z'),
+        submittedAt: new Date('2024-01-12T09:02:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createSharedJobWithClaimAndAggregate(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-402',
+        clientName: 'Third Shared Client',
+        clientContact: '',
+        acUnits: [{ type: 'Window AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: true,
+        sharedInstallGroupKey: 'company-1-inv-402',
+        sharedInvoiceTotalUnits: 2,
+        sharedContributionUnits: 1,
+        sharedInvoiceSplitUnits: 1,
+        sharedInvoiceWindowUnits: 1,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceUninstallSplitUnits: 0,
+        sharedInvoiceUninstallWindowUnits: 0,
+        sharedInvoiceUninstallFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 0,
+        sharedInvoiceDeliveryAmount: 0,
+        techSplitShare: 0,
+        techWindowShare: 1,
+        techFreestandingShare: 0,
+        techUninstallSplitShare: 0,
+        techUninstallWindowShare: 0,
+        techUninstallFreestandingShare: 0,
+        techBracketShare: 0,
+        charges: null,
+        date: new Date('2024-01-12T09:03:00Z'),
+        submittedAt: new Date('2024-01-12T09:03:00Z'),
       }),
     );
 
