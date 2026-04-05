@@ -57,6 +57,9 @@ class ExpenseRepository {
       rethrow;
     } on FirebaseException catch (e) {
       debugPrint('addExpense error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw ExpenseException.permissionDenied();
+      }
       throw ExpenseException.saveFailed();
     } catch (e) {
       debugPrint('addExpense unknown: $e');
@@ -102,6 +105,9 @@ class ExpenseRepository {
       rethrow;
     } on FirebaseException catch (e) {
       debugPrint('updateExpense error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw ExpenseException.permissionDenied();
+      }
       throw ExpenseException.userSaveFailed();
     } catch (e) {
       debugPrint('updateExpense unknown: $e');

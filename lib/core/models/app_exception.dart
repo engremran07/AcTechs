@@ -338,6 +338,13 @@ class ExpenseException extends AppException {
     'تعذر حفظ التغييرات. حاول مرة أخرى.',
   );
 
+  factory ExpenseException.permissionDenied() => const ExpenseException(
+    'expense_permission_denied',
+    "You don't have permission to save this expense. Contact your admin.",
+    'آپ کو یہ خرچہ محفوظ کرنے کی اجازت نہیں۔ اپنے ایڈمن سے رابطہ کریں۔',
+    'ليست لديك صلاحية لحفظ هذا المصروف. تواصل مع المسؤول.',
+  );
+
   factory ExpenseException.approvedRecordLocked() => const ExpenseException(
     'expense_approved_record_locked',
     'Approved records are locked. Create a correction entry instead of editing this record.',
@@ -373,6 +380,13 @@ class EarningException extends AppException {
     "Couldn't save changes to the earning. Please try again.",
     'آمدنی میں تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
     'تعذر حفظ تغييرات الإيراد. حاول مرة أخرى.',
+  );
+
+  factory EarningException.permissionDenied() => const EarningException(
+    'earning_permission_denied',
+    "You don't have permission to save this earning. Contact your admin.",
+    'آپ کو یہ آمدنی محفوظ کرنے کی اجازت نہیں۔ اپنے ایڈمن سے رابطہ کریں۔',
+    'ليست لديك صلاحية لحفظ هذا الإيراد. تواصل مع المسؤول.',
   );
 
   factory EarningException.approvedRecordLocked() => const EarningException(

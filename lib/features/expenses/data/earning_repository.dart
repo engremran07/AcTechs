@@ -57,6 +57,9 @@ class EarningRepository {
       rethrow;
     } on FirebaseException catch (e) {
       debugPrint('addEarning error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw EarningException.permissionDenied();
+      }
       throw EarningException.saveFailed();
     } catch (e) {
       debugPrint('addEarning unknown: $e');
@@ -102,6 +105,9 @@ class EarningRepository {
       rethrow;
     } on FirebaseException catch (e) {
       debugPrint('updateEarning error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw EarningException.permissionDenied();
+      }
       throw EarningException.updateFailed();
     } catch (e) {
       debugPrint('updateEarning unknown: $e');

@@ -14,13 +14,32 @@ async function seedDoc(context, docPath, data) {
   await context.firestore().doc(docPath).set(data);
 }
 
+function normalizeInvoice(invoiceNumber) {
+  const trimmed = (invoiceNumber || '').trim();
+  const upper = trimmed.toUpperCase();
+  if (upper.startsWith('INV-') || upper.startsWith('INV ')) {
+    return trimmed.substring(4).trim();
+  }
+  return trimmed;
+}
+
+function invoiceClaimDocId(invoiceNumber) {
+  return normalizeInvoice(invoiceNumber).toLowerCase();
+}
+
 async function createJobWithClaim(context, job) {
   const batch = context.firestore().batch();
-  const invoiceNumber = job.invoiceNumber;
-  const claimRef = context.firestore().doc(`invoice_claims/${invoiceNumber}`);
+  const invoiceNumber = normalizeInvoice(job.invoiceNumber);
+  const claimRef = context.firestore().doc(
+    `invoice_claims/${invoiceClaimDocId(invoiceNumber)}`,
+  );
   const jobRef = context.firestore().collection('jobs').doc();
   const existingClaim = await claimRef.get();
   const now = job.submittedAt;
+  const persistedJob = {
+    ...job,
+    invoiceNumber,
+  };
 
   if (!existingClaim.exists) {
     batch.set(claimRef, {
@@ -47,7 +66,7 @@ async function createJobWithClaim(context, job) {
     });
   }
 
-  batch.set(jobRef, job);
+  batch.set(jobRef, persistedJob);
   await batch.commit();
 }
 
@@ -189,6 +208,28 @@ async function main() {
         charges: null,
         date: new Date('2024-01-12T08:30:00Z'),
         submittedAt: new Date('2024-01-12T08:30:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-ABC350',
+        clientName: 'Alpha Invoice Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-12T08:31:00Z'),
+        submittedAt: new Date('2024-01-12T08:31:00Z'),
       }),
     );
 

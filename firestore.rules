@@ -81,7 +81,7 @@ service cloud.firestore {
     }
 
     function invoiceClaimDocPath(invoiceNumber) {
-      return /databases/$(database)/documents/invoice_claims/$(invoiceNumber);
+      return /databases/$(database)/documents/invoice_claims/$(invoiceNumber.lower());
     }
 
     function invoiceClaimAfterData() {
@@ -470,7 +470,7 @@ service cloud.firestore {
           'createdAt',
           'updatedAt'
         ]) &&
-        request.resource.data.invoiceNumber == claimId &&
+        request.resource.data.invoiceNumber.lower() == claimId &&
         request.resource.data.companyId is string &&
         request.resource.data.companyName is string &&
         request.resource.data.reuseMode in ['shared', 'solo'] &&

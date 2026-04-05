@@ -77,9 +77,7 @@ class InvoiceUtils {
   }
 
   static String invoiceClaimDocumentId(String invoiceNumber) {
-    final safe = normalize(
-      invoiceNumber,
-    ).trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9_-]'), '_');
-    return safe.isEmpty ? 'unknown_invoice' : safe;
+    final normalized = normalize(invoiceNumber).trim().toLowerCase();
+    return normalized.isEmpty ? 'unknown_invoice' : normalized;
   }
 }
