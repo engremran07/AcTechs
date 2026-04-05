@@ -18,7 +18,6 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
-import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 
@@ -74,19 +73,13 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   Future<Map<String, List<String>>> _sharedInstallerNamesByGroup(
     List<JobModel> jobs,
   ) async {
-    final groupKeys = jobs
-        .where((job) => job.isSharedInstall)
-        .map((job) => job.sharedInstallGroupKey.trim())
-        .where((key) => key.isNotEmpty)
-        .toSet();
-    if (groupKeys.isEmpty) {
+    final query = SharedInstallerNamesQuery.fromJobs(jobs);
+    if (query.groupKeys.isEmpty) {
       return const <String, List<String>>{};
     }
 
     try {
-      return await ref
-          .read(jobRepositoryProvider)
-          .fetchSharedInstallerNamesByGroup(groupKeys);
+      return ref.read(sharedInstallerNamesProvider(query).future);
     } catch (_) {
       return const <String, List<String>>{};
     }

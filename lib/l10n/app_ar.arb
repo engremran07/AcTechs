@@ -217,6 +217,9 @@
   "sharedInstall": "تركيب مشترك",
   "sharedInstallHint": "فعّل هذا الخيار عندما يتم تقسيم الفاتورة نفسها بين عدة فنيين.",
   "sharedInstallMixHint": "أدخل إجمالي وحدات الفاتورة حسب النوع. سيُدخل كل فني حصته من الوحدات يدوياً. فقط رسوم التوصيل تُقسم بالتساوي.",
+  "flushOperationGuidanceTitle": "ما العملية التي تحتاجها؟",
+  "flushOperationMigrationNote": "الترحيل لمرة واحدة أو الاستيراد التاريخي يحافظ على البيانات الحالية وهو الخيار الآمن عند بدء النقل من Excel لأول مرة.",
+  "flushOperationReimportNote": "المسح ثم إعادة الاستيراد يحذف البيانات التشغيلية أولاً. استخدمه فقط لإعادة ضبط كاملة أو عندما تحتاج عمدًا إلى إعادة البناء من الصفر.",
   "sharedInvoiceTotalUnits": "إجمالي وحدات الفاتورة",
   "sharedInstallLimitError": "الوحدات التي أدخلتها تتجاوز إجمالي وحدات الفاتورة.",
   "sharedInvoiceSplitUnits": "وحدات السبليت في الفاتورة",
@@ -357,6 +360,32 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "importTopTechNamesLabel": "أكثر أسماء الفنيين تكراراً",
+  "importProgressFile": "جارٍ استيراد {current}/{total}: {fileName}",
+  "@importProgressFile": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" },
+      "fileName": { "type": "String" }
+    }
+  },
+  "importInstalledBreakdown": "التركيب S/W/F: {split}/{window}/{freestanding}",
+  "@importInstalledBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" }
+    }
+  },
+  "importUninstallBreakdown": "الفك S/W/F/O: {split}/{window}/{freestanding}/{old}",
+  "@importUninstallBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" },
+      "old": { "type": "int" }
+    }
+  },
+  "importSheetRowLimitExceeded": "تم تجاوز حد الصفوف؛ تمت معالجة أول 5000 صف فقط.",
   "importTargetTechnician": "الفني المستهدف",
   "importTargetTechnicianRequired": "اختر الفني الذي يجب أن تُنسب إليه البيانات التاريخية المستوردة.",
   "importTechnicianKeyword": "مرشح الفني المصدر",

@@ -18,6 +18,10 @@ class JobRepository {
   static const String _sharedBracketType = 'Bracket';
   static const String _invoiceReuseModeShared = 'shared';
   static const String _invoiceReuseModeSolo = 'solo';
+  static const Set<String> _unsupportedSharedUnitTypes = {
+    AppConstants.unitTypeCassetteAc,
+    AppConstants.unitTypeUninstallOld,
+  };
 
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
@@ -57,13 +61,30 @@ class JobRepository {
     );
   }
 
+  Future<List<JobModel>> _fetchAdminJobsPaged({int pageSize = 200}) async {
+    final jobs = <JobModel>[];
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    var hasMore = true;
+
+    while (hasMore) {
+      final page = await fetchAdminJobsPage(
+        startAfter: cursor,
+        limit: pageSize,
+      );
+      jobs.addAll(page.jobs);
+      cursor = page.cursor;
+      hasMore = page.hasMore && page.jobs.isNotEmpty;
+    }
+
+    return jobs;
+  }
+
   Future<List<JobModel>> fetchAllAdminJobs() async {
-    final snap = await _jobsRef.orderBy('date', descending: true).get();
-    return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+    return _fetchAdminJobsPaged();
   }
 
   Future<AdminJobSummary> fetchAdminJobSummary() async {
-    final jobs = await fetchAllAdminJobs();
+    final jobs = await _fetchAdminJobsPaged();
     return AdminJobSummary.fromJobs(jobs);
   }
 
@@ -137,6 +158,17 @@ class JobRepository {
   int _unitsForType(JobModel job, String type) => job.acUnits
       .where((unit) => unit.type == type)
       .fold(0, (total, unit) => total + unit.quantity);
+
+  void _validateSupportedSharedInstallUnits(JobModel job) {
+    if (!job.isSharedInstall) return;
+
+    for (final unit in job.acUnits) {
+      if (unit.quantity <= 0) continue;
+      if (_unsupportedSharedUnitTypes.contains(unit.type)) {
+        throw JobException.sharedUnsupportedUnitType(unitType: unit.type);
+      }
+    }
+  }
 
   int _bracketCount(JobModel job) => job.effectiveBracketCount;
 
@@ -433,6 +465,8 @@ class JobRepository {
             );
 
       if (job.isSharedInstall) {
+        _validateSupportedSharedInstallUnits(job);
+
         final splitContribution = _unitsForType(
           job,
           AppConstants.unitTypeSplitAc,
@@ -815,26 +849,37 @@ class JobRepository {
   Future<void> bulkApproveJobs(List<String> jobIds, String adminUid) async {
     try {
       if (jobIds.isEmpty) return;
-      for (final id in jobIds) {
-        await firestore.runTransaction((tx) async {
-          final jobRef = _jobsRef.doc(id);
-          final snap = await tx.get(jobRef);
-          if (!snap.exists) return;
+      const chunkSize = 100;
+      for (var start = 0; start < jobIds.length; start += chunkSize) {
+        final end = (start + chunkSize > jobIds.length)
+            ? jobIds.length
+            : start + chunkSize;
+        final chunk = jobIds.sublist(start, end);
+        final snaps = await Future.wait(
+          chunk.map((id) => _jobsRef.doc(id).get()),
+        );
+
+        final batch = firestore.batch();
+        for (final snap in snaps) {
+          if (!snap.exists) continue;
 
           final prevStatus = snap.data()?['status'] as String? ?? 'pending';
-          _ensureMutableJobStatus(prevStatus);
-          tx.update(jobRef, {
+          if (prevStatus == JobStatus.approved.name) continue;
+
+          batch.update(snap.reference, {
             'status': 'approved',
             'approvedBy': adminUid,
             'reviewedAt': FieldValue.serverTimestamp(),
           });
-          tx.set(jobRef.collection('history').doc(), {
+          batch.set(snap.reference.collection('history').doc(), {
             'changedBy': adminUid,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': prevStatus,
             'newStatus': 'approved',
           });
-        });
+        }
+
+        await batch.commit();
       }
     } on JobException {
       rethrow;
@@ -969,31 +1014,98 @@ class JobRepository {
 
       var imported = 0;
       for (final chunk in chunks) {
-        final batch = firestore.batch();
-        for (final job in chunk) {
-          final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
-          final ref = _jobsRef.doc(_safeImportDocId(job));
-          final claimRef = _invoiceClaimsRef.doc(
-            _invoiceClaimDocId(normalizedInvoice),
+        final normalizedChunk = chunk
+            .map(
+              (job) => job.copyWith(
+                invoiceNumber: InvoiceUtils.normalize(job.invoiceNumber),
+              ),
+            )
+            .toList(growable: false);
+        final refs = normalizedChunk
+            .map((job) => _jobsRef.doc(_safeImportDocId(job)))
+            .toList(growable: false);
+        final existingJobDocs = await Future.wait(refs.map((ref) => ref.get()));
+
+        final jobsToCreate =
+            <({JobModel job, DocumentReference<Map<String, dynamic>> ref})>[];
+        for (var i = 0; i < normalizedChunk.length; i++) {
+          if (existingJobDocs[i].exists) {
+            continue;
+          }
+          jobsToCreate.add((job: normalizedChunk[i], ref: refs[i]));
+        }
+
+        if (jobsToCreate.isEmpty) {
+          continue;
+        }
+
+        final claimBumps = <String, Map<String, dynamic>>{};
+        for (final item in jobsToCreate) {
+          final claimId = _invoiceClaimDocId(item.job.invoiceNumber);
+          final entry = claimBumps.putIfAbsent(
+            claimId,
+            () => {
+              'invoiceNumber': item.job.invoiceNumber,
+              'companyId': item.job.companyId,
+              'companyName': item.job.companyName,
+              'reuseMode': _invoiceReuseModeFor(item.job),
+              'activeJobCount': 0,
+              'createdBy': item.job.techId,
+            },
           );
-          final data = job
-              .copyWith(invoiceNumber: normalizedInvoice)
-              .toFirestore();
+          entry['activeJobCount'] =
+              ((entry['activeJobCount'] as int?) ?? 0) + 1;
+        }
+
+        final existingClaimDocs = await Future.wait(
+          claimBumps.keys.map(
+            (claimId) => _invoiceClaimsRef.doc(claimId).get(),
+          ),
+        );
+
+        final batch = firestore.batch();
+        for (final item in jobsToCreate) {
+          final data = item.job.toFirestore();
           data['date'] ??= FieldValue.serverTimestamp();
           data['submittedAt'] ??= FieldValue.serverTimestamp();
-          batch.set(ref, data);
-          batch.set(claimRef, {
-            'invoiceNumber': normalizedInvoice,
-            'companyId': job.companyId,
-            'companyName': job.companyName,
-            'reuseMode': _invoiceReuseModeFor(job),
-            'activeJobCount': 1,
-            'createdBy': job.techId,
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          batch.set(item.ref, data);
           imported++;
         }
+
+        for (final existingClaimDoc in existingClaimDocs) {
+          final claimRef = existingClaimDoc.reference;
+          final bump = claimBumps[claimRef.id]!;
+          final increment = bump['activeJobCount'] as int? ?? 0;
+          if (existingClaimDoc.exists) {
+            final existingData = existingClaimDoc.data() ?? <String, dynamic>{};
+            batch.set(claimRef, {
+              'invoiceNumber':
+                  existingData['invoiceNumber'] ?? bump['invoiceNumber'],
+              'companyId': existingData['companyId'] ?? bump['companyId'],
+              'companyName': existingData['companyName'] ?? bump['companyName'],
+              'reuseMode': existingData['reuseMode'] ?? bump['reuseMode'],
+              'activeJobCount':
+                  ((existingData['activeJobCount'] as num?)?.toInt() ?? 0) +
+                  increment,
+              'createdBy': existingData['createdBy'] ?? bump['createdBy'],
+              'createdAt':
+                  existingData['createdAt'] ?? FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          } else {
+            batch.set(claimRef, {
+              'invoiceNumber': bump['invoiceNumber'],
+              'companyId': bump['companyId'],
+              'companyName': bump['companyName'],
+              'reuseMode': bump['reuseMode'],
+              'activeJobCount': increment,
+              'createdBy': bump['createdBy'],
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+        }
+
         await batch.commit();
       }
       return imported;

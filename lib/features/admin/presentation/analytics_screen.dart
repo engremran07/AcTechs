@@ -65,19 +65,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Future<Map<String, List<String>>> _sharedInstallerNamesByGroup(
     List<JobModel> jobs,
   ) async {
-    final groupKeys = jobs
-        .where((job) => job.isSharedInstall)
-        .map((job) => job.sharedInstallGroupKey.trim())
-        .where((key) => key.isNotEmpty)
-        .toSet();
-    if (groupKeys.isEmpty) {
+    final query = SharedInstallerNamesQuery.fromJobs(jobs);
+    if (query.groupKeys.isEmpty) {
       return const <String, List<String>>{};
     }
 
     try {
-      return await ref
-          .read(jobRepositoryProvider)
-          .fetchSharedInstallerNamesByGroup(groupKeys);
+      return ref.read(sharedInstallerNamesProvider(query).future);
     } catch (_) {
       return const <String, List<String>>{};
     }
@@ -765,10 +759,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     try {
       if (jobs.isEmpty) {
         if (mounted) {
-          ErrorSnackbar.show(
-            context,
-            message: localizations.noJobsForPeriod,
-          );
+          ErrorSnackbar.show(context, message: localizations.noJobsForPeriod);
         }
         return;
       }
@@ -791,10 +782,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ErrorSnackbar.show(
-          context,
-          message: localizations.couldNotExport,
-        );
+        ErrorSnackbar.show(context, message: localizations.couldNotExport);
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);

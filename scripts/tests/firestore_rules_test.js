@@ -460,6 +460,132 @@ async function main() {
       }),
     );
 
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await seedDoc(context, 'app_settings/approval_config', {
+        inOutApprovalRequired: false,
+        jobApprovalRequired: true,
+        sharedJobApprovalRequired: true,
+        enforceMinimumBuild: false,
+        minSupportedBuildNumber: 1,
+      });
+    });
+
+    await assertFails(
+      activeTech.firestore().collection('expenses').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Fuel',
+        amount: 25,
+        note: '',
+        expenseType: 'work',
+        status: 'approved',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T09:00:00Z'),
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        reviewedAt: null,
+      }),
+    );
+
+    await assertFails(
+      activeTech.firestore().collection('earnings').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Other',
+        amount: 25,
+        note: '',
+        paymentType: 'cash',
+        status: 'approved',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T09:00:00Z'),
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        reviewedAt: null,
+      }),
+    );
+
+    await assertSucceeds(
+      activeTech.firestore().collection('expenses').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Fuel',
+        amount: 25,
+        note: '',
+        expenseType: 'work',
+        status: 'approved',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T09:00:00Z'),
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        reviewedAt: new Date('2024-01-12T09:05:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      activeTech.firestore().collection('earnings').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Other',
+        amount: 25,
+        note: '',
+        paymentType: 'cash',
+        status: 'approved',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-01-12T09:00:00Z'),
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        reviewedAt: new Date('2024-01-12T09:05:00Z'),
+      }),
+    );
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context.firestore().doc('app_settings/approval_config').delete();
+    });
+
+    await assertFails(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-999',
+        clientName: 'Fail Closed Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'approved',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-12T09:30:00Z'),
+        submittedAt: new Date('2024-01-12T09:30:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-1000',
+        clientName: 'Pending Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-12T09:35:00Z'),
+        submittedAt: new Date('2024-01-12T09:35:00Z'),
+      }),
+    );
+
     const historyDoc = await admin
       .firestore()
       .doc('ac_installs/install-1/history/event-1')

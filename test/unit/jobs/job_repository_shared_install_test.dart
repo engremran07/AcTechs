@@ -74,6 +74,27 @@ void main() {
     );
   }
 
+  JobModel buildImportedJob({
+    required String techId,
+    required String techName,
+    required String invoiceNumber,
+  }) {
+    final now = DateTime(2023, 12, 5, 14, 30);
+    return JobModel(
+      techId: techId,
+      techName: techName,
+      companyId: 'company-1',
+      companyName: 'Company',
+      invoiceNumber: invoiceNumber,
+      clientName: 'Imported Client',
+      acUnits: const [AcUnit(type: AppConstants.unitTypeSplitAc, quantity: 1)],
+      status: JobStatus.approved,
+      expenses: 0,
+      date: now,
+      submittedAt: now,
+    );
+  }
+
   test(
     'shared job submission creates and updates aggregate reservations',
     () async {
@@ -313,5 +334,64 @@ void main() {
       ),
       throwsA(isA<JobException>()),
     );
+  });
+
+  test('shared installs reject unsupported cassette units', () async {
+    final now = DateTime(2024, 1, 10, 9);
+    final job = JobModel(
+      techId: 'tech-1',
+      techName: 'Tech One',
+      companyId: 'company-1',
+      companyName: 'Company',
+      invoiceNumber: 'INV-800',
+      clientName: 'Client',
+      acUnits: const [
+        AcUnit(type: AppConstants.unitTypeCassetteAc, quantity: 1),
+      ],
+      status: JobStatus.pending,
+      expenses: 0,
+      isSharedInstall: true,
+      sharedInstallGroupKey: 'company-1-inv-800',
+      sharedInvoiceTotalUnits: 1,
+      sharedContributionUnits: 1,
+      sharedInvoiceSplitUnits: 0,
+      sharedInvoiceWindowUnits: 0,
+      sharedInvoiceFreestandingUnits: 0,
+      sharedInvoiceBracketCount: 0,
+      sharedDeliveryTeamCount: 0,
+      sharedInvoiceDeliveryAmount: 0,
+      date: now,
+      submittedAt: now,
+    );
+
+    await expectLater(
+      () => repository.submitJob(job),
+      throwsA(isA<JobException>()),
+    );
+  });
+
+  test('historical import is idempotent for deterministic job ids', () async {
+    final importedJob = buildImportedJob(
+      techId: 'tech-import-1',
+      techName: 'Import Tech',
+      invoiceNumber: 'INV-900',
+    );
+
+    final firstPass = await repository.importJobs([importedJob]);
+    final secondPass = await repository.importJobs([importedJob]);
+
+    final jobsSnap = await firestore
+        .collection(AppConstants.jobsCollection)
+        .get();
+    final claimsSnap = await firestore
+        .collection(AppConstants.invoiceClaimsCollection)
+        .get();
+
+    expect(firstPass, 1);
+    expect(secondPass, 0);
+    expect(jobsSnap.docs, hasLength(1));
+    expect(claimsSnap.docs, hasLength(1));
+    expect(claimsSnap.docs.single.data()['activeJobCount'], 1);
+    expect(claimsSnap.docs.single.data()['invoiceNumber'], '900');
   });
 }

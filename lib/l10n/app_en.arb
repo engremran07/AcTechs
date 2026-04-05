@@ -217,6 +217,9 @@
   "sharedInstall": "Shared Install",
   "sharedInstallHint": "Enable when one invoice is split across multiple technicians.",
   "sharedInstallMixHint": "Enter invoice totals by type. Technicians will enter their own unit share manually. Delivery is split equally only.",
+  "flushOperationGuidanceTitle": "Which operation do you need?",
+  "flushOperationMigrationNote": "One-time migration or historical import keeps existing data and is the safe choice for first-time Excel onboarding.",
+  "flushOperationReimportNote": "Flush plus re-import deletes operational data first. Use it only for a full reset or when you intentionally need to rebuild from scratch.",
   "sharedInvoiceTotalUnits": "Invoice Total Units",
   "sharedInstallLimitError": "Your entered units exceed the invoice total units.",
   "sharedInvoiceSplitUnits": "Invoice Split Units",
@@ -357,6 +360,32 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "importTopTechNamesLabel": "Top technician names",
+  "importProgressFile": "Importing {current}/{total}: {fileName}",
+  "@importProgressFile": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" },
+      "fileName": { "type": "String" }
+    }
+  },
+  "importInstalledBreakdown": "Installed S/W/F: {split}/{window}/{freestanding}",
+  "@importInstalledBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" }
+    }
+  },
+  "importUninstallBreakdown": "Uninstall S/W/F/O: {split}/{window}/{freestanding}/{old}",
+  "@importUninstallBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" },
+      "old": { "type": "int" }
+    }
+  },
+  "importSheetRowLimitExceeded": "Row limit exceeded; only the first 5000 rows were processed.",
   "importTargetTechnician": "Target technician",
   "importTargetTechnicianRequired": "Select the technician who should receive the imported history.",
   "importTechnicianKeyword": "Source technician filter",

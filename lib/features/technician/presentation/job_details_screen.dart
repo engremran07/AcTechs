@@ -7,7 +7,6 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
-import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
@@ -32,9 +31,11 @@ class JobDetailsScreen extends ConsumerWidget {
     }
 
     try {
-      final namesByGroup = await ref
-          .read(jobRepositoryProvider)
-          .fetchSharedInstallerNamesByGroup([job.sharedInstallGroupKey]);
+      final namesByGroup = await ref.read(
+        sharedInstallerNamesProvider(
+          SharedInstallerNamesQuery.fromKeys([job.sharedInstallGroupKey]),
+        ).future,
+      );
       return (namesByGroup[job.sharedInstallGroupKey] ?? const <String>[])
           .where((name) => name.trim().isNotEmpty)
           .toList(growable: false);

@@ -624,6 +624,17 @@ class AppLocalizationsUr extends AppLocalizations {
       'انوائس کے کل یونٹس قسم کے مطابق درج کریں۔ ہر ٹیکنیشن اپنی مرضی کے مطابق اپنی یونٹ شیئر درج کرے گا۔ صرف ڈیلیوری برابر تقسیم ہوگی۔';
 
   @override
+  String get flushOperationGuidanceTitle => 'آپ کو کون سا آپریشن چاہیے؟';
+
+  @override
+  String get flushOperationMigrationNote =>
+      'ون ٹائم مائیگریشن یا ہسٹریکل امپورٹ موجودہ ڈیٹا کو محفوظ رکھتا ہے اور پہلی بار ایکسل آن بورڈنگ کے لیے محفوظ انتخاب ہے۔';
+
+  @override
+  String get flushOperationReimportNote =>
+      'فلش پلس ری امپورٹ پہلے آپریشنل ڈیٹا حذف کرتا ہے۔ اسے صرف مکمل ری سیٹ یا جان بوجھ کر ازسرنو تعمیر کے لیے استعمال کریں۔';
+
+  @override
   String get sharedInvoiceTotalUnits => 'انوائس کے کل یونٹس';
 
   @override
@@ -964,6 +975,30 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get importTopTechNamesLabel => 'زیادہ آنے والے ٹیکنیشن نام';
+
+  @override
+  String importProgressFile(int current, int total, String fileName) {
+    return 'امپورٹ ہو رہا ہے $current/$total: $fileName';
+  }
+
+  @override
+  String importInstalledBreakdown(int split, int window, int freestanding) {
+    return 'انسٹال S/W/F: $split/$window/$freestanding';
+  }
+
+  @override
+  String importUninstallBreakdown(
+    int split,
+    int window,
+    int freestanding,
+    int old,
+  ) {
+    return 'ان انسٹال S/W/F/O: $split/$window/$freestanding/$old';
+  }
+
+  @override
+  String get importSheetRowLimitExceeded =>
+      'قطاروں کی حد پوری ہو گئی؛ صرف پہلی 5000 قطاریں پروسیس کی گئیں۔';
 
   @override
   String get importTargetTechnician => 'ٹارگٹ ٹیکنیشن';

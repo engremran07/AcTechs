@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/invoice_utils.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
@@ -242,7 +243,10 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
       final normalizedInvoice = _buildInvoiceNumber();
       final sharedGroupKey = _isSharedInstall
-          ? '${(_selectedCompanyId ?? 'no-company')}-${normalizedInvoice.toLowerCase()}'
+          ? InvoiceUtils.sharedInstallGroupKey(
+              companyId: _selectedCompanyId ?? '',
+              invoiceNumber: normalizedInvoice,
+            )
           : '';
 
       final sharedContributionUnits = _isSharedInstall
@@ -264,7 +268,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           ((_isSharedInstall
               ? approvalConfig?.sharedJobApprovalRequired
               : approvalConfig?.jobApprovalRequired) ??
-          false);
+          true);
       final status = requiresApproval ? JobStatus.pending : JobStatus.approved;
 
       final job = JobModel(
@@ -344,7 +348,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         ((_isSharedInstall
             ? approvalConfig?.sharedJobApprovalRequired
             : approvalConfig?.jobApprovalRequired) ??
-        false);
+        true);
 
     return AppShortcuts(
       onSubmit: _isSubmitting ? null : _submit,

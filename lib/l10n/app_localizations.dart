@@ -1294,6 +1294,24 @@ abstract class AppLocalizations {
   /// **'Enter invoice totals by type. Technicians will enter their own unit share manually. Delivery is split equally only.'**
   String get sharedInstallMixHint;
 
+  /// No description provided for @flushOperationGuidanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which operation do you need?'**
+  String get flushOperationGuidanceTitle;
+
+  /// No description provided for @flushOperationMigrationNote.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time migration or historical import keeps existing data and is the safe choice for first-time Excel onboarding.'**
+  String get flushOperationMigrationNote;
+
+  /// No description provided for @flushOperationReimportNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Flush plus re-import deletes operational data first. Use it only for a full reset or when you intentionally need to rebuild from scratch.'**
+  String get flushOperationReimportNote;
+
   /// No description provided for @sharedInvoiceTotalUnits.
   ///
   /// In en, this message translates to:
@@ -1917,6 +1935,35 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Top technician names'**
   String get importTopTechNamesLabel;
+
+  /// No description provided for @importProgressFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {current}/{total}: {fileName}'**
+  String importProgressFile(int current, int total, String fileName);
+
+  /// No description provided for @importInstalledBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed S/W/F: {split}/{window}/{freestanding}'**
+  String importInstalledBreakdown(int split, int window, int freestanding);
+
+  /// No description provided for @importUninstallBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall S/W/F/O: {split}/{window}/{freestanding}/{old}'**
+  String importUninstallBreakdown(
+    int split,
+    int window,
+    int freestanding,
+    int old,
+  );
+
+  /// No description provided for @importSheetRowLimitExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Row limit exceeded; only the first 5000 rows were processed.'**
+  String get importSheetRowLimitExceeded;
 
   /// No description provided for @importTargetTechnician.
   ///

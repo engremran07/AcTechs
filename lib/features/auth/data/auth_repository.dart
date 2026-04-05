@@ -11,6 +11,8 @@ import 'package:ac_techs/core/constants/app_constants.dart';
 const _kRememberEmailKey = 'remember_email';
 const _kRememberMeKey = 'remember_me';
 const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
+const _kProfileSyncAtPrefix = 'profile_sync_at_';
+const _kProfileSyncCooldown = Duration(hours: 24);
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
@@ -27,13 +29,32 @@ class AuthRepository {
 
   Stream<User?> get authStateChanges =>
       auth.userChanges().asyncMap((user) async {
-        if (user != null) {
+        if (user != null && await _shouldSyncProfile(user.uid)) {
           await _syncProfileFromAuth(user);
         }
         return user;
       });
 
   User? get currentUser => auth.currentUser;
+
+  String _profileSyncKey(String uid) => '$_kProfileSyncAtPrefix$uid';
+
+  Future<bool> _shouldSyncProfile(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSyncedAt = prefs.getInt(_profileSyncKey(uid));
+    if (lastSyncedAt == null) return true;
+
+    final elapsed = DateTime.now().millisecondsSinceEpoch - lastSyncedAt;
+    return elapsed >= _kProfileSyncCooldown.inMilliseconds;
+  }
+
+  Future<void> _markProfileSynced(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      _profileSyncKey(uid),
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
 
   Future<void> _syncProfileFromAuth(User user) async {
     try {
@@ -58,6 +79,8 @@ class AuthRepository {
       if (updates.isNotEmpty) {
         await userDocRef.update(updates);
       }
+
+      await _markProfileSynced(user.uid);
     } on FirebaseException catch (e) {
       debugPrint('profile sync Firestore error: ${e.code} — ${e.message}');
     } catch (e) {

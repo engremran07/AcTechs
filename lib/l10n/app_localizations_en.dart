@@ -625,6 +625,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter invoice totals by type. Technicians will enter their own unit share manually. Delivery is split equally only.';
 
   @override
+  String get flushOperationGuidanceTitle => 'Which operation do you need?';
+
+  @override
+  String get flushOperationMigrationNote =>
+      'One-time migration or historical import keeps existing data and is the safe choice for first-time Excel onboarding.';
+
+  @override
+  String get flushOperationReimportNote =>
+      'Flush plus re-import deletes operational data first. Use it only for a full reset or when you intentionally need to rebuild from scratch.';
+
+  @override
   String get sharedInvoiceTotalUnits => 'Invoice Total Units';
 
   @override
@@ -966,6 +977,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importTopTechNamesLabel => 'Top technician names';
+
+  @override
+  String importProgressFile(int current, int total, String fileName) {
+    return 'Importing $current/$total: $fileName';
+  }
+
+  @override
+  String importInstalledBreakdown(int split, int window, int freestanding) {
+    return 'Installed S/W/F: $split/$window/$freestanding';
+  }
+
+  @override
+  String importUninstallBreakdown(
+    int split,
+    int window,
+    int freestanding,
+    int old,
+  ) {
+    return 'Uninstall S/W/F/O: $split/$window/$freestanding/$old';
+  }
+
+  @override
+  String get importSheetRowLimitExceeded =>
+      'Row limit exceeded; only the first 5000 rows were processed.';
 
   @override
   String get importTargetTechnician => 'Target technician';

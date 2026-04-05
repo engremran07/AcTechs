@@ -217,6 +217,9 @@
   "sharedInstall": "شیئرڈ انسٹال",
   "sharedInstallHint": "جب ایک ہی انوائس کئی ٹیکنیشنز میں تقسیم ہو تو اسے فعال کریں۔",
   "sharedInstallMixHint": "انوائس کے کل یونٹس قسم کے مطابق درج کریں۔ ہر ٹیکنیشن اپنی مرضی کے مطابق اپنی یونٹ شیئر درج کرے گا۔ صرف ڈیلیوری برابر تقسیم ہوگی۔",
+  "flushOperationGuidanceTitle": "آپ کو کون سا آپریشن چاہیے؟",
+  "flushOperationMigrationNote": "ون ٹائم مائیگریشن یا ہسٹریکل امپورٹ موجودہ ڈیٹا کو محفوظ رکھتا ہے اور پہلی بار ایکسل آن بورڈنگ کے لیے محفوظ انتخاب ہے۔",
+  "flushOperationReimportNote": "فلش پلس ری امپورٹ پہلے آپریشنل ڈیٹا حذف کرتا ہے۔ اسے صرف مکمل ری سیٹ یا جان بوجھ کر ازسرنو تعمیر کے لیے استعمال کریں۔",
   "sharedInvoiceTotalUnits": "انوائس کے کل یونٹس",
   "sharedInstallLimitError": "آپ کے درج کردہ یونٹس انوائس کے کل یونٹس سے زیادہ ہیں۔",
   "sharedInvoiceSplitUnits": "انوائس سپلٹ یونٹس",
@@ -357,6 +360,32 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "importTopTechNamesLabel": "زیادہ آنے والے ٹیکنیشن نام",
+  "importProgressFile": "امپورٹ ہو رہا ہے {current}/{total}: {fileName}",
+  "@importProgressFile": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" },
+      "fileName": { "type": "String" }
+    }
+  },
+  "importInstalledBreakdown": "انسٹال S/W/F: {split}/{window}/{freestanding}",
+  "@importInstalledBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" }
+    }
+  },
+  "importUninstallBreakdown": "ان انسٹال S/W/F/O: {split}/{window}/{freestanding}/{old}",
+  "@importUninstallBreakdown": {
+    "placeholders": {
+      "split": { "type": "int" },
+      "window": { "type": "int" },
+      "freestanding": { "type": "int" },
+      "old": { "type": "int" }
+    }
+  },
+  "importSheetRowLimitExceeded": "قطاروں کی حد پوری ہو گئی؛ صرف پہلی 5000 قطاریں پروسیس کی گئیں۔",
   "importTargetTechnician": "ٹارگٹ ٹیکنیشن",
   "importTargetTechnicianRequired": "وہ ٹیکنیشن منتخب کریں جس کے اکاؤنٹ میں یہ تاریخی ڈیٹا ڈالنا ہے۔",
   "importTechnicianKeyword": "سورس ٹیکنیشن فلٹر",

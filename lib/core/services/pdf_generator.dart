@@ -26,6 +26,7 @@ class _PdfGenerationParams {
   final List<JobModel> jobs;
   final String title;
   final String locale;
+  final Uint8List? rtlFontBytes;
   final Map<String, List<String>> sharedInstallerNamesByGroup;
   final String? technicianName;
   final DateTime? fromDate;
@@ -42,6 +43,7 @@ class _PdfGenerationParams {
     required this.jobs,
     required this.title,
     required this.locale,
+    this.rtlFontBytes,
     this.sharedInstallerNamesByGroup = const <String, List<String>>{},
     this.technicianName, // ignore: unused_element_parameter — reserved for future filter by technician feature
     this.fromDate, // ignore: unused_element_parameter — reserved for future date range feature
@@ -77,6 +79,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
       jobs: params.jobs,
       title: params.title,
       locale: params.locale,
+      rtlFontBytes: params.rtlFontBytes,
       sharedInstallerNamesByGroup: params.sharedInstallerNamesByGroup,
       technicianName: params.technicianName,
       fromDate: params.fromDate,
@@ -89,6 +92,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
       jobs: params.jobs,
       title: params.title,
       locale: params.locale,
+      rtlFontBytes: params.rtlFontBytes,
       technicianName: params.technicianName,
       fromDate: params.fromDate,
       toDate: params.toDate,
@@ -298,12 +302,35 @@ class PdfGenerator {
   // ── Font cache ──────────────────────────────────────────────────────────────
   // Shared between ur and ar since both now use NotoNaskhArabic for PDFs.
   static pw.Font? _cachedRtlFont;
+  static Uint8List? _cachedRtlFontBytes;
 
-  static Future<pw.Font?> _getLocaleFont(String locale) async {
+  static Future<Uint8List?> _getLocaleFontBytes(String locale) async {
+    if (locale != 'ur' && locale != 'ar') return null;
+
+    final asset = AppFonts.pdfFontAsset(locale);
+    if (asset == null) return null;
+
+    if (_cachedRtlFontBytes != null) {
+      return _cachedRtlFontBytes;
+    }
+
+    final byteData = await rootBundle.load(asset);
+    _cachedRtlFontBytes = byteData.buffer.asUint8List();
+    return _cachedRtlFontBytes;
+  }
+
+  static Future<pw.Font?> _getLocaleFont(
+    String locale, {
+    Uint8List? rtlFontBytes,
+  }) async {
     if (locale == 'ur' || locale == 'ar') {
-      final asset = AppFonts.pdfFontAsset(locale);
-      if (asset == null) return null;
-      _cachedRtlFont ??= pw.Font.ttf(await rootBundle.load(asset));
+      if (rtlFontBytes != null) {
+        return pw.Font.ttf(rtlFontBytes.buffer.asByteData());
+      }
+
+      _cachedRtlFont ??= pw.Font.ttf(
+        (await _getLocaleFontBytes(locale))!.buffer.asByteData(),
+      );
       return _cachedRtlFont;
     }
     return null; // pdf package's built-in Latin font
@@ -715,12 +742,13 @@ class PdfGenerator {
     required List<JobModel> jobs,
     required String title,
     String locale = 'en',
+    Uint8List? rtlFontBytes,
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
     ReportBrandingContext? reportBranding,
   }) async {
-    final font = await _getLocaleFont(locale);
+    final font = await _getLocaleFont(locale, rtlFontBytes: rtlFontBytes);
     final dir = _dir(locale);
     final isRtl = locale == 'ur' || locale == 'ar';
 
@@ -1750,6 +1778,7 @@ class PdfGenerator {
     required List<JobModel> jobs,
     required String title,
     String locale = 'en',
+    Uint8List? rtlFontBytes,
     Map<String, List<String>> sharedInstallerNamesByGroup =
         const <String, List<String>>{},
     String? technicianName,
@@ -1758,7 +1787,7 @@ class PdfGenerator {
     int maxPages = 2000,
     ReportBrandingContext? reportBranding,
   }) async {
-    final font = await _getLocaleFont(locale);
+    final font = await _getLocaleFont(locale, rtlFontBytes: rtlFontBytes);
     final dir = _dir(locale);
     final isRtl = locale == 'ur' || locale == 'ar';
 
@@ -3145,6 +3174,7 @@ class PdfGenerator {
         : 'Jobs Report';
 
     Uint8List bytes;
+    final rtlFontBytes = await _getLocaleFontBytes(locale);
 
     try {
       if (jobs.length > 20) {
@@ -3153,6 +3183,7 @@ class PdfGenerator {
           jobs: jobs,
           title: reportTitle,
           locale: locale,
+          rtlFontBytes: rtlFontBytes,
           useDetails: true,
           maxPages: 2000,
           reportBranding: reportBranding,
@@ -3164,6 +3195,7 @@ class PdfGenerator {
           maxPages: 2000,
           title: reportTitle,
           locale: locale,
+          rtlFontBytes: rtlFontBytes,
           reportBranding: reportBranding,
         );
       }
@@ -3174,6 +3206,7 @@ class PdfGenerator {
           jobs: jobs,
           title: reportTitle,
           locale: locale,
+          rtlFontBytes: rtlFontBytes,
           useDetails: false,
           reportBranding: reportBranding,
         );
@@ -3183,6 +3216,7 @@ class PdfGenerator {
           jobs: jobs,
           title: reportTitle,
           locale: locale,
+          rtlFontBytes: rtlFontBytes,
           reportBranding: reportBranding,
         );
       }
@@ -3198,6 +3232,7 @@ class PdfGenerator {
     required List<JobModel> jobs,
     required String title,
     required String locale,
+    Uint8List? rtlFontBytes,
     required bool useDetails,
     Map<String, List<String>> sharedInstallerNamesByGroup =
         const <String, List<String>>{},
@@ -3210,6 +3245,7 @@ class PdfGenerator {
         jobs: jobs,
         title: title,
         locale: locale,
+        rtlFontBytes: rtlFontBytes,
         sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
         useDetails: useDetails,
         maxPages: maxPages,

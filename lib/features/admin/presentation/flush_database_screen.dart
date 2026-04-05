@@ -228,6 +228,31 @@ class _Step1View extends StatelessWidget {
         ).animate().fadeIn(delay: 200.ms),
         const SizedBox(height: 12),
 
+        ArcticCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l.flushOperationGuidanceTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                l.flushOperationMigrationNote,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l.flushOperationReimportNote,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 220.ms),
+        const SizedBox(height: 12),
+
         // Delete list
         ...[
               l.flushItemJobs,

@@ -25,6 +25,45 @@ class AdminJobsQuery {
   int get hashCode => Object.hash(start, end, techId);
 }
 
+class SharedInstallerNamesQuery {
+  SharedInstallerNamesQuery._(this.groupKeys);
+
+  factory SharedInstallerNamesQuery.fromKeys(Iterable<String> rawKeys) {
+    final keys =
+        rawKeys
+            .map((key) => key.trim())
+            .where((key) => key.isNotEmpty)
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+    return SharedInstallerNamesQuery._(keys);
+  }
+
+  factory SharedInstallerNamesQuery.fromJobs(Iterable<JobModel> jobs) {
+    return SharedInstallerNamesQuery.fromKeys(
+      jobs
+          .where((job) => job.isSharedInstall)
+          .map((job) => job.sharedInstallGroupKey),
+    );
+  }
+
+  final List<String> groupKeys;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SharedInstallerNamesQuery) return false;
+    if (groupKeys.length != other.groupKeys.length) return false;
+    for (var i = 0; i < groupKeys.length; i++) {
+      if (groupKeys[i] != other.groupKeys[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(groupKeys);
+}
+
 String jobAcTypeFilterToPath(JobAcTypeFilter filter) {
   switch (filter) {
     case JobAcTypeFilter.split:
@@ -121,6 +160,19 @@ final filteredAdminJobsProvider = FutureProvider.autoDispose
             end: query.end,
             techId: query.techId,
           );
+    });
+
+final sharedInstallerNamesProvider = FutureProvider.autoDispose
+    .family<Map<String, List<String>>, SharedInstallerNamesQuery>((
+      ref,
+      query,
+    ) async {
+      if (query.groupKeys.isEmpty) {
+        return const <String, List<String>>{};
+      }
+      return ref
+          .watch(jobRepositoryProvider)
+          .fetchSharedInstallerNamesByGroup(query.groupKeys);
     });
 
 final techJobsByAcTypeProvider = Provider.autoDispose

@@ -43,6 +43,9 @@ void main() {
               date: DateTime(2026, 4, 1),
             ),
           ],
+          sharedInstallerNamesByGroup: const {
+            'company-1-inv-100': ['Tech One', 'Tech Two'],
+          },
           generatedAt: DateTime(2026, 4, 2, 9),
         );
 
@@ -50,7 +53,7 @@ void main() {
         expect(cellText(sheet, 'A1'), 'Jobs Report');
         expect(cellText(sheet, 'B5'), 'Invoice Number');
         expect(cellText(sheet, 'C6'), 'Yes');
-        expect(cellText(sheet, 'D6'), 'company-1-inv-100');
+        expect(cellText(sheet, 'D6'), 'Tech One, Tech Two');
         expect(cellText(sheet, 'A8'), 'SUMMARY');
         expect(cellText(sheet, 'D8'), '2');
         expect(cellText(sheet, 'G8'), '1');

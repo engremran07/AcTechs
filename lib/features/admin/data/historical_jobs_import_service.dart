@@ -73,6 +73,7 @@ class HistoricalImportSheetSummary {
     required this.uninstallFreestanding,
     required this.uninstallOld,
     this.note = '',
+    this.noteCode = '',
   });
 
   factory HistoricalImportSheetSummary.fromJson(Map<String, dynamic> json) {
@@ -95,6 +96,7 @@ class HistoricalImportSheetSummary {
           (json['uninstallFreestanding'] as num?)?.toInt() ?? 0,
       uninstallOld: (json['uninstallOld'] as num?)?.toInt() ?? 0,
       note: json['note'] as String? ?? '',
+      noteCode: json['noteCode'] as String? ?? '',
     );
   }
 
@@ -112,6 +114,7 @@ class HistoricalImportSheetSummary {
   final int uninstallFreestanding;
   final int uninstallOld;
   final String note;
+  final String noteCode;
 
   Map<String, dynamic> toJson() {
     return {
@@ -129,6 +132,7 @@ class HistoricalImportSheetSummary {
       'uninstallFreestanding': uninstallFreestanding,
       'uninstallOld': uninstallOld,
       'note': note,
+      'noteCode': noteCode,
     };
   }
 }
@@ -309,6 +313,7 @@ class HistoricalJobsImportService {
       var sheetUninstallFreestanding = 0;
       var sheetUninstallOld = 0;
       var sheetNote = '';
+      var sheetNoteCode = '';
       final sheetUniqueInvoices = <String>{};
 
       final maxRowIndex = rows.length > _maxDataRowsPerSheet + 1
@@ -316,6 +321,7 @@ class HistoricalJobsImportService {
           : rows.length - 1;
       if (rows.length > _maxDataRowsPerSheet + 1) {
         sheetNote = 'Row limit exceeded; only first 5000 rows were processed.';
+        sheetNoteCode = 'row_limit_exceeded';
       }
 
       for (var i = 1; i <= maxRowIndex; i++) {
@@ -552,6 +558,7 @@ class HistoricalJobsImportService {
           uninstallFreestanding: sheetUninstallFreestanding,
           uninstallOld: sheetUninstallOld,
           note: sheetNote,
+          noteCode: sheetNoteCode,
         ),
       );
     }

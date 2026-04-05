@@ -622,6 +622,17 @@ class AppLocalizationsAr extends AppLocalizations {
       'أدخل إجمالي وحدات الفاتورة حسب النوع. سيُدخل كل فني حصته من الوحدات يدوياً. فقط رسوم التوصيل تُقسم بالتساوي.';
 
   @override
+  String get flushOperationGuidanceTitle => 'ما العملية التي تحتاجها؟';
+
+  @override
+  String get flushOperationMigrationNote =>
+      'الترحيل لمرة واحدة أو الاستيراد التاريخي يحافظ على البيانات الحالية وهو الخيار الآمن عند بدء النقل من Excel لأول مرة.';
+
+  @override
+  String get flushOperationReimportNote =>
+      'المسح ثم إعادة الاستيراد يحذف البيانات التشغيلية أولاً. استخدمه فقط لإعادة ضبط كاملة أو عندما تحتاج عمدًا إلى إعادة البناء من الصفر.';
+
+  @override
   String get sharedInvoiceTotalUnits => 'إجمالي وحدات الفاتورة';
 
   @override
@@ -962,6 +973,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get importTopTechNamesLabel => 'أكثر أسماء الفنيين تكراراً';
+
+  @override
+  String importProgressFile(int current, int total, String fileName) {
+    return 'جارٍ استيراد $current/$total: $fileName';
+  }
+
+  @override
+  String importInstalledBreakdown(int split, int window, int freestanding) {
+    return 'التركيب S/W/F: $split/$window/$freestanding';
+  }
+
+  @override
+  String importUninstallBreakdown(
+    int split,
+    int window,
+    int freestanding,
+    int old,
+  ) {
+    return 'الفك S/W/F/O: $split/$window/$freestanding/$old';
+  }
+
+  @override
+  String get importSheetRowLimitExceeded =>
+      'تم تجاوز حد الصفوف؛ تمت معالجة أول 5000 صف فقط.';
 
   @override
   String get importTargetTechnician => 'الفني المستهدف';

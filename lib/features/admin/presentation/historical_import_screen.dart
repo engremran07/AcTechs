@@ -145,8 +145,8 @@ class _HistoricalImportScreenState
                                     '${sheet.sheetName} • ${l.importCompletedCount(sheet.importedRows)} • ${l.importSkippedCount(sheet.skippedRows)} • ${l.importUnresolvedTechRows(sheet.unresolvedTechnicians)}\n'
                                     '${l.importRowsWithoutTechName(sheet.rowsWithoutTechnicianName)} • ${l.importUniqueTechNamesCount(sheet.technicianNameCounts.length)}\n'
                                     '${sheetTopTechnicians.isNotEmpty ? '${l.importTopTechNamesLabel}: ${_formatTechnicianEntries(sheetTopTechnicians)}\n' : ''}'
-                                    'S/W/F: ${sheet.installedSplit}/${sheet.installedWindow}/${sheet.installedFreestanding} • U S/W/F/O: ${sheet.uninstallSplit}/${sheet.uninstallWindow}/${sheet.uninstallFreestanding}/${sheet.uninstallOld}'
-                                    '${sheet.note.isNotEmpty ? '\n${sheet.note}' : ''}',
+                                    '${_sheetBreakdownLine(l, sheet)}'
+                                    '${_localizedSheetNote(l, sheet).isNotEmpty ? '\n${_localizedSheetNote(l, sheet)}' : ''}',
                                   ),
                                 );
                               }),
@@ -247,6 +247,26 @@ class _HistoricalImportScreenState
 
   String _formatTechnicianEntries(List<MapEntry<String, int>> entries) {
     return entries.map((entry) => '${entry.key} (${entry.value})').join(', ');
+  }
+
+  String _localizedSheetNote(
+    AppLocalizations l,
+    HistoricalImportSheetSummary sheet,
+  ) {
+    switch (sheet.noteCode) {
+      case 'row_limit_exceeded':
+        return l.importSheetRowLimitExceeded;
+      default:
+        return sheet.note;
+    }
+  }
+
+  String _sheetBreakdownLine(
+    AppLocalizations l,
+    HistoricalImportSheetSummary sheet,
+  ) {
+    return '${l.importInstalledBreakdown(sheet.installedSplit, sheet.installedWindow, sheet.installedFreestanding)} • '
+        '${l.importUninstallBreakdown(sheet.uninstallSplit, sheet.uninstallWindow, sheet.uninstallFreestanding, sheet.uninstallOld)}';
   }
 
   Future<void> _importFiles() async {
@@ -372,8 +392,11 @@ class _HistoricalImportScreenState
         final parsed = prepared.parsed;
 
         // Update progress (3.5)
-        _importProgress.value =
-            'Importing ${i + 1}/${preparedBatches.length}: ${prepared.fileName}';
+        _importProgress.value = l.importProgressFile(
+          i + 1,
+          preparedBatches.length,
+          prepared.fileName,
+        );
 
         if (parsed.jobs.isNotEmpty) {
           importedCount += await ref

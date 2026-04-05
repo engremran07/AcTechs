@@ -18,9 +18,9 @@ class ApprovalConfig {
   final DateTime? lockedBeforeDate;
 
   factory ApprovalConfig.defaults() => const ApprovalConfig(
-    jobApprovalRequired: false,
-    sharedJobApprovalRequired: false,
-    inOutApprovalRequired: false,
+    jobApprovalRequired: true,
+    sharedJobApprovalRequired: true,
+    inOutApprovalRequired: true,
     enforceMinimumBuild: false,
     minSupportedBuildNumber: 1,
     lockedBeforeDate: null,
@@ -33,13 +33,13 @@ class ApprovalConfig {
     return ApprovalConfig(
       jobApprovalRequired: data?['jobApprovalRequired'] is bool
           ? data!['jobApprovalRequired'] as bool
-          : false,
+          : true,
       sharedJobApprovalRequired: data?['sharedJobApprovalRequired'] is bool
           ? data!['sharedJobApprovalRequired'] as bool
-          : false,
+          : true,
       inOutApprovalRequired: data?['inOutApprovalRequired'] is bool
           ? data!['inOutApprovalRequired'] as bool
-          : false,
+          : true,
       enforceMinimumBuild: data?['enforceMinimumBuild'] is bool
           ? data!['enforceMinimumBuild'] as bool
           : false,

@@ -102,11 +102,20 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
   Timer? refreshDebounce;
+  Timer? refreshFollowUp;
+
+  void triggerRefresh() {
+    notifier.value++;
+  }
 
   void queueRefresh() {
     refreshDebounce?.cancel();
+    refreshFollowUp?.cancel();
     refreshDebounce = Timer(const Duration(milliseconds: 40), () {
-      notifier.value++;
+      triggerRefresh();
+      refreshFollowUp = Timer(const Duration(milliseconds: 250), () {
+        triggerRefresh();
+      });
     });
   }
 
@@ -116,6 +125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.onDispose(() {
     refreshDebounce?.cancel();
+    refreshFollowUp?.cancel();
     notifier.dispose();
   });
 

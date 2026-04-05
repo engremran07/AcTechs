@@ -46,20 +46,20 @@ service cloud.firestore {
     }
 
     function jobApprovalRequired() {
-      return exists(approvalConfigDocPath()) &&
-        approvalConfigData().jobApprovalRequired is bool &&
+      return !exists(approvalConfigDocPath()) ||
+        !(approvalConfigData().jobApprovalRequired is bool) ||
         approvalConfigData().jobApprovalRequired;
     }
 
     function inOutApprovalRequired() {
-      return exists(approvalConfigDocPath()) &&
-        approvalConfigData().inOutApprovalRequired is bool &&
+      return !exists(approvalConfigDocPath()) ||
+        !(approvalConfigData().inOutApprovalRequired is bool) ||
         approvalConfigData().inOutApprovalRequired;
     }
 
     function sharedJobApprovalRequired() {
-      return exists(approvalConfigDocPath()) &&
-        approvalConfigData().sharedJobApprovalRequired is bool &&
+      return !exists(approvalConfigDocPath()) ||
+        !(approvalConfigData().sharedJobApprovalRequired is bool) ||
         approvalConfigData().sharedJobApprovalRequired;
     }
 
@@ -180,6 +180,8 @@ service cloud.firestore {
       return request.resource.data.keys().hasAll([
         'techId',
         'techName',
+        'companyId',
+        'companyName',
         'invoiceNumber',
         'clientName',
         'acUnits',
@@ -188,6 +190,8 @@ service cloud.firestore {
         'date',
         'submittedAt'
       ]) &&
+      request.resource.data.companyId is string &&
+      request.resource.data.companyName is string &&
       request.resource.data.invoiceNumber is string &&
       request.resource.data.invoiceNumber.size() > 0 &&
       request.resource.data.clientName is string &&
@@ -535,9 +539,18 @@ service cloud.firestore {
         request.resource.data.amount <= 1000000 &&
         request.resource.data.expenseType in ['work', 'home'] &&
         request.resource.data.date is timestamp &&
-        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved') &&
         request.resource.data.approvedBy is string &&
-        request.resource.data.adminNote is string;
+        request.resource.data.adminNote is string &&
+        (
+          (inOutApprovalRequired() &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == 'approved' &&
+            request.resource.data.reviewedAt is timestamp)
+        );
 
       allow update: if (isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
@@ -612,9 +625,18 @@ service cloud.firestore {
         request.resource.data.amount > 0 &&
         request.resource.data.amount <= 1000000 &&
         request.resource.data.date is timestamp &&
-        request.resource.data.status == (inOutApprovalRequired() ? 'pending' : 'approved') &&
         request.resource.data.approvedBy is string &&
-        request.resource.data.adminNote is string;
+        request.resource.data.adminNote is string &&
+        (
+          (inOutApprovalRequired() &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.approvedBy == '' &&
+            request.resource.data.adminNote == '' &&
+            request.resource.data.reviewedAt == null) ||
+          (!inOutApprovalRequired() &&
+            request.resource.data.status == 'approved' &&
+            request.resource.data.reviewedAt is timestamp)
+        );
 
       allow update: if (isAdmin() &&
         dateIsUnlocked(resource.data.date) &&

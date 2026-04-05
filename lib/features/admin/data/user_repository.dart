@@ -442,6 +442,27 @@ class UserRepository {
   Future<void> flushTechnicianData(String techId) async {
     try {
       if (techId.trim().isEmpty) return;
+
+      final jobsToDelete = await _jobsRef
+          .where('techId', isEqualTo: techId)
+          .get();
+      final affectedInvoices = <String>{};
+      final affectedGroupKeys = <String>{};
+
+      for (final doc in jobsToDelete.docs) {
+        final job = JobModel.fromFirestore(doc);
+        if (job.isRejected) continue;
+
+        final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
+        if (normalizedInvoice.isNotEmpty) {
+          affectedInvoices.add(normalizedInvoice);
+        }
+        if (job.isSharedInstall &&
+            job.sharedInstallGroupKey.trim().isNotEmpty) {
+          affectedGroupKeys.add(job.sharedInstallGroupKey.trim());
+        }
+      }
+
       await _deleteCollectionByFieldInChunks(
         AppConstants.jobsCollection,
         'techId',
@@ -462,6 +483,9 @@ class UserRepository {
         'techId',
         techId,
       );
+
+      await _rebuildInvoiceClaimsForInvoices(affectedInvoices);
+      await _rebuildSharedAggregatesForGroups(affectedGroupKeys);
     } on FirebaseException catch (e) {
       debugPrint('flushTechnicianData error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -633,6 +657,9 @@ class UserRepository {
           .limit(chunkSize)
           .get();
       if (snap.docs.isEmpty) break;
+      for (final doc in snap.docs) {
+        await _deleteHistorySubcollectionInChunks(doc.reference);
+      }
       final batch = firestore.batch();
       for (final doc in snap.docs) {
         batch.delete(doc.reference);
@@ -654,10 +681,149 @@ class UserRepository {
           .limit(chunkSize)
           .get();
       if (snap.docs.isEmpty) break;
+      for (final doc in snap.docs) {
+        await _deleteHistorySubcollectionInChunks(doc.reference);
+      }
       final batch = firestore.batch();
       for (final doc in snap.docs) {
         batch.delete(doc.reference);
       }
+      await batch.commit();
+    }
+  }
+
+  Future<void> _deleteHistorySubcollectionInChunks(
+    DocumentReference<Map<String, dynamic>> parentRef,
+  ) async {
+    const chunkSize = 400;
+    while (true) {
+      final snap = await parentRef.collection('history').limit(chunkSize).get();
+      if (snap.docs.isEmpty) break;
+
+      final batch = firestore.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+
+  _InvoiceMigrationJobState _jobStateFromSnapshot(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = Map<String, dynamic>.from(doc.data());
+    return _InvoiceMigrationJobState(
+      reference: doc.reference,
+      invoiceNumber: (data['invoiceNumber'] as String? ?? '').trim(),
+      companyId: (data['companyId'] as String? ?? '').trim(),
+      companyName: (data['companyName'] as String? ?? '').trim(),
+      techId: (data['techId'] as String? ?? '').trim(),
+      status: (data['status'] as String? ?? '').trim(),
+      isSharedInstall: data['isSharedInstall'] == true,
+      sharedInstallGroupKey: (data['sharedInstallGroupKey'] as String? ?? '')
+          .trim(),
+      data: data,
+      submittedAt: _timestampToDate(data['submittedAt'] ?? data['date']),
+    );
+  }
+
+  Future<void> _rebuildInvoiceClaimsForInvoices(
+    Set<String> invoiceNumbers,
+  ) async {
+    if (invoiceNumbers.isEmpty) return;
+
+    final activeJobs = <_InvoiceMigrationJobState>[];
+    final invoices = invoiceNumbers.toList(growable: false);
+    for (var start = 0; start < invoices.length; start += 10) {
+      final end = (start + 10 > invoices.length) ? invoices.length : start + 10;
+      final snap = await _jobsRef
+          .where('invoiceNumber', whereIn: invoices.sublist(start, end))
+          .get();
+      activeJobs.addAll(
+        snap.docs
+            .map(_jobStateFromSnapshot)
+            .where((job) => !job.isRejected && job.invoiceNumber.isNotEmpty),
+      );
+    }
+
+    final invoiceBuckets = <String, List<_InvoiceMigrationJobState>>{};
+    for (final job in activeJobs) {
+      (invoiceBuckets[job.invoiceNumber] ??= <_InvoiceMigrationJobState>[]).add(
+        job,
+      );
+    }
+
+    final rebuiltClaims = _buildInvoiceClaimDocs(invoiceBuckets);
+    final expectedClaimDocIds = invoiceNumbers
+        .map(InvoiceUtils.invoiceClaimDocumentId)
+        .toSet();
+
+    await _replaceDocumentSet(
+      collectionName: AppConstants.invoiceClaimsCollection,
+      expectedDocumentIds: expectedClaimDocIds,
+      documents: rebuiltClaims,
+    );
+  }
+
+  Future<void> _rebuildSharedAggregatesForGroups(Set<String> groupKeys) async {
+    if (groupKeys.isEmpty) return;
+
+    final activeJobs = <_InvoiceMigrationJobState>[];
+    final keys = groupKeys.toList(growable: false);
+    for (var start = 0; start < keys.length; start += 10) {
+      final end = (start + 10 > keys.length) ? keys.length : start + 10;
+      final snap = await _jobsRef
+          .where('sharedInstallGroupKey', whereIn: keys.sublist(start, end))
+          .get();
+      activeJobs.addAll(
+        snap.docs
+            .map(_jobStateFromSnapshot)
+            .where(
+              (job) =>
+                  !job.isRejected &&
+                  job.isSharedInstall &&
+                  job.sharedInstallGroupKey.isNotEmpty,
+            ),
+      );
+    }
+
+    final rebuiltAggregates = _buildSharedAggregateDocs(activeJobs);
+    final expectedAggregateDocIds = groupKeys
+        .map(_sharedAggregateDocId)
+        .toSet();
+
+    await _replaceDocumentSet(
+      collectionName: AppConstants.sharedInstallAggregatesCollection,
+      expectedDocumentIds: expectedAggregateDocIds,
+      documents: rebuiltAggregates,
+    );
+  }
+
+  Future<void> _replaceDocumentSet({
+    required String collectionName,
+    required Set<String> expectedDocumentIds,
+    required Map<String, Map<String, dynamic>> documents,
+  }) async {
+    if (expectedDocumentIds.isEmpty) return;
+
+    const chunkSize = 200;
+    final ids = expectedDocumentIds.toList(growable: false);
+    for (var start = 0; start < ids.length; start += chunkSize) {
+      final end = (start + chunkSize > ids.length)
+          ? ids.length
+          : start + chunkSize;
+      final batch = firestore.batch();
+
+      for (final id in ids.sublist(start, end)) {
+        final ref = firestore.collection(collectionName).doc(id);
+        final data = documents[id];
+        if (data == null) {
+          batch.delete(ref);
+        } else {
+          batch.set(ref, data);
+        }
+      }
+
       await batch.commit();
     }
   }

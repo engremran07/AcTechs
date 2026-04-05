@@ -185,7 +185,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       final user = ref.read(currentUserProvider).value;
       if (user == null) return;
       final approvalConfig = ref.read(approvalConfigProvider).value;
-      final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
+      final requiresApproval = approvalConfig?.inOutApprovalRequired ?? true;
       final lockedBeforeDate = approvalConfig?.lockedBeforeDate;
 
       final now = DateTime.now();
@@ -1052,7 +1052,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     final amount = double.parse(amountCtrl.text.trim());
     final note = noteCtrl.text.trim();
     final approvalConfig = ref.read(approvalConfigProvider).value;
-    final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
+    final requiresApproval = approvalConfig?.inOutApprovalRequired ?? true;
 
     if (item.isIn) {
       await _updateEarning(

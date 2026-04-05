@@ -241,6 +241,15 @@ class JobException extends AppException {
     'هذه الفاتورة المشتركة موجودة بالفعل بإجماليات مختلفة. استخدم نفس الإجماليات المشتركة لكل فني في هذه الفاتورة.',
   );
 
+  factory JobException.sharedUnsupportedUnitType({
+    required String unitType,
+  }) => JobException(
+    'job_shared_unsupported_unit_type',
+    '$unitType cannot be used on a shared install invoice. Use split, window, freestanding, uninstall split/window/freestanding, and bracket-only shares.',
+    '$unitType کو مشترکہ انسٹال انوائس پر استعمال نہیں کیا جا سکتا۔ صرف سپلٹ، ونڈو، فری اسٹینڈنگ، اَن انسٹال سپلٹ/ونڈو/فری اسٹینڈنگ اور بریکٹ شیئر استعمال کریں۔',
+    'لا يمكن استخدام $unitType في فاتورة تركيب مشتركة. استخدم فقط السبليت أو الشباك أو الأرضي أو إلغاء تركيب السبليت/الشباك/الأرضي وحصص الحوامل.',
+  );
+
   factory JobException.permissionDenied() => const JobException(
     'job_permission_denied',
     'Permission denied. Please contact your admin.',
