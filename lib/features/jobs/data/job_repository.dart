@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:collection';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/invoice_utils.dart';
@@ -74,6 +75,58 @@ class JobRepository {
     return snap.docs
         .map((doc) => ApprovalHistoryEntry.fromMap(doc.data()))
         .toList(growable: false);
+  }
+
+  Future<Map<String, List<String>>> fetchSharedInstallerNamesByGroup(
+    Iterable<String> groupKeys,
+  ) async {
+    final normalizedKeys = groupKeys
+        .map((key) => key.trim())
+        .where((key) => key.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (normalizedKeys.isEmpty) {
+      return const <String, List<String>>{};
+    }
+
+    try {
+      final namesByGroup = <String, LinkedHashSet<String>>{};
+
+      for (var start = 0; start < normalizedKeys.length; start += 10) {
+        final end = (start + 10 < normalizedKeys.length)
+            ? start + 10
+            : normalizedKeys.length;
+        final chunk = normalizedKeys.sublist(start, end);
+        final snap = await _jobsRef
+            .where('sharedInstallGroupKey', whereIn: chunk)
+            .get();
+
+        for (final doc in snap.docs) {
+          final job = JobModel.fromFirestore(doc);
+          final groupKey = job.sharedInstallGroupKey.trim();
+          final techName = job.techName.trim();
+          if (groupKey.isEmpty || techName.isEmpty) {
+            continue;
+          }
+          (namesByGroup[groupKey] ??= LinkedHashSet<String>()).add(techName);
+        }
+      }
+
+      return namesByGroup.map(
+        (groupKey, names) => MapEntry(groupKey, names.toList(growable: false)),
+      );
+    } on FirebaseException catch (error, stackTrace) {
+      debugPrint(
+        'fetchSharedInstallerNamesByGroup failed: ${error.code} ${error.message}',
+      );
+      Error.throwWithStackTrace(
+        error.code == 'permission-denied'
+            ? JobException.permissionDenied()
+            : JobException.saveFailed(),
+        stackTrace,
+      );
+    }
   }
 
   int _unitsForType(JobModel job, String type) => job.acUnits

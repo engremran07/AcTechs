@@ -26,6 +26,7 @@ class _PdfGenerationParams {
   final List<JobModel> jobs;
   final String title;
   final String locale;
+  final Map<String, List<String>> sharedInstallerNamesByGroup;
   final String? technicianName;
   final DateTime? fromDate;
   final DateTime? toDate;
@@ -41,6 +42,7 @@ class _PdfGenerationParams {
     required this.jobs,
     required this.title,
     required this.locale,
+    this.sharedInstallerNamesByGroup = const <String, List<String>>{},
     this.technicianName, // ignore: unused_element_parameter — reserved for future filter by technician feature
     this.fromDate, // ignore: unused_element_parameter — reserved for future date range feature
     this.toDate, // ignore: unused_element_parameter — reserved for future date range feature
@@ -75,6 +77,7 @@ Future<Uint8List> _isolatePdfGeneration(_PdfGenerationParams params) async {
       jobs: params.jobs,
       title: params.title,
       locale: params.locale,
+      sharedInstallerNamesByGroup: params.sharedInstallerNamesByGroup,
       technicianName: params.technicianName,
       fromDate: params.fromDate,
       toDate: params.toDate,
@@ -116,6 +119,91 @@ class PdfGenerator {
   static List<String> _shapeRowForPdf(String locale, List<String> row) {
     if (locale != 'ur' && locale != 'ar') return row;
     return row.map((value) => _shapeRtlForPdf(locale, value)).toList();
+  }
+
+  static int _jobReportSplitQty(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceSplitUnits
+      : job.unitsForType(AppConstants.unitTypeSplitAc);
+
+  static int _jobReportWindowQty(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceWindowUnits
+      : job.unitsForType(AppConstants.unitTypeWindowAc);
+
+  static int _jobReportFreestandingQty(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceFreestandingUnits
+      : job.unitsForType(AppConstants.unitTypeFreestandingAc);
+
+  static int _jobReportUninstallLegacyQty(JobModel job) =>
+      job.unitsForType(AppConstants.unitTypeUninstallOld);
+
+  static int _jobReportUninstallSplitQty(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceUninstallSplitUnits
+      : job.unitsForType(AppConstants.unitTypeUninstallSplit);
+
+  static int _jobReportUninstallWindowQty(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceUninstallWindowUnits
+      : job.unitsForType(AppConstants.unitTypeUninstallWindow);
+
+  static int _jobReportUninstallFreestandingQty(JobModel job) =>
+      job.isSharedInstall
+      ? job.sharedInvoiceUninstallFreestandingUnits
+      : job.unitsForType(AppConstants.unitTypeUninstallFreestanding);
+
+  static int _jobReportBracketCount(JobModel job) => job.isSharedInstall
+      ? job.sharedInvoiceBracketCount
+      : (job.charges?.bracketCount ?? 0);
+
+  static double _jobReportDeliveryAmount(JobModel job) {
+    final deliveryNote = job.charges?.deliveryNote ?? '';
+    final amount = job.isSharedInstall
+        ? job.sharedInvoiceDeliveryAmount
+        : (job.charges?.deliveryAmount ?? 0);
+    if (amount <= 0 || AppFormatters.isCustomerCashPaid(deliveryNote)) {
+      return 0;
+    }
+    return amount;
+  }
+
+  static List<String> _sharedInstallerNames(
+    JobModel job,
+    Map<String, List<String>> sharedInstallerNamesByGroup,
+  ) {
+    final groupKey = job.sharedInstallGroupKey.trim();
+    final sharedNames = groupKey.isEmpty
+        ? const <String>[]
+        : (sharedInstallerNamesByGroup[groupKey] ?? const <String>[]);
+    final fallbackName = job.techName.trim();
+    final uniqueNames = <String>{
+      ...sharedNames
+          .map((name) => name.trim())
+          .where((name) => name.isNotEmpty),
+      if (fallbackName.isNotEmpty) fallbackName,
+    };
+    return uniqueNames.toList(growable: false);
+  }
+
+  static String _sharedInstallerDescription(
+    String locale,
+    JobModel job,
+    Map<String, List<String>> sharedInstallerNamesByGroup,
+  ) {
+    if (!job.isSharedInstall) {
+      return '';
+    }
+    final names = _sharedInstallerNames(job, sharedInstallerNamesByGroup);
+    if (names.isEmpty) {
+      return locale == 'ur'
+          ? 'مشترکہ انسٹال ٹیم'
+          : locale == 'ar'
+          ? 'فريق التركيب المشترك'
+          : 'Shared Install Team';
+    }
+    final label = locale == 'ur'
+        ? 'مشترکہ انسٹال ٹیم'
+        : locale == 'ar'
+        ? 'فريق التركيب المشترك'
+        : 'Shared Install Team';
+    return '$label: ${names.join(', ')}';
   }
 
   static List<List<String>> _shapeTableForPdf(
@@ -422,7 +510,7 @@ class PdfGenerator {
     final serviceCompany = reportBranding?.serviceCompany;
     final clientCompany = reportBranding?.clientCompany;
     final leadText = serviceCompany == null
-        ? '${AppConstants.appName} — Confidential'
+        ? '${AppConstants.appName} - Confidential'
         : '${serviceCompany.name.trim().isEmpty ? AppConstants.appName : serviceCompany.name}${serviceCompany.phoneNumber.trim().isEmpty ? '' : ' • ${serviceCompany.phoneNumber}'}';
 
     return pw.Column(
@@ -666,7 +754,7 @@ class PdfGenerator {
     final statusMap = _statusLabels(locale);
 
     final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
         : null;
 
     final totalExpenses = jobs.fold<double>(0, (s, j) => s + j.expenses);
@@ -866,7 +954,7 @@ class PdfGenerator {
     final totalExpensesAmt = expenses.fold<double>(0, (s, e) => s + e.amount);
 
     final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
         : null;
 
     final pdf = pw.Document();
@@ -1274,7 +1362,7 @@ class PdfGenerator {
                     pw.Expanded(
                       child: _metaField(
                         contactLabel,
-                        job.clientContact.isEmpty ? '—' : job.clientContact,
+                        job.clientContact.isEmpty ? '-' : job.clientContact,
                         labelStyle,
                         valueStyle,
                         dir,
@@ -1382,14 +1470,14 @@ class PdfGenerator {
                       : (job.charges!.acBracket &&
                                 job.charges!.bracketAmount > 0
                             ? AppFormatters.currency(job.charges!.bracketAmount)
-                            : '—'),
+                            : '-'),
                 ],
                 [
                   '$deliveryLabel${job.charges!.deliveryNote.isNotEmpty ? " (${job.charges!.deliveryNote})" : ""}',
                   job.charges!.deliveryAmount > 0 ? yesLabel : noLabel,
                   job.charges!.deliveryAmount > 0
                       ? AppFormatters.currency(job.charges!.deliveryAmount)
-                      : '—',
+                      : '-',
                 ],
               ],
               headerStyle: headerCellStyle,
@@ -1426,7 +1514,7 @@ class PdfGenerator {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  job.expenseNote.isNotEmpty ? job.expenseNote : '—',
+                  job.expenseNote.isNotEmpty ? job.expenseNote : '-',
                   style: cellStyle,
                   textDirection: dir,
                 ),
@@ -1662,6 +1750,8 @@ class PdfGenerator {
     required List<JobModel> jobs,
     required String title,
     String locale = 'en',
+    Map<String, List<String>> sharedInstallerNamesByGroup =
+        const <String, List<String>>{},
     String? technicianName,
     DateTime? fromDate,
     DateTime? toDate,
@@ -1723,59 +1813,48 @@ class PdfGenerator {
           ];
 
     final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
         : null;
-    final totalUnits = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
-    final totalSplitUnits = jobs.fold<int>(
+    final totalUnits = jobs.fold<int>(
       0,
       (s, j) =>
           s +
-          j.acUnits
-              .where((u) => u.type == 'Split AC')
-              .fold<int>(0, (x, u) => x + u.quantity),
+          _jobReportSplitQty(j) +
+          _jobReportWindowQty(j) +
+          _jobReportFreestandingQty(j) +
+          _jobReportUninstallLegacyQty(j) +
+          _jobReportUninstallSplitQty(j) +
+          _jobReportUninstallWindowQty(j) +
+          _jobReportUninstallFreestandingQty(j),
+    );
+    final totalSplitUnits = jobs.fold<int>(
+      0,
+      (s, j) => s + _jobReportSplitQty(j),
     );
     final totalWindowUnits = jobs.fold<int>(
       0,
-      (s, j) =>
-          s +
-          j.acUnits
-              .where((u) => u.type == 'Window AC')
-              .fold<int>(0, (x, u) => x + u.quantity),
+      (s, j) => s + _jobReportWindowQty(j),
     );
     final totalFreestandingUnits = jobs.fold<int>(
       0,
-      (s, j) =>
-          s +
-          j.acUnits
-              .where((u) => u.type == 'Freestanding AC')
-              .fold<int>(0, (x, u) => x + u.quantity),
+      (s, j) => s + _jobReportFreestandingQty(j),
     );
     final totalUninstallations = jobs.fold<int>(
       0,
       (s, j) =>
           s +
-          j.acUnits
-              .where(
-                (u) =>
-                    u.type == AppConstants.unitTypeUninstallOld ||
-                    u.type == AppConstants.unitTypeUninstallSplit ||
-                    u.type == AppConstants.unitTypeUninstallWindow ||
-                    u.type == AppConstants.unitTypeUninstallFreestanding,
-              )
-              .fold<int>(0, (x, u) => x + u.quantity),
+          _jobReportUninstallLegacyQty(j) +
+          _jobReportUninstallSplitQty(j) +
+          _jobReportUninstallWindowQty(j) +
+          _jobReportUninstallFreestandingQty(j),
     );
     final totalInstalledBrackets = jobs.fold<int>(
       0,
-      (s, j) => s + (j.charges?.bracketCount ?? 0),
+      (s, j) => s + _jobReportBracketCount(j),
     );
     final totalDeliveryCharges = jobs.fold<double>(
       0,
-      (s, j) =>
-          s +
-          ((j.charges != null &&
-                  !AppFormatters.isCustomerCashPaid(j.charges!.deliveryNote))
-              ? j.charges!.deliveryAmount
-              : 0),
+      (s, j) => s + _jobReportDeliveryAmount(j),
     );
     final sharedJobs = jobs.where((j) => j.isSharedInstall).toList();
     final soloJobs = jobs.where((j) => !j.isSharedInstall).toList();
@@ -1835,32 +1914,15 @@ class PdfGenerator {
             data: _shapeTableForPdf(
               locale,
               jobs.map((j) {
-                final splitQty = j.acUnits
-                    .where((u) => u.type == 'Split AC')
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final windowQty = j.acUnits
-                    .where((u) => u.type == 'Window AC')
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final uninstallQty = j.acUnits
-                    .where((u) => u.type == AppConstants.unitTypeUninstallOld)
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final uninstallSplitQty = j.acUnits
-                    .where((u) => u.type == AppConstants.unitTypeUninstallSplit)
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final uninstallWindowQty = j.acUnits
-                    .where(
-                      (u) => u.type == AppConstants.unitTypeUninstallWindow,
-                    )
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final uninstallStandingQty = j.acUnits
-                    .where(
-                      (u) =>
-                          u.type == AppConstants.unitTypeUninstallFreestanding,
-                    )
-                    .fold<int>(0, (s, u) => s + u.quantity);
-                final dolabQty = j.acUnits
-                    .where((u) => u.type == 'Freestanding AC')
-                    .fold<int>(0, (s, u) => s + u.quantity);
+                final splitQty = _jobReportSplitQty(j);
+                final windowQty = _jobReportWindowQty(j);
+                final uninstallQty = _jobReportUninstallLegacyQty(j);
+                final uninstallSplitQty = _jobReportUninstallSplitQty(j);
+                final uninstallWindowQty = _jobReportUninstallWindowQty(j);
+                final uninstallStandingQty = _jobReportUninstallFreestandingQty(
+                  j,
+                );
+                final dolabQty = _jobReportFreestandingQty(j);
                 final uninstallDetail = () {
                   final splitPart = uninstallSplitQty > 0
                       ? 'S:$uninstallSplitQty'
@@ -1884,29 +1946,22 @@ class PdfGenerator {
                     uninstallSplitQty +
                     uninstallWindowQty +
                     uninstallStandingQty;
-                final bracketText = (j.charges?.bracketCount ?? 0) > 0
-                    ? '${j.charges!.bracketCount}'
-                    : '';
-                final deliveryText =
-                    j.charges != null &&
-                        j.charges!.deliveryAmount > 0 &&
-                        !AppFormatters.isCustomerCashPaid(
-                          j.charges!.deliveryNote,
-                        )
-                    ? _plainAmount(j.charges!.deliveryAmount)
+                final bracketQty = _jobReportBracketCount(j);
+                final bracketText = bracketQty > 0 ? '$bracketQty' : '';
+                final deliveryAmount = _jobReportDeliveryAmount(j);
+                final deliveryText = deliveryAmount > 0
+                    ? _plainAmount(deliveryAmount)
                     : '';
                 final baseDescription = j.expenseNote.isNotEmpty
                     ? AppFormatters.safeText(j.expenseNote)
                     : (j.charges != null
                           ? AppFormatters.safeText(j.charges!.deliveryNote)
                           : '');
-                final sharedInstallDescription = j.isSharedInstall
-                    ? (locale == 'ur'
-                          ? 'شیئرڈ: ${j.techName}'
-                          : locale == 'ar'
-                          ? 'مشترك: ${j.techName}'
-                          : 'Shared: ${j.techName}')
-                    : '';
+                final sharedInstallDescription = _sharedInstallerDescription(
+                  locale,
+                  j,
+                  sharedInstallerNamesByGroup,
+                );
                 final description =
                     [baseDescription, sharedInstallDescription, uninstallDetail]
                         .where((p) => p.isNotEmpty)
@@ -2555,7 +2610,7 @@ class PdfGenerator {
     final todaysTotal = todaysEarnings.fold<double>(0, (s, e) => s + e.amount);
 
     final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
         : null;
 
     final pdf = pw.Document();
@@ -2759,7 +2814,7 @@ class PdfGenerator {
     final monthHomeTotal = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
 
     final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} — ${AppFormatters.date(toDate)}'
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
         : null;
 
     final pdf = pw.Document();
@@ -3144,6 +3199,8 @@ class PdfGenerator {
     required String title,
     required String locale,
     required bool useDetails,
+    Map<String, List<String>> sharedInstallerNamesByGroup =
+        const <String, List<String>>{},
     int maxPages = 2000,
     ReportBrandingContext? reportBranding,
   }) async {
@@ -3153,6 +3210,7 @@ class PdfGenerator {
         jobs: jobs,
         title: title,
         locale: locale,
+        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
         useDetails: useDetails,
         maxPages: maxPages,
         serviceCompanyName: reportBranding?.serviceCompany.name ?? '',

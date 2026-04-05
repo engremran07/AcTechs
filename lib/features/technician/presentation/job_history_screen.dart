@@ -18,6 +18,7 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 
@@ -67,6 +68,27 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   void _handleTabChanged() {
     if (!_tabController.indexIsChanging && mounted) {
       setState(() {});
+    }
+  }
+
+  Future<Map<String, List<String>>> _sharedInstallerNamesByGroup(
+    List<JobModel> jobs,
+  ) async {
+    final groupKeys = jobs
+        .where((job) => job.isSharedInstall)
+        .map((job) => job.sharedInstallGroupKey.trim())
+        .where((key) => key.isNotEmpty)
+        .toSet();
+    if (groupKeys.isEmpty) {
+      return const <String, List<String>>{};
+    }
+
+    try {
+      return await ref
+          .read(jobRepositoryProvider)
+          .fetchSharedInstallerNamesByGroup(groupKeys);
+    } catch (_) {
+      return const <String, List<String>>{};
     }
   }
 
@@ -489,11 +511,15 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
       final toDate =
           options.dateRange?.end ??
           DateTime(options.month.year, options.month.month + 1, 0);
+      final sharedInstallerNamesByGroup = await _sharedInstallerNamesByGroup(
+        filtered,
+      );
 
       final bytes = await PdfGenerator.generateJobsDetailsReport(
         jobs: filtered,
         title: reportTitle,
         locale: locale,
+        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
         technicianName: personName,
         fromDate: fromDate,
         toDate: toDate,
@@ -839,11 +865,15 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                               } else if (action == 'export_pdf') {
                                 try {
                                   final l = AppLocalizations.of(context)!;
+                                  final sharedInstallerNamesByGroup =
+                                      await _sharedInstallerNamesByGroup([job]);
                                   final bytes =
                                       await PdfGenerator.generateJobsDetailsReport(
                                         jobs: [job],
                                         title: l.jobs,
                                         locale: locale,
+                                        sharedInstallerNamesByGroup:
+                                            sharedInstallerNamesByGroup,
                                         technicianName: job.techName,
                                         fromDate: job.date,
                                         toDate: job.date,
