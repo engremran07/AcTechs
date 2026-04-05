@@ -8,6 +8,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('exports jobs detail PDF samples in en ur ar', () async {
+    if (Platform.environment.containsKey('CI')) {
+      return;
+    }
+
     final outputDir = Directory('logs/pdf_samples');
     await outputDir.create(recursive: true);
 

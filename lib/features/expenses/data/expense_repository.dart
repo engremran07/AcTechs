@@ -43,9 +43,15 @@ class ExpenseRepository {
         .toList(growable: false);
   }
 
-  Future<void> addExpense(ExpenseModel expense) async {
+  Future<void> addExpense(
+    ExpenseModel expense, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
-      await _periodLockGuard.ensureUnlockedDate(expense.date);
+      await _periodLockGuard.ensureUnlockedDate(
+        expense.date,
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ref.add(expense.toFirestore());
     } on PeriodException {
       rethrow;
@@ -58,9 +64,12 @@ class ExpenseRepository {
     }
   }
 
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DateTime? lockedBeforeDate}) async {
     try {
-      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
+      await _periodLockGuard.ensureUnlockedDocument(
+        _ref.doc(id),
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ensureMutableRecord(id);
       await _ref.doc(id).delete();
     } on ExpenseException {
@@ -76,9 +85,15 @@ class ExpenseRepository {
     }
   }
 
-  Future<void> updateExpense(ExpenseModel expense) async {
+  Future<void> updateExpense(
+    ExpenseModel expense, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
-      await _periodLockGuard.ensureUnlockedDate(expense.date);
+      await _periodLockGuard.ensureUnlockedDate(
+        expense.date,
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ensureMutableRecord(expense.id);
       await _ref.doc(expense.id).update(expense.toFirestore());
     } on ExpenseException {
@@ -185,6 +200,39 @@ class ExpenseRepository {
           (snap) =>
               snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
         );
+  }
+
+  Future<List<ExpenseModel>> fetchExpenses({
+    DateTime? start,
+    DateTime? end,
+    String? techId,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _ref;
+      if (techId != null && techId.trim().isNotEmpty) {
+        query = query.where('techId', isEqualTo: techId.trim());
+      }
+      if (start != null) {
+        query = query.where(
+          'date',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        );
+      }
+      if (end != null) {
+        query = query.where(
+          'date',
+          isLessThanOrEqualTo: Timestamp.fromDate(end),
+        );
+      }
+      final snap = await query.orderBy('date', descending: true).get();
+      return snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList();
+    } on FirebaseException catch (e) {
+      debugPrint('fetchExpenses error: ${e.code} — ${e.message}');
+      throw ExpenseException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchExpenses unknown: $e');
+      throw ExpenseException.saveFailed();
+    }
   }
 
   /// Real-time stream of a tech's expenses, newest first.

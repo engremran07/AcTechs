@@ -49,6 +49,31 @@ void main() {
     );
   }
 
+  JobModel buildSoloJob({
+    required String techId,
+    required String techName,
+    required String invoiceNumber,
+    required String companyId,
+    required String companyName,
+    JobStatus status = JobStatus.approved,
+  }) {
+    final now = DateTime(2024, 1, 10, 9);
+    return JobModel(
+      techId: techId,
+      techName: techName,
+      companyId: companyId,
+      companyName: companyName,
+      invoiceNumber: invoiceNumber,
+      clientName: 'Client',
+      acUnits: const [AcUnit(type: AppConstants.unitTypeSplitAc, quantity: 1)],
+      status: status,
+      expenses: 0,
+      isSharedInstall: false,
+      date: now,
+      submittedAt: now,
+    );
+  }
+
   test(
     'shared job submission creates and updates aggregate reservations',
     () async {
@@ -206,6 +231,86 @@ void main() {
 
     await expectLater(
       () => repository.rejectJob(jobRef.id, 'admin-2', 'Late correction'),
+      throwsA(isA<JobException>()),
+    );
+  });
+
+  test(
+    'same-company duplicate invoice is blocked across technicians',
+    () async {
+      await repository.submitJob(
+        buildSoloJob(
+          techId: 'tech-1',
+          techName: 'Tech One',
+          invoiceNumber: 'INV-500',
+          companyId: 'company-1',
+          companyName: 'Company One',
+        ),
+      );
+
+      await expectLater(
+        () => repository.submitJob(
+          buildSoloJob(
+            techId: 'tech-2',
+            techName: 'Tech Two',
+            invoiceNumber: 'INV-500',
+            companyId: 'company-1',
+            companyName: 'Company One',
+          ),
+        ),
+        throwsA(isA<JobException>()),
+      );
+    },
+  );
+
+  test('cross-company duplicate solo invoice is blocked', () async {
+    await repository.submitJob(
+      buildSoloJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-600',
+        companyId: 'company-1',
+        companyName: 'Company One',
+      ),
+    );
+
+    await expectLater(
+      () => repository.submitJob(
+        buildSoloJob(
+          techId: 'tech-2',
+          techName: 'Tech Two',
+          invoiceNumber: 'INV-600',
+          companyId: 'company-2',
+          companyName: 'Company Two',
+        ),
+      ),
+      throwsA(isA<JobException>()),
+    );
+  });
+
+  test('cross-company duplicate shared invoice is blocked', () async {
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-700',
+        splitShare: 1,
+      ),
+    );
+
+    await expectLater(
+      () => repository.submitJob(
+        buildSharedJob(
+          techId: 'tech-2',
+          techName: 'Tech Two',
+          invoiceNumber: 'INV-700',
+          splitShare: 1,
+        ).copyWith(
+          companyId: 'company-2',
+          companyName: 'Company Two',
+          sharedInstallGroupKey: 'company-2-inv-700',
+        ),
+      ),
       throwsA(isA<JobException>()),
     );
   });

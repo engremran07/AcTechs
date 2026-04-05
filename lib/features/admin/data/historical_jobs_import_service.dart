@@ -338,7 +338,10 @@ class HistoricalJobsImportService {
           'invoice number',
           'invoice',
         ]);
-        final invoice = InvoiceUtils.normalize(rawInvoice);
+        final invoice = _normalizeImportedInvoice(
+          rawInvoice,
+          targetCompany?.invoicePrefix,
+        );
         if (invoice.isEmpty) {
           skipped++;
           sheetSkippedRows++;
@@ -494,6 +497,7 @@ class HistoricalJobsImportService {
             approvedBy: adminUid,
             charges: InvoiceCharges(
               acBracket: bracket > 0,
+              bracketCount: bracket > 0 ? 1 : 0,
               bracketAmount: bracket,
               deliveryCharge: delivery > 0,
               deliveryAmount: delivery,
@@ -584,6 +588,37 @@ class HistoricalJobsImportService {
     return '$a | $b';
   }
 
+  static String _normalizeImportedInvoice(
+    String rawInvoice,
+    String? companyPrefix,
+  ) {
+    var normalized = InvoiceUtils.normalize(rawInvoice);
+    if (normalized.isEmpty) return normalized;
+
+    final trimmedPrefix = companyPrefix?.trim() ?? '';
+    if (trimmedPrefix.isEmpty) {
+      return normalized;
+    }
+
+    final upperInvoice = normalized.toUpperCase();
+    final upperPrefix = trimmedPrefix.toUpperCase();
+    final prefixVariants = <String>[
+      upperPrefix,
+      '$upperPrefix-',
+      '$upperPrefix ',
+      '$upperPrefix/',
+    ];
+
+    for (final variant in prefixVariants) {
+      if (upperInvoice.startsWith(variant)) {
+        normalized = normalized.substring(variant.length).trim();
+        break;
+      }
+    }
+
+    return InvoiceUtils.normalize(normalized);
+  }
+
   static InvoiceCharges _mergeCharges(
     InvoiceCharges? existing,
     double bracket,
@@ -600,6 +635,11 @@ class HistoricalJobsImportService {
 
     return current.copyWith(
       acBracket: current.acBracket || bracket > 0,
+      bracketCount: current.bracketCount > 0
+          ? current.bracketCount
+          : ((current.acBracket || current.bracketAmount > 0 || bracket > 0)
+                ? 1
+                : 0),
       bracketAmount: nextBracket,
       deliveryCharge: current.deliveryCharge || delivery > 0,
       deliveryAmount: nextDelivery,

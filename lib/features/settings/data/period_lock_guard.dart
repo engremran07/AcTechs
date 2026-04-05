@@ -19,10 +19,13 @@ class PeriodLockGuard {
     return _timestampToDate(rawValue);
   }
 
-  Future<void> ensureUnlockedDate(DateTime? value) async {
+  Future<void> ensureUnlockedDate(
+    DateTime? value, {
+    DateTime? cachedLockedBefore,
+  }) async {
     if (value == null) return;
 
-    final lockedBefore = await lockedBeforeDate();
+    final lockedBefore = cachedLockedBefore ?? await lockedBeforeDate();
     if (lockedBefore != null && value.isBefore(lockedBefore)) {
       throw PeriodException.locked();
     }
@@ -31,12 +34,13 @@ class PeriodLockGuard {
   Future<void> ensureUnlockedDocument(
     DocumentReference<Map<String, dynamic>> ref, {
     String dateField = 'date',
+    DateTime? cachedLockedBefore,
   }) async {
     final snap = await ref.get();
     if (!snap.exists) return;
 
     final date = _timestampToDate(snap.data()?[dateField]);
-    await ensureUnlockedDate(date);
+    await ensureUnlockedDate(date, cachedLockedBefore: cachedLockedBefore);
   }
 
   DateTime? _timestampToDate(Object? value) {

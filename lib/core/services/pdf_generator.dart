@@ -151,7 +151,7 @@ class PdfGenerator {
 
   static int _jobReportBracketCount(JobModel job) => job.isSharedInstall
       ? job.sharedInvoiceBracketCount
-      : (job.charges?.bracketCount ?? 0);
+      : job.effectiveBracketCount;
 
   static double _jobReportDeliveryAmount(JobModel job) {
     final deliveryNote = job.charges?.deliveryNote ?? '';

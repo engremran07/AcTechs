@@ -104,10 +104,16 @@ class AcInstallRepository {
         .toList(growable: false);
   }
 
-  Future<void> addInstall(AcInstallModel install) async {
+  Future<void> addInstall(
+    AcInstallModel install, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
       _validateInstall(install);
-      await _periodLockGuard.ensureUnlockedDate(install.date);
+      await _periodLockGuard.ensureUnlockedDate(
+        install.date,
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ref.add(_normalizedInstallData(install));
     } on PeriodException {
       rethrow;

@@ -116,6 +116,32 @@ extension JobModelX on JobModel {
   bool get isApproved => status == JobStatus.approved;
   bool get isRejected => status == JobStatus.rejected;
 
+  bool get hasInvoiceConflict => importMeta['invoiceConflict'] == true;
+
+  List<String> get invoiceConflictCompanies {
+    final raw = importMeta['invoiceConflictCompanies'];
+    if (raw is! List) return const <String>[];
+    return raw
+        .map((value) => value?.toString().trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+  }
+
+  int get effectiveBracketCount {
+    if (isSharedInstall && sharedInvoiceBracketCount > 0) {
+      return sharedInvoiceBracketCount;
+    }
+
+    final currentCharges = charges;
+    if (currentCharges == null) return 0;
+    if (currentCharges.bracketCount > 0) return currentCharges.bracketCount;
+    if (currentCharges.acBracket || currentCharges.bracketAmount > 0) {
+      return 1;
+    }
+    return 0;
+  }
+
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);
 
   int unitsForType(String type) {

@@ -11,7 +11,8 @@ import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
-import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/expenses/data/earning_repository.dart';
+import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -53,6 +54,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   String _reportPreset = 'all';
   String _technicianFilter = 'all';
   DateTimeRange? _customDateRange;
+
+  Future<({List<EarningModel> earnings, List<ExpenseModel> expenses})>
+  _fetchAdminInOutData() async {
+    final earnings = await ref.read(earningRepositoryProvider).fetchEarnings();
+    final expenses = await ref.read(expenseRepositoryProvider).fetchExpenses();
+    return (earnings: earnings, expenses: expenses);
+  }
 
   List<DateTime> _invoiceReportMonths(List<JobModel> jobs) {
     final months = <DateTime>{};
@@ -841,8 +849,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final summaryAsync = _summaryAsync();
     final usersAsync = ref.watch(allUsersProvider);
-    final allEarningsAsync = ref.watch(allEarningsProvider);
-    final allExpensesAsync = ref.watch(allExpensesProvider);
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -893,22 +899,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ? null
                 : () async {
                     final users = usersAsync.value;
-                    final earnings = allEarningsAsync.value;
-                    final expenses = allExpensesAsync.value;
-                    if (users == null || earnings == null || expenses == null) {
+                    if (users == null) {
                       return;
                     }
+                    final inOutData = await _fetchAdminInOutData();
+                    if (!mounted) return;
                     final techs = users.where((u) => !u.isAdmin).toList();
                     final picked = await _pickAdminInOutOptions(
                       technicians: techs,
-                      earnings: earnings,
-                      expenses: expenses,
+                      earnings: inOutData.earnings,
+                      expenses: inOutData.expenses,
                     );
                     if (picked == null) return;
                     await _exportAdminInOutPdf(
                       options: picked,
-                      earnings: earnings,
-                      expenses: expenses,
+                      earnings: inOutData.earnings,
+                      expenses: inOutData.expenses,
                     );
                   },
             icon: _isExportingInOutPdf

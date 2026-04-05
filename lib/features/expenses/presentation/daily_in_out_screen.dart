@@ -186,6 +186,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       if (user == null) return;
       final approvalConfig = ref.read(approvalConfigProvider).value;
       final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
+      final lockedBeforeDate = approvalConfig?.lockedBeforeDate;
 
       final now = DateTime.now();
 
@@ -211,7 +212,9 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             createdAt: now,
             reviewedAt: requiresApproval ? null : now,
           );
-          await ref.read(earningRepositoryProvider).addEarning(earning);
+          await ref
+              .read(earningRepositoryProvider)
+              .addEarning(earning, lockedBeforeDate: lockedBeforeDate);
         } else {
           final expense = ExpenseModel(
             techId: user.uid,
@@ -228,7 +231,9 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             createdAt: now,
             reviewedAt: requiresApproval ? null : now,
           );
-          await ref.read(expenseRepositoryProvider).addExpense(expense);
+          await ref
+              .read(expenseRepositoryProvider)
+              .addExpense(expense, lockedBeforeDate: lockedBeforeDate);
         }
       }
 
@@ -264,7 +269,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
   Future<void> _deleteEarning(String id) async {
     try {
-      await ref.read(earningRepositoryProvider).deleteEarning(id);
+      final lockedBeforeDate = ref
+          .read(approvalConfigProvider)
+          .value
+          ?.lockedBeforeDate;
+      await ref
+          .read(earningRepositoryProvider)
+          .deleteEarning(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
         AppFeedback.success(
           context,
@@ -281,7 +292,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
   Future<void> _deleteExpense(String id) async {
     try {
-      await ref.read(expenseRepositoryProvider).deleteExpense(id);
+      final lockedBeforeDate = ref
+          .read(approvalConfigProvider)
+          .value
+          ?.lockedBeforeDate;
+      await ref
+          .read(expenseRepositoryProvider)
+          .deleteExpense(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
         AppFeedback.success(
           context,
@@ -298,7 +315,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
   Future<void> _updateEarning(EarningModel earning) async {
     try {
-      await ref.read(earningRepositoryProvider).updateEarning(earning);
+      final lockedBeforeDate = ref
+          .read(approvalConfigProvider)
+          .value
+          ?.lockedBeforeDate;
+      await ref
+          .read(earningRepositoryProvider)
+          .updateEarning(earning, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
         AppFeedback.success(
           context,
@@ -315,7 +338,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
   Future<void> _updateExpense(ExpenseModel expense) async {
     try {
-      await ref.read(expenseRepositoryProvider).updateExpense(expense);
+      final lockedBeforeDate = ref
+          .read(approvalConfigProvider)
+          .value
+          ?.lockedBeforeDate;
+      await ref
+          .read(expenseRepositoryProvider)
+          .updateExpense(expense, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
         AppFeedback.success(
           context,

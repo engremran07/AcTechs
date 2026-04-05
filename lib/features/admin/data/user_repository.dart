@@ -353,6 +353,7 @@ class UserRepository {
         AppConstants.earningsCollection,
         AppConstants.acInstallsCollection,
         AppConstants.sharedInstallAggregatesCollection,
+        AppConstants.invoiceClaimsCollection,
         AppConstants.companiesCollection,
       ]) {
         await _deleteCollectionInChunks(collection);

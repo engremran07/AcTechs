@@ -7,8 +7,6 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/presentation/login_screen.dart';
 import 'package:ac_techs/features/auth/presentation/splash_screen.dart';
-import 'package:ac_techs/features/auth/presentation/update_required_screen.dart';
-import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/features/technician/presentation/tech_shell.dart';
 import 'package:ac_techs/features/technician/presentation/tech_dashboard_screen.dart';
 import 'package:ac_techs/features/technician/presentation/submit_job_screen.dart';
@@ -39,11 +37,9 @@ String? resolveAppRedirect({
   required bool isLoggedIn,
   required AsyncValue<UserModel?> currentUser,
   required ApprovalConfig? approvalConfig,
-  required int? appBuild,
 }) {
   final isSplashRoute = matchedLocation == '/splash';
   final isLoginRoute = matchedLocation == '/login';
-  final isUpdateRoute = matchedLocation == '/update-required';
   final user = currentUser.value;
 
   if (isAuthLoading || (isLoggedIn && currentUser.isLoading)) {
@@ -60,24 +56,6 @@ String? resolveAppRedirect({
 
   if (!user.isActive) {
     return '/login';
-  }
-
-  if (approvalConfig == null) {
-    return isSplashRoute ? null : '/splash';
-  }
-
-  if (approvalConfig.enforceMinimumBuild && appBuild == null) {
-    return isSplashRoute ? null : '/splash';
-  }
-
-  if (approvalConfig.enforceMinimumBuild &&
-      appBuild != null &&
-      appBuild < approvalConfig.minSupportedBuildNumber) {
-    return isUpdateRoute ? null : '/update-required';
-  }
-
-  if (isUpdateRoute) {
-    return user.isAdmin ? '/admin' : '/tech';
   }
 
   if (isSplashRoute || isLoginRoute) {
@@ -135,7 +113,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(authStateProvider, (_, _) => queueRefresh());
   ref.listen(currentUserProvider, (_, _) => queueRefresh());
   ref.listen(approvalConfigProvider, (_, _) => queueRefresh());
-  ref.listen(appBuildNumberProvider, (_, _) => queueRefresh());
 
   ref.onDispose(() {
     refreshDebounce?.cancel();
@@ -150,7 +127,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
       final approvalConfig = ref.read(approvalConfigProvider).asData?.value;
-      final appBuild = ref.read(appBuildNumberProvider).asData?.value;
 
       return resolveAppRedirect(
         matchedLocation: state.matchedLocation,
@@ -158,7 +134,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         isLoggedIn: authState.value != null,
         currentUser: currentUser,
         approvalConfig: approvalConfig,
-        appBuild: appBuild,
       );
     },
     routes: [
@@ -173,13 +148,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         pageBuilder: (context, state) =>
             _slideFadePage(pageKey: state.pageKey, child: const LoginScreen()),
-      ),
-      GoRoute(
-        path: '/update-required',
-        pageBuilder: (context, state) => _slideFadePage(
-          pageKey: state.pageKey,
-          child: const UpdateRequiredScreen(),
-        ),
       ),
       ShellRoute(
         builder: (context, state, child) => TechShell(child: child),

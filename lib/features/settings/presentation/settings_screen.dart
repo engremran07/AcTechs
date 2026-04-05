@@ -326,31 +326,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onChanged: (value) => _toggleInOutApproval(value),
                     ),
                     const Divider(height: 1),
-                    SwitchListTile.adaptive(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                      title: Text(l.enforceMinimumBuild),
-                      subtitle: Text(l.required),
-                      value: config.enforceMinimumBuild,
-                      onChanged: (value) =>
-                          _toggleMinimumBuildEnforcement(value),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                      title: Text(l.minimumSupportedBuild),
-                      subtitle: Text(
-                        appBuildAsync.asData?.value == null
-                            ? '${config.minSupportedBuildNumber}'
-                            : '${config.minSupportedBuildNumber} (${l.currentBuild}: ${appBuildAsync.asData?.value})',
-                      ),
-                      trailing: IconButton(
-                        onPressed: () => _editMinimumSupportedBuild(
-                          config.minSupportedBuildNumber,
-                        ),
-                        icon: const Icon(Icons.edit_rounded),
-                      ),
-                    ),
-                    const Divider(height: 1),
                     ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       title: Text(l.lockRecordsBefore),
@@ -564,62 +539,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref
           .read(approvalConfigRepositoryProvider)
           .setSharedJobApprovalRequired(value);
-    } on Exception {
-      if (!mounted) return;
-      ErrorSnackbar.show(
-        context,
-        message: AppLocalizations.of(context)!.couldNotExport,
-      );
-    }
-  }
-
-  Future<void> _toggleMinimumBuildEnforcement(bool value) async {
-    try {
-      await ref
-          .read(approvalConfigRepositoryProvider)
-          .setEnforceMinimumBuild(value);
-    } on Exception {
-      if (!mounted) return;
-      ErrorSnackbar.show(
-        context,
-        message: AppLocalizations.of(context)!.couldNotExport,
-      );
-    }
-  }
-
-  Future<void> _editMinimumSupportedBuild(int initialValue) async {
-    final l = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: '$initialValue');
-    final next = await showDialog<int>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.minimumSupportedBuild),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(hintText: l.minimumSupportedBuild),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = int.tryParse(controller.text.trim());
-              if (parsed == null || parsed < 1) return;
-              Navigator.of(ctx).pop(parsed);
-            },
-            child: Text(l.save),
-          ),
-        ],
-      ),
-    );
-    if (next == null) return;
-    try {
-      await ref
-          .read(approvalConfigRepositoryProvider)
-          .setMinimumSupportedBuildNumber(next);
     } on Exception {
       if (!mounted) return;
       ErrorSnackbar.show(

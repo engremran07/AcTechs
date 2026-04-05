@@ -226,6 +226,11 @@
   "sharedInvoiceDeliveryAmount": "Total Delivery Charge (Invoice)",
   "sharedDeliverySplitHint": "This delivery amount will be split equally across the shared team.",
   "sharedDeliverySplitInvalid": "Enter the shared team size so delivery charges can be split equally.",
+  "invoiceConflictNeedsReview": "This invoice also exists in another company. Review before approval.",
+  "invoiceConflictCompaniesLabel": "Conflicting companies: {companies}",
+  "@invoiceConflictCompaniesLabel": {
+    "placeholders": { "companies": { "type": "String" } }
+  },
   "splits": "Splits",
   "windowAc": "Window",
   "standing": "Standing",

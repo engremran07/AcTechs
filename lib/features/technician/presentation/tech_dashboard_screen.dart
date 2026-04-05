@@ -120,7 +120,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                       );
                       final totalBrackets = jobs.fold<int>(
                         0,
-                        (sum, job) => sum + (job.charges?.bracketCount ?? 0),
+                        (sum, job) => sum + job.effectiveBracketCount,
                       );
                       final totalUninstalls =
                           countByType(AppConstants.unitTypeUninstallOld) +

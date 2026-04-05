@@ -655,6 +655,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter the shared team size so delivery charges can be split equally.';
 
   @override
+  String get invoiceConflictNeedsReview =>
+      'This invoice also exists in another company. Review before approval.';
+
+  @override
+  String invoiceConflictCompaniesLabel(String companies) {
+    return 'Conflicting companies: $companies';
+  }
+
+  @override
   String get splits => 'Splits';
 
   @override

@@ -654,6 +654,15 @@ class AppLocalizationsUr extends AppLocalizations {
       'مشترکہ ٹیم کی تعداد درج کریں تاکہ ڈیلیوری برابر تقسیم ہو سکے۔';
 
   @override
+  String get invoiceConflictNeedsReview =>
+      'یہ انوائس کسی دوسری کمپنی میں بھی موجود ہے۔ منظوری سے پہلے جائزہ لیں۔';
+
+  @override
+  String invoiceConflictCompaniesLabel(String companies) {
+    return 'متصادم کمپنیاں: $companies';
+  }
+
+  @override
   String get splits => 'اسپلٹ';
 
   @override

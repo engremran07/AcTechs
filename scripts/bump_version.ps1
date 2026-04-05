@@ -1,45 +1,41 @@
 <#
 .SYNOPSIS
-    Auto-increments the app version in pubspec.yaml and can build release APK/web artifacts.
-    Commit + push are also handled without double-bumping the build number.
+    Applies the centralized AC Techs version policy and optionally builds,
+    installs, commits, and pushes the current release.
+
+.DESCRIPTION
+    Versioning is fully automatic:
+    - each run advances the build number
+    - build 1..10 stay within the same patch version
+    - after build 10, the next run advances the patch and resets build to 1
+
+    Examples:
+    1.0.1+1 -> 1.0.1+2
+    1.0.1+10 -> 1.0.2+1
+
+    The same version policy is used by this script and the git pre-commit hook.
 
 .USAGE
-    # Bump patch only (default)
     .\scripts\bump_version.ps1
-
-    # Bump minor (resets patch to 0)
-    .\scripts\bump_version.ps1 -Minor
-
-    # Bump major (resets minor + patch to 0)
-    .\scripts\bump_version.ps1 -Major
-
-    # Bump + build APK automatically
     .\scripts\bump_version.ps1 -Build
-
-    # Bump + build release web bundle
-    .\scripts\bump_version.ps1 -Web
-
-    # Bump + build APK + web together
-    .\scripts\bump_version.ps1 -Build -Web
-
-    # Bump + build + install to connected device
-    .\scripts\bump_version.ps1 -Build -Install
-
-    # Bump + build APK + web + install + commit + push
-    .\scripts\bump_version.ps1 -Build -Web -Install -Push
+    .\scripts\bump_version.ps1 -Build -Web -Install
+    .\scripts\bump_version.ps1 -Build -Web -Install -Commit -Push
 #>
 
 param(
-    [switch]$Minor,
-    [switch]$Major,
+    [Alias('Apk')]
     [switch]$Build,
     [switch]$Web,
     [switch]$Install,
-    [switch]$Push
+    [switch]$Commit,
+    [switch]$Push,
+    [string]$CommitMessage
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+. (Join-Path $PSScriptRoot 'versioning.ps1')
 
 function Invoke-Step {
     param(
@@ -61,39 +57,14 @@ function Invoke-Step {
     }
 }
 
-$pubspec = Join-Path $PSScriptRoot '..\pubspec.yaml'
-$content  = Get-Content $pubspec -Raw
+$repoRoot = Join-Path $PSScriptRoot '..'
+$pubspec = Join-Path $repoRoot 'pubspec.yaml'
+$previousVersion = Get-AcTechsVersionInfoFromPubspec -PubspecPath $pubspec
+$nextVersion = Update-AcTechsPubspecVersion -PubspecPath $pubspec
+$oldVersionLabel = Format-AcTechsVersion -VersionInfo $previousVersion
+$newVersionLabel = Format-AcTechsVersion -VersionInfo $nextVersion
 
-# ── Parse current version string  e.g. "1.0.0+1" ──
-if ($content -notmatch 'version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)') {
-    Write-Error "Could not parse version from pubspec.yaml"
-    exit 1
-}
-
-[int]$maj   = $Matches[1]
-[int]$min   = $Matches[2]
-[int]$patch = $Matches[3]
-[int]$build = $Matches[4]
-
-$oldVersion = "$maj.$min.$patch+$build"
-
-# ── Increment ──
-if ($Major) {
-    $maj++; $min = 0; $patch = 0
-} elseif ($Minor) {
-    $min++; $patch = 0
-} else {
-    $patch++
-}
-$build++
-
-$newVersion = "$maj.$min.$patch+$build"
-
-Write-Host "  $oldVersion  →  $newVersion" -ForegroundColor Cyan
-
-# ── Write back ──
-$updated = $content -replace "version:\s*$([regex]::Escape($oldVersion))", "version: $newVersion"
-Set-Content -Path $pubspec -Value $updated -NoNewline
+Write-Host "  $oldVersionLabel  ->  $newVersionLabel" -ForegroundColor Cyan
 
 Write-Host "pubspec.yaml updated." -ForegroundColor Green
 
@@ -102,7 +73,7 @@ $buildApk = $Build -or $Install
 $buildWeb = $Web
 
 if ($buildApk -or $buildWeb) {
-    Push-Location (Join-Path $PSScriptRoot '..')
+    Push-Location $repoRoot
     try {
         if ($buildApk) {
             Invoke-Step -Description 'Building release APK...' -Action {
@@ -122,7 +93,7 @@ if ($buildApk -or $buildWeb) {
 
         if ($Install) {
             Invoke-Step -Description 'Installing release build to connected device...' -Action {
-                flutter install --release
+                flutter install --use-application-binary build\app\outputs\flutter-apk\app-release.apk
             } -FailureMessage 'flutter install failed'
 
             Write-Host 'Installed.' -ForegroundColor Green
@@ -134,19 +105,31 @@ if ($buildApk -or $buildWeb) {
 
 # ── Optional: git commit + push ──
 if ($Push) {
-    Push-Location (Join-Path $PSScriptRoot '..')
+    $Commit = $true
+}
+
+if ($Commit) {
+    Push-Location $repoRoot
     try {
         $previousSkipValue = $env:ACTECHS_SKIP_VERSION_HOOK
         $env:ACTECHS_SKIP_VERSION_HOOK = '1'
 
         git add pubspec.yaml
-        git commit -m "chore: bump version to $maj.$min.$patch+$build"
+        $message = if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+            "chore: release $newVersionLabel"
+        } else {
+            $CommitMessage
+        }
+        git commit -m $message
         if ($LASTEXITCODE -ne 0) { Write-Error 'git commit failed'; exit 1 }
 
-        git push
-        if ($LASTEXITCODE -ne 0) { Write-Error 'git push failed'; exit 1 }
-
-        Write-Host "Committed + pushed version bump." -ForegroundColor Green
+        if ($Push) {
+            git push
+            if ($LASTEXITCODE -ne 0) { Write-Error 'git push failed'; exit 1 }
+            Write-Host 'Committed + pushed release.' -ForegroundColor Green
+        } else {
+            Write-Host 'Committed release.' -ForegroundColor Green
+        }
     } finally {
         if ($null -eq $previousSkipValue) {
             Remove-Item Env:ACTECHS_SKIP_VERSION_HOOK -ErrorAction SilentlyContinue
@@ -157,4 +140,4 @@ if ($Push) {
     }
 }
 
-Write-Host "`nDone. Version is now $maj.$min.$patch (build $build)" -ForegroundColor Green
+Write-Host "`nDone. Version is now $($nextVersion.Major).$($nextVersion.Minor).$($nextVersion.Patch) (build $($nextVersion.Build))" -ForegroundColor Green

@@ -56,6 +56,50 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     );
   }
 
+  Widget _buildInvoiceConflictWarning(JobModel job, AppLocalizations l) {
+    final companies = job.invoiceConflictCompanies.join(', ');
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ArcticTheme.arcticWarning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ArcticTheme.arcticWarning.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: ArcticTheme.arcticWarning,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l.invoiceConflictNeedsReview,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+          if (companies.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              l.invoiceConflictCompaniesLabel(companies),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   List<JobModel> _filter(List<JobModel> jobs) {
     if (_search.isEmpty) return jobs;
     final q = _search.toLowerCase();
@@ -249,6 +293,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (job.hasInvoiceConflict) _buildInvoiceConflictWarning(job, l),
               Text('${l.technician}: ${job.techName}'),
               Text('${l.technicianUidLabel}: ${job.techId}'),
               Text('${l.client}: ${job.clientName}'),
@@ -1085,6 +1130,36 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (job.hasInvoiceConflict) ...[
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _warningTone.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _warningTone.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: _warningTone,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l.invoiceConflictNeedsReview,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               Row(
                 children: [
                   Checkbox(

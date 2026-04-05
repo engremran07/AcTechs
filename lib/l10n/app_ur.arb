@@ -226,6 +226,11 @@
   "sharedInvoiceDeliveryAmount": "کل ڈیلیوری چارج (انوائس)",
   "sharedDeliverySplitHint": "یہ ڈیلیوری رقم مشترکہ ٹیم میں برابر تقسیم ہوگی۔",
   "sharedDeliverySplitInvalid": "مشترکہ ٹیم کی تعداد درج کریں تاکہ ڈیلیوری برابر تقسیم ہو سکے۔",
+  "invoiceConflictNeedsReview": "یہ انوائس کسی دوسری کمپنی میں بھی موجود ہے۔ منظوری سے پہلے جائزہ لیں۔",
+  "invoiceConflictCompaniesLabel": "متصادم کمپنیاں: {companies}",
+  "@invoiceConflictCompaniesLabel": {
+    "placeholders": { "companies": { "type": "String" } }
+  },
   "splits": "اسپلٹ",
   "windowAc": "ونڈو",
   "standing": "اسٹینڈنگ",

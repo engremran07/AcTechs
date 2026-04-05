@@ -463,6 +463,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
       if (user == null) return;
       final approvalConfig = ref.read(approvalConfigProvider).value;
       final requiresApproval = approvalConfig?.inOutApprovalRequired ?? false;
+      final lockedBeforeDate = approvalConfig?.lockedBeforeDate;
       final now = DateTime.now();
 
       final install = AcInstallModel(
@@ -483,7 +484,9 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
         reviewedAt: requiresApproval ? null : now,
       );
 
-      await ref.read(acInstallRepositoryProvider).addInstall(install);
+      await ref
+          .read(acInstallRepositoryProvider)
+          .addInstall(install, lockedBeforeDate: lockedBeforeDate);
 
       if (mounted) {
         HapticFeedback.lightImpact();

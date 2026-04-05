@@ -100,12 +100,6 @@ final approvedSharedInstallsProvider =
       return ref.watch(jobRepositoryProvider).approvedSharedInstalls();
     });
 
-final allJobsProvider = StreamProvider<List<JobModel>>((ref) {
-  final user = ref.watch(currentUserProvider).value;
-  if (user == null || !user.isAdmin) return Stream.value([]);
-  return ref.watch(jobRepositoryProvider).allJobs();
-});
-
 final adminJobSummaryProvider = FutureProvider.autoDispose<AdminJobSummary>((
   ref,
 ) {
@@ -133,12 +127,6 @@ final techJobsByAcTypeProvider = Provider.autoDispose
     .family<List<JobModel>, JobAcTypeFilter>((ref, filter) {
       final jobs =
           ref.watch(technicianJobsProvider).value ?? const <JobModel>[];
-      return _jobsByType(jobs, filter);
-    });
-
-final adminJobsByAcTypeProvider = Provider.autoDispose
-    .family<List<JobModel>, JobAcTypeFilter>((ref, filter) {
-      final jobs = ref.watch(allJobsProvider).value ?? const <JobModel>[];
       return _jobsByType(jobs, filter);
     });
 

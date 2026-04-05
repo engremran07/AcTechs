@@ -226,6 +226,11 @@
   "sharedInvoiceDeliveryAmount": "إجمالي رسوم التوصيل للفاتورة",
   "sharedDeliverySplitHint": "سيتم تقسيم مبلغ التوصيل هذا بالتساوي على الفريق المشترك.",
   "sharedDeliverySplitInvalid": "أدخل عدد أعضاء الفريق المشترك ليتم تقسيم رسوم التوصيل بالتساوي.",
+  "invoiceConflictNeedsReview": "هذه الفاتورة موجودة أيضاً في شركة أخرى. راجعها قبل الموافقة.",
+  "invoiceConflictCompaniesLabel": "الشركات المتعارضة: {companies}",
+  "@invoiceConflictCompaniesLabel": {
+    "placeholders": { "companies": { "type": "String" } }
+  },
   "splits": "سبليت",
   "windowAc": "نافذة",
   "standing": "قائم",

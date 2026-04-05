@@ -11,7 +11,6 @@ void main() {
       isLoggedIn: false,
       currentUser: const AsyncData(null),
       approvalConfig: ApprovalConfig.defaults(),
-      appBuild: 7,
     );
 
     expect(redirect, '/login');
@@ -26,7 +25,6 @@ void main() {
         UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
       ),
       approvalConfig: ApprovalConfig.defaults(),
-      appBuild: 7,
     );
 
     expect(redirect, isNull);
@@ -46,35 +44,12 @@ void main() {
         ),
       ),
       approvalConfig: ApprovalConfig.defaults(),
-      appBuild: 7,
     );
 
     expect(redirect, '/login');
   });
 
-  test('minimum build gate holds on splash until app build loads', () {
-    final redirect = resolveAppRedirect(
-      matchedLocation: '/tech',
-      isAuthLoading: false,
-      isLoggedIn: true,
-      currentUser: const AsyncData(
-        UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
-      ),
-      approvalConfig: const ApprovalConfig(
-        jobApprovalRequired: false,
-        sharedJobApprovalRequired: false,
-        inOutApprovalRequired: false,
-        enforceMinimumBuild: true,
-        minSupportedBuildNumber: 99,
-        lockedBeforeDate: null,
-      ),
-      appBuild: null,
-    );
-
-    expect(redirect, '/splash');
-  });
-
-  test('missing approval config holds on splash until config loads', () {
+  test('missing approval config falls back to defaults', () {
     final redirect = resolveAppRedirect(
       matchedLocation: '/tech',
       isAuthLoading: false,
@@ -83,32 +58,9 @@ void main() {
         UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
       ),
       approvalConfig: null,
-      appBuild: 7,
     );
 
-    expect(redirect, '/splash');
-  });
-
-  test('minimum build gate redirects outdated builds', () {
-    final redirect = resolveAppRedirect(
-      matchedLocation: '/tech',
-      isAuthLoading: false,
-      isLoggedIn: true,
-      currentUser: const AsyncData(
-        UserModel(uid: 'tech-1', name: 'Tech One', email: 'tech@example.com'),
-      ),
-      approvalConfig: const ApprovalConfig(
-        jobApprovalRequired: false,
-        sharedJobApprovalRequired: false,
-        inOutApprovalRequired: false,
-        enforceMinimumBuild: true,
-        minSupportedBuildNumber: 9,
-        lockedBeforeDate: null,
-      ),
-      appBuild: 7,
-    );
-
-    expect(redirect, '/update-required');
+    expect(redirect, isNull);
   });
 
   test('admin users are redirected away from technician routes', () {
@@ -125,7 +77,6 @@ void main() {
         ),
       ),
       approvalConfig: ApprovalConfig.defaults(),
-      appBuild: 7,
     );
 
     expect(redirect, '/admin');

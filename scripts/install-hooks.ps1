@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
     Installs git hooks for the AC Techs project.
-    The pre-commit hook auto-increments the +build number in pubspec.yaml
-    and stages the file so the bump is included in the commit.
+    The pre-commit hook uses the centralized versioning policy shared with
+    scripts\bump_version.ps1.
 
 .USAGE
     .\scripts\install-hooks.ps1
@@ -18,7 +18,7 @@ $hookFileW = Join-Path $hooksDir 'pre-commit.ps1'
 
 # PowerShell side — the real logic
 $ps1Content = @'
-# Auto-bump build number in pubspec.yaml before every commit.
+# Auto-bump the app version before every commit.
 # Called by the POSIX pre-commit shell wrapper.
 
 Set-StrictMode -Version Latest
@@ -29,23 +29,21 @@ if ($env:ACTECHS_SKIP_VERSION_HOOK -eq '1') {
     exit 0
 }
 
-$pubspec = Join-Path $PSScriptRoot '..\..\pubspec.yaml'
-$content = Get-Content $pubspec -Raw
-
-if ($content -notmatch 'version:\s*(\d+\.\d+\.\d+)\+(\d+)') {
-    Write-Host "pre-commit: could not parse version - skipping bump"
+$versioning = Join-Path $PSScriptRoot '..\..\scripts\versioning.ps1'
+if (-not (Test-Path $versioning)) {
+    Write-Host "pre-commit: versioning helper not found - skipping bump"
     exit 0
 }
 
-$semver    = $Matches[1]
-[int]$build = [int]$Matches[2] + 1
-$newVersion = "version: ${semver}+${build}"
-$updated = $content -replace 'version:\s*\d+\.\d+\.\d+\+\d+', $newVersion
-Set-Content -Path $pubspec -Value $updated -NoNewline
+. $versioning
+
+$pubspec = Join-Path $PSScriptRoot '..\..\pubspec.yaml'
+$previousVersion = Get-AcTechsVersionInfoFromPubspec -PubspecPath $pubspec
+$nextVersion = Update-AcTechsPubspecVersion -PubspecPath $pubspec
 
 # Stage the bumped file
 git add $pubspec
-Write-Host "pre-commit: bumped build to ${semver}+${build}"
+Write-Host "pre-commit: bumped version from $(Format-AcTechsVersion -VersionInfo $previousVersion) to $(Format-AcTechsVersion -VersionInfo $nextVersion)"
 '@
 
 # POSIX shell wrapper (git runs sh on all platforms via Git for Windows)
@@ -80,4 +78,4 @@ if ($env:OS -ne 'Windows_NT') {
 Write-Host "Hooks installed:"
 Write-Host "  $hookFile"
 Write-Host "  $hookFileW"
-Write-Host "Every commit will now auto-bump the +build number in pubspec.yaml."
+Write-Host "Every commit will now auto-bump the app version using the shared version policy."

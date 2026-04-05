@@ -80,8 +80,58 @@ service cloud.firestore {
         request.resource.data.isSharedInstall;
     }
 
+    function invoiceClaimDocPath(invoiceNumber) {
+      return /databases/$(database)/documents/invoice_claims/$(invoiceNumber);
+    }
+
+    function invoiceClaimAfterData() {
+      return getAfter(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data;
+    }
+
+    function invoiceClaimBeforeExists() {
+      return exists(invoiceClaimDocPath(request.resource.data.invoiceNumber));
+    }
+
+    function invoiceClaimAfterExists() {
+      return existsAfter(invoiceClaimDocPath(request.resource.data.invoiceNumber));
+    }
+
+    function requestedInvoiceReuseMode() {
+      return isSharedJobCreate() ? 'shared' : 'solo';
+    }
+
+    function validInvoiceClaimState() {
+      return invoiceClaimAfterExists() &&
+        invoiceClaimAfterData().invoiceNumber == request.resource.data.invoiceNumber &&
+        invoiceClaimAfterData().companyId == request.resource.data.companyId &&
+        invoiceClaimAfterData().companyName == request.resource.data.companyName &&
+        invoiceClaimAfterData().reuseMode in ['shared', 'solo'] &&
+        (invoiceClaimAfterData().createdBy == request.auth.uid || isAdmin()) &&
+        invoiceClaimAfterData().activeJobCount is int &&
+        invoiceClaimAfterData().activeJobCount > 0 &&
+        invoiceClaimAfterData().createdAt is timestamp &&
+        invoiceClaimAfterData().updatedAt is timestamp &&
+        (
+          (!invoiceClaimBeforeExists() &&
+            invoiceClaimAfterData().reuseMode == requestedInvoiceReuseMode() &&
+            invoiceClaimAfterData().activeJobCount == 1) ||
+          (invoiceClaimBeforeExists() &&
+            get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.companyId == request.resource.data.companyId &&
+            get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.reuseMode == 'shared' &&
+            requestedInvoiceReuseMode() == 'shared' &&
+            invoiceClaimAfterData().reuseMode == 'shared' &&
+            invoiceClaimAfterData().activeJobCount == get(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data.activeJobCount + 1)
+        );
+    }
+
+    function isNonSharedJobCreate() {
+      return request.resource.data.isSharedInstall is bool &&
+        !request.resource.data.isSharedInstall;
+    }
+
     function validSharedInstallFields() {
       return request.resource.data.isSharedInstall is bool &&
+        request.resource.data.isSharedInstall &&
         request.resource.data.sharedInstallGroupKey is string &&
         request.resource.data.sharedInvoiceTotalUnits is int &&
         request.resource.data.sharedInvoiceTotalUnits >= 0 &&
@@ -105,6 +155,7 @@ service cloud.firestore {
         request.resource.data.sharedDeliveryTeamCount >= 0 &&
         request.resource.data.sharedInvoiceDeliveryAmount is number &&
         request.resource.data.sharedInvoiceDeliveryAmount >= 0 &&
+        request.resource.data.sharedInvoiceDeliveryAmount <= 1000000 &&
         request.resource.data.techSplitShare is int &&
         request.resource.data.techSplitShare >= 0 &&
         request.resource.data.techWindowShare is int &&
@@ -119,6 +170,10 @@ service cloud.firestore {
         request.resource.data.techUninstallFreestandingShare >= 0 &&
         request.resource.data.techBracketShare is int &&
         request.resource.data.techBracketShare >= 0;
+    }
+
+    function validJobSharedState() {
+      return isNonSharedJobCreate() || validSharedInstallFields();
     }
 
     function validJobCreatePayload() {
@@ -314,11 +369,13 @@ service cloud.firestore {
             : (jobApprovalRequired() ? 'pending' : 'approved')
         ) &&
         validJobCreatePayload() &&
-        validSharedInstallFields()) ||
+        validJobSharedState() &&
+        validInvoiceClaimState()) ||
         (isAdmin() &&
           dateIsUnlocked(request.resource.data.date) &&
           validJobCreatePayload() &&
-          validSharedInstallFields() &&
+          validJobSharedState() &&
+          validInvoiceClaimState() &&
           request.resource.data.status in ['pending', 'approved', 'rejected']);
 
       allow update: if (isAdmin() &&
@@ -336,7 +393,7 @@ service cloud.firestore {
         request.resource.data.approvedBy == resource.data.approvedBy &&
         request.resource.data.reviewedAt == resource.data.reviewedAt &&
         request.resource.data.adminNote == resource.data.adminNote &&
-        validSharedInstallFields() &&
+        validJobSharedState() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
           'companyId',
@@ -392,6 +449,55 @@ service cloud.firestore {
       allow update: if (isAdmin() && validSharedAggregateAdminUpdatePayload()) ||
         (isActiveUser() && validSharedAggregateTechUpdatePayload());
       allow delete: if isAdmin();
+    }
+
+    match /invoice_claims/{claimId} {
+      allow get: if isAdmin() || isActiveUser();
+      allow list: if isAdmin();
+
+      allow create: if (isAdmin() || isActiveUser()) &&
+        request.resource.data.keys().hasOnly([
+          'invoiceNumber',
+          'companyId',
+          'companyName',
+          'reuseMode',
+          'activeJobCount',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        request.resource.data.invoiceNumber == claimId &&
+        request.resource.data.companyId is string &&
+        request.resource.data.companyName is string &&
+        request.resource.data.reuseMode in ['shared', 'solo'] &&
+        request.resource.data.activeJobCount is int &&
+        request.resource.data.activeJobCount > 0 &&
+        (request.resource.data.createdBy == request.auth.uid || isAdmin()) &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow update: if (isAdmin() || isActiveUser()) &&
+        request.resource.data.keys().hasOnly([
+          'invoiceNumber',
+          'companyId',
+          'companyName',
+          'reuseMode',
+          'activeJobCount',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        request.resource.data.invoiceNumber == resource.data.invoiceNumber &&
+        request.resource.data.companyId == resource.data.companyId &&
+        request.resource.data.companyName == resource.data.companyName &&
+        request.resource.data.reuseMode == resource.data.reuseMode &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        request.resource.data.activeJobCount is int &&
+        request.resource.data.activeJobCount >= 0 &&
+        request.resource.data.updatedAt is timestamp;
+
+      allow delete: if isAdmin() || isActiveUser();
     }
 
     // ─── Expenses ───

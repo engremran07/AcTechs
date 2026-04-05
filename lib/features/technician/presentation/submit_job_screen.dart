@@ -311,12 +311,16 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         status: status,
       );
 
-      await ref.read(jobRepositoryProvider).submitJob(job);
+      final savedStatus = await ref
+          .read(jobRepositoryProvider)
+          .submitJob(job, lockedBeforeDate: approvalConfig?.lockedBeforeDate);
 
       if (mounted) {
         AppFeedback.success(
           context,
-          message: status == JobStatus.pending ? l.jobSubmitted : l.jobSaved,
+          message: savedStatus == JobStatus.pending
+              ? l.jobSubmitted
+              : l.jobSaved,
         );
         _resetForm();
       }

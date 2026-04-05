@@ -1348,6 +1348,18 @@ abstract class AppLocalizations {
   /// **'Enter the shared team size so delivery charges can be split equally.'**
   String get sharedDeliverySplitInvalid;
 
+  /// No description provided for @invoiceConflictNeedsReview.
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice also exists in another company. Review before approval.'**
+  String get invoiceConflictNeedsReview;
+
+  /// No description provided for @invoiceConflictCompaniesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicting companies: {companies}'**
+  String invoiceConflictCompaniesLabel(String companies);
+
   /// No description provided for @splits.
   ///
   /// In en, this message translates to:

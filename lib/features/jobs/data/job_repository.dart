@@ -16,12 +16,17 @@ class JobRepository {
 
   final FirebaseFirestore firestore;
   static const String _sharedBracketType = 'Bracket';
+  static const String _invoiceReuseModeShared = 'shared';
+  static const String _invoiceReuseModeSolo = 'solo';
 
   CollectionReference<Map<String, dynamic>> get _jobsRef =>
       firestore.collection(AppConstants.jobsCollection);
 
   CollectionReference<Map<String, dynamic>> get _sharedAggregatesRef =>
       firestore.collection(AppConstants.sharedInstallAggregatesCollection);
+
+  CollectionReference<Map<String, dynamic>> get _invoiceClaimsRef =>
+      firestore.collection(AppConstants.invoiceClaimsCollection);
 
   PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
 
@@ -133,7 +138,7 @@ class JobRepository {
       .where((unit) => unit.type == type)
       .fold(0, (total, unit) => total + unit.quantity);
 
-  int _bracketCount(JobModel job) => job.charges?.bracketCount ?? 0;
+  int _bracketCount(JobModel job) => job.effectiveBracketCount;
 
   String _safeImportDocId(JobModel job) {
     final techId = job.techId.trim().toLowerCase();
@@ -158,6 +163,90 @@ class JobRepository {
 
   int _readAggregateInt(Map<String, dynamic> data, String key) {
     return (data[key] as num?)?.toInt() ?? 0;
+  }
+
+  String _invoiceClaimDocId(String normalizedInvoice) {
+    final safe = normalizedInvoice.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9_-]'),
+      '_',
+    );
+    return safe.isEmpty ? 'unknown_invoice' : safe;
+  }
+
+  String _invoiceReuseModeFor(JobModel job) =>
+      job.isSharedInstall ? _invoiceReuseModeShared : _invoiceReuseModeSolo;
+
+  bool _allowsInvoiceReuse(JobModel submittedJob, List<JobModel> existingJobs) {
+    if (existingJobs.isEmpty) return true;
+    if (!submittedJob.isSharedInstall) return false;
+    return existingJobs.every((job) => job.isSharedInstall);
+  }
+
+  int _readInvoiceClaimCount(Map<String, dynamic> data) {
+    return (data['activeJobCount'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> _reserveInvoiceClaim(
+    Transaction tx,
+    JobModel job,
+    String normalizedInvoice,
+  ) async {
+    final claimRef = _invoiceClaimsRef.doc(
+      _invoiceClaimDocId(normalizedInvoice),
+    );
+    final claimSnap = await tx.get(claimRef);
+    final requestedMode = _invoiceReuseModeFor(job);
+
+    if (!claimSnap.exists) {
+      tx.set(claimRef, {
+        'invoiceNumber': normalizedInvoice,
+        'companyId': job.companyId,
+        'companyName': job.companyName,
+        'reuseMode': requestedMode,
+        'activeJobCount': 1,
+        'createdBy': job.techId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    final claim = claimSnap.data() ?? <String, dynamic>{};
+    final claimedCompanyId = (claim['companyId'] as String? ?? '').trim();
+    final reuseMode = (claim['reuseMode'] as String? ?? '').trim();
+
+    if (claimedCompanyId != job.companyId) {
+      throw JobException.duplicateInvoice();
+    }
+    if (requestedMode != _invoiceReuseModeShared ||
+        reuseMode != _invoiceReuseModeShared) {
+      throw JobException.duplicateInvoice();
+    }
+
+    tx.update(claimRef, {
+      'activeJobCount': _readInvoiceClaimCount(claim) + 1,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  void _releaseInvoiceClaimFromSnapshot(
+    Transaction tx,
+    DocumentReference<Map<String, dynamic>> claimRef,
+    DocumentSnapshot<Map<String, dynamic>> claimSnap,
+  ) {
+    if (!claimSnap.exists) return;
+
+    final claim = claimSnap.data() ?? <String, dynamic>{};
+    final nextCount = _readInvoiceClaimCount(claim) - 1;
+    if (nextCount <= 0) {
+      tx.delete(claimRef);
+      return;
+    }
+
+    tx.update(claimRef, {
+      'activeJobCount': nextCount,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   void _ensureMutableJobStatus(String status) {
@@ -244,17 +333,18 @@ class JobRepository {
 
   Future<void> _releaseSharedAggregateReservation(
     Transaction tx,
-    JobModel job,
-  ) async {
+    JobModel job, {
+    DocumentSnapshot<Map<String, dynamic>>? aggregateSnap,
+  }) async {
     if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) return;
 
     final aggregateRef = _sharedAggregatesRef.doc(
       _sharedAggregateDocId(job.sharedInstallGroupKey),
     );
-    final aggregateSnap = await tx.get(aggregateRef);
-    if (!aggregateSnap.exists) return;
+    final resolvedAggregateSnap = aggregateSnap ?? await tx.get(aggregateRef);
+    if (!resolvedAggregateSnap.exists) return;
 
-    final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
+    final aggregate = resolvedAggregateSnap.data() ?? <String, dynamic>{};
     final nextConsumedSplitUnits =
         (_readAggregateInt(aggregate, 'consumedSplitUnits') -
                 _unitsForType(job, AppConstants.unitTypeSplitAc))
@@ -302,19 +392,39 @@ class JobRepository {
     });
   }
 
-  Future<void> submitJob(JobModel job) async {
+  Future<JobStatus> submitJob(
+    JobModel job, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
-      await _periodLockGuard.ensureUnlockedDate(job.date ?? DateTime.now());
+      await _periodLockGuard.ensureUnlockedDate(
+        job.date ?? DateTime.now(),
+        cachedLockedBefore: lockedBeforeDate,
+      );
       final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
-      final duplicateSnap = await _jobsRef
-          .where('techId', isEqualTo: job.techId)
-          .where('companyId', isEqualTo: job.companyId)
+      final sameInvoiceSnap = await _jobsRef
           .where('invoiceNumber', isEqualTo: normalizedInvoice)
-          .limit(1)
+          .limit(25)
           .get();
-      if (duplicateSnap.docs.isNotEmpty) {
+
+      final existingInvoiceJobs = sameInvoiceSnap.docs
+          .map((doc) => JobModel.fromFirestore(doc))
+          .toList(growable: false);
+      final sameCompanyInvoiceJobs = existingInvoiceJobs
+          .where((existing) => existing.companyId == job.companyId)
+          .toList(growable: false);
+      final crossCompanyInvoiceJobs = existingInvoiceJobs
+          .where((existing) => existing.companyId != job.companyId)
+          .toList(growable: false);
+
+      if (!_allowsInvoiceReuse(job, sameCompanyInvoiceJobs)) {
         throw JobException.duplicateInvoice();
       }
+      if (crossCompanyInvoiceJobs.isNotEmpty) {
+        throw JobException.duplicateInvoice();
+      }
+
+      final resolvedStatus = job.status;
 
       final normalizedGroupKey = job.sharedInstallGroupKey.isEmpty
           ? ''
@@ -413,6 +523,7 @@ class JobRepository {
         final data = job.toFirestore();
         data['invoiceNumber'] = normalizedInvoice;
         data['sharedInstallGroupKey'] = resolvedGroupKey;
+        data['status'] = resolvedStatus.name;
         data['date'] ??= FieldValue.serverTimestamp();
         data['submittedAt'] ??= FieldValue.serverTimestamp();
 
@@ -423,6 +534,7 @@ class JobRepository {
 
         await firestore.runTransaction((tx) async {
           final aggregateSnap = await tx.get(aggregateRef);
+          await _reserveInvoiceClaim(tx, job, normalizedInvoice);
           var consumedSplitUnits = 0;
           var consumedWindowUnits = 0;
           var consumedFreestandingUnits = 0;
@@ -558,17 +670,24 @@ class JobRepository {
 
           tx.set(newJobRef, data);
         });
-        return;
+        return resolvedStatus;
       }
 
       final data = job.toFirestore();
       data['invoiceNumber'] = normalizedInvoice;
+      data['status'] = resolvedStatus.name;
       if (job.isSharedInstall) {
         data['sharedInstallGroupKey'] = resolvedGroupKey;
       }
       data['date'] ??= FieldValue.serverTimestamp();
       data['submittedAt'] ??= FieldValue.serverTimestamp();
-      await _jobsRef.add(data);
+
+      await firestore.runTransaction((tx) async {
+        final newJobRef = _jobsRef.doc();
+        await _reserveInvoiceClaim(tx, job, normalizedInvoice);
+        tx.set(newJobRef, data);
+      });
+      return resolvedStatus;
     } on FirebaseException catch (e) {
       debugPrint('submitJob FirebaseException: ${e.code} — ${e.message}');
       if (e.code == 'unauthenticated') {
@@ -633,22 +752,48 @@ class JobRepository {
     try {
       await _periodLockGuard.ensureUnlockedDocument(_jobsRef.doc(jobId));
       await firestore.runTransaction((tx) async {
-        final snap = await tx.get(_jobsRef.doc(jobId));
+        final jobRef = _jobsRef.doc(jobId);
+        final snap = await tx.get(jobRef);
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
         _ensureMutableJobStatus(prevStatus);
         final job = JobModel.fromFirestore(snap);
 
-        if (job.isSharedInstall && prevStatus != 'rejected') {
-          await _releaseSharedAggregateReservation(tx, job);
+        final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
+        final claimRef = _invoiceClaimsRef.doc(
+          _invoiceClaimDocId(normalizedInvoice),
+        );
+        final claimSnap = prevStatus != 'rejected'
+            ? await tx.get(claimRef)
+            : null;
+        final aggregateRef = job.isSharedInstall && prevStatus != 'rejected'
+            ? _sharedAggregatesRef.doc(
+                _sharedAggregateDocId(job.sharedInstallGroupKey),
+              )
+            : null;
+        final aggregateSnap = aggregateRef != null
+            ? await tx.get(aggregateRef)
+            : null;
+
+        if (prevStatus != 'rejected' && claimSnap != null) {
+          _releaseInvoiceClaimFromSnapshot(tx, claimRef, claimSnap);
+        }
+        if (job.isSharedInstall &&
+            prevStatus != 'rejected' &&
+            aggregateSnap != null) {
+          await _releaseSharedAggregateReservation(
+            tx,
+            job,
+            aggregateSnap: aggregateSnap,
+          );
         }
 
-        tx.update(_jobsRef.doc(jobId), {
+        tx.update(jobRef, {
           'status': 'rejected',
           'approvedBy': adminUid,
           'adminNote': reason,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(_jobsRef.doc(jobId).collection('history').doc(), {
+        tx.set(jobRef.collection('history').doc(), {
           'changedBy': adminUid,
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': prevStatus,
@@ -830,12 +975,25 @@ class JobRepository {
         for (final job in chunk) {
           final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
           final ref = _jobsRef.doc(_safeImportDocId(job));
+          final claimRef = _invoiceClaimsRef.doc(
+            _invoiceClaimDocId(normalizedInvoice),
+          );
           final data = job
               .copyWith(invoiceNumber: normalizedInvoice)
               .toFirestore();
           data['date'] ??= FieldValue.serverTimestamp();
           data['submittedAt'] ??= FieldValue.serverTimestamp();
           batch.set(ref, data);
+          batch.set(claimRef, {
+            'invoiceNumber': normalizedInvoice,
+            'companyId': job.companyId,
+            'companyName': job.companyName,
+            'reuseMode': _invoiceReuseModeFor(job),
+            'activeJobCount': 1,
+            'createdBy': job.techId,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
           imported++;
         }
         await batch.commit();

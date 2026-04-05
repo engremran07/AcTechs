@@ -14,6 +14,43 @@ async function seedDoc(context, docPath, data) {
   await context.firestore().doc(docPath).set(data);
 }
 
+async function createJobWithClaim(context, job) {
+  const batch = context.firestore().batch();
+  const invoiceNumber = job.invoiceNumber;
+  const claimRef = context.firestore().doc(`invoice_claims/${invoiceNumber}`);
+  const jobRef = context.firestore().collection('jobs').doc();
+  const existingClaim = await claimRef.get();
+  const now = job.submittedAt;
+
+  if (!existingClaim.exists) {
+    batch.set(claimRef, {
+      invoiceNumber,
+      companyId: job.companyId,
+      companyName: job.companyName,
+      reuseMode: job.isSharedInstall ? 'shared' : 'solo',
+      activeJobCount: 1,
+      createdBy: job.techId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const claim = existingClaim.data();
+    batch.update(claimRef, {
+      invoiceNumber,
+      companyId: claim.companyId,
+      companyName: claim.companyName,
+      reuseMode: claim.reuseMode,
+      activeJobCount: (claim.activeJobCount || 0) + 1,
+      createdBy: claim.createdBy,
+      createdAt: claim.createdAt,
+      updatedAt: now,
+    });
+  }
+
+  batch.set(jobRef, job);
+  await batch.commit();
+}
+
 async function main() {
   const testEnv = await initializeTestEnvironment({
     projectId,
@@ -134,7 +171,51 @@ async function main() {
     await assertFails(activeTech.firestore().doc('users/tech-1').delete());
 
     await assertSucceeds(
-      activeTech.firestore().collection('jobs').add({
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-350',
+        clientName: 'Solo Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-12T08:30:00Z'),
+        submittedAt: new Date('2024-01-12T08:30:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createJobWithClaim(admin, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-351',
+        clientName: 'Imported Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'approved',
+        expenses: 0,
+        expenseNote: 'Historical import',
+        adminNote: 'Imported by admin',
+        approvedBy: 'admin-1',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-11T08:30:00Z'),
+        submittedAt: new Date('2024-01-11T08:30:00Z'),
+      }),
+    );
+
+    await assertSucceeds(
+      createJobWithClaim(activeTech, {
         techId: 'tech-1',
         techName: 'Tech One',
         companyId: 'company-1',
@@ -174,6 +255,110 @@ async function main() {
         charges: null,
         date: new Date('2024-01-12T09:00:00Z'),
         submittedAt: new Date('2024-01-12T09:00:00Z'),
+      }),
+    );
+
+    await assertFails(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company',
+        invoiceNumber: 'INV-401',
+        clientName: 'Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: true,
+        sharedInstallGroupKey: 'company-1-inv-401',
+        sharedInvoiceTotalUnits: 1,
+        sharedContributionUnits: 1,
+        sharedInvoiceSplitUnits: 1,
+        sharedInvoiceWindowUnits: 0,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceUninstallSplitUnits: 0,
+        sharedInvoiceUninstallWindowUnits: 0,
+        sharedInvoiceUninstallFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 2,
+        sharedInvoiceDeliveryAmount: 1000001,
+        techSplitShare: 1,
+        techWindowShare: 0,
+        techFreestandingShare: 0,
+        techUninstallSplitShare: 0,
+        techUninstallWindowShare: 0,
+        techUninstallFreestandingShare: 0,
+        techBracketShare: 0,
+        charges: null,
+        date: new Date('2024-01-12T09:05:00Z'),
+        submittedAt: new Date('2024-01-12T09:05:00Z'),
+      }),
+    );
+
+    await assertFails(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-2',
+        companyName: 'Other Company',
+        invoiceNumber: 'INV-350',
+        clientName: 'Cross Company Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: false,
+        charges: null,
+        date: new Date('2024-01-12T08:45:00Z'),
+        submittedAt: new Date('2024-01-12T08:45:00Z'),
+      }),
+    );
+
+    await assertFails(
+      createJobWithClaim(activeTech, {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-2',
+        companyName: 'Other Company',
+        invoiceNumber: 'INV-400',
+        clientName: 'Cross Company Shared Client',
+        clientContact: '',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'pending',
+        expenses: 0,
+        expenseNote: '',
+        adminNote: '',
+        approvedBy: '',
+        isSharedInstall: true,
+        sharedInstallGroupKey: 'company-2-inv-400',
+        sharedInvoiceTotalUnits: 1,
+        sharedContributionUnits: 1,
+        sharedInvoiceSplitUnits: 1,
+        sharedInvoiceWindowUnits: 0,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceUninstallSplitUnits: 0,
+        sharedInvoiceUninstallWindowUnits: 0,
+        sharedInvoiceUninstallFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 0,
+        sharedInvoiceDeliveryAmount: 0,
+        techSplitShare: 1,
+        techWindowShare: 0,
+        techFreestandingShare: 0,
+        techUninstallSplitShare: 0,
+        techUninstallWindowShare: 0,
+        techUninstallFreestandingShare: 0,
+        techBracketShare: 0,
+        charges: null,
+        date: new Date('2024-01-12T09:01:00Z'),
+        submittedAt: new Date('2024-01-12T09:01:00Z'),
       }),
     );
 

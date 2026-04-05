@@ -652,6 +652,15 @@ class AppLocalizationsAr extends AppLocalizations {
       'أدخل عدد أعضاء الفريق المشترك ليتم تقسيم رسوم التوصيل بالتساوي.';
 
   @override
+  String get invoiceConflictNeedsReview =>
+      'هذه الفاتورة موجودة أيضاً في شركة أخرى. راجعها قبل الموافقة.';
+
+  @override
+  String invoiceConflictCompaniesLabel(String companies) {
+    return 'الشركات المتعارضة: $companies';
+  }
+
+  @override
   String get splits => 'سبليت';
 
   @override

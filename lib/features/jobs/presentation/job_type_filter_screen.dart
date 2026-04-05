@@ -81,13 +81,11 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
       return;
     }
 
-    final jobs = widget.isAdminScope
-        ? ref.read(adminJobsByAcTypeProvider(widget.filter))
-        : ref.read(techJobsByAcTypeProvider(widget.filter));
+    final jobs = ref.read(techJobsByAcTypeProvider(widget.filter));
 
     if (_visibleCount >= jobs.length) return;
     setState(() {
-      _visibleCount = (_visibleCount + _pageSize).clamp(0, jobs.length);
+      _visibleCount = (_visibleCount + _pageSize).clamp(0, jobs.length).toInt();
     });
   }
 
@@ -173,8 +171,6 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     final l = AppLocalizations.of(context)!;
     final jobs = widget.isAdminScope
         ? _adminJobs
-        : widget.isAdminScope
-        ? ref.watch(adminJobsByAcTypeProvider(widget.filter))
         : ref.watch(techJobsByAcTypeProvider(widget.filter));
 
     if (_visibleCount > jobs.length) {

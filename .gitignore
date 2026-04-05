@@ -38,7 +38,6 @@ lib/**/*.g.dart
 .firebase/
 analyze_output.txt
 android/app/google-services.json
-lib/firebase_options.dart
 auth-users.json
 auth_users.json
 scripts/.env

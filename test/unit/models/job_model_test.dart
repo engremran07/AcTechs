@@ -308,6 +308,32 @@ void main() {
       expect(job.totalCharges, 50.0);
     });
 
+    test('effectiveBracketCount falls back to one for historical imports', () {
+      const job = JobModel(
+        techId: 't',
+        techName: 'T',
+        invoiceNumber: 'I',
+        clientName: 'C',
+        charges: InvoiceCharges(acBracket: true, bracketAmount: 150.0),
+      );
+      expect(job.effectiveBracketCount, 1);
+    });
+
+    test('effectiveBracketCount prefers explicit bracketCount', () {
+      const job = JobModel(
+        techId: 't',
+        techName: 'T',
+        invoiceNumber: 'I',
+        clientName: 'C',
+        charges: InvoiceCharges(
+          acBracket: true,
+          bracketCount: 3,
+          bracketAmount: 150.0,
+        ),
+      );
+      expect(job.effectiveBracketCount, 3);
+    });
+
     test('totalCharges returns 0 when both flags are false', () {
       const job = JobModel(
         techId: 't',

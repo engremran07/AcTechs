@@ -4,8 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
+
+const _kRememberEmailKey = 'remember_email';
+const _kRememberMeKey = 'remember_me';
+const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
@@ -227,11 +232,16 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kRememberMeKey);
+    await prefs.remove(_kRememberEmailKey);
+    await prefs.setBool(_kClearFirestoreCacheOnLaunchKey, true);
     await auth.signOut();
     // NOTE: We do NOT call firestore.terminate() / clearPersistence() here.
     // Doing so kills the singleton Firestore instance, breaking all
     // subsequent Firestore operations after re-login. Instead, provider
     // invalidation in SignInNotifier ensures data isolation between sessions.
+    // A safe cache wipe is scheduled for the next cold start.
   }
 
   Future<UserModel?> getCurrentUserModel() async {

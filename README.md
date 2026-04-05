@@ -1,192 +1,95 @@
-# AC Techs
+# ❄️ AC Techs
 
-AC Techs is a production-focused Flutter operations app for AC installation teams in Saudi Arabia. It supports technicians in the field and admins in the office, with Firebase-backed approval workflows, shared invoice handling, tri-lingual UX, offline-friendly Firestore behavior, reporting, imports, exports, and release automation.
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](#-stack)
+[![Firebase](https://img.shields.io/badge/Firebase-Spark%20Only-FFCA28?logo=firebase&logoColor=black)](#-platform-constraints)
+[![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Web-0A84FF)](#-build--release)
+[![State](https://img.shields.io/badge/State-Riverpod%203-00C2B8)](#-architecture)
+[![License](https://img.shields.io/badge/Repo-Private-informational)](#)
 
-This project is intentionally kept Spark-only. The supported backend surface is Firebase Auth, Cloud Firestore, Hosting, and client-side App Check. Do not add Cloud Functions or any Firebase feature that requires Blaze.
+Production Flutter operations app for AC installation teams in Saudi Arabia. The system supports technicians in the field and admins in the office with invoice-based job capture, shared installs, IN/OUT tracking, approvals, analytics, branded exports, historical imports, and controlled destructive maintenance flows.
 
-This README is the current master overview of the codebase: what the product does, how the repo is structured, how the backend behaves, how to build it, and what engineering constraints matter when changing it.
+> [!IMPORTANT]
+> This repository is intentionally Spark-only.
+> Supported backend surface: Firebase Auth, Cloud Firestore, Hosting, and client-side App Check.
+> Do not add Cloud Functions or any Firebase feature that requires Blaze.
 
-## Product Overview
+## 📚 Table of Contents
 
-AC Techs is built around two roles:
+- [Overview](#-overview)
+- [Stack](#-stack)
+- [Platform Constraints](#-platform-constraints)
+- [Core Workflows](#-core-workflows)
+- [Architecture](#-architecture)
+- [Firestore Model](#-firestore-model)
+- [Security and Rules](#-security-and-rules)
+- [Versioning Policy](#-versioning-policy)
+- [Local Cache and Uninstall Behavior](#-local-cache-and-uninstall-behavior)
+- [Database Flush Scope](#-database-flush-scope)
+- [Build and Release](#-build--release)
+- [Developer Commands](#-developer-commands)
+- [Testing](#-testing)
+- [Operational Notes](#-operational-notes)
 
-- Technicians submit daily operational data: installation jobs, AC-install unit records, earnings, and expenses.
-- Admins review submissions, manage users and companies, enforce approval policy, import historical records, export reports, and maintain deployment settings.
+## ✨ Overview
 
-The app targets Android first, also supports Flutter web, and uses Firebase Auth, Cloud Firestore, and App Check.
+AC Techs is built around two primary roles:
 
-## Core Workflows
+| Role | Capabilities |
+| --- | --- |
+| Technician | Submit jobs, shared installs, AC installation records, earnings, expenses, and export personal history |
+| Admin | Approve or reject records, manage users and companies, import historical data, export analytics, and run controlled maintenance operations |
 
-### Technician workflow
+The product targets Android first and also ships a Flutter web build.
 
-Technicians can:
+## 🧰 Stack
 
-- submit invoice-based AC jobs
-- attach multiple AC unit types to one invoice
-- record bracket and delivery charges
-- submit shared installs with per-tech contribution shares
-- track daily IN/OUT activity through earnings and expenses
-- view job history and monthly summaries
-- export their history as reports
-- switch app language and theme preferences
+| Area | Technology |
+| --- | --- |
+| Framework | Flutter 3.x |
+| Language | Dart 3 |
+| Backend | Firebase Auth + Cloud Firestore + Hosting |
+| App Integrity | Firebase App Check |
+| State | Riverpod 3 |
+| Navigation | GoRouter |
+| Serialization | Freezed + json_serializable |
+| Localization | `gen-l10n` with English, Urdu, Arabic |
+| Reports | PDF + Excel |
 
-### Admin workflow
+## 🚧 Platform Constraints
 
-Admins can:
+The following constraints are intentional and must remain true:
 
-- approve or reject jobs, expenses, earnings, and AC installations
-- bulk-approve pending jobs
-- inspect shared-install approval context
-- view analytics and technician productivity summaries
-- manage technicians, activation state, and password resets
-- manage companies, invoice prefixes, and logos
-- control approval requirements through Firestore-backed settings
-- enforce minimum supported app build numbers
-- import historical Excel workbooks with technician mapping
-- export Excel and PDF reports
-- run destructive database flush operations with explicit confirmation
+- Spark-tier safe only
+- No Cloud Functions dependency
+- Repository-mediated Firestore writes for sensitive workflows
+- No raw Firebase error text exposed to users
+- Approval logic must match UI, repository logic, and Firestore rules
 
-## Main Feature Areas
+## 🔄 Core Workflows
 
-### Jobs
+### Technician
 
-The jobs domain is centered on invoice-based AC installation records.
+- Submit invoice-based AC jobs
+- Attach multiple unit types to one invoice
+- Record bracket and delivery charges
+- Submit shared installs with per-tech contribution shares
+- Track daily earnings and expenses
+- View history and monthly summaries
+- Export reports
+- Switch theme and language preferences
 
-Key capabilities:
+### Admin
 
-- invoice normalization through `InvoiceUtils`
-- multi-unit job capture across split, window, freestanding, cassette, and uninstall categories
-- approval statuses: `pending`, `approved`, `rejected`
-- approver and review timestamps
-- approval history subcollections for auditability
-- period and technician filtering for reports and analytics
+- Approve or reject jobs, earnings, expenses, and AC installs
+- Bulk review pending work
+- Review invoice conflicts and shared-install context
+- Manage users and activation state
+- Manage companies, invoice prefixes, and logos
+- Import historical workbooks
+- Export Excel and PDF reports
+- Run guarded database flush operations
 
-Primary files:
-
-- `lib/core/models/job_model.dart`
-- `lib/features/jobs/data/job_repository.dart`
-- `lib/features/jobs/providers/job_providers.dart`
-
-### Shared installs
-
-Shared installs are the most sensitive workflow in the repo.
-
-Current design:
-
-- the mobile client writes shared jobs through Firestore transactions only
-- the repository validates invoice totals, per-type capacity, bracket counts, and delivery-share rules before writing
-- aggregate capacity is tracked in `shared_install_aggregates`
-- mismatched totals across technicians are rejected
-- rejected shared jobs release their reserved capacity back to the group
-- re-approving a previously rejected shared job revalidates and re-reserves capacity
-
-Relevant files:
-
-- `lib/features/jobs/data/job_repository.dart`
-- `firestore.rules`
-- `firestore.indexes.json`
-
-### AC installations
-
-AC installations are tracked separately from invoice jobs for approval-safe unit accounting.
-
-Current behavior:
-
-- technicians submit total invoice units plus their personal share per type
-- admins review and approve or reject records
-- approval history is stored under `ac_installs/{id}/history`
-- technicians cannot delete AC-install records directly
-
-Relevant files:
-
-- `lib/core/models/ac_install_model.dart`
-- `lib/features/expenses/data/ac_install_repository.dart`
-- `lib/features/expenses/presentation/ac_installations_screen.dart`
-- `lib/features/admin/presentation/approvals_screen.dart`
-
-### Earnings and expenses
-
-The IN/OUT system tracks both business and home-related flows.
-
-Capabilities:
-
-- separate earning and expense records
-- approval support controlled by `inOutApprovalRequired`
-- daily, monthly, and technician-scoped filtering
-- export-ready reporting for both admin and technician use
-
-Relevant files:
-
-- `lib/core/models/earning_model.dart`
-- `lib/core/models/expense_model.dart`
-- `lib/features/expenses/data/earning_repository.dart`
-- `lib/features/expenses/data/expense_repository.dart`
-- `lib/features/expenses/presentation/daily_in_out_screen.dart`
-
-### Admin analytics and reporting
-
-Admins have access to summary screens, charts, and exports.
-
-Included features:
-
-- job status summaries
-- technician workload summaries
-- shared-install invoice-aware totals
-- uninstall totals
-- PDF exports with branding
-- Excel exports for jobs, earnings, expenses, and company invoice activity
-
-Relevant files:
-
-- `lib/core/models/admin_job_summary.dart`
-- `lib/features/admin/presentation/analytics_screen.dart`
-- `lib/core/services/pdf_generator.dart`
-- `lib/core/services/excel_export.dart`
-
-### Historical import
-
-Historical workbook import is an admin-only maintenance flow.
-
-Capabilities:
-
-- multi-sheet Excel import
-- technician mapping against active users
-- sheet-aware period naming and metadata notes
-- row-level validation and skipped-row reporting
-- cleanup-safe file loading for mobile and web
-
-Relevant files:
-
-- `lib/features/admin/presentation/historical_import_screen.dart`
-- `lib/features/admin/data/historical_jobs_import_service.dart`
-- `lib/core/utils/picked_file_bytes.dart`
-
-### Team and company management
-
-Admins manage both user lifecycle and company metadata.
-
-Users:
-
-- create technician/admin accounts
-- soft deactivate via `isActive`
-- bulk activate/deactivate
-- send reset emails
-
-Companies:
-
-- create and edit companies
-- store invoice prefixes
-- store logos for branded exports
-
-Relevant files:
-
-- `lib/features/admin/data/user_repository.dart`
-- `lib/features/admin/presentation/team_screen.dart`
-- `lib/features/admin/presentation/companies_screen.dart`
-
-## Current Architecture
-
-The app follows a feature-first layout.
+## 🏗️ Architecture
 
 ```text
 lib/
@@ -211,30 +114,231 @@ docs/
 scripts/
 ```
 
-Repo rules that matter:
+### Architecture Rules
 
 - Firestore access belongs in repositories.
-- Widgets should not expose raw Firebase messages.
-- Approval logic must stay aligned across UI, repository code, and rules.
-- Shared installs are Spark-safe and repository-mediated.
-- User-visible strings should come from localization or typed exceptions.
+- Shared-install writes must stay transaction-based.
+- Widgets must not expose raw backend exceptions.
+- User-visible strings must come from localization or typed exceptions.
+- Rules, repositories, and UI behavior must stay aligned.
 
-## Firebase Data Model
+<details>
+<summary><strong>Feature highlights</strong></summary>
 
-Main collections:
+#### Jobs
 
-- `users`
+- Invoice normalization via `InvoiceUtils`
+- Split, window, freestanding, cassette, and uninstall support
+- `pending`, `approved`, and `rejected` workflow states
+- Approval history subcollections
+
+#### Shared installs
+
+- Capacity tracked in `shared_install_aggregates`
+- Invoice ownership tracked in `invoice_claims`
+- Cross-company duplicate protection
+- Rejection releases reservations
+
+#### Historical import
+
+- Multi-sheet Excel parsing
+- Technician mapping
+- Sheet-aware notes and period metadata
+- Admin-safe import rules
+- Company-prefix stripping during import normalization
+
+#### Analytics and exports
+
+- Job summaries and productivity metrics
+- Shared-install invoice-aware totals
+- Branded PDF and Excel exports
+
+</details>
+
+## 🗃️ Firestore Model
+
+Primary collections:
+
+| Collection | Purpose |
+| --- | --- |
+| `users` | Auth-linked user profiles |
+| `jobs` | Invoice-based job records |
+| `jobs/{jobId}/history` | Approval audit trail |
+| `expenses` | OUT records |
+| `expenses/{expenseId}/history` | Expense audit trail |
+| `earnings` | IN records |
+| `earnings/{earningId}/history` | Earning audit trail |
+| `ac_installs` | AC install unit records |
+| `ac_installs/{installId}/history` | Install audit trail |
+| `companies` | Customer companies and invoice prefixes |
+| `shared_install_aggregates` | Shared invoice capacity ledger |
+| `invoice_claims` | Invoice uniqueness ownership registry |
+| `app_settings/approval_config` | Approval and period-lock settings |
+| `app_settings/company_branding` | App-level company branding |
+
+## 🔐 Security and Rules
+
+### Current guarantees
+
+- Technicians can create only their own jobs and IN/OUT records.
+- Technicians cannot self-approve records.
+- Admins can approve, reject, and import historical records.
+- Shared installs enforce invoice ownership and capacity limits.
+- Historical admin imports are allowed through rules even when imported invoice claims carry technician ownership metadata.
+- Period locks prevent create, edit, approve, reject, and delete operations before the configured date.
+
+### Rules coverage checked in this repo
+
+- Job create and update permissions
+- Expense and earning approval constraints
+- AC install approval constraints
+- Shared-install aggregate update limits
+- Invoice-claim duplicate protection
+- Admin historical import path
+
+## 🔢 Versioning Policy
+
+Versioning is centralized in `scripts/versioning.ps1` and shared by:
+
+- `scripts/bump_version.ps1`
+- `.git/hooks/pre-commit.ps1`
+
+### Policy
+
+- Every release action increments the build number automatically.
+- Builds cycle from `1` to `10` within the same patch version.
+- After build `10`, the next increment advances the patch and resets build to `1`.
+
+### Examples
+
+| Current | Next |
+| --- | --- |
+| `1.0.1+1` | `1.0.1+2` |
+| `1.0.1+9` | `1.0.1+10` |
+| `1.0.1+10` | `1.0.2+1` |
+
+## 🧹 Local Cache and Uninstall Behavior
+
+### What happens on sign-out
+
+- Riverpod session-scoped providers are invalidated.
+- Firebase Auth signs out.
+- Saved login reminder keys are removed.
+- A Firestore persistence wipe is scheduled for the next cold launch.
+
+### What happens on uninstall
+
+- Android removes the app sandbox, including app-private local storage and cached Firestore data.
+- The app cannot execute code during uninstall.
+- Uninstall does **not** delete server-side Firestore data.
+
+### If you want zero traces everywhere
+
+- Uninstall clears device-local app data.
+- Database Flush clears server-side operational data.
+
+## 💥 Database Flush Scope
+
+Full database flush currently removes:
+
 - `jobs`
-- `jobs/{jobId}/history`
 - `expenses`
-- `expenses/{expenseId}/history`
 - `earnings`
-- `earnings/{earningId}/history`
 - `ac_installs`
-- `ac_installs/{installId}/history`
-- `companies`
 - `shared_install_aggregates`
-- `app_settings/approval_config`
+- `invoice_claims`
+- `companies`
+
+Optional behavior:
+
+- Non-admin user documents can also be deleted when explicitly selected.
+
+> [!WARNING]
+> Flush is destructive and intentionally guarded by countdown and password confirmation.
+
+## 🚀 Build & Release
+
+### Recommended release command
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\bump_version.ps1 -Build -Web -Install
+```
+
+### Commit and push in the same flow
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\bump_version.ps1 -Build -Web -Install -Commit -Push
+```
+
+### What the script does
+
+- Bumps version using the shared policy
+- Builds release APK when `-Build` is used
+- Builds release web when `-Web` is used
+- Installs the built APK when `-Install` is used
+- Commits with the bumped version when `-Commit` is used
+- Pushes the commit when `-Push` is used
+
+## 🛠️ Developer Commands
+
+| Command | Purpose |
+| --- | --- |
+| `flutter pub get` | Install Dart and Flutter dependencies |
+| `flutter analyze` | Static analysis |
+| `flutter test` | Flutter tests |
+| `dart run build_runner build --delete-conflicting-outputs` | Code generation |
+| `flutter gen-l10n` | Localization generation |
+| `flutter build apk --release` | Release APK |
+| `flutter build web --release` | Release web bundle |
+| `powershell -ExecutionPolicy Bypass -File .\scripts\install-hooks.ps1` | Install git hooks |
+| `cd scripts; npm run test:firestore-rules` | Emulator-backed rules tests |
+
+## ✅ Testing
+
+Recommended validation before shipping:
+
+```powershell
+flutter analyze
+flutter test
+Set-Location scripts
+npm run test:firestore-rules
+```
+
+Focused checks commonly used in this repo:
+
+- Router regression tests
+- Shared-install repository tests
+- Firestore rule regression tests
+- PDF export sample validation
+
+## 🧭 Operational Notes
+
+### Invoice prefix handling
+
+- New job submissions store invoice numbers without forcing `INV-`.
+- Historical import now strips the selected company prefix from imported invoice numbers when present.
+- Existing already-imported prefixed invoices remain in Firestore until they are migrated or deleted.
+- Full database flush removes those stored historical invoice rows and their invoice claims.
+
+### Approval behavior
+
+- Jobs, earnings, expenses, and AC installs respect approval settings in `approval_config`.
+- Period lock enforcement applies across create, update, approve, reject, and delete flows.
+- Approved records are intentionally harder to mutate or delete.
+
+### Spark-only discipline
+
+- Prefer repository reads that avoid unnecessary always-on listeners.
+- Keep batch operations chunked.
+- Avoid backend architecture that assumes privileged server transforms.
+
+---
+
+If you change approval logic, invoice ownership, import behavior, or destructive maintenance flows, review all three layers together:
+
+1. UI behavior
+2. Repository enforcement
+3. Firestore rules
 - `app_settings/company_branding`
 
 Important implementation notes:

@@ -43,9 +43,15 @@ class EarningRepository {
         .toList(growable: false);
   }
 
-  Future<void> addEarning(EarningModel earning) async {
+  Future<void> addEarning(
+    EarningModel earning, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
-      await _periodLockGuard.ensureUnlockedDate(earning.date);
+      await _periodLockGuard.ensureUnlockedDate(
+        earning.date,
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ref.add(earning.toFirestore());
     } on PeriodException {
       rethrow;
@@ -58,9 +64,12 @@ class EarningRepository {
     }
   }
 
-  Future<void> deleteEarning(String id) async {
+  Future<void> deleteEarning(String id, {DateTime? lockedBeforeDate}) async {
     try {
-      await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
+      await _periodLockGuard.ensureUnlockedDocument(
+        _ref.doc(id),
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ensureMutableRecord(id);
       await _ref.doc(id).delete();
     } on EarningException {
@@ -76,9 +85,15 @@ class EarningRepository {
     }
   }
 
-  Future<void> updateEarning(EarningModel earning) async {
+  Future<void> updateEarning(
+    EarningModel earning, {
+    DateTime? lockedBeforeDate,
+  }) async {
     try {
-      await _periodLockGuard.ensureUnlockedDate(earning.date);
+      await _periodLockGuard.ensureUnlockedDate(
+        earning.date,
+        cachedLockedBefore: lockedBeforeDate,
+      );
       await _ensureMutableRecord(earning.id);
       await _ref.doc(earning.id).update(earning.toFirestore());
     } on EarningException {
@@ -185,6 +200,39 @@ class EarningRepository {
           (snap) =>
               snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
         );
+  }
+
+  Future<List<EarningModel>> fetchEarnings({
+    DateTime? start,
+    DateTime? end,
+    String? techId,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _ref;
+      if (techId != null && techId.trim().isNotEmpty) {
+        query = query.where('techId', isEqualTo: techId.trim());
+      }
+      if (start != null) {
+        query = query.where(
+          'date',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        );
+      }
+      if (end != null) {
+        query = query.where(
+          'date',
+          isLessThanOrEqualTo: Timestamp.fromDate(end),
+        );
+      }
+      final snap = await query.orderBy('date', descending: true).get();
+      return snap.docs.map((d) => EarningModel.fromFirestore(d)).toList();
+    } on FirebaseException catch (e) {
+      debugPrint('fetchEarnings error: ${e.code} — ${e.message}');
+      throw EarningException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchEarnings unknown: $e');
+      throw EarningException.saveFailed();
+    }
   }
 
   /// Real-time stream of a tech's earnings, newest first.
