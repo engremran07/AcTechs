@@ -922,9 +922,11 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                     '/tech/job/${job.id}',
                                     extra: job,
                                   ),
-                                  onEdit: job.canTechnicianEdit(
+                                  onEdit:
+                                      job.canTechnicianEdit(
                                         approvalRequired:
-                                            approvalConfig?.jobApprovalRequired ??
+                                            approvalConfig
+                                                ?.jobApprovalRequired ??
                                             true,
                                         sharedApprovalRequired:
                                             approvalConfig
@@ -932,9 +934,9 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                             true,
                                       )
                                       ? () => context.push(
-                                            '/tech/submit',
-                                            extra: job,
-                                          )
+                                          '/tech/submit',
+                                          extra: job,
+                                        )
                                       : null,
                                 ),
                               )

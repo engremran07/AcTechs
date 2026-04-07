@@ -89,7 +89,8 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _invoiceController.text = job.invoiceNumber;
     _clientNameController.text = job.clientName;
     _clientContactController.text = job.clientContact;
-    _deliveryAmountController.text = job.charges?.deliveryAmount.toString() ?? '';
+    _deliveryAmountController.text =
+        job.charges?.deliveryAmount.toString() ?? '';
     _deliveryNoteController.text = job.charges?.deliveryNote ?? '';
     _descriptionController.text = job.expenseNote;
 
@@ -102,7 +103,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _windowQty = job.unitsForType(AppConstants.unitTypeWindowAc);
     _dolabQty = job.unitsForType(AppConstants.unitTypeFreestandingAc);
     _uninstallSplitQty = job.unitsForType(AppConstants.unitTypeUninstallSplit);
-    _uninstallWindowQty = job.unitsForType(AppConstants.unitTypeUninstallWindow);
+    _uninstallWindowQty = job.unitsForType(
+      AppConstants.unitTypeUninstallWindow,
+    );
     _uninstallStandingQty = job.unitsForType(
       AppConstants.unitTypeUninstallFreestanding,
     );
@@ -113,7 +116,8 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _sharedFreestandingUnits = job.sharedInvoiceFreestandingUnits;
     _sharedUninstallSplitUnits = job.sharedInvoiceUninstallSplitUnits;
     _sharedUninstallWindowUnits = job.sharedInvoiceUninstallWindowUnits;
-    _sharedUninstallFreestandingUnits = job.sharedInvoiceUninstallFreestandingUnits;
+    _sharedUninstallFreestandingUnits =
+        job.sharedInvoiceUninstallFreestandingUnits;
     _sharedBracketQty = job.sharedInvoiceBracketCount;
     _sharedTeamSize = job.sharedDeliveryTeamCount;
     _techSplitShare = job.techSplitShare;
@@ -936,8 +940,8 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               : (_isEditing
                                     ? l.save
                                     : (requiresApproval
-                                    ? l.submitForApproval
-                                    : l.submit)),
+                                          ? l.submitForApproval
+                                          : l.submit)),
                         ),
                       ),
                     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),

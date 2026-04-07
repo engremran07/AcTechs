@@ -292,12 +292,13 @@ class JobException extends AppException {
     'تم إنهاء دفعة سداد الفاتورة هذه بالفعل.',
   );
 
-  factory JobException.settlementCorrectionCycleExceeded() => const JobException(
-    'job_settlement_correction_cycle_exceeded',
-    'Only one payment correction cycle is allowed for an invoice batch.',
-    'انوائس بیچ کے لیے صرف ایک ادائیگی اصلاحی چکر کی اجازت ہے۔',
-    'يسمح بدورة تصحيح دفع واحدة فقط لكل دفعة فواتير.',
-  );
+  factory JobException.settlementCorrectionCycleExceeded() =>
+      const JobException(
+        'job_settlement_correction_cycle_exceeded',
+        'Only one payment correction cycle is allowed for an invoice batch.',
+        'انوائس بیچ کے لیے صرف ایک ادائیگی اصلاحی چکر کی اجازت ہے۔',
+        'يسمح بدورة تصحيح دفع واحدة فقط لكل دفعة فواتير.',
+      );
 }
 
 class AdminException extends AppException {

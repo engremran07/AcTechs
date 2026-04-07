@@ -86,8 +86,7 @@ abstract class JobModel with _$JobModel {
     @Default(0.0) double expenses,
     @Default('') String expenseNote,
     @Default('') String adminNote,
-    @Default(JobSettlementStatus.unpaid)
-    JobSettlementStatus settlementStatus,
+    @Default(JobSettlementStatus.unpaid) JobSettlementStatus settlementStatus,
     @Default('') String settlementBatchId,
     @Default(0) int settlementRound,
     @Default('') String settlementAdminNote,
@@ -161,15 +160,15 @@ extension JobModelX on JobModel {
 
   bool get isUnpaid => settlementStatus == JobSettlementStatus.unpaid;
   bool get isSettlementAwaitingTechnician =>
-    settlementStatus == JobSettlementStatus.awaitingTechnician;
+      settlementStatus == JobSettlementStatus.awaitingTechnician;
   bool get isSettlementCorrectionRequired =>
-    settlementStatus == JobSettlementStatus.correctionRequired;
+      settlementStatus == JobSettlementStatus.correctionRequired;
   bool get isSettlementConfirmed =>
-    settlementStatus == JobSettlementStatus.confirmed;
+      settlementStatus == JobSettlementStatus.confirmed;
   bool get isSettlementDisputedFinal =>
-    settlementStatus == JobSettlementStatus.disputedFinal;
+      settlementStatus == JobSettlementStatus.disputedFinal;
   bool get isSettlementLocked =>
-    isSettlementConfirmed || isSettlementDisputedFinal;
+      isSettlementConfirmed || isSettlementDisputedFinal;
 
   bool get hasInvoiceConflict => importMeta['invoiceConflict'] == true;
 
@@ -185,7 +184,9 @@ extension JobModelX on JobModel {
 
   int get effectiveBracketCount {
     if (isSharedInstall && sharedInvoiceBracketCount > 0) {
-      return techBracketShare > 0 ? techBracketShare : sharedInvoiceBracketCount;
+      return techBracketShare > 0
+          ? techBracketShare
+          : sharedInvoiceBracketCount;
     }
 
     final currentCharges = charges;

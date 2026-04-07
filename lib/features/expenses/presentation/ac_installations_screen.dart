@@ -142,9 +142,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
         ...List.generate(
           jobs.length,
           (index) => Padding(
-            padding: EdgeInsets.only(
-              bottom: index == jobs.length - 1 ? 0 : 12,
-            ),
+            padding: EdgeInsets.only(bottom: index == jobs.length - 1 ? 0 : 12),
             child: _buildJobCard(theme, jobs[index], l),
           ),
         ),
@@ -152,11 +150,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildJobCard(
-    ThemeData theme,
-    JobModel job,
-    AppLocalizations l,
-  ) {
+  Widget _buildJobCard(ThemeData theme, JobModel job, AppLocalizations l) {
     final unitSummary = job.acUnits
         .where((unit) => unit.quantity > 0)
         .map((unit) => '${unit.type}: ${unit.quantity}')
@@ -180,16 +174,10 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            job.invoiceNumber,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(job.invoiceNumber, style: theme.textTheme.titleMedium),
           if (unitSummary.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(
-              unitSummary,
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text(unitSummary, style: theme.textTheme.bodyMedium),
           ],
           if (job.isSharedInstall) ...[
             const SizedBox(height: 8),
@@ -258,10 +246,7 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
 }
 
 class _InstallSummaryChip extends StatelessWidget {
-  const _InstallSummaryChip({
-    required this.label,
-    required this.value,
-  });
+  const _InstallSummaryChip({required this.label, required this.value});
 
   final String label;
   final int value;
@@ -283,10 +268,7 @@ class _InstallSummaryChip extends StatelessWidget {
           children: [
             TextSpan(
               text: '$value ',
-              style: const TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(color: color, fontWeight: FontWeight.w700),
             ),
             TextSpan(text: label),
           ],

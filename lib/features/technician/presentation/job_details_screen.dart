@@ -97,10 +97,8 @@ class JobDetailsScreen extends ConsumerWidget {
                         Align(
                           alignment: Alignment.centerRight,
                           child: OutlinedButton.icon(
-                            onPressed: () => context.push(
-                              '/tech/submit',
-                              extra: job,
-                            ),
+                            onPressed: () =>
+                                context.push('/tech/submit', extra: job),
                             icon: const Icon(Icons.edit_outlined),
                             label: Text(l.save),
                           ),

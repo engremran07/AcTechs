@@ -248,7 +248,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: ArcticTheme.arcticSuccess.withValues(alpha: 0.15),
+                              color: ArcticTheme.arcticSuccess.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(

@@ -150,7 +150,9 @@ final technicianSettlementInboxProvider =
     StreamProvider.autoDispose<List<JobModel>>((ref) {
       final user = ref.watch(currentUserProvider).value;
       if (user == null) return Stream.value([]);
-      return ref.watch(jobRepositoryProvider).technicianSettlementInbox(user.uid);
+      return ref
+          .watch(jobRepositoryProvider)
+          .technicianSettlementInbox(user.uid);
     });
 
 final settlementBatchJobsProvider = StreamProvider.autoDispose

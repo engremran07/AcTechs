@@ -30,7 +30,8 @@ class SettlementInboxScreen extends ConsumerWidget {
             child: Text(l.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
             child: Text(l.save),
           ),
         ],
@@ -61,7 +62,9 @@ class SettlementInboxScreen extends ConsumerWidget {
 
             final byBatch = <String, List<JobModel>>{};
             for (final job in jobs) {
-              byBatch.putIfAbsent(job.settlementBatchId, () => <JobModel>[]).add(job);
+              byBatch
+                  .putIfAbsent(job.settlementBatchId, () => <JobModel>[])
+                  .add(job);
             }
             final entries = byBatch.entries.toList(growable: false);
 
@@ -85,8 +88,8 @@ class SettlementInboxScreen extends ConsumerWidget {
                       Text(
                         '${items.length} ${l.jobs} • ${AppFormatters.date(first.settlementRequestedAt ?? first.date)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: ArcticTheme.arcticTextSecondary,
-                            ),
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
                       ),
                       if (first.settlementAdminNote.trim().isNotEmpty) ...[
                         const SizedBox(height: 8),
@@ -112,9 +115,13 @@ class SettlementInboxScreen extends ConsumerWidget {
                               onPressed: () async {
                                 final comment = await _promptComment(context);
                                 if (comment == null || comment.isEmpty) return;
-                                final user = ref.read(currentUserProvider).value;
+                                final user = ref
+                                    .read(currentUserProvider)
+                                    .value;
                                 if (user == null) return;
-                                await ref.read(jobRepositoryProvider).rejectSettlementBatch(
+                                await ref
+                                    .read(jobRepositoryProvider)
+                                    .rejectSettlementBatch(
                                       batchId,
                                       user.uid,
                                       comment,
@@ -134,12 +141,13 @@ class SettlementInboxScreen extends ConsumerWidget {
                           Expanded(
                             child: FilledButton.icon(
                               onPressed: () async {
-                                final user = ref.read(currentUserProvider).value;
+                                final user = ref
+                                    .read(currentUserProvider)
+                                    .value;
                                 if (user == null) return;
-                                await ref.read(jobRepositoryProvider).confirmSettlementBatch(
-                                      batchId,
-                                      user.uid,
-                                    );
+                                await ref
+                                    .read(jobRepositoryProvider)
+                                    .confirmSettlementBatch(batchId, user.uid);
                                 if (context.mounted) {
                                   AppFeedback.success(
                                     context,

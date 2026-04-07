@@ -25,28 +25,33 @@ class _InvoiceSettlementsScreenState
   bool _isProcessing = false;
 
   List<JobModel> _filterJobs(List<JobModel> jobs) {
-    return jobs.where((job) {
-      final matchesSearch = _search.trim().isEmpty
-          ? true
-          : [job.invoiceNumber, job.clientName, job.techName, job.companyName]
-                .join(' ')
-                .toLowerCase()
-                .contains(_search.toLowerCase());
-      final matchesDate = _dateRange == null ||
-          (job.date != null &&
-              !job.date!.isBefore(_dateRange!.start) &&
-              !job.date!.isAfter(
-                DateTime(
-                  _dateRange!.end.year,
-                  _dateRange!.end.month,
-                  _dateRange!.end.day,
-                  23,
-                  59,
-                  59,
-                ),
-              ));
-      return matchesSearch && matchesDate;
-    }).toList(growable: false);
+    return jobs
+        .where((job) {
+          final matchesSearch = _search.trim().isEmpty
+              ? true
+              : [
+                  job.invoiceNumber,
+                  job.clientName,
+                  job.techName,
+                  job.companyName,
+                ].join(' ').toLowerCase().contains(_search.toLowerCase());
+          final matchesDate =
+              _dateRange == null ||
+              (job.date != null &&
+                  !job.date!.isBefore(_dateRange!.start) &&
+                  !job.date!.isAfter(
+                    DateTime(
+                      _dateRange!.end.year,
+                      _dateRange!.end.month,
+                      _dateRange!.end.day,
+                      23,
+                      59,
+                      59,
+                    ),
+                  ));
+          return matchesSearch && matchesDate;
+        })
+        .toList(growable: false);
   }
 
   Future<String?> _promptNote(
@@ -70,7 +75,8 @@ class _InvoiceSettlementsScreenState
             child: Text(AppLocalizations.of(context)!.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
             child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
@@ -93,7 +99,11 @@ class _InvoiceSettlementsScreenState
     if (picked == null) return;
     setState(() {
       _dateRange = DateTimeRange(
-        start: DateTime(picked.start.year, picked.start.month, picked.start.day),
+        start: DateTime(
+          picked.start.year,
+          picked.start.month,
+          picked.start.day,
+        ),
         end: DateTime(picked.end.year, picked.end.month, picked.end.day),
       );
     });
@@ -120,7 +130,9 @@ class _InvoiceSettlementsScreenState
 
     setState(() => _isProcessing = true);
     try {
-      await ref.read(jobRepositoryProvider).markJobsAsPaid(
+      await ref
+          .read(jobRepositoryProvider)
+          .markJobsAsPaid(
             selectedJobs.map((job) => job.id).toList(growable: false),
             admin.uid,
             adminNote: note ?? '',
@@ -164,7 +176,9 @@ class _InvoiceSettlementsScreenState
 
     setState(() => _isProcessing = true);
     try {
-      await ref.read(jobRepositoryProvider).resubmitSettlementBatch(
+      await ref
+          .read(jobRepositoryProvider)
+          .resubmitSettlementBatch(
             batchIds.first,
             admin.uid,
             adminNote: note ?? '',
@@ -212,9 +226,11 @@ class _InvoiceSettlementsScreenState
             final selectedJobs = filtered
                 .where((job) => _selected.contains(job.id))
                 .toList(growable: false);
-            final canMarkPaid = selectedJobs.isNotEmpty &&
+            final canMarkPaid =
+                selectedJobs.isNotEmpty &&
                 selectedJobs.every((job) => job.isUnpaid);
-            final canResubmit = selectedJobs.isNotEmpty &&
+            final canResubmit =
+                selectedJobs.isNotEmpty &&
                 selectedJobs.every((job) => job.isSettlementCorrectionRequired);
 
             return Column(
@@ -311,8 +327,8 @@ class _InvoiceSettlementsScreenState
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: ArcticTheme
-                                                .arcticTextSecondary,
+                                            color:
+                                                ArcticTheme.arcticTextSecondary,
                                           ),
                                     ),
                                     if (job.settlementTechnicianComment

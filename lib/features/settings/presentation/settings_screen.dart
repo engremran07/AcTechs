@@ -1385,10 +1385,7 @@ class _LanguageTile extends StatelessWidget {
 }
 
 class _AboutBadge extends StatelessWidget {
-  const _AboutBadge({
-    required this.icon,
-    required this.text,
-  });
+  const _AboutBadge({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
@@ -1411,9 +1408,9 @@ class _AboutBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
