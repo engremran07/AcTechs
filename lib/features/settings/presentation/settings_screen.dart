@@ -372,54 +372,125 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 8),
           ArcticCard(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoTile(
-                  icon: Icons.info_outline_rounded,
-                  label: l.version,
-                  value: appVersionAsync.maybeWhen(
-                    data: (value) => value,
-                    orElse: () => '...',
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        ArcticTheme.arcticBlue.withValues(alpha: 0.18),
+                        ArcticTheme.arcticBlueDark.withValues(alpha: 0.08),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: ArcticTheme.arcticBlue.withValues(alpha: 0.2),
+                    ),
                   ),
-                ),
-                const Divider(height: 1),
-                _InfoTile(
-                  icon: Icons.numbers_rounded,
-                  label: l.currentBuild,
-                  value: appBuildAsync.maybeWhen(
-                    data: (value) => '$value',
-                    orElse: () => '...',
-                  ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l.adminAboutBuiltBy,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      appBrandingAsync.maybeWhen(
+                        data: (branding) {
+                          final logoBase64 = branding.logoBase64.trim();
+                          return Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: ArcticTheme.arcticBlue.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: logoBase64.isNotEmpty
+                                ? _BrandLogoPreview(logoBase64: logoBase64)
+                                : const Icon(
+                                    Icons.ac_unit_rounded,
+                                    color: ArcticTheme.arcticBlue,
+                                  ),
+                          );
+                        },
+                        orElse: () => Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticBlue.withValues(
+                              alpha: 0.12,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.ac_unit_rounded,
+                            color: ArcticTheme.arcticBlue,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      _DevelopedBySignature(label: l.developedByMuhammadImran),
-                      const SizedBox(height: 12),
-                      _SupportContactRow(
-                        countryLabel: l.saudiArabia,
-                        phoneNumber: _supportPhoneSaudi,
-                        onCallTap: () => _launchCall(_supportPhoneSaudi),
-                        onWhatsAppTap: () =>
-                            WhatsAppLauncher.openChat(_supportPhoneSaudi),
-                      ),
-                      const SizedBox(height: 10),
-                      _SupportContactRow(
-                        countryLabel: l.pakistan,
-                        phoneNumber: _supportPhonePakistan,
-                        onCallTap: () => _launchCall(_supportPhonePakistan),
-                        onWhatsAppTap: () =>
-                            WhatsAppLauncher.openChat(_supportPhonePakistan),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              appBrandingAsync.maybeWhen(
+                                data: (branding) =>
+                                    _displayAppBrandingName(l, branding),
+                                orElse: () => 'AC Techs',
+                              ),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l.adminAboutBuiltBy,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _AboutBadge(
+                                  icon: Icons.info_outline_rounded,
+                                  text:
+                                      '${l.version}: ${appVersionAsync.maybeWhen(data: (value) => value, orElse: () => '...')}',
+                                ),
+                                _AboutBadge(
+                                  icon: Icons.numbers_rounded,
+                                  text:
+                                      '${l.currentBuild}: ${appBuildAsync.maybeWhen(data: (value) => '$value', orElse: () => '...')}',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 16),
+                _DevelopedBySignature(label: l.developedByMuhammadImran),
+                const SizedBox(height: 16),
+                _SupportContactRow(
+                  countryLabel: l.saudiArabia,
+                  phoneNumber: _supportPhoneSaudi,
+                  onCallTap: () => _launchCall(_supportPhoneSaudi),
+                  onWhatsAppTap: () =>
+                      WhatsAppLauncher.openChat(_supportPhoneSaudi),
+                ),
+                const SizedBox(height: 10),
+                _SupportContactRow(
+                  countryLabel: l.pakistan,
+                  phoneNumber: _supportPhonePakistan,
+                  onCallTap: () => _launchCall(_supportPhonePakistan),
+                  onWhatsAppTap: () =>
+                      WhatsAppLauncher.openChat(_supportPhonePakistan),
                 ),
               ],
             ),
@@ -1313,24 +1384,39 @@ class _LanguageTile extends StatelessWidget {
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({
+class _AboutBadge extends StatelessWidget {
+  const _AboutBadge({
     required this.icon,
-    required this.label,
-    required this.value,
+    required this.text,
   });
 
   final IconData icon;
-  final String label;
-  final String value;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-      title: Text(label, style: Theme.of(context).textTheme.titleSmall),
-      trailing: Text(value, style: Theme.of(context).textTheme.bodySmall),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: ArcticTheme.arcticBlue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: ArcticTheme.arcticBlue.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: ArcticTheme.arcticBlue),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

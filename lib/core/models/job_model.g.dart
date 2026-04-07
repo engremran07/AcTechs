@@ -56,6 +56,18 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   expenses: (json['expenses'] as num?)?.toDouble() ?? 0.0,
   expenseNote: json['expenseNote'] as String? ?? '',
   adminNote: json['adminNote'] as String? ?? '',
+  settlementStatus:
+      $enumDecodeNullable(
+        _$JobSettlementStatusEnumMap,
+        json['settlementStatus'],
+      ) ??
+      JobSettlementStatus.unpaid,
+  settlementBatchId: json['settlementBatchId'] as String? ?? '',
+  settlementRound: (json['settlementRound'] as num?)?.toInt() ?? 0,
+  settlementAdminNote: json['settlementAdminNote'] as String? ?? '',
+  settlementTechnicianComment:
+      json['settlementTechnicianComment'] as String? ?? '',
+  settlementRequestedBy: json['settlementRequestedBy'] as String? ?? '',
   importMeta:
       json['importMeta'] as Map<String, dynamic>? ?? const <String, dynamic>{},
   approvedBy: json['approvedBy'] as String?,
@@ -99,6 +111,9 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   date: _timestampFromJson(json['date']),
   submittedAt: _timestampFromJson(json['submittedAt']),
   reviewedAt: _timestampFromJson(json['reviewedAt']),
+  settlementRequestedAt: _timestampFromJson(json['settlementRequestedAt']),
+  settlementRespondedAt: _timestampFromJson(json['settlementRespondedAt']),
+  settlementCorrectedAt: _timestampFromJson(json['settlementCorrectedAt']),
 );
 
 Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
@@ -115,6 +130,12 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'expenses': instance.expenses,
   'expenseNote': instance.expenseNote,
   'adminNote': instance.adminNote,
+  'settlementStatus': _$JobSettlementStatusEnumMap[instance.settlementStatus]!,
+  'settlementBatchId': instance.settlementBatchId,
+  'settlementRound': instance.settlementRound,
+  'settlementAdminNote': instance.settlementAdminNote,
+  'settlementTechnicianComment': instance.settlementTechnicianComment,
+  'settlementRequestedBy': instance.settlementRequestedBy,
   'importMeta': instance.importMeta,
   'approvedBy': instance.approvedBy,
   'isSharedInstall': instance.isSharedInstall,
@@ -143,10 +164,21 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'date': _timestampToJson(instance.date),
   'submittedAt': _timestampToJson(instance.submittedAt),
   'reviewedAt': _timestampToJson(instance.reviewedAt),
+  'settlementRequestedAt': _timestampToJson(instance.settlementRequestedAt),
+  'settlementRespondedAt': _timestampToJson(instance.settlementRespondedAt),
+  'settlementCorrectedAt': _timestampToJson(instance.settlementCorrectedAt),
 };
 
 const _$JobStatusEnumMap = {
   JobStatus.pending: 'pending',
   JobStatus.approved: 'approved',
   JobStatus.rejected: 'rejected',
+};
+
+const _$JobSettlementStatusEnumMap = {
+  JobSettlementStatus.unpaid: 'unpaid',
+  JobSettlementStatus.awaitingTechnician: 'awaiting_technician',
+  JobSettlementStatus.correctionRequired: 'correction_required',
+  JobSettlementStatus.confirmed: 'confirmed',
+  JobSettlementStatus.disputedFinal: 'disputed_final',
 };

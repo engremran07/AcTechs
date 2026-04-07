@@ -139,6 +139,28 @@ final approvedSharedInstallsProvider =
       return ref.watch(jobRepositoryProvider).approvedSharedInstalls();
     });
 
+final adminSettlementCandidatesProvider =
+    StreamProvider.autoDispose<List<JobModel>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return Stream.value([]);
+      return ref.watch(jobRepositoryProvider).settlementCandidates();
+    });
+
+final technicianSettlementInboxProvider =
+    StreamProvider.autoDispose<List<JobModel>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null) return Stream.value([]);
+      return ref.watch(jobRepositoryProvider).technicianSettlementInbox(user.uid);
+    });
+
+final settlementBatchJobsProvider = StreamProvider.autoDispose
+    .family<List<JobModel>, String>((ref, batchId) {
+      if (batchId.trim().isEmpty) {
+        return Stream.value(const <JobModel>[]);
+      }
+      return ref.watch(jobRepositoryProvider).settlementBatchJobs(batchId);
+    });
+
 final adminJobSummaryProvider = FutureProvider.autoDispose<AdminJobSummary>((
   ref,
 ) {

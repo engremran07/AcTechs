@@ -1614,4 +1614,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enterValidQuantity => 'Enter a valid quantity.';
+
+  @override
+  String get invoiceSettlements => 'Invoice Settlements';
+
+  @override
+  String get markAsPaid => 'Mark as Paid';
+
+  @override
+  String get paymentInbox => 'Payment Inbox';
+
+  @override
+  String get awaitingTechnicianConfirmation =>
+      'Awaiting technician confirmation';
+
+  @override
+  String get correctionRequired => 'Correction required';
+
+  @override
+  String get paymentConfirmed => 'Payment confirmed';
+
+  @override
+  String get paymentDisputed => 'Payment disputed';
+
+  @override
+  String get confirmPaymentReceived => 'Confirm payment received';
+
+  @override
+  String get rejectPayment => 'Reject payment';
+
+  @override
+  String get resubmitPayment => 'Resubmit payment';
+
+  @override
+  String get settlementAdminNote => 'Admin note for technician';
+
+  @override
+  String get settlementTechnicianComment => 'Add a payment comment';
+
+  @override
+  String get settlementBatch => 'Settlement batch';
+
+  @override
+  String get paymentMarkedForConfirmation =>
+      'Payment marked for technician confirmation.';
+
+  @override
+  String get paymentConfirmedSuccess => 'Payment confirmed successfully.';
+
+  @override
+  String get paymentRejectedForCorrection =>
+      'Payment sent back for one correction round.';
+
+  @override
+  String get paymentResubmitted => 'Payment resubmitted to technician.';
+
+  @override
+  String get selectJobsFirst => 'Select at least one job first.';
+
+  @override
+  String get selectSameTechnicianJobs =>
+      'Select jobs from the same technician only.';
+
+  @override
+  String get selectSingleBatchToResubmit =>
+      'Select jobs from a single settlement batch to resubmit.';
+
+  @override
+  String get filterByDateRange => 'Filter by date range';
+
+  @override
+  String get unpaid => 'Unpaid';
 }

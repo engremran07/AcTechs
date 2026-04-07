@@ -14,6 +14,36 @@ enum JobStatus {
   rejected,
 }
 
+enum JobSettlementStatus {
+  @JsonValue('unpaid')
+  unpaid,
+  @JsonValue('awaiting_technician')
+  awaitingTechnician,
+  @JsonValue('correction_required')
+  correctionRequired,
+  @JsonValue('confirmed')
+  confirmed,
+  @JsonValue('disputed_final')
+  disputedFinal,
+}
+
+extension JobSettlementStatusX on JobSettlementStatus {
+  String get firestoreValue {
+    switch (this) {
+      case JobSettlementStatus.unpaid:
+        return 'unpaid';
+      case JobSettlementStatus.awaitingTechnician:
+        return 'awaiting_technician';
+      case JobSettlementStatus.correctionRequired:
+        return 'correction_required';
+      case JobSettlementStatus.confirmed:
+        return 'confirmed';
+      case JobSettlementStatus.disputedFinal:
+        return 'disputed_final';
+    }
+  }
+}
+
 /// Represents one AC service line item on an invoice.
 @freezed
 abstract class AcUnit with _$AcUnit {
@@ -56,6 +86,13 @@ abstract class JobModel with _$JobModel {
     @Default(0.0) double expenses,
     @Default('') String expenseNote,
     @Default('') String adminNote,
+    @Default(JobSettlementStatus.unpaid)
+    JobSettlementStatus settlementStatus,
+    @Default('') String settlementBatchId,
+    @Default(0) int settlementRound,
+    @Default('') String settlementAdminNote,
+    @Default('') String settlementTechnicianComment,
+    @Default('') String settlementRequestedBy,
     @Default(<String, dynamic>{}) Map<String, dynamic> importMeta,
     String? approvedBy,
     @Default(false) bool isSharedInstall,
@@ -89,6 +126,12 @@ abstract class JobModel with _$JobModel {
     DateTime? submittedAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? reviewedAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? settlementRequestedAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? settlementRespondedAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? settlementCorrectedAt,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>
@@ -116,6 +159,18 @@ extension JobModelX on JobModel {
   bool get isApproved => status == JobStatus.approved;
   bool get isRejected => status == JobStatus.rejected;
 
+  bool get isUnpaid => settlementStatus == JobSettlementStatus.unpaid;
+  bool get isSettlementAwaitingTechnician =>
+    settlementStatus == JobSettlementStatus.awaitingTechnician;
+  bool get isSettlementCorrectionRequired =>
+    settlementStatus == JobSettlementStatus.correctionRequired;
+  bool get isSettlementConfirmed =>
+    settlementStatus == JobSettlementStatus.confirmed;
+  bool get isSettlementDisputedFinal =>
+    settlementStatus == JobSettlementStatus.disputedFinal;
+  bool get isSettlementLocked =>
+    isSettlementConfirmed || isSettlementDisputedFinal;
+
   bool get hasInvoiceConflict => importMeta['invoiceConflict'] == true;
 
   List<String> get invoiceConflictCompanies {
@@ -130,7 +185,7 @@ extension JobModelX on JobModel {
 
   int get effectiveBracketCount {
     if (isSharedInstall && sharedInvoiceBracketCount > 0) {
-      return sharedInvoiceBracketCount;
+      return techBracketShare > 0 ? techBracketShare : sharedInvoiceBracketCount;
     }
 
     final currentCharges = charges;
@@ -140,6 +195,25 @@ extension JobModelX on JobModel {
       return 1;
     }
     return 0;
+  }
+
+  bool canTechnicianEdit({
+    required bool approvalRequired,
+    required bool sharedApprovalRequired,
+  }) {
+    if (isSettlementLocked || isSettlementAwaitingTechnician) {
+      return false;
+    }
+    if (isPending || isRejected) {
+      return true;
+    }
+    if (!isApproved) {
+      return false;
+    }
+    final requiresApproval = isSharedInstall
+        ? sharedApprovalRequired
+        : approvalRequired;
+    return !requiresApproval && !isSharedInstall && isUnpaid;
   }
 
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);

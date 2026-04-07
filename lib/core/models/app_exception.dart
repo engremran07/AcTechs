@@ -263,6 +263,41 @@ class JobException extends AppException {
     'منظور شدہ ریکارڈ لاک ہیں۔ اس ریکارڈ میں ترمیم کے بجائے ایک نیا اصلاحی اندراج بنائیں۔',
     'السجلات المعتمدة مقفلة. أنشئ قيد تصحيح بدلاً من تعديل هذا السجل.',
   );
+
+  factory JobException.settlementLocked() => const JobException(
+    'job_settlement_locked',
+    'This job is locked because invoice payment settlement is already in progress or completed.',
+    'یہ جاب لاک ہے کیونکہ انوائس ادائیگی کی تصدیق شروع ہو چکی ہے یا مکمل ہو چکی ہے۔',
+    'تم قفل هذه المهمة لأن تسوية دفع الفاتورة بدأت بالفعل أو اكتملت.',
+  );
+
+  factory JobException.jobNotEditable() => const JobException(
+    'job_not_editable',
+    'This job cannot be edited in its current state.',
+    'اس جاب میں موجودہ حالت میں ترمیم نہیں کی جا سکتی۔',
+    'لا يمكن تعديل هذه المهمة في حالتها الحالية.',
+  );
+
+  factory JobException.settlementBatchNotFound() => const JobException(
+    'job_settlement_batch_not_found',
+    'The selected invoice payment batch could not be found.',
+    'منتخب انوائس ادائیگی بیچ نہیں ملا۔',
+    'تعذر العثور على دفعة سداد الفاتورة المحددة.',
+  );
+
+  factory JobException.settlementAlreadyFinalized() => const JobException(
+    'job_settlement_already_finalized',
+    'This invoice payment batch has already been finalized.',
+    'اس انوائس ادائیگی بیچ کو پہلے ہی حتمی کر دیا گیا ہے۔',
+    'تم إنهاء دفعة سداد الفاتورة هذه بالفعل.',
+  );
+
+  factory JobException.settlementCorrectionCycleExceeded() => const JobException(
+    'job_settlement_correction_cycle_exceeded',
+    'Only one payment correction cycle is allowed for an invoice batch.',
+    'انوائس بیچ کے لیے صرف ایک ادائیگی اصلاحی چکر کی اجازت ہے۔',
+    'يسمح بدورة تصحيح دفع واحدة فقط لكل دفعة فواتير.',
+  );
 }
 
 class AdminException extends AppException {

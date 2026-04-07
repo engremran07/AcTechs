@@ -14,10 +14,12 @@ import 'package:ac_techs/features/technician/presentation/job_history_screen.dar
 import 'package:ac_techs/features/technician/presentation/job_details_screen.dart';
 import 'package:ac_techs/features/jobs/presentation/job_type_filter_screen.dart';
 import 'package:ac_techs/features/technician/presentation/tech_profile_screen.dart';
+import 'package:ac_techs/features/technician/presentation/settlement_inbox_screen.dart';
 import 'package:ac_techs/features/admin/presentation/admin_shell.dart';
 import 'package:ac_techs/features/admin/presentation/admin_dashboard_screen.dart';
 import 'package:ac_techs/features/admin/presentation/approvals_screen.dart';
 import 'package:ac_techs/features/admin/presentation/analytics_screen.dart';
+import 'package:ac_techs/features/admin/presentation/invoice_settlements_screen.dart';
 import 'package:ac_techs/features/admin/presentation/companies_screen.dart';
 import 'package:ac_techs/features/admin/presentation/team_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
@@ -171,10 +173,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/tech/submit',
-            pageBuilder: (context, state) => _slideFadePage(
-              pageKey: state.pageKey,
-              child: const SubmitJobScreen(),
-            ),
+            pageBuilder: (context, state) {
+              final initialJob = state.extra is JobModel
+                  ? state.extra as JobModel
+                  : null;
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: SubmitJobScreen(initialJob: initialJob),
+              );
+            },
           ),
           GoRoute(
             path: '/tech/inout',
@@ -206,6 +213,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const JobHistoryScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tech/settlements',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const SettlementInboxScreen(),
             ),
           ),
           GoRoute(
@@ -264,6 +278,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const ApprovalsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/settlements',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const InvoiceSettlementsScreen(),
             ),
           ),
           GoRoute(

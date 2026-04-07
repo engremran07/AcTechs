@@ -1617,4 +1617,74 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get enterValidQuantity => 'درست تعداد درج کریں۔';
+
+  @override
+  String get invoiceSettlements => 'انوائس سیٹلمنٹس';
+
+  @override
+  String get markAsPaid => 'ادا شدہ نشان زد کریں';
+
+  @override
+  String get paymentInbox => 'ادائیگی ان باکس';
+
+  @override
+  String get awaitingTechnicianConfirmation => 'ٹیکنیشن کی تصدیق کا انتظار';
+
+  @override
+  String get correctionRequired => 'درستگی درکار ہے';
+
+  @override
+  String get paymentConfirmed => 'ادائیگی تصدیق شدہ';
+
+  @override
+  String get paymentDisputed => 'ادائیگی متنازع';
+
+  @override
+  String get confirmPaymentReceived => 'ادائیگی موصول ہونے کی تصدیق کریں';
+
+  @override
+  String get rejectPayment => 'ادائیگی مسترد کریں';
+
+  @override
+  String get resubmitPayment => 'ادائیگی دوبارہ بھیجیں';
+
+  @override
+  String get settlementAdminNote => 'ٹیکنیشن کے لیے ایڈمن نوٹ';
+
+  @override
+  String get settlementTechnicianComment => 'ادائیگی پر تبصرہ لکھیں';
+
+  @override
+  String get settlementBatch => 'سیٹلمنٹ بیچ';
+
+  @override
+  String get paymentMarkedForConfirmation =>
+      'ادائیگی ٹیکنیشن کی تصدیق کے لیے نشان زد کر دی گئی ہے۔';
+
+  @override
+  String get paymentConfirmedSuccess => 'ادائیگی کامیابی سے تصدیق ہو گئی۔';
+
+  @override
+  String get paymentRejectedForCorrection =>
+      'ادائیگی ایک درستگی کے مرحلے کے لیے واپس بھیج دی گئی۔';
+
+  @override
+  String get paymentResubmitted => 'ادائیگی دوبارہ ٹیکنیشن کو بھیج دی گئی۔';
+
+  @override
+  String get selectJobsFirst => 'پہلے کم از کم ایک جاب منتخب کریں۔';
+
+  @override
+  String get selectSameTechnicianJobs =>
+      'صرف ایک ہی ٹیکنیشن کی جابز منتخب کریں۔';
+
+  @override
+  String get selectSingleBatchToResubmit =>
+      'دوبارہ بھیجنے کے لیے ایک ہی سیٹلمنٹ بیچ کی جابز منتخب کریں۔';
+
+  @override
+  String get filterByDateRange => 'تاریخ کی حد سے فلٹر کریں';
+
+  @override
+  String get unpaid => 'غیر ادا شدہ';
 }

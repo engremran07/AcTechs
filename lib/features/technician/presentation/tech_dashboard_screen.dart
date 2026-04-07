@@ -57,6 +57,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final user = ref.watch(currentUserProvider).value;
     final todaysJobs = ref.watch(todaysJobsProvider);
     final allJobs = ref.watch(technicianJobsProvider);
+    final settlementInbox = ref.watch(technicianSettlementInboxProvider);
 
     return AppShortcuts(
       onRefresh: _refresh,
@@ -235,6 +236,52 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                     },
                     loading: () => const ArcticShimmer(height: 90, count: 1),
                     error: (e, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  settlementInbox.when(
+                    data: (items) => ArcticCard(
+                      onTap: () => context.push('/tech/settlements'),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: ArcticTheme.arcticSuccess.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.payments_outlined,
+                              color: ArcticTheme.arcticSuccess,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l.paymentInbox,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                Text(
+                                  '${items.length} ${l.awaitingTechnicianConfirmation}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: ArcticTheme.arcticTextSecondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
 

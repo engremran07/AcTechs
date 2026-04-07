@@ -170,7 +170,11 @@ class JobRepository {
     }
   }
 
-  int _bracketCount(JobModel job) => job.effectiveBracketCount;
+  int _bracketCount(JobModel job) => job.isSharedInstall
+      ? (job.techBracketShare > 0
+            ? job.techBracketShare
+            : job.effectiveBracketCount)
+      : job.effectiveBracketCount;
 
   String _safeImportDocId(JobModel job) {
     final techId = job.techId.trim().toLowerCase();
@@ -754,6 +758,326 @@ class JobRepository {
     }
   }
 
+  Future<JobStatus> updateTechnicianJob(
+    JobModel job, {
+    required ApprovalConfig? approvalConfig,
+  }) async {
+    if (job.id.trim().isEmpty) {
+      throw JobException.saveFailed();
+    }
+
+    try {
+      final jobRef = _jobsRef.doc(job.id);
+      final existingSnap = await jobRef.get();
+      if (!existingSnap.exists) {
+        throw JobException.saveFailed();
+      }
+
+      final existing = JobModel.fromFirestore(existingSnap);
+      await _periodLockGuard.ensureUnlockedDate(
+        existing.date ?? DateTime.now(),
+        cachedLockedBefore: approvalConfig?.lockedBeforeDate,
+      );
+      await _periodLockGuard.ensureUnlockedDate(
+        job.date ?? DateTime.now(),
+        cachedLockedBefore: approvalConfig?.lockedBeforeDate,
+      );
+
+      if (existing.techId != job.techId) {
+        throw JobException.permissionDenied();
+      }
+      if (existing.isSettlementAwaitingTechnician ||
+          existing.isSettlementLocked) {
+        throw JobException.settlementLocked();
+      }
+
+      final requiresApproval =
+          ((job.isSharedInstall
+              ? approvalConfig?.sharedJobApprovalRequired
+              : approvalConfig?.jobApprovalRequired) ??
+          true);
+      final nextStatus = requiresApproval ? JobStatus.pending : JobStatus.approved;
+
+      final canEditDirectApproved =
+          existing.isApproved &&
+          !requiresApproval &&
+          existing.isUnpaid &&
+          !existing.isSharedInstall &&
+          !job.isSharedInstall;
+      final canEditPending = existing.isPending;
+      final canResubmitRejected = existing.isRejected;
+
+      if (!canEditDirectApproved && !canEditPending && !canResubmitRejected) {
+        throw JobException.jobNotEditable();
+      }
+
+      final updated = job.copyWith(
+        status: nextStatus,
+        adminNote: '',
+        approvedBy: null,
+        reviewedAt: null,
+        settlementStatus: JobSettlementStatus.unpaid,
+        settlementBatchId: '',
+        settlementAdminNote: '',
+        settlementTechnicianComment: '',
+        settlementRequestedBy: '',
+        settlementRequestedAt: null,
+        settlementRespondedAt: null,
+        settlementCorrectedAt: null,
+        settlementRound: 0,
+      );
+
+      final normalizedInvoice = InvoiceUtils.normalize(updated.invoiceNumber);
+      final resolvedGroupKey = updated.isSharedInstall
+          ? (updated.sharedInstallGroupKey.trim().isEmpty
+                ? InvoiceUtils.sharedInstallGroupKey(
+                    companyId: updated.companyId,
+                    invoiceNumber: normalizedInvoice,
+                  )
+                : InvoiceUtils.normalize(updated.sharedInstallGroupKey)
+                      .toLowerCase())
+          : '';
+
+      final data = updated.toFirestore();
+      data['invoiceNumber'] = normalizedInvoice;
+      data['status'] = nextStatus.name;
+      data['sharedInstallGroupKey'] = resolvedGroupKey;
+
+      if (canEditDirectApproved || canEditPending) {
+        await jobRef.update(data);
+        await jobRef.collection('history').add({
+          'changedBy': updated.techId,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': existing.status.name,
+          'newStatus': nextStatus.name,
+          'flow': 'approval',
+          'action': 'technician_edit',
+        });
+        return nextStatus;
+      }
+
+      final existingClaim = await _fetchInvoiceClaim(normalizedInvoice);
+      _validateInvoiceClaimReuse(updated, existingClaim);
+
+      if (!updated.isSharedInstall) {
+        await firestore.runTransaction((tx) async {
+          await _reserveInvoiceClaim(tx, updated, normalizedInvoice);
+          tx.update(jobRef, data);
+          tx.set(jobRef.collection('history').doc(), {
+            'changedBy': updated.techId,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': existing.status.name,
+            'newStatus': nextStatus.name,
+            'flow': 'approval',
+            'action': 'technician_resubmit',
+          });
+        });
+        return nextStatus;
+      }
+
+      _validateSupportedSharedInstallUnits(updated);
+      final splitContribution = _unitsForType(updated, AppConstants.unitTypeSplitAc);
+      final windowContribution = _unitsForType(updated, AppConstants.unitTypeWindowAc);
+      final freestandingContribution = _unitsForType(
+        updated,
+        AppConstants.unitTypeFreestandingAc,
+      );
+      final uninstallSplitContribution = _unitsForType(
+        updated,
+        AppConstants.unitTypeUninstallSplit,
+      );
+      final uninstallWindowContribution = _unitsForType(
+        updated,
+        AppConstants.unitTypeUninstallWindow,
+      );
+      final uninstallFreestandingContribution = _unitsForType(
+        updated,
+        AppConstants.unitTypeUninstallFreestanding,
+      );
+      final deliveryShare = updated.charges?.deliveryAmount ?? 0;
+
+      final typeLimits = <(String, int, int)>[
+        (
+          AppConstants.unitTypeSplitAc,
+          splitContribution,
+          updated.sharedInvoiceSplitUnits,
+        ),
+        (
+          AppConstants.unitTypeWindowAc,
+          windowContribution,
+          updated.sharedInvoiceWindowUnits,
+        ),
+        (
+          AppConstants.unitTypeFreestandingAc,
+          freestandingContribution,
+          updated.sharedInvoiceFreestandingUnits,
+        ),
+        (
+          AppConstants.unitTypeUninstallSplit,
+          uninstallSplitContribution,
+          updated.sharedInvoiceUninstallSplitUnits,
+        ),
+        (
+          AppConstants.unitTypeUninstallWindow,
+          uninstallWindowContribution,
+          updated.sharedInvoiceUninstallWindowUnits,
+        ),
+        (
+          AppConstants.unitTypeUninstallFreestanding,
+          uninstallFreestandingContribution,
+          updated.sharedInvoiceUninstallFreestandingUnits,
+        ),
+        (_sharedBracketType, _bracketCount(updated), updated.sharedInvoiceBracketCount),
+      ];
+
+      for (final typeLimit in typeLimits) {
+        final contribution = typeLimit.$2;
+        final totalAllowed = typeLimit.$3;
+        if (contribution <= 0) continue;
+        if (totalAllowed <= 0 || contribution > totalAllowed) {
+          throw JobException.sharedTypeUnitsExceeded(
+            unitType: typeLimit.$1,
+            remaining: totalAllowed < 0 ? 0 : totalAllowed,
+          );
+        }
+      }
+
+      await firestore.runTransaction((tx) async {
+        final aggregateRef = _sharedAggregatesRef.doc(_sharedAggregateDocId(resolvedGroupKey));
+        final aggregateSnap = await tx.get(aggregateRef);
+        await _reserveInvoiceClaim(tx, updated, normalizedInvoice);
+
+        var consumedSplitUnits = 0;
+        var consumedWindowUnits = 0;
+        var consumedFreestandingUnits = 0;
+        var consumedUninstallSplitUnits = 0;
+        var consumedUninstallWindowUnits = 0;
+        var consumedUninstallFreestandingUnits = 0;
+        var consumedBracketCount = 0;
+        var consumedDeliveryAmount = 0.0;
+
+        if (aggregateSnap.exists) {
+          final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
+          _validateSharedAggregateTotals(aggregate, updated, resolvedGroupKey);
+          consumedSplitUnits = _readAggregateInt(aggregate, 'consumedSplitUnits');
+          consumedWindowUnits = _readAggregateInt(aggregate, 'consumedWindowUnits');
+          consumedFreestandingUnits = _readAggregateInt(
+            aggregate,
+            'consumedFreestandingUnits',
+          );
+          consumedUninstallSplitUnits = _readAggregateInt(
+            aggregate,
+            'consumedUninstallSplitUnits',
+          );
+          consumedUninstallWindowUnits = _readAggregateInt(
+            aggregate,
+            'consumedUninstallWindowUnits',
+          );
+          consumedUninstallFreestandingUnits = _readAggregateInt(
+            aggregate,
+            'consumedUninstallFreestandingUnits',
+          );
+          consumedBracketCount = _readAggregateInt(aggregate, 'consumedBracketCount');
+          consumedDeliveryAmount = _readAggregateDouble(
+            aggregate,
+            'consumedDeliveryAmount',
+          );
+        }
+
+        for (final typeLimit in typeLimits) {
+          final typeName = typeLimit.$1;
+          final contribution = typeLimit.$2;
+          final totalAllowed = typeLimit.$3;
+          if (contribution <= 0) continue;
+          final consumed = switch (typeName) {
+            AppConstants.unitTypeSplitAc => consumedSplitUnits,
+            AppConstants.unitTypeWindowAc => consumedWindowUnits,
+            AppConstants.unitTypeFreestandingAc => consumedFreestandingUnits,
+            AppConstants.unitTypeUninstallSplit => consumedUninstallSplitUnits,
+            AppConstants.unitTypeUninstallWindow => consumedUninstallWindowUnits,
+            AppConstants.unitTypeUninstallFreestanding =>
+              consumedUninstallFreestandingUnits,
+            _sharedBracketType => consumedBracketCount,
+            _ => 0,
+          };
+          final remaining = totalAllowed - consumed;
+          if (contribution > remaining) {
+            throw JobException.sharedTypeUnitsExceeded(
+              unitType: typeName,
+              remaining: remaining < 0 ? 0 : remaining,
+            );
+          }
+        }
+
+        if (updated.sharedInvoiceDeliveryAmount > 0) {
+          final remainingDelivery = updated.sharedInvoiceDeliveryAmount - consumedDeliveryAmount;
+          if (deliveryShare - remainingDelivery > 0.01) {
+            throw JobException.sharedUnitsExceeded(
+              remaining: remainingDelivery <= 0 ? 0 : remainingDelivery.floor(),
+            );
+          }
+        }
+
+        if (aggregateSnap.exists) {
+          tx.update(aggregateRef, {
+            'consumedSplitUnits': consumedSplitUnits + splitContribution,
+            'consumedWindowUnits': consumedWindowUnits + windowContribution,
+            'consumedFreestandingUnits':
+                consumedFreestandingUnits + freestandingContribution,
+            'consumedUninstallSplitUnits':
+                consumedUninstallSplitUnits + uninstallSplitContribution,
+            'consumedUninstallWindowUnits':
+                consumedUninstallWindowUnits + uninstallWindowContribution,
+            'consumedUninstallFreestandingUnits':
+                consumedUninstallFreestandingUnits + uninstallFreestandingContribution,
+            'consumedBracketCount': consumedBracketCount + _bracketCount(updated),
+            'consumedDeliveryAmount': consumedDeliveryAmount + deliveryShare,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          tx.set(
+            aggregateRef,
+            _sharedAggregateCreateData(
+              updated,
+              resolvedGroupKey,
+              splitContribution,
+              windowContribution,
+              freestandingContribution,
+              uninstallSplitContribution,
+              uninstallWindowContribution,
+              uninstallFreestandingContribution,
+              _bracketCount(updated),
+              deliveryShare,
+            ),
+          );
+        }
+
+        tx.update(jobRef, data);
+        tx.set(jobRef.collection('history').doc(), {
+          'changedBy': updated.techId,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': existing.status.name,
+          'newStatus': nextStatus.name,
+          'flow': 'approval',
+          'action': 'technician_resubmit',
+        });
+      });
+
+      return nextStatus;
+    } on FirebaseException catch (e) {
+      debugPrint('updateTechnicianJob FirebaseException: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw JobException.permissionDenied();
+      }
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    } catch (e) {
+      debugPrint('updateTechnicianJob unknown error: $e');
+      throw JobException.saveFailed();
+    }
+  }
+
   Future<void> approveJob(String jobId, String adminUid) async {
     try {
       await _periodLockGuard.ensureUnlockedDocument(_jobsRef.doc(jobId));
@@ -850,6 +1174,222 @@ class JobRepository {
       debugPrint('rejectJob unknown: $e');
       throw JobException.saveFailed();
     }
+  }
+
+  Stream<List<JobModel>> settlementCandidates() {
+    return _jobsRef
+        .where('status', isEqualTo: JobStatus.approved.name)
+        .where(
+          'settlementStatus',
+          whereIn: [
+            JobSettlementStatus.unpaid.firestoreValue,
+            JobSettlementStatus.correctionRequired.firestoreValue,
+          ],
+        )
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Stream<List<JobModel>> technicianSettlementInbox(String techId) {
+    return _jobsRef
+        .where('techId', isEqualTo: techId)
+        .where(
+          'settlementStatus',
+          isEqualTo: JobSettlementStatus.awaitingTechnician.firestoreValue,
+        )
+        .orderBy('settlementRequestedAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Stream<List<JobModel>> settlementBatchJobs(String batchId) {
+    return _jobsRef
+        .where('settlementBatchId', isEqualTo: batchId)
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Future<String> markJobsAsPaid(
+    List<String> jobIds,
+    String adminUid, {
+    String adminNote = '',
+  }) async {
+    if (jobIds.isEmpty) {
+      throw JobException.settlementBatchNotFound();
+    }
+
+    final batchId =
+        'pay_${DateTime.now().millisecondsSinceEpoch}_${adminUid.substring(0, adminUid.length < 6 ? adminUid.length : 6)}';
+    final snaps = await Future.wait(jobIds.map((id) => _jobsRef.doc(id).get()));
+    final jobs = snaps.where((snap) => snap.exists).map(JobModel.fromFirestore).toList();
+    if (jobs.isEmpty) {
+      throw JobException.settlementBatchNotFound();
+    }
+
+    final techIds = jobs.map((job) => job.techId).toSet();
+    if (techIds.length != 1) {
+      throw JobException.saveFailed();
+    }
+
+    final batch = firestore.batch();
+    for (final job in jobs) {
+      if (!job.isApproved) {
+        throw JobException.jobNotEditable();
+      }
+      if (!job.isUnpaid) {
+        throw JobException.settlementAlreadyFinalized();
+      }
+      final ref = _jobsRef.doc(job.id);
+      batch.update(ref, {
+        'settlementStatus': JobSettlementStatus.awaitingTechnician.firestoreValue,
+        'settlementBatchId': batchId,
+        'settlementRound': 1,
+        'settlementAdminNote': adminNote,
+        'settlementTechnicianComment': '',
+        'settlementRequestedBy': adminUid,
+        'settlementRequestedAt': FieldValue.serverTimestamp(),
+        'settlementRespondedAt': null,
+        'settlementCorrectedAt': null,
+      });
+      batch.set(ref.collection('history').doc(), {
+        'changedBy': adminUid,
+        'changedAt': FieldValue.serverTimestamp(),
+        'previousStatus': job.settlementStatus.firestoreValue,
+        'newStatus': JobSettlementStatus.awaitingTechnician.firestoreValue,
+        'flow': 'settlement',
+        'action': 'mark_paid',
+        'reason': adminNote,
+      });
+    }
+    await batch.commit();
+    return batchId;
+  }
+
+  Future<void> confirmSettlementBatch(String batchId, String techId) async {
+    final snap = await _jobsRef.where('settlementBatchId', isEqualTo: batchId).get();
+    final jobs = snap.docs.map(JobModel.fromFirestore).toList(growable: false);
+    if (jobs.isEmpty) {
+      throw JobException.settlementBatchNotFound();
+    }
+
+    final batch = firestore.batch();
+    for (final job in jobs) {
+      if (job.techId != techId) {
+        throw JobException.permissionDenied();
+      }
+      if (!job.isSettlementAwaitingTechnician) {
+        throw JobException.settlementAlreadyFinalized();
+      }
+      final ref = _jobsRef.doc(job.id);
+      batch.update(ref, {
+        'settlementStatus': JobSettlementStatus.confirmed.firestoreValue,
+        'settlementRespondedAt': FieldValue.serverTimestamp(),
+      });
+      batch.set(ref.collection('history').doc(), {
+        'changedBy': techId,
+        'changedAt': FieldValue.serverTimestamp(),
+        'previousStatus': job.settlementStatus.firestoreValue,
+        'newStatus': JobSettlementStatus.confirmed.firestoreValue,
+        'flow': 'settlement',
+        'action': 'confirm_received',
+      });
+    }
+    await batch.commit();
+  }
+
+  Future<void> rejectSettlementBatch(
+    String batchId,
+    String techId,
+    String comment,
+  ) async {
+    final snap = await _jobsRef.where('settlementBatchId', isEqualTo: batchId).get();
+    final jobs = snap.docs.map(JobModel.fromFirestore).toList(growable: false);
+    if (jobs.isEmpty) {
+      throw JobException.settlementBatchNotFound();
+    }
+
+    final currentRound = jobs.first.settlementRound;
+    final nextStatus = currentRound >= 2
+        ? JobSettlementStatus.disputedFinal
+        : JobSettlementStatus.correctionRequired;
+
+    final batch = firestore.batch();
+    for (final job in jobs) {
+      if (job.techId != techId) {
+        throw JobException.permissionDenied();
+      }
+      if (!job.isSettlementAwaitingTechnician) {
+        throw JobException.settlementAlreadyFinalized();
+      }
+      final ref = _jobsRef.doc(job.id);
+      batch.update(ref, {
+        'settlementStatus': nextStatus.firestoreValue,
+        'settlementTechnicianComment': comment,
+        'settlementRespondedAt': FieldValue.serverTimestamp(),
+      });
+      batch.set(ref.collection('history').doc(), {
+        'changedBy': techId,
+        'changedAt': FieldValue.serverTimestamp(),
+        'previousStatus': job.settlementStatus.firestoreValue,
+        'newStatus': nextStatus.firestoreValue,
+        'flow': 'settlement',
+        'action': 'reject_payment',
+        'reason': comment,
+      });
+    }
+    await batch.commit();
+  }
+
+  Future<void> resubmitSettlementBatch(
+    String batchId,
+    String adminUid, {
+    String adminNote = '',
+  }) async {
+    final snap = await _jobsRef.where('settlementBatchId', isEqualTo: batchId).get();
+    final jobs = snap.docs.map(JobModel.fromFirestore).toList(growable: false);
+    if (jobs.isEmpty) {
+      throw JobException.settlementBatchNotFound();
+    }
+    if (!jobs.every((job) => job.isSettlementCorrectionRequired)) {
+      throw JobException.settlementAlreadyFinalized();
+    }
+    if (jobs.any((job) => job.settlementRound >= 2)) {
+      throw JobException.settlementCorrectionCycleExceeded();
+    }
+
+    final batch = firestore.batch();
+    for (final job in jobs) {
+      final ref = _jobsRef.doc(job.id);
+      batch.update(ref, {
+        'settlementStatus': JobSettlementStatus.awaitingTechnician.firestoreValue,
+        'settlementRound': 2,
+        'settlementAdminNote': adminNote,
+        'settlementRequestedBy': adminUid,
+        'settlementRequestedAt': FieldValue.serverTimestamp(),
+        'settlementCorrectedAt': FieldValue.serverTimestamp(),
+      });
+      batch.set(ref.collection('history').doc(), {
+        'changedBy': adminUid,
+        'changedAt': FieldValue.serverTimestamp(),
+        'previousStatus': job.settlementStatus.firestoreValue,
+        'newStatus': JobSettlementStatus.awaitingTechnician.firestoreValue,
+        'flow': 'settlement',
+        'action': 'resubmit_payment',
+        'reason': adminNote,
+      });
+    }
+    await batch.commit();
   }
 
   Future<void> bulkApproveJobs(List<String> jobIds, String adminUid) async {

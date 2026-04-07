@@ -3110,6 +3110,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid quantity.'**
   String get enterValidQuantity;
+
+  /// No description provided for @invoiceSettlements.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Settlements'**
+  String get invoiceSettlements;
+
+  /// No description provided for @markAsPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Paid'**
+  String get markAsPaid;
+
+  /// No description provided for @paymentInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Inbox'**
+  String get paymentInbox;
+
+  /// No description provided for @awaitingTechnicianConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting technician confirmation'**
+  String get awaitingTechnicianConfirmation;
+
+  /// No description provided for @correctionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction required'**
+  String get correctionRequired;
+
+  /// No description provided for @paymentConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment confirmed'**
+  String get paymentConfirmed;
+
+  /// No description provided for @paymentDisputed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment disputed'**
+  String get paymentDisputed;
+
+  /// No description provided for @confirmPaymentReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm payment received'**
+  String get confirmPaymentReceived;
+
+  /// No description provided for @rejectPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject payment'**
+  String get rejectPayment;
+
+  /// No description provided for @resubmitPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Resubmit payment'**
+  String get resubmitPayment;
+
+  /// No description provided for @settlementAdminNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin note for technician'**
+  String get settlementAdminNote;
+
+  /// No description provided for @settlementTechnicianComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a payment comment'**
+  String get settlementTechnicianComment;
+
+  /// No description provided for @settlementBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement batch'**
+  String get settlementBatch;
+
+  /// No description provided for @paymentMarkedForConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment marked for technician confirmation.'**
+  String get paymentMarkedForConfirmation;
+
+  /// No description provided for @paymentConfirmedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment confirmed successfully.'**
+  String get paymentConfirmedSuccess;
+
+  /// No description provided for @paymentRejectedForCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment sent back for one correction round.'**
+  String get paymentRejectedForCorrection;
+
+  /// No description provided for @paymentResubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment resubmitted to technician.'**
+  String get paymentResubmitted;
+
+  /// No description provided for @selectJobsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one job first.'**
+  String get selectJobsFirst;
+
+  /// No description provided for @selectSameTechnicianJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Select jobs from the same technician only.'**
+  String get selectSameTechnicianJobs;
+
+  /// No description provided for @selectSingleBatchToResubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select jobs from a single settlement batch to resubmit.'**
+  String get selectSingleBatchToResubmit;
+
+  /// No description provided for @filterByDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by date range'**
+  String get filterByDateRange;
+
+  /// No description provided for @unpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid'**
+  String get unpaid;
 }
 
 class _AppLocalizationsDelegate

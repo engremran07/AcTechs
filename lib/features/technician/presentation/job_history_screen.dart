@@ -19,6 +19,7 @@ import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 
 enum _JobsReportPeriodType { month, range }
@@ -695,6 +696,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     AppLocalizations l,
     VoidCallback refresh,
   ) {
+    final approvalConfig = ref.watch(approvalConfigProvider).value;
     return jobs.when(
       data: (jobList) {
         final pendingCount = jobList.where((j) => j.isPending).length;
@@ -920,6 +922,20 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                     '/tech/job/${job.id}',
                                     extra: job,
                                   ),
+                                  onEdit: job.canTechnicianEdit(
+                                        approvalRequired:
+                                            approvalConfig?.jobApprovalRequired ??
+                                            true,
+                                        sharedApprovalRequired:
+                                            approvalConfig
+                                                ?.sharedJobApprovalRequired ??
+                                            true,
+                                      )
+                                      ? () => context.push(
+                                            '/tech/submit',
+                                            extra: job,
+                                          )
+                                      : null,
                                 ),
                               )
                               .animate(delay: (index * 80).ms)
@@ -1226,11 +1242,13 @@ class _HistoryJobCard extends StatelessWidget {
     required this.job,
     required this.sharedTechnicianNames,
     required this.onTap,
+    this.onEdit,
   });
 
   final JobModel job;
   final List<String> sharedTechnicianNames;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1260,6 +1278,12 @@ class _HistoryJobCard extends StatelessWidget {
                 ),
               ),
               StatusBadge(status: job.status.name),
+              if (onEdit != null)
+                IconButton(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: l.save,
+                ),
             ],
           ),
           const SizedBox(height: 12),

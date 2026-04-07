@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -14,7 +15,9 @@ import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class SubmitJobScreen extends ConsumerStatefulWidget {
-  const SubmitJobScreen({super.key});
+  const SubmitJobScreen({this.initialJob, super.key});
+
+  final JobModel? initialJob;
 
   @override
   ConsumerState<SubmitJobScreen> createState() => _SubmitJobScreenState();
@@ -57,6 +60,17 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   String? _selectedCompanyId;
   String _selectedCompanyName = '';
 
+  bool get _isEditing => widget.initialJob != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialJob = widget.initialJob;
+    if (initialJob != null) {
+      _populateFromJob(initialJob);
+    }
+  }
+
   @override
   void dispose() {
     _invoiceController.dispose();
@@ -70,6 +84,46 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   int get _effectiveBracketQty =>
       _isSharedInstall ? _techBracketShare : _bracketQty;
+
+  void _populateFromJob(JobModel job) {
+    _invoiceController.text = job.invoiceNumber;
+    _clientNameController.text = job.clientName;
+    _clientContactController.text = job.clientContact;
+    _deliveryAmountController.text = job.charges?.deliveryAmount.toString() ?? '';
+    _deliveryNoteController.text = job.charges?.deliveryNote ?? '';
+    _descriptionController.text = job.expenseNote;
+
+    _selectedDate = job.date ?? DateTime.now();
+    _selectedCompanyId = job.companyId.trim().isEmpty ? null : job.companyId;
+    _selectedCompanyName = job.companyName;
+    _isSharedInstall = job.isSharedInstall;
+
+    _splitQty = job.unitsForType(AppConstants.unitTypeSplitAc);
+    _windowQty = job.unitsForType(AppConstants.unitTypeWindowAc);
+    _dolabQty = job.unitsForType(AppConstants.unitTypeFreestandingAc);
+    _uninstallSplitQty = job.unitsForType(AppConstants.unitTypeUninstallSplit);
+    _uninstallWindowQty = job.unitsForType(AppConstants.unitTypeUninstallWindow);
+    _uninstallStandingQty = job.unitsForType(
+      AppConstants.unitTypeUninstallFreestanding,
+    );
+    _bracketQty = job.charges?.bracketCount ?? job.effectiveBracketCount;
+
+    _sharedSplitUnits = job.sharedInvoiceSplitUnits;
+    _sharedWindowUnits = job.sharedInvoiceWindowUnits;
+    _sharedFreestandingUnits = job.sharedInvoiceFreestandingUnits;
+    _sharedUninstallSplitUnits = job.sharedInvoiceUninstallSplitUnits;
+    _sharedUninstallWindowUnits = job.sharedInvoiceUninstallWindowUnits;
+    _sharedUninstallFreestandingUnits = job.sharedInvoiceUninstallFreestandingUnits;
+    _sharedBracketQty = job.sharedInvoiceBracketCount;
+    _sharedTeamSize = job.sharedDeliveryTeamCount;
+    _techSplitShare = job.techSplitShare;
+    _techWindowShare = job.techWindowShare;
+    _techFreestandingShare = job.techFreestandingShare;
+    _techUninstallSplitShare = job.techUninstallSplitShare;
+    _techUninstallWindowShare = job.techUninstallWindowShare;
+    _techUninstallFreestandingShare = job.techUninstallFreestandingShare;
+    _techBracketShare = job.techBracketShare;
+  }
 
   int _clampShare(int nextValue, int invoiceTotal) {
     return nextValue.clamp(0, invoiceTotal < 0 ? 0 : invoiceTotal);
@@ -272,6 +326,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       final status = requiresApproval ? JobStatus.pending : JobStatus.approved;
 
       final job = JobModel(
+        id: widget.initialJob?.id ?? '',
         techId: user.uid,
         techName: user.name,
         companyId: _selectedCompanyId ?? '',
@@ -315,9 +370,16 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         status: status,
       );
 
-      final savedStatus = await ref
-          .read(jobRepositoryProvider)
-          .submitJob(job, lockedBeforeDate: approvalConfig?.lockedBeforeDate);
+      final savedStatus = _isEditing
+          ? await ref
+                .read(jobRepositoryProvider)
+                .updateTechnicianJob(job, approvalConfig: approvalConfig)
+          : await ref
+                .read(jobRepositoryProvider)
+                .submitJob(
+                  job,
+                  lockedBeforeDate: approvalConfig?.lockedBeforeDate,
+                );
 
       if (mounted) {
         AppFeedback.success(
@@ -326,7 +388,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               ? l.jobSubmitted
               : l.jobSaved,
         );
-        _resetForm();
+        if (_isEditing) {
+          context.go('/tech/history');
+        } else {
+          _resetForm();
+        }
       }
     } on AppException catch (e) {
       if (mounted) {
@@ -353,7 +419,9 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     return AppShortcuts(
       onSubmit: _isSubmitting ? null : _submit,
       child: Scaffold(
-        appBar: AppBar(title: Text(l.submitInvoice)),
+        appBar: AppBar(
+          title: Text(_isEditing ? l.editProfile : l.submitInvoice),
+        ),
         body: SafeArea(
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -865,9 +933,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         label: Text(
                           _isSubmitting
                               ? l.submitting
-                              : (requiresApproval
+                              : (_isEditing
+                                    ? l.save
+                                    : (requiresApproval
                                     ? l.submitForApproval
-                                    : l.submit),
+                                    : l.submit)),
                         ),
                       ),
                     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),

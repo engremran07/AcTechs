@@ -295,6 +295,47 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   const SizedBox(height: 16),
                   ArcticCard(
+                    onTap: () => context.go('/admin/settlements'),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticSuccess.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.payments_outlined,
+                            color: ArcticTheme.arcticSuccess,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.invoiceSettlements,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              Text(
+                                l.markAsPaid,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ArcticCard(
                     onTap: _showInvoicePrefixMigrationDialog,
                     child: Row(
                       children: [

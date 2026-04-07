@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -8,6 +9,7 @@ import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
   const JobDetailsScreen({required this.jobId, this.initialJob, super.key});
@@ -48,6 +50,7 @@ class JobDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
     final jobsAsync = ref.watch(technicianJobsProvider);
+    final approvalConfig = ref.watch(approvalConfigProvider).value;
 
     return Scaffold(
       appBar: AppBar(title: Text(l.jobHistory)),
@@ -84,6 +87,25 @@ class JobDetailsScreen extends ConsumerWidget {
                           StatusBadge(status: job.status.name),
                         ],
                       ),
+                      if (job.canTechnicianEdit(
+                        approvalRequired:
+                            approvalConfig?.jobApprovalRequired ?? true,
+                        sharedApprovalRequired:
+                            approvalConfig?.sharedJobApprovalRequired ?? true,
+                      )) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.push(
+                              '/tech/submit',
+                              extra: job,
+                            ),
+                            icon: const Icon(Icons.edit_outlined),
+                            label: Text(l.save),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       _DetailRow(
                         icon: Icons.business_outlined,

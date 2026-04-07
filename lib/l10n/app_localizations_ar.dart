@@ -1611,4 +1611,73 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get enterValidQuantity => 'أدخل كمية صحيحة.';
+
+  @override
+  String get invoiceSettlements => 'تسويات الفواتير';
+
+  @override
+  String get markAsPaid => 'تحديد كمدفوع';
+
+  @override
+  String get paymentInbox => 'صندوق تأكيد الدفع';
+
+  @override
+  String get awaitingTechnicianConfirmation => 'بانتظار تأكيد الفني';
+
+  @override
+  String get correctionRequired => 'مطلوب تصحيح';
+
+  @override
+  String get paymentConfirmed => 'تم تأكيد الدفع';
+
+  @override
+  String get paymentDisputed => 'الدفع محل نزاع';
+
+  @override
+  String get confirmPaymentReceived => 'تأكيد استلام الدفع';
+
+  @override
+  String get rejectPayment => 'رفض الدفع';
+
+  @override
+  String get resubmitPayment => 'إعادة إرسال الدفع';
+
+  @override
+  String get settlementAdminNote => 'ملاحظة المشرف للفني';
+
+  @override
+  String get settlementTechnicianComment => 'أضف تعليقاً على الدفع';
+
+  @override
+  String get settlementBatch => 'دفعة التسوية';
+
+  @override
+  String get paymentMarkedForConfirmation =>
+      'تم وضع الدفع بانتظار تأكيد الفني.';
+
+  @override
+  String get paymentConfirmedSuccess => 'تم تأكيد الدفع بنجاح.';
+
+  @override
+  String get paymentRejectedForCorrection =>
+      'تمت إعادة الدفع لجولة تصحيح واحدة.';
+
+  @override
+  String get paymentResubmitted => 'تمت إعادة إرسال الدفع إلى الفني.';
+
+  @override
+  String get selectJobsFirst => 'اختر مهمة واحدة على الأقل أولاً.';
+
+  @override
+  String get selectSameTechnicianJobs => 'اختر مهام الفني نفسه فقط.';
+
+  @override
+  String get selectSingleBatchToResubmit =>
+      'اختر مهام من دفعة تسوية واحدة لإعادة الإرسال.';
+
+  @override
+  String get filterByDateRange => 'تصفية حسب نطاق التاريخ';
+
+  @override
+  String get unpaid => 'غير مدفوع';
 }

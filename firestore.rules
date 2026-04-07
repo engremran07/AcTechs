@@ -191,6 +191,151 @@ service cloud.firestore {
       request.resource.data.expenses <= 1000000;
     }
 
+    function settlementStatusOf(data) {
+      return data.keys().hasAny(['settlementStatus']) && data.settlementStatus is string
+        ? data.settlementStatus
+        : 'unpaid';
+    }
+
+    function settlementFieldsUnchanged() {
+      return settlementStatusOf(request.resource.data) == settlementStatusOf(resource.data) &&
+        (request.resource.data.settlementBatchId == resource.data.settlementBatchId ||
+          (!request.resource.data.keys().hasAny(['settlementBatchId']) && !resource.data.keys().hasAny(['settlementBatchId']))) &&
+        (request.resource.data.settlementRound == resource.data.settlementRound ||
+          (!request.resource.data.keys().hasAny(['settlementRound']) && !resource.data.keys().hasAny(['settlementRound']))) &&
+        (request.resource.data.settlementAdminNote == resource.data.settlementAdminNote ||
+          (!request.resource.data.keys().hasAny(['settlementAdminNote']) && !resource.data.keys().hasAny(['settlementAdminNote']))) &&
+        (request.resource.data.settlementTechnicianComment == resource.data.settlementTechnicianComment ||
+          (!request.resource.data.keys().hasAny(['settlementTechnicianComment']) && !resource.data.keys().hasAny(['settlementTechnicianComment']))) &&
+        (request.resource.data.settlementRequestedBy == resource.data.settlementRequestedBy ||
+          (!request.resource.data.keys().hasAny(['settlementRequestedBy']) && !resource.data.keys().hasAny(['settlementRequestedBy']))) &&
+        request.resource.data.settlementRequestedAt == resource.data.settlementRequestedAt &&
+        request.resource.data.settlementRespondedAt == resource.data.settlementRespondedAt &&
+        request.resource.data.settlementCorrectedAt == resource.data.settlementCorrectedAt;
+    }
+
+    function settlementFieldsOnlyChanged() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'settlementStatus',
+        'settlementBatchId',
+        'settlementRound',
+        'settlementAdminNote',
+        'settlementTechnicianComment',
+        'settlementRequestedBy',
+        'settlementRequestedAt',
+        'settlementRespondedAt',
+        'settlementCorrectedAt'
+      ]);
+    }
+
+    function technicianExpectedEditedStatus() {
+      return (request.resource.data.isSharedInstall is bool && request.resource.data.isSharedInstall)
+        ? (sharedJobApprovalRequired() ? 'pending' : 'approved')
+        : (jobApprovalRequired() ? 'pending' : 'approved');
+    }
+
+    function technicianCanEditApprovedJob() {
+      return resource.data.status == 'approved' &&
+        settlementStatusOf(resource.data) == 'unpaid' &&
+        ((resource.data.isSharedInstall is bool && resource.data.isSharedInstall)
+          ? !sharedJobApprovalRequired()
+          : !jobApprovalRequired());
+    }
+
+    function technicianMutableJobUpdate() {
+      return isActiveUser() &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        isOwner(resource.data.techId) &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.submittedAt == resource.data.submittedAt &&
+        validJobSharedState() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'companyId',
+          'companyName',
+          'invoiceNumber',
+          'clientName',
+          'clientContact',
+          'acUnits',
+          'isSharedInstall',
+          'sharedInstallGroupKey',
+          'sharedInvoiceTotalUnits',
+          'sharedContributionUnits',
+          'sharedInvoiceSplitUnits',
+          'sharedInvoiceWindowUnits',
+          'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits',
+          'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
+          'sharedInvoiceBracketCount',
+          'sharedDeliveryTeamCount',
+          'sharedInvoiceDeliveryAmount',
+          'techSplitShare',
+          'techWindowShare',
+          'techFreestandingShare',
+          'techUninstallSplitShare',
+          'techUninstallWindowShare',
+          'techUninstallFreestandingShare',
+          'techBracketShare',
+          'charges',
+          'date',
+          'expenses',
+          'expenseNote',
+          'status',
+          'approvedBy',
+          'reviewedAt',
+          'adminNote'
+        ]);
+    }
+
+    function technicianPendingEdit() {
+      return technicianMutableJobUpdate() &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        settlementFieldsUnchanged();
+    }
+
+    function technicianRejectedResubmission() {
+      return technicianMutableJobUpdate() &&
+        resource.data.status == 'rejected' &&
+        request.resource.data.status == technicianExpectedEditedStatus() &&
+        request.resource.data.approvedBy == null &&
+        request.resource.data.reviewedAt == null &&
+        request.resource.data.adminNote == '' &&
+        settlementStatusOf(request.resource.data) == 'unpaid';
+    }
+
+    function technicianApprovedEdit() {
+      return technicianMutableJobUpdate() &&
+        technicianCanEditApprovedJob() &&
+        request.resource.data.status == 'approved' &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        settlementFieldsUnchanged();
+    }
+
+    function adminSettlementUpdate() {
+      return isAdmin() &&
+        dateIsUnlocked(resource.data.date) &&
+        resource.data.status == 'approved' &&
+        request.resource.data.status == resource.data.status &&
+        settlementFieldsOnlyChanged();
+    }
+
+    function technicianSettlementUpdate() {
+      return isActiveUser() &&
+        isOwner(resource.data.techId) &&
+        dateIsUnlocked(resource.data.date) &&
+        resource.data.status == 'approved' &&
+        settlementStatusOf(resource.data) == 'awaiting_technician' &&
+        settlementFieldsOnlyChanged();
+    }
+
     function validSharedAggregateTotals(data) {
       return data.sharedInvoiceSplitUnits is int &&
         data.sharedInvoiceSplitUnits >= 0 &&
@@ -422,54 +567,12 @@ service cloud.firestore {
       allow update: if (isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
-        resource.data.status != 'approved') || (
-        isActiveUser() &&
-        dateIsUnlocked(resource.data.date) &&
-        dateIsUnlocked(request.resource.data.date) &&
-        isOwner(resource.data.techId) &&
-        resource.data.status == 'pending' &&
-        request.resource.data.status == resource.data.status &&
-        request.resource.data.techId == resource.data.techId &&
-        request.resource.data.submittedAt == resource.data.submittedAt &&
-        request.resource.data.approvedBy == resource.data.approvedBy &&
-        request.resource.data.reviewedAt == resource.data.reviewedAt &&
-        request.resource.data.adminNote == resource.data.adminNote &&
-        validJobSharedState() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'techName',
-          'companyId',
-          'companyName',
-          'invoiceNumber',
-          'clientName',
-          'clientContact',
-          'acUnits',
-          'isSharedInstall',
-          'sharedInstallGroupKey',
-          'sharedInvoiceTotalUnits',
-          'sharedContributionUnits',
-          'sharedInvoiceSplitUnits',
-          'sharedInvoiceWindowUnits',
-          'sharedInvoiceFreestandingUnits',
-          'sharedInvoiceUninstallSplitUnits',
-          'sharedInvoiceUninstallWindowUnits',
-          'sharedInvoiceUninstallFreestandingUnits',
-          'sharedInvoiceBracketCount',
-          'sharedDeliveryTeamCount',
-          'sharedInvoiceDeliveryAmount',
-          'techSplitShare',
-          'techWindowShare',
-          'techFreestandingShare',
-          'techUninstallSplitShare',
-          'techUninstallWindowShare',
-          'techUninstallFreestandingShare',
-          'techBracketShare',
-          'charges',
-          'date',
-          'submittedAt',
-          'expenses',
-          'expenseNote'
-        ])
-      );
+        resource.data.status != 'approved') ||
+        adminSettlementUpdate() ||
+        technicianPendingEdit() ||
+        technicianRejectedResubmission() ||
+        technicianApprovedEdit() ||
+        technicianSettlementUpdate();
 
       allow delete: if (isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
