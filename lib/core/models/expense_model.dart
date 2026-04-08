@@ -65,6 +65,10 @@ extension ExpenseModelX on ExpenseModel {
   Map<String, dynamic> toFirestore() {
     final json = toJson();
     json.remove('id');
+    // Archive fields are managed via direct .update() in the repository;
+    // they must NOT appear in create payloads (Firestore hasOnly() rules).
+    json.remove('isDeleted');
+    json.remove('deletedAt');
     return json;
   }
 

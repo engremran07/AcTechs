@@ -97,6 +97,15 @@
       "collectionGroup": "jobs",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "settlementStatus", "order": "ASCENDING" },
+        { "fieldPath": "settlementRespondedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobs",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "techId", "order": "ASCENDING" },
         { "fieldPath": "settlementStatus", "order": "ASCENDING" },
         { "fieldPath": "settlementRequestedAt", "order": "DESCENDING" }

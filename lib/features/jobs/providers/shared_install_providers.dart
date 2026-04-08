@@ -25,19 +25,3 @@ final pendingSharedInstallAggregatesProvider =
                 snap.docs.map(SharedInstallAggregate.fromFirestore).toList(),
           );
     });
-
-/// Single aggregate by [groupKey]. Used in submit_job_screen to pre-fill
-/// invoice totals and team roster when joining an existing shared install.
-final sharedAggregateByGroupKeyProvider = StreamProvider.autoDispose
-    .family<SharedInstallAggregate?, String>((ref, groupKey) {
-      if (groupKey.isEmpty) return Stream.value(null);
-
-      return FirebaseFirestore.instance
-          .collection(AppConstants.sharedInstallAggregatesCollection)
-          .doc(groupKey)
-          .snapshots()
-          .map((snap) {
-            if (!snap.exists) return null;
-            return SharedInstallAggregate.fromFirestore(snap);
-          });
-    });
