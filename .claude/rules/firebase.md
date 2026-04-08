@@ -17,3 +17,6 @@ paths:
 - Offline: Firestore persistence handles caching automatically
 - Free tier awareness: minimize reads, use pagination for large lists
 - Destructive operations (delete/flush) must be admin-only and triggered from repository methods
+- Firestore rules changes must pass `npm run lint:firestore-rules` and `npm test` in `scripts/` before deploy
+- Treat Firestore rules compile warnings as release blockers; remove unused functions and reserved-name patterns immediately
+- Expression-limit evaluator messages in emulator logs are considered failures and require a rules micro-pass before release

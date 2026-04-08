@@ -22,6 +22,13 @@ Required order when user asks for release or deploy:
 7. Install APK to a connected device only if the user asked for it.
 8. Commit or push only after validation and requested build or deploy steps succeed.
 
+Strict quality gates (must pass with zero warnings):
+
+- Treat warnings as failures for release readiness (rules, lint, analyzer, tests, deploy checks).
+- Run `npm run lint:firestore-rules` in `scripts/` before rules tests or rules deploy.
+- Run Firestore rules emulator tests and confirm there are no expression-limit evaluator messages in the run logs.
+- If any gate produces warnings or expression-limit noise, perform a micro-pass and re-run gates until clean before deploy.
+
 Release verification rules:
 
 - Confirm the displayed app version and build in Settings/About match the built source.

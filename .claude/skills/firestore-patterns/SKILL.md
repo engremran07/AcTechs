@@ -67,3 +67,9 @@ Firestore local persistence is enabled by default in Flutter. When offline:
 - Admins: full read/write on all jobs and users
 - Admin-only deletes are allowed for controlled maintenance flows (e.g., flush)
 - UI must never call raw delete logic directly; route through repository/service methods
+
+## Strict Rules Hygiene
+- Treat warnings as failures: rules changes are not release-ready if compile/lint warnings exist.
+- Always run `npm run lint:firestore-rules` and `npm test` from `scripts/` before deploying Firestore rules.
+- Consider Firestore evaluator `maximum of 1000 expressions` messages as hard failures even when tests pass.
+- When expression-limit messages appear, perform a micro-pass: reorder predicates for cheaper short-circuiting, split heavy branches, and remove duplicate high-cost checks.

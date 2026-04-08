@@ -8,6 +8,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function authUidOrEmpty() {
+      return request.auth != null ? request.auth.uid : '';
+    }
+
     function userExists() {
       return isAuth() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid));
@@ -88,10 +92,6 @@ service cloud.firestore {
       return getAfter(invoiceClaimDocPath(request.resource.data.invoiceNumber)).data;
     }
 
-    function invoiceClaimBeforeExists() {
-      return exists(invoiceClaimDocPath(request.resource.data.invoiceNumber));
-    }
-
     function invoiceClaimAfterExists() {
       return existsAfter(invoiceClaimDocPath(request.resource.data.invoiceNumber));
     }
@@ -111,6 +111,32 @@ service cloud.firestore {
         invoiceClaimAfterData().activeJobCount > 0 &&
         invoiceClaimAfterData().createdAt is timestamp &&
         invoiceClaimAfterData().updatedAt is timestamp;
+    }
+
+    function invoiceClaimHasAllowedKeys(data) {
+      return data.keys().hasOnly([
+        'invoiceNumber',
+        'companyId',
+        'companyName',
+        'reuseMode',
+        'activeJobCount',
+        'createdBy',
+        'createdAt',
+        'updatedAt'
+      ]);
+    }
+
+    function validInvoiceClaimModes(data) {
+      return data.reuseMode in ['shared', 'solo'];
+    }
+
+    function invoiceClaimImmutableFieldsUnchanged() {
+      return request.resource.data.invoiceNumber == resource.data.invoiceNumber &&
+        request.resource.data.companyId == resource.data.companyId &&
+        request.resource.data.companyName == resource.data.companyName &&
+        request.resource.data.reuseMode == resource.data.reuseMode &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        request.resource.data.createdAt == resource.data.createdAt;
     }
 
     function isNonSharedJobCreate() {
@@ -244,11 +270,11 @@ service cloud.firestore {
 
     function technicianMutableJobUpdate() {
       return isActiveUser() &&
-        dateIsUnlocked(resource.data.date) &&
-        dateIsUnlocked(request.resource.data.date) &&
         isOwner(resource.data.techId) &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.submittedAt == resource.data.submittedAt &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
         validJobSharedState() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techName',
@@ -289,53 +315,84 @@ service cloud.firestore {
         ]);
     }
 
-    function technicianPendingEdit() {
-      return technicianMutableJobUpdate() &&
-        resource.data.status == 'pending' &&
-        request.resource.data.status == resource.data.status &&
-        request.resource.data.approvedBy == resource.data.approvedBy &&
-        request.resource.data.reviewedAt == resource.data.reviewedAt &&
-        request.resource.data.adminNote == resource.data.adminNote &&
-        settlementFieldsUnchanged();
-    }
-
-    function technicianRejectedResubmission() {
-      return technicianMutableJobUpdate() &&
-        resource.data.status == 'rejected' &&
-        request.resource.data.status == technicianExpectedEditedStatus() &&
-        request.resource.data.approvedBy == null &&
-        request.resource.data.reviewedAt == null &&
-        request.resource.data.adminNote == '' &&
-        settlementStatusOf(request.resource.data) == 'unpaid';
-    }
-
-    function technicianApprovedEdit() {
-      return technicianMutableJobUpdate() &&
-        technicianCanEditApprovedJob() &&
-        request.resource.data.status == 'approved' &&
-        request.resource.data.approvedBy == resource.data.approvedBy &&
-        request.resource.data.reviewedAt == resource.data.reviewedAt &&
-        request.resource.data.adminNote == resource.data.adminNote &&
-        settlementFieldsUnchanged();
+    function technicianApprovalFlowUpdate() {
+      return technicianMutableJobUpdate() && (
+        (
+          resource.data.status == 'pending' &&
+          request.resource.data.status == resource.data.status &&
+          request.resource.data.approvedBy == resource.data.approvedBy &&
+          request.resource.data.reviewedAt == resource.data.reviewedAt &&
+          request.resource.data.adminNote == resource.data.adminNote &&
+          settlementFieldsUnchanged()
+        ) || (
+          resource.data.status == 'rejected' &&
+          request.resource.data.status == technicianExpectedEditedStatus() &&
+          request.resource.data.approvedBy == null &&
+          request.resource.data.reviewedAt == null &&
+          request.resource.data.adminNote == '' &&
+          settlementStatusOf(request.resource.data) == 'unpaid'
+        ) || (
+          technicianCanEditApprovedJob() &&
+          request.resource.data.status == 'approved' &&
+          request.resource.data.approvedBy == resource.data.approvedBy &&
+          request.resource.data.reviewedAt == resource.data.reviewedAt &&
+          request.resource.data.adminNote == resource.data.adminNote &&
+          settlementFieldsUnchanged()
+        )
+      );
     }
 
     function adminSettlementUpdate() {
       return isAdmin() &&
-        dateIsUnlocked(resource.data.date) &&
         resource.data.status == 'approved' &&
         request.resource.data.status == resource.data.status &&
         settlementFieldsOnlyChanged() &&
+        dateIsUnlocked(resource.data.date) &&
         validAdminSettlementTransition();
     }
 
     function technicianSettlementUpdate() {
       return isActiveUser() &&
         isOwner(resource.data.techId) &&
-        dateIsUnlocked(resource.data.date) &&
         resource.data.status == 'approved' &&
         settlementStatusOf(resource.data) == 'awaiting_technician' &&
         settlementFieldsOnlyChanged() &&
+        dateIsUnlocked(resource.data.date) &&
         validTechSettlementTransition();
+    }
+
+    function technicianJobCreateAllowed() {
+      return isActiveUser() &&
+        dateIsUnlocked(request.resource.data.date) &&
+        request.resource.data.techId == request.auth.uid &&
+        request.resource.data.status == (
+          isSharedJobCreate()
+            ? (sharedJobApprovalRequired() ? 'pending' : 'approved')
+            : (jobApprovalRequired() ? 'pending' : 'approved')
+        ) &&
+        validJobCreatePayload() &&
+        validJobSharedState() &&
+        validInvoiceClaimState();
+    }
+
+    function adminJobCreateAllowed() {
+      return dateIsUnlocked(request.resource.data.date) &&
+        validJobCreatePayload() &&
+        validJobSharedState() &&
+        validInvoiceClaimState() &&
+        request.resource.data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function adminGeneralJobUpdateAllowed() {
+      return dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        resource.data.status != 'approved';
+    }
+
+    function jobUpdateAllowed() {
+      return isAdmin()
+        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed())
+        : (technicianSettlementUpdate() || technicianApprovalFlowUpdate());
     }
 
     function validAdminSettlementTransition() {
@@ -539,36 +596,120 @@ service cloud.firestore {
           'updatedAt'
         ]) &&
         sharedAggregateStaticFieldsUnchanged() &&
-        request.resource.data.consumedSplitUnits is int &&
-        request.resource.data.consumedSplitUnits >= 0 &&
-        request.resource.data.consumedWindowUnits is int &&
-        request.resource.data.consumedWindowUnits >= 0 &&
-        request.resource.data.consumedFreestandingUnits is int &&
-        request.resource.data.consumedFreestandingUnits >= 0 &&
-        request.resource.data.consumedUninstallSplitUnits is int &&
-        request.resource.data.consumedUninstallSplitUnits >= 0 &&
-        request.resource.data.consumedUninstallWindowUnits is int &&
-        request.resource.data.consumedUninstallWindowUnits >= 0 &&
-        request.resource.data.consumedUninstallFreestandingUnits is int &&
-        request.resource.data.consumedUninstallFreestandingUnits >= 0 &&
-        request.resource.data.consumedBracketCount is int &&
-        request.resource.data.consumedBracketCount >= 0 &&
-        request.resource.data.consumedDeliveryAmount is number &&
-        request.resource.data.consumedDeliveryAmount >= 0 &&
         request.resource.data.updatedAt is timestamp &&
         validSharedAggregateTotals(request.resource.data);
     }
 
+    function sharedAggregateUpdateAllowed() {
+      return isAdmin()
+        ? validSharedAggregateAdminUpdatePayload()
+        : (isActiveUser() && validSharedAggregateTechUpdatePayload());
+    }
+
     function validSharedAggregateTechUpdatePayload() {
-      return validSharedAggregateAdminUpdatePayload() &&
+      return request.resource.data.keys().hasOnly([
+          'groupKey',
+          'sharedInvoiceSplitUnits',
+          'sharedInvoiceWindowUnits',
+          'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits',
+          'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
+          'sharedInvoiceBracketCount',
+          'sharedDeliveryTeamCount',
+          'sharedInvoiceDeliveryAmount',
+          'consumedSplitUnits',
+          'consumedWindowUnits',
+          'consumedFreestandingUnits',
+          'consumedUninstallSplitUnits',
+          'consumedUninstallWindowUnits',
+          'consumedUninstallFreestandingUnits',
+          'consumedBracketCount',
+          'consumedDeliveryAmount',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        sharedAggregateStaticFieldsUnchanged() &&
+        request.resource.data.updatedAt is timestamp &&
+        request.resource.data.consumedSplitUnits is int &&
         request.resource.data.consumedSplitUnits >= resource.data.consumedSplitUnits &&
+        request.resource.data.consumedSplitUnits <= resource.data.sharedInvoiceSplitUnits &&
+        request.resource.data.consumedWindowUnits is int &&
         request.resource.data.consumedWindowUnits >= resource.data.consumedWindowUnits &&
+        request.resource.data.consumedWindowUnits <= resource.data.sharedInvoiceWindowUnits &&
+        request.resource.data.consumedFreestandingUnits is int &&
         request.resource.data.consumedFreestandingUnits >= resource.data.consumedFreestandingUnits &&
+        request.resource.data.consumedFreestandingUnits <= resource.data.sharedInvoiceFreestandingUnits &&
+        request.resource.data.consumedUninstallSplitUnits is int &&
         request.resource.data.consumedUninstallSplitUnits >= resource.data.consumedUninstallSplitUnits &&
+        request.resource.data.consumedUninstallSplitUnits <= resource.data.sharedInvoiceUninstallSplitUnits &&
+        request.resource.data.consumedUninstallWindowUnits is int &&
         request.resource.data.consumedUninstallWindowUnits >= resource.data.consumedUninstallWindowUnits &&
+        request.resource.data.consumedUninstallWindowUnits <= resource.data.sharedInvoiceUninstallWindowUnits &&
+        request.resource.data.consumedUninstallFreestandingUnits is int &&
         request.resource.data.consumedUninstallFreestandingUnits >= resource.data.consumedUninstallFreestandingUnits &&
+        request.resource.data.consumedUninstallFreestandingUnits <= resource.data.sharedInvoiceUninstallFreestandingUnits &&
+        request.resource.data.consumedBracketCount is int &&
         request.resource.data.consumedBracketCount >= resource.data.consumedBracketCount &&
-        request.resource.data.consumedDeliveryAmount >= resource.data.consumedDeliveryAmount;
+        request.resource.data.consumedBracketCount <= resource.data.sharedInvoiceBracketCount &&
+        request.resource.data.consumedDeliveryAmount is number &&
+        request.resource.data.consumedDeliveryAmount >= resource.data.consumedDeliveryAmount &&
+        request.resource.data.consumedDeliveryAmount <= resource.data.sharedInvoiceDeliveryAmount + 0.01;
+    }
+
+    function invoiceClaimCreatePayloadAllowed() {
+      return (isAdmin() || isActiveUser()) &&
+        request.resource.data.keys().hasAll([
+          'invoiceNumber',
+          'companyId',
+          'companyName',
+          'reuseMode',
+          'activeJobCount',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        invoiceClaimHasAllowedKeys(request.resource.data) &&
+        request.resource.data.companyId is string &&
+        request.resource.data.companyName is string &&
+        validInvoiceClaimModes(request.resource.data) &&
+        request.resource.data.activeJobCount is int &&
+        request.resource.data.activeJobCount > 0 &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        (
+          isAdmin() || (
+            isActiveUser() &&
+            request.resource.data.createdBy == authUidOrEmpty()
+          )
+        );
+    }
+
+    function invoiceClaimUpdateAllowed() {
+      return (isAdmin() || isActiveUser()) &&
+        request.resource.data.keys().hasAll([
+          'invoiceNumber',
+          'companyId',
+          'companyName',
+          'reuseMode',
+          'activeJobCount',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        invoiceClaimHasAllowedKeys(request.resource.data) &&
+        invoiceClaimImmutableFieldsUnchanged() &&
+        request.resource.data.activeJobCount is int &&
+        request.resource.data.activeJobCount >= 0 &&
+        request.resource.data.updatedAt is timestamp &&
+        (
+          isAdmin() || (
+            isActiveUser() &&
+            request.resource.data.activeJobCount >= resource.data.activeJobCount - 1 &&
+            request.resource.data.activeJobCount <= resource.data.activeJobCount + 1
+          )
+        );
     }
 
     // Helper: check if caller is the document owner
@@ -599,33 +740,11 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      allow create: if (isActiveUser() &&
-        dateIsUnlocked(request.resource.data.date) &&
-        request.resource.data.techId == request.auth.uid &&
-        request.resource.data.status == (
-          isSharedJobCreate()
-            ? (sharedJobApprovalRequired() ? 'pending' : 'approved')
-            : (jobApprovalRequired() ? 'pending' : 'approved')
-        ) &&
-        validJobCreatePayload() &&
-        validJobSharedState() &&
-        validInvoiceClaimState()) ||
-        (isAdmin() &&
-          dateIsUnlocked(request.resource.data.date) &&
-          validJobCreatePayload() &&
-          validJobSharedState() &&
-          validInvoiceClaimState() &&
-          request.resource.data.status in ['pending', 'approved', 'rejected']);
+      allow create: if isAdmin()
+        ? adminJobCreateAllowed()
+        : technicianJobCreateAllowed();
 
-      allow update: if (isAdmin() &&
-        dateIsUnlocked(resource.data.date) &&
-        dateIsUnlocked(request.resource.data.date) &&
-        resource.data.status != 'approved') ||
-        adminSettlementUpdate() ||
-        technicianPendingEdit() ||
-        technicianRejectedResubmission() ||
-        technicianApprovedEdit() ||
-        technicianSettlementUpdate();
+      allow update: if jobUpdateAllowed();
 
       allow delete: if (isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
@@ -643,8 +762,7 @@ service cloud.firestore {
 
       allow create: if (isAdmin() || isActiveUser()) &&
         validSharedAggregateCreatePayload();
-      allow update: if (isAdmin() && validSharedAggregateAdminUpdatePayload()) ||
-        (isActiveUser() && validSharedAggregateTechUpdatePayload());
+      allow update: if sharedAggregateUpdateAllowed();
       allow delete: if isAdmin();
     }
 
@@ -652,53 +770,11 @@ service cloud.firestore {
       allow get: if isAdmin() || isActiveUser();
       allow list: if isAdmin();
 
-      allow create: if (isAdmin() || isActiveUser()) &&
-        request.resource.data.keys().hasOnly([
-          'invoiceNumber',
-          'companyId',
-          'companyName',
-          'reuseMode',
-          'activeJobCount',
-          'createdBy',
-          'createdAt',
-          'updatedAt'
-        ]) &&
+      allow create: if request.resource.data.invoiceNumber is string &&
         request.resource.data.invoiceNumber.lower() == claimId &&
-        request.resource.data.companyId is string &&
-        request.resource.data.companyName is string &&
-        request.resource.data.reuseMode in ['shared', 'solo'] &&
-        request.resource.data.activeJobCount is int &&
-        request.resource.data.activeJobCount > 0 &&
-        (request.resource.data.createdBy == request.auth.uid || isAdmin()) &&
-        request.resource.data.createdAt is timestamp &&
-        request.resource.data.updatedAt is timestamp;
+        invoiceClaimCreatePayloadAllowed();
 
-      allow update: if request.resource.data.keys().hasOnly([
-          'invoiceNumber',
-          'companyId',
-          'companyName',
-          'reuseMode',
-          'activeJobCount',
-          'createdBy',
-          'createdAt',
-          'updatedAt'
-        ]) &&
-        request.resource.data.invoiceNumber == resource.data.invoiceNumber &&
-        request.resource.data.companyId == resource.data.companyId &&
-        request.resource.data.companyName == resource.data.companyName &&
-        request.resource.data.reuseMode == resource.data.reuseMode &&
-        request.resource.data.createdBy == resource.data.createdBy &&
-        request.resource.data.createdAt == resource.data.createdAt &&
-        request.resource.data.activeJobCount is int &&
-        request.resource.data.activeJobCount >= 0 &&
-        request.resource.data.updatedAt is timestamp &&
-        (
-          isAdmin() || (
-            isActiveUser() &&
-            request.resource.data.activeJobCount >= resource.data.activeJobCount - 1 &&
-            request.resource.data.activeJobCount <= resource.data.activeJobCount + 1
-          )
-        );
+      allow update: if invoiceClaimUpdateAllowed();
 
       allow delete: if isAdmin();
     }

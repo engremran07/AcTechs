@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test:firestore-rules",
-    "test:firestore-rules": "firebase emulators:exec --config ../firebase.json --only firestore --project actechs-rules-test \"node tests/firestore_rules_test.js\""
+    "lint:firestore-rules": "node tests/firestore_rules_strict_lint.js",
+    "test:firestore-rules": "node tests/firestore_rules_strict_runner.js"
   },
   "keywords": [],
   "author": "",
