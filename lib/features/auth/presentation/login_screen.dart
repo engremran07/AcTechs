@@ -37,7 +37,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _passwordFocusNode.addListener(_refreshCapsLockState);
-    _loadSavedCredentials();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _loadSavedCredentials(),
+    );
   }
 
   Future<void> _loadSavedCredentials() async {

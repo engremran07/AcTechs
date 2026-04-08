@@ -639,5 +639,21 @@
   "selectSameTechnicianJobs": "صرف ایک ہی ٹیکنیشن کی جابز منتخب کریں۔",
   "selectSingleBatchToResubmit": "دوبارہ بھیجنے کے لیے ایک ہی سیٹلمنٹ بیچ کی جابز منتخب کریں۔",
   "filterByDateRange": "تاریخ کی حد سے فلٹر کریں",
-  "unpaid": "غیر ادا شدہ"
+  "unpaid": "غیر ادا شدہ",
+  "sharedTeamMembers": "ٹیم کے ارکان",
+  "addTeamMember": "ٹیم ممبر شامل کریں",
+  "removeTeamMember": "ہٹائیں",
+  "sharedTeamCount": "ٹیم سائز: {count}",
+  "@sharedTeamCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notTeamMember": "آپ کو اس مشترکہ انوائس کی ٹیم میں شامل نہیں کیا گیا۔ پہلے ٹیکنیشن سے کہیں کہ وہ آپ کو ٹیم میں شامل کریں۔",
+  "yourSharedTeams": "آپ کی مشترکہ ٹیمیں",
+  "pendingSharedInstalls": "زیر التزام مشترکہ انسٹال",
+  "tapToAddYourShare": "اپنا حصہ شامل کرنے کے لیے ٹیپ کریں",
+  "addYourShare": "اپنا حصہ شامل کریں",
+  "preFilledFromSharedInstall": "انوائس کی معلومات آپ کی ٹیم کے مشترکہ انسٹال سے چھری گئی ہے۔ صرف اپنا یونٹ حصہ درج کریں۔",
+  "teamJobPending": "آپ کی شراکت درکار ہے",
+  "teamJobSubmitted": "آپ کی شراکت جمع ہو گئی",
+  "undo": "واپس کریں"
 }

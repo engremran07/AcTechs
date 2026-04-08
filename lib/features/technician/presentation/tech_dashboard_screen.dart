@@ -12,6 +12,7 @@ import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
 
 class TechDashboardScreen extends ConsumerStatefulWidget {
   const TechDashboardScreen({super.key});
@@ -58,6 +59,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final todaysJobs = ref.watch(todaysJobsProvider);
     final allJobs = ref.watch(technicianJobsProvider);
     final settlementInbox = ref.watch(technicianSettlementInboxProvider);
+    final sharedAggregates = ref.watch(pendingSharedInstallAggregatesProvider);
 
     return AppShortcuts(
       onRefresh: _refresh,
@@ -240,52 +242,187 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                   const SizedBox(height: 24),
 
                   settlementInbox.when(
-                    data: (items) => ArcticCard(
-                      onTap: () => context.push('/tech/settlements'),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: ArcticTheme.arcticSuccess.withValues(
-                                alpha: 0.15,
+                    data: (items) {
+                      final batchCount = items
+                          .map((job) => job.settlementBatchId.trim())
+                          .where((id) => id.isNotEmpty)
+                          .toSet()
+                          .length;
+                      return ArcticCard(
+                        onTap: () => context.push('/tech/settlements'),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: ArcticTheme.arcticSuccess.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              borderRadius: BorderRadius.circular(12),
+                              child: const Icon(
+                                Icons.payments_outlined,
+                                color: ArcticTheme.arcticSuccess,
+                                size: 22,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.payments_outlined,
-                              color: ArcticTheme.arcticSuccess,
-                              size: 22,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l.paymentInbox,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleSmall,
+                                  ),
+                                  Text(
+                                    '$batchCount ${l.settlementBatch}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l.paymentInbox,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                Text(
-                                  '${items.length} ${l.awaitingTechnicianConfirmation}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
+                            const Icon(
+                              Icons.chevron_right,
+                              color: ArcticTheme.arcticTextSecondary,
                             ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: ArcticTheme.arcticTextSecondary,
-                          ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    },
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
+
+                  // Pending Shared Installs
+                  sharedAggregates.when(
+                    data: (aggregates) {
+                      if (aggregates.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l.pendingSharedInstalls,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge,
+                                    ),
+                                    Text(
+                                      l.tapToAddYourShare,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: ArcticTheme.arcticWarning,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: ArcticTheme.arcticWarning.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${aggregates.length}',
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(
+                                        color: ArcticTheme.arcticWarning,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...aggregates.map(
+                            (agg) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: ArcticCard(
+                                onTap: () =>
+                                    context.go('/tech/submit', extra: agg),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: ArcticTheme.arcticWarning
+                                            .withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.group_work_outlined,
+                                        color: ArcticTheme.arcticWarning,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            agg.invoiceNumber.isNotEmpty
+                                                ? agg.invoiceNumber
+                                                : agg.groupKey,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleSmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            l.teamJobPending,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color:
+                                                      ArcticTheme.arcticWarning,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      color: ArcticTheme.arcticWarning,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
 
                   // Today's Jobs
                   Text(

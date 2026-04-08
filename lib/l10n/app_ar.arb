@@ -639,5 +639,21 @@
   "selectSameTechnicianJobs": "اختر مهام الفني نفسه فقط.",
   "selectSingleBatchToResubmit": "اختر مهام من دفعة تسوية واحدة لإعادة الإرسال.",
   "filterByDateRange": "تصفية حسب نطاق التاريخ",
-  "unpaid": "غير مدفوع"
+  "unpaid": "غير مدفوع",
+  "sharedTeamMembers": "أعضاء الفريق",
+  "addTeamMember": "إضافة عضو فريق",
+  "removeTeamMember": "إزالة",
+  "sharedTeamCount": "حجم الفريق: {count}",
+  "@sharedTeamCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notTeamMember": "أنت لست مدرجاً كعضو في فريق هذه الفاتورة المشتركة. اطلب من الفني الأول الذي قدّم هذه الفاتورة إضافتك إلى الفريق.",
+  "yourSharedTeams": "فرقك المشتركة",
+  "pendingSharedInstalls": "تنفيذ مشترك قيد الانتظار",
+  "tapToAddYourShare": "اضغط لإدخال حصتك",
+  "addYourShare": "أضف حصتك",
+  "preFilledFromSharedInstall": "تم تعبئة بيانات الفاتورة مسبقاً من التنفيذ المشترك لفريقك. أدخل حصتك من الوحدات فقط.",
+  "teamJobPending": "في انتظار مساهمتك",
+  "teamJobSubmitted": "تم تقديم مساهمتك",
+  "undo": "تراجع"
 }

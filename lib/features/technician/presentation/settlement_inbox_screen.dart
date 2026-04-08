@@ -4,13 +4,20 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
-import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
-class SettlementInboxScreen extends ConsumerWidget {
+class SettlementInboxScreen extends ConsumerStatefulWidget {
   const SettlementInboxScreen({super.key});
+
+  @override
+  ConsumerState<SettlementInboxScreen> createState() =>
+      _SettlementInboxScreenState();
+}
+
+class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
+  final Set<String> _processingBatchIds = <String>{};
 
   Future<String?> _promptComment(BuildContext context) async {
     final controller = TextEditingController();
@@ -41,8 +48,71 @@ class SettlementInboxScreen extends ConsumerWidget {
     return value;
   }
 
+  Future<void> _confirmBatch(String batchId) async {
+    final l = AppLocalizations.of(context)!;
+    setState(() => _processingBatchIds.add(batchId));
+    try {
+      await ref.read(jobRepositoryProvider).confirmSettlementBatch(batchId);
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.paymentConfirmedSuccess);
+      ref.invalidate(technicianSettlementInboxProvider);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: error.message(Localizations.localeOf(context).languageCode),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: JobException.saveFailed().message(
+          Localizations.localeOf(context).languageCode,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _processingBatchIds.remove(batchId));
+      }
+    }
+  }
+
+  Future<void> _rejectBatch(String batchId) async {
+    final l = AppLocalizations.of(context)!;
+    final comment = await _promptComment(context);
+    if (comment == null || comment.isEmpty) return;
+
+    setState(() => _processingBatchIds.add(batchId));
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .rejectSettlementBatch(batchId, comment);
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.paymentRejectedForCorrection);
+      ref.invalidate(technicianSettlementInboxProvider);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: error.message(Localizations.localeOf(context).languageCode),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: JobException.saveFailed().message(
+          Localizations.localeOf(context).languageCode,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _processingBatchIds.remove(batchId));
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final inboxAsync = ref.watch(technicianSettlementInboxProvider);
 
@@ -75,6 +145,7 @@ class SettlementInboxScreen extends ConsumerWidget {
                 final batchId = entries[index].key;
                 final items = entries[index].value;
                 final first = items.first;
+                final isProcessing = _processingBatchIds.contains(batchId);
                 return ArcticCard(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Column(
@@ -95,6 +166,15 @@ class SettlementInboxScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(first.settlementAdminNote),
                       ],
+                      if (first.settlementAmount > 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          first.settlementPaymentMethod.trim().isEmpty
+                              ? '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)}'
+                              : '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)} • ${first.settlementPaymentMethod}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       ...items.map(
                         (job) => Padding(
@@ -112,27 +192,9 @@ class SettlementInboxScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final comment = await _promptComment(context);
-                                if (comment == null || comment.isEmpty) return;
-                                final user = ref
-                                    .read(currentUserProvider)
-                                    .value;
-                                if (user == null) return;
-                                await ref
-                                    .read(jobRepositoryProvider)
-                                    .rejectSettlementBatch(
-                                      batchId,
-                                      user.uid,
-                                      comment,
-                                    );
-                                if (context.mounted) {
-                                  AppFeedback.success(
-                                    context,
-                                    message: l.paymentRejectedForCorrection,
-                                  );
-                                }
-                              },
+                              onPressed: isProcessing
+                                  ? null
+                                  : () => _rejectBatch(batchId),
                               icon: const Icon(Icons.close_rounded),
                               label: Text(l.rejectPayment),
                             ),
@@ -140,21 +202,9 @@ class SettlementInboxScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: FilledButton.icon(
-                              onPressed: () async {
-                                final user = ref
-                                    .read(currentUserProvider)
-                                    .value;
-                                if (user == null) return;
-                                await ref
-                                    .read(jobRepositoryProvider)
-                                    .confirmSettlementBatch(batchId, user.uid);
-                                if (context.mounted) {
-                                  AppFeedback.success(
-                                    context,
-                                    message: l.paymentConfirmedSuccess,
-                                  );
-                                }
-                              },
+                              onPressed: isProcessing
+                                  ? null
+                                  : () => _confirmBatch(batchId),
                               icon: const Icon(Icons.check_circle_outline),
                               label: Text(l.confirmPaymentReceived),
                             ),
@@ -171,9 +221,13 @@ class SettlementInboxScreen extends ConsumerWidget {
             padding: EdgeInsets.all(16),
             child: ArcticShimmer(count: 5),
           ),
-          error: (error, _) => error is AppException
-              ? Center(child: ErrorCard(exception: error))
-              : const SizedBox.shrink(),
+          error: (error, _) => Center(
+            child: ErrorCard(
+              exception: error is AppException
+                  ? error
+                  : JobException.saveFailed(),
+            ),
+          ),
         ),
       ),
     );

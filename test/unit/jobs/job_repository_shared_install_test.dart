@@ -11,7 +11,11 @@ void main() {
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
-    repository = JobRepository(firestore: firestore);
+    // Provide a stub currentUid so the conflict guard doesn't hit FirebaseAuth.instance
+    repository = JobRepository(
+      firestore: firestore,
+      currentUid: () => 'tech-1',
+    );
   });
 
   JobModel buildSharedJob({
@@ -336,64 +340,76 @@ void main() {
     );
   });
 
-  test('existing shared invoice claim allows another shared submission', () async {
-    await firestore.collection(AppConstants.invoiceClaimsCollection).doc('710')
-        .set({
-          'invoiceNumber': '710',
-          'companyId': 'company-1',
-          'companyName': 'Company',
-          'reuseMode': 'shared',
-          'activeJobCount': 1,
-          'createdBy': 'tech-1',
-          'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
-          'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
-        });
+  test(
+    'existing shared invoice claim allows another shared submission',
+    () async {
+      await firestore
+          .collection(AppConstants.invoiceClaimsCollection)
+          .doc('710')
+          .set({
+            'invoiceNumber': '710',
+            'companyId': 'company-1',
+            'companyName': 'Company',
+            'reuseMode': 'shared',
+            'activeJobCount': 1,
+            'createdBy': 'tech-1',
+            'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+            'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          });
 
-    await repository.submitJob(
-      buildSharedJob(
-        techId: 'tech-2',
-        techName: 'Tech Two',
-        invoiceNumber: 'INV-710',
-        splitShare: 1,
-      ),
-    );
-
-    final claimSnap = await firestore
-        .collection(AppConstants.invoiceClaimsCollection)
-        .doc('710')
-        .get();
-    final jobsSnap = await firestore.collection(AppConstants.jobsCollection).get();
-
-    expect(claimSnap.data()?['activeJobCount'], 2);
-    expect(jobsSnap.docs, hasLength(1));
-  });
-
-  test('existing solo invoice claim blocks resubmission without job scan', () async {
-    await firestore.collection(AppConstants.invoiceClaimsCollection).doc('720')
-        .set({
-          'invoiceNumber': '720',
-          'companyId': 'company-1',
-          'companyName': 'Company One',
-          'reuseMode': 'solo',
-          'activeJobCount': 1,
-          'createdBy': 'tech-1',
-          'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
-          'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
-        });
-
-    await expectLater(
-      () => repository.submitJob(
-        buildSoloJob(
+      await repository.submitJob(
+        buildSharedJob(
           techId: 'tech-2',
           techName: 'Tech Two',
-          invoiceNumber: 'INV-720',
-          companyId: 'company-1',
-          companyName: 'Company One',
+          invoiceNumber: 'INV-710',
+          splitShare: 1,
         ),
-      ),
-      throwsA(isA<JobException>()),
-    );
-  });
+      );
+
+      final claimSnap = await firestore
+          .collection(AppConstants.invoiceClaimsCollection)
+          .doc('710')
+          .get();
+      final jobsSnap = await firestore
+          .collection(AppConstants.jobsCollection)
+          .get();
+
+      expect(claimSnap.data()?['activeJobCount'], 2);
+      expect(jobsSnap.docs, hasLength(1));
+    },
+  );
+
+  test(
+    'existing solo invoice claim blocks resubmission without job scan',
+    () async {
+      await firestore
+          .collection(AppConstants.invoiceClaimsCollection)
+          .doc('720')
+          .set({
+            'invoiceNumber': '720',
+            'companyId': 'company-1',
+            'companyName': 'Company One',
+            'reuseMode': 'solo',
+            'activeJobCount': 1,
+            'createdBy': 'tech-1',
+            'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+            'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          });
+
+      await expectLater(
+        () => repository.submitJob(
+          buildSoloJob(
+            techId: 'tech-2',
+            techName: 'Tech Two',
+            invoiceNumber: 'INV-720',
+            companyId: 'company-1',
+            companyName: 'Company One',
+          ),
+        ),
+        throwsA(isA<JobException>()),
+      );
+    },
+  );
 
   test('shared installs reject unsupported cassette units', () async {
     final now = DateTime(2024, 1, 10, 9);

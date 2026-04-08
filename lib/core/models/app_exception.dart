@@ -299,6 +299,16 @@ class JobException extends AppException {
         'انوائس بیچ کے لیے صرف ایک ادائیگی اصلاحی چکر کی اجازت ہے۔',
         'يسمح بدورة تصحيح دفع واحدة فقط لكل دفعة فواتير.',
       );
+
+  factory JobException.notTeamMember() => const JobException(
+    'job_not_team_member',
+    'You are not listed as a team member for this shared invoice. '
+        'Ask the first technician who submitted this invoice to include you.',
+    'آپ کو اس مشترکہ انوائس کی ٹیم میں شامل نہیں کیا گیا۔ '
+        'پہلے ٹیکنیشن سے کہیں کہ وہ آپ کو ٹیم میں شامل کریں۔',
+    'أنت لست مدرجاً كعضو في فريق هذه الفاتورة المشتركة. '
+        'اطلب من الفني الأول الذي قدّم هذه الفاتورة إضافتك إلى الفريق.',
+  );
 }
 
 class AdminException extends AppException {

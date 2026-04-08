@@ -103,6 +103,42 @@ final todaysEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
   return ref.watch(earningRepositoryProvider).todaysEarnings(user.uid);
 });
 
+/// Single day's earnings — derived from monthlyEarningsProvider (no extra Firestore listener).
+final dailyEarningsProvider = Provider.autoDispose
+    .family<AsyncValue<List<EarningModel>>, DateTime>((ref, date) {
+      final month = DateTime(date.year, date.month);
+      return ref
+          .watch(monthlyEarningsProvider(month))
+          .whenData(
+            (list) => list
+                .where(
+                  (e) =>
+                      e.date?.year == date.year &&
+                      e.date?.month == date.month &&
+                      e.date?.day == date.day,
+                )
+                .toList(),
+          );
+    });
+
+/// Single day's expenses — derived from monthlyExpensesProvider (no extra Firestore listener).
+final dailyExpensesProvider = Provider.autoDispose
+    .family<AsyncValue<List<ExpenseModel>>, DateTime>((ref, date) {
+      final month = DateTime(date.year, date.month);
+      return ref
+          .watch(monthlyExpensesProvider(month))
+          .whenData(
+            (list) => list
+                .where(
+                  (e) =>
+                      e.date?.year == date.year &&
+                      e.date?.month == date.month &&
+                      e.date?.day == date.day,
+                )
+                .toList(),
+          );
+    });
+
 /// Monthly earnings for the logged-in tech.
 final monthlyEarningsProvider = StreamProvider.autoDispose
     .family<List<EarningModel>, DateTime>((ref, month) {

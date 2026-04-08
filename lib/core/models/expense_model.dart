@@ -36,6 +36,9 @@ abstract class ExpenseModel with _$ExpenseModel {
     DateTime? createdAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? reviewedAt,
+    @JsonKey(defaultValue: false) @Default(false) bool isDeleted,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? deletedAt,
   }) = _ExpenseModel;
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) =>

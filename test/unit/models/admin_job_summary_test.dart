@@ -25,14 +25,14 @@ void main() {
     );
   }
 
-  test('disambiguates duplicate technician display names by tech id', () {
+  test('keys technician map by stable technician id', () {
     final summary = AdminJobSummary.fromJobs([
       buildJob(techId: 'tech-1', techName: 'Alex', invoiceNumber: 'INV-1'),
       buildJob(techId: 'tech-2', techName: 'Alex', invoiceNumber: 'INV-2'),
     ]);
 
-    expect(summary.technicianJobsMap['Alex (tech-1)'], 1);
-    expect(summary.technicianJobsMap['Alex (tech-2)'], 1);
+    expect(summary.technicianJobsMap['tech-1'], 1);
+    expect(summary.technicianJobsMap['tech-2'], 1);
   });
 
   test(

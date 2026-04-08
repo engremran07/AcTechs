@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
-class TechShell extends StatelessWidget {
+class TechShell extends ConsumerWidget {
   const TechShell({super.key, required this.child});
 
   final Widget child;
@@ -20,7 +23,20 @@ class TechShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingSettlementBatches = ref
+        .watch(technicianSettlementInboxProvider)
+        .maybeWhen(
+          data: (jobs) => jobs
+              .map((job) => job.settlementBatchId.trim())
+              .where((id) => id.isNotEmpty)
+              .toSet()
+              .length,
+          orElse: () => 0,
+        );
+    final sharedTeamsCount = ref
+        .watch(pendingSharedInstallAggregatesProvider)
+        .maybeWhen(data: (aggs) => aggs.length, orElse: () => 0);
     final isHome = _currentIndex(context) == 0;
     return PopScope(
       canPop: false,
@@ -63,7 +79,25 @@ class TechShell extends StatelessWidget {
           },
           items: [
             BottomNavigationBarItem(
-              icon: const Icon(Icons.dashboard_rounded),
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.dashboard_rounded),
+                  if (sharedTeamsCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.amber,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               label: AppLocalizations.of(context)!.home,
             ),
             BottomNavigationBarItem(
@@ -75,7 +109,25 @@ class TechShell extends StatelessWidget {
               label: AppLocalizations.of(context)!.inOut,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.history_rounded),
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.history_rounded),
+                  if (pendingSettlementBatches > 0)
+                    Positioned(
+                      right: -2,
+                      top: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               label: AppLocalizations.of(context)!.history,
             ),
             BottomNavigationBarItem(

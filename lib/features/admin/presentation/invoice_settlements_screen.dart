@@ -19,8 +19,12 @@ class InvoiceSettlementsScreen extends ConsumerStatefulWidget {
 
 class _InvoiceSettlementsScreenState
     extends ConsumerState<InvoiceSettlementsScreen> {
+  static const String _scopePending = 'pending';
+  static const String _scopeHistory = 'history';
+
   final Set<String> _selected = <String>{};
   String _search = '';
+  String _scope = _scopePending;
   DateTimeRange? _dateRange;
   bool _isProcessing = false;
 
@@ -86,6 +90,68 @@ class _InvoiceSettlementsScreenState
     return value;
   }
 
+  Future<({double amount, String paymentMethod, String note})?>
+  _promptSettlementPaymentDetails(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
+    final amountController = TextEditingController();
+    final methodController = TextEditingController();
+    final noteController = TextEditingController();
+
+    final value =
+        await showDialog<({double amount, String paymentMethod, String note})>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l.markAsPaid),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(hintText: l.amountLabel),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: methodController,
+                  decoration: InputDecoration(hintText: l.notesLabel),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  decoration: InputDecoration(hintText: l.settlementAdminNote),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final amount =
+                      double.tryParse(amountController.text.trim()) ?? 0;
+                  Navigator.of(dialogContext).pop((
+                    amount: amount,
+                    paymentMethod: methodController.text.trim(),
+                    note: noteController.text.trim(),
+                  ));
+                },
+                child: Text(l.save),
+              ),
+            ],
+          ),
+        );
+
+    amountController.dispose();
+    methodController.dispose();
+    noteController.dispose();
+    return value;
+  }
+
   Future<void> _pickRange() async {
     final l = AppLocalizations.of(context)!;
     final now = DateTime.now();
@@ -120,11 +186,18 @@ class _InvoiceSettlementsScreenState
       return;
     }
 
-    final note = await _promptNote(
-      context,
-      l.markAsPaid,
-      l.settlementAdminNote,
-    );
+    final settlementDetails = await _promptSettlementPaymentDetails(context);
+    if (!mounted) return;
+    final lAfterPrompt = AppLocalizations.of(context)!;
+    if (settlementDetails == null) return;
+    if (settlementDetails.amount <= 0) {
+      AppFeedback.error(context, message: lAfterPrompt.amountLabel);
+      return;
+    }
+    if (settlementDetails.paymentMethod.trim().isEmpty) {
+      AppFeedback.error(context, message: lAfterPrompt.notesLabel);
+      return;
+    }
     final admin = ref.read(currentUserProvider).value;
     if (admin == null) return;
 
@@ -135,7 +208,9 @@ class _InvoiceSettlementsScreenState
           .markJobsAsPaid(
             selectedJobs.map((job) => job.id).toList(growable: false),
             admin.uid,
-            adminNote: note ?? '',
+            adminNote: settlementDetails.note,
+            amountPerJob: settlementDetails.amount,
+            paymentMethod: settlementDetails.paymentMethod,
           );
       if (!mounted) return;
       AppFeedback.success(context, message: l.paymentMarkedForConfirmation);
@@ -197,6 +272,55 @@ class _InvoiceSettlementsScreenState
     }
   }
 
+  Future<void> _resolveDisputed(List<JobModel> selectedJobs) async {
+    final l = AppLocalizations.of(context)!;
+    if (selectedJobs.isEmpty) {
+      AppFeedback.error(context, message: l.selectJobsFirst);
+      return;
+    }
+
+    final batchIds = selectedJobs
+        .map((job) => job.settlementBatchId)
+        .where((id) => id.trim().isNotEmpty)
+        .toSet();
+    if (batchIds.length != 1) {
+      AppFeedback.error(context, message: l.selectSingleBatchToResubmit);
+      return;
+    }
+
+    final note = await _promptNote(
+      context,
+      l.paymentDisputed,
+      l.settlementAdminNote,
+    );
+    final admin = ref.read(currentUserProvider).value;
+    if (admin == null) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .resolveDisputedSettlement(
+            batchIds.first,
+            admin.uid,
+            resolutionNote: note ?? '',
+          );
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.paymentConfirmedSuccess);
+      setState(() => _selected.clear());
+      ref.invalidate(adminSettlementHistoryProvider);
+      ref.invalidate(settlementSummaryProvider);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: error.message(Localizations.localeOf(context).languageCode),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   String _statusLabel(AppLocalizations l, JobSettlementStatus status) {
     switch (status) {
       case JobSettlementStatus.unpaid:
@@ -215,7 +339,9 @@ class _InvoiceSettlementsScreenState
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final settlementsAsync = ref.watch(adminSettlementCandidatesProvider);
+    final settlementsAsync = _scope == _scopeHistory
+        ? ref.watch(adminSettlementHistoryProvider)
+        : ref.watch(adminSettlementCandidatesProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l.invoiceSettlements)),
@@ -232,9 +358,40 @@ class _InvoiceSettlementsScreenState
             final canResubmit =
                 selectedJobs.isNotEmpty &&
                 selectedJobs.every((job) => job.isSettlementCorrectionRequired);
+            final canResolveDisputed =
+                selectedJobs.isNotEmpty &&
+                selectedJobs.every((job) => job.isSettlementDisputedFinal);
 
             return Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    children: [
+                      ChoiceChip(
+                        label: Text(l.pending),
+                        selected: _scope == _scopePending,
+                        onSelected: (_) {
+                          setState(() {
+                            _scope = _scopePending;
+                            _selected.clear();
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: Text(l.history),
+                        selected: _scope == _scopeHistory,
+                        onSelected: (_) {
+                          setState(() {
+                            _scope = _scopeHistory;
+                            _selected.clear();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: ArcticSearchBar(
@@ -283,72 +440,95 @@ class _InvoiceSettlementsScreenState
                             color: ArcticTheme.arcticWarning,
                             onPressed: () => _resubmit(selectedJobs),
                           ),
+                        if (canResolveDisputed)
+                          BulkAction(
+                            label: l.paymentConfirmed,
+                            icon: Icons.gavel_rounded,
+                            color: ArcticTheme.arcticSuccess,
+                            onPressed: () => _resolveDisputed(selectedJobs),
+                          ),
                       ],
                     ),
                   ),
                 Expanded(
-                  child: filtered.isEmpty
-                      ? Center(
-                          child: Text(
-                            l.noJobsForPeriod,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final job = filtered[index];
-                            final selected = _selected.contains(job.id);
-                            return ArcticCard(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: CheckboxListTile(
-                                value: selected,
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                onChanged: (value) {
-                                  setState(() {
-                                    if (value ?? false) {
-                                      _selected.add(job.id);
-                                    } else {
-                                      _selected.remove(job.id);
-                                    }
-                                  });
-                                },
-                                title: Text(job.invoiceNumber),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('${job.techName} • ${job.clientName}'),
-                                    Text(
-                                      '${AppFormatters.date(job.date)} • ${_statusLabel(l, job.settlementStatus)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color:
-                                                ArcticTheme.arcticTextSecondary,
-                                          ),
-                                    ),
-                                    if (job.settlementTechnicianComment
-                                        .trim()
-                                        .isNotEmpty)
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(adminSettlementCandidatesProvider);
+                      ref.invalidate(adminSettlementHistoryProvider);
+                      ref.invalidate(settlementSummaryProvider);
+                    },
+                    child: filtered.isEmpty
+                        ? ListView(
+                            children: [
+                              const SizedBox(height: 80),
+                              Center(
+                                child: Text(
+                                  l.noJobsForPeriod,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, index) {
+                              final job = filtered[index];
+                              final selected = _selected.contains(job.id);
+                              return ArcticCard(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: CheckboxListTile(
+                                  value: selected,
+                                  contentPadding: EdgeInsets.zero,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      if (value ?? false) {
+                                        _selected.add(job.id);
+                                      } else {
+                                        _selected.remove(job.id);
+                                      }
+                                    });
+                                  },
+                                  title: Text(job.invoiceNumber),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
                                       Text(
-                                        job.settlementTechnicianComment,
+                                        '${job.techName} • ${job.clientName}',
+                                      ),
+                                      Text(
+                                        '${AppFormatters.date(job.date)} • ${_statusLabel(l, job.settlementStatus)}',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color: ArcticTheme.arcticWarning,
+                                              color: ArcticTheme
+                                                  .arcticTextSecondary,
                                             ),
                                       ),
-                                  ],
+                                      if (job.settlementTechnicianComment
+                                          .trim()
+                                          .isNotEmpty)
+                                        Text(
+                                          job.settlementTechnicianComment,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color:
+                                                    ArcticTheme.arcticWarning,
+                                              ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
+                  ),
                 ),
               ],
             );
@@ -357,9 +537,13 @@ class _InvoiceSettlementsScreenState
             padding: EdgeInsets.all(16),
             child: ArcticShimmer(count: 6),
           ),
-          error: (error, _) => error is AppException
-              ? Center(child: ErrorCard(exception: error))
-              : const SizedBox.shrink(),
+          error: (error, _) => Center(
+            child: ErrorCard(
+              exception: error is AppException
+                  ? error
+                  : JobException.saveFailed(),
+            ),
+          ),
         ),
       ),
     );

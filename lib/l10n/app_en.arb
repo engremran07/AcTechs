@@ -638,5 +638,21 @@
   "selectSameTechnicianJobs": "Select jobs from the same technician only.",
   "selectSingleBatchToResubmit": "Select jobs from a single settlement batch to resubmit.",
   "filterByDateRange": "Filter by date range",
-  "unpaid": "Unpaid"
+  "unpaid": "Unpaid",
+  "sharedTeamMembers": "Team Members",
+  "addTeamMember": "Add Team Member",
+  "removeTeamMember": "Remove",
+  "sharedTeamCount": "Team size: {count}",
+  "@sharedTeamCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notTeamMember": "You are not enrolled in this shared invoice team. Ask the first submitter to add you.",
+  "yourSharedTeams": "Your Shared Teams",
+  "pendingSharedInstalls": "Pending Shared Installs",
+  "tapToAddYourShare": "Tap to insert your share",
+  "addYourShare": "Add Your Share",
+  "preFilledFromSharedInstall": "Invoice data pre-filled from your team\u2019s shared install. Enter only your unit share.",
+  "teamJobPending": "Pending your contribution",
+  "teamJobSubmitted": "Your contribution submitted",
+  "undo": "Undo"
 }

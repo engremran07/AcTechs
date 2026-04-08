@@ -9,15 +9,17 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/invoice_utils.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class SubmitJobScreen extends ConsumerStatefulWidget {
-  const SubmitJobScreen({this.initialJob, super.key});
+  const SubmitJobScreen({this.initialJob, this.initialAggregate, super.key});
 
   final JobModel? initialJob;
+  final SharedInstallAggregate? initialAggregate;
 
   @override
   ConsumerState<SubmitJobScreen> createState() => _SubmitJobScreenState();
@@ -50,6 +52,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   int _sharedUninstallFreestandingUnits = 0;
   int _sharedBracketQty = 0;
   int _sharedTeamSize = 0;
+  List<UserModel> _selectedTeamMembers = [];
   int _techSplitShare = 0;
   int _techWindowShare = 0;
   int _techFreestandingShare = 0;
@@ -62,12 +65,23 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   bool get _isEditing => widget.initialJob != null;
 
+  /// True when opened from a pending shared install card on the dashboard.
+  bool get _fromAggregate => widget.initialAggregate != null;
+
   @override
   void initState() {
     super.initState();
     final initialJob = widget.initialJob;
     if (initialJob != null) {
       _populateFromJob(initialJob);
+    }
+    final initialAggregate = widget.initialAggregate;
+    if (initialAggregate != null) {
+      _populateFromAggregate(initialAggregate);
+      // Async-load client name / phone from the first job in this group.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadClientDetailsFromGroup(initialAggregate.groupKey);
+      });
     }
   }
 
@@ -84,6 +98,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   int get _effectiveBracketQty =>
       _isSharedInstall ? _techBracketShare : _bracketQty;
+
+  /// Total team count including self. Falls back to legacy numeric field
+  /// when no team members have been explicitly selected (e.g. editing an
+  /// old job that predates the team-roster feature).
+  int get _effectiveTeamCount => _selectedTeamMembers.isNotEmpty
+      ? _selectedTeamMembers.length + 1
+      : _sharedTeamSize;
 
   void _populateFromJob(JobModel job) {
     _invoiceController.text = job.invoiceNumber;
@@ -127,6 +148,70 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _techUninstallWindowShare = job.techUninstallWindowShare;
     _techUninstallFreestandingShare = job.techUninstallFreestandingShare;
     _techBracketShare = job.techBracketShare;
+  }
+
+  /// Pre-fill invoice totals and delivery from a shared aggregate.
+  /// Tech share fields are left at 0 — the tech fills those themselves.
+  void _populateFromAggregate(SharedInstallAggregate agg) {
+    _invoiceController.text = agg.invoiceNumber;
+    _isSharedInstall = true;
+    _sharedSplitUnits = agg.sharedInvoiceSplitUnits;
+    _sharedWindowUnits = agg.sharedInvoiceWindowUnits;
+    _sharedFreestandingUnits = agg.sharedInvoiceFreestandingUnits;
+    _sharedUninstallSplitUnits = agg.sharedInvoiceUninstallSplitUnits;
+    _sharedUninstallWindowUnits = agg.sharedInvoiceUninstallWindowUnits;
+    _sharedUninstallFreestandingUnits =
+        agg.sharedInvoiceUninstallFreestandingUnits;
+    _sharedBracketQty = agg.sharedInvoiceBracketCount;
+    _sharedTeamSize = agg.sharedDeliveryTeamCount;
+    // Pre-fill client details stored on the aggregate (no job query needed).
+    if (agg.clientName.isNotEmpty) {
+      _clientNameController.text = agg.clientName;
+    }
+    if (agg.clientContact.isNotEmpty) {
+      _clientContactController.text = agg.clientContact;
+    }
+    if (agg.sharedInvoiceDeliveryAmount > 0) {
+      _deliveryAmountController.text = agg.sharedInvoiceDeliveryAmount
+          .toStringAsFixed(
+            agg.sharedInvoiceDeliveryAmount ==
+                    agg.sharedInvoiceDeliveryAmount.roundToDouble()
+                ? 0
+                : 2,
+          );
+    }
+  }
+
+  /// Async one-time fetch of the first job in this group to pre-fill
+  /// client name, phone, and company from the original submitter's job.
+  /// Async fallback: fetches client details from the first job in the group
+  /// for legacy aggregates that predate the clientName/clientContact fields.
+  /// Silently ignored on PERMISSION_DENIED (tech can only read own jobs).
+  Future<void> _loadClientDetailsFromGroup(String groupKey) async {
+    if (!mounted) return;
+    try {
+      final job = await ref
+          .read(jobRepositoryProvider)
+          .fetchFirstJobForGroup(groupKey);
+      if (!mounted || job == null) return;
+      setState(() {
+        if (_clientNameController.text.isEmpty &&
+            job.clientName.trim().isNotEmpty) {
+          _clientNameController.text = job.clientName.trim();
+        }
+        if (_clientContactController.text.isEmpty &&
+            job.clientContact.trim().isNotEmpty) {
+          _clientContactController.text = job.clientContact.trim();
+        }
+        if (job.companyId.trim().isNotEmpty && _selectedCompanyId == null) {
+          _selectedCompanyId = job.companyId;
+          _selectedCompanyName = job.companyName;
+        }
+      });
+    } catch (_) {
+      // PERMISSION_DENIED reading another tech’s job — silently ignored.
+      // Client details were pre-filled from the aggregate if available.
+    }
   }
 
   int _clampShare(int nextValue, int invoiceTotal) {
@@ -216,6 +301,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       _sharedUninstallFreestandingUnits = 0;
       _sharedBracketQty = 0;
       _sharedTeamSize = 0;
+      _selectedTeamMembers = [];
       _techSplitShare = 0;
       _techWindowShare = 0;
       _techFreestandingShare = 0;
@@ -280,14 +366,16 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
       final rawDeliveryAmount =
           double.tryParse(_deliveryAmountController.text.trim()) ?? 0;
-      if (_isSharedInstall && rawDeliveryAmount > 0 && _sharedTeamSize <= 0) {
+      if (_isSharedInstall &&
+          rawDeliveryAmount > 0 &&
+          _effectiveTeamCount <= 0) {
         if (mounted) {
           AppFeedback.error(context, message: l.sharedDeliverySplitInvalid);
         }
         return;
       }
       final deliveryAmount = _isSharedInstall && rawDeliveryAmount > 0
-          ? rawDeliveryAmount / _sharedTeamSize
+          ? rawDeliveryAmount / _effectiveTeamCount
           : rawDeliveryAmount;
 
       final charges = InvoiceCharges(
@@ -359,7 +447,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
             ? _sharedUninstallFreestandingUnits
             : 0,
         sharedInvoiceBracketCount: _isSharedInstall ? _sharedBracketQty : 0,
-        sharedDeliveryTeamCount: _isSharedInstall ? _sharedTeamSize : 0,
+        sharedDeliveryTeamCount: _isSharedInstall ? _effectiveTeamCount : 0,
         sharedInvoiceDeliveryAmount: _isSharedInstall ? rawDeliveryAmount : 0,
         techSplitShare: _techSplitShare,
         techWindowShare: _techWindowShare,
@@ -383,6 +471,14 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                 .submitJob(
                   job,
                   lockedBeforeDate: approvalConfig?.lockedBeforeDate,
+                  teamMemberIds:
+                      _isSharedInstall && _selectedTeamMembers.isNotEmpty
+                      ? [user.uid, ..._selectedTeamMembers.map((t) => t.uid)]
+                      : [],
+                  teamMemberNames:
+                      _isSharedInstall && _selectedTeamMembers.isNotEmpty
+                      ? [user.name, ..._selectedTeamMembers.map((t) => t.name)]
+                      : [],
                 );
 
       if (mounted) {
@@ -424,7 +520,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
       onSubmit: _isSubmitting ? null : _submit,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEditing ? l.editProfile : l.submitInvoice),
+          title: Text(
+            _fromAggregate
+                ? l.addYourShare
+                : (_isEditing ? l.editProfile : l.submitInvoice),
+          ),
         ),
         body: SafeArea(
           child: GestureDetector(
@@ -436,6 +536,44 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    // ── Pre-fill banner (shared install join flow) ──
+                    if (_fromAggregate) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: ArcticTheme.arcticBlue.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.groups_rounded,
+                              color: ArcticTheme.arcticBlue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                l.preFilledFromSharedInstall,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: ArcticTheme.arcticBlue),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     // ── AC Services (single source of truth) ──
                     _SectionHeader(
                       icon: Icons.ac_unit_rounded,
@@ -445,32 +583,34 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                     ArcticCard(
                       child: Column(
                         children: [
-                          SwitchListTile.adaptive(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l.sharedInstall),
-                            subtitle: Text(l.sharedInstallHint),
-                            value: _isSharedInstall,
-                            onChanged: (value) => setState(() {
-                              _isSharedInstall = value;
-                              if (!value) {
-                                _sharedSplitUnits = 0;
-                                _sharedWindowUnits = 0;
-                                _sharedFreestandingUnits = 0;
-                                _sharedUninstallSplitUnits = 0;
-                                _sharedUninstallWindowUnits = 0;
-                                _sharedUninstallFreestandingUnits = 0;
-                                _sharedBracketQty = 0;
-                                _sharedTeamSize = 0;
-                                _techSplitShare = 0;
-                                _techWindowShare = 0;
-                                _techFreestandingShare = 0;
-                                _techUninstallSplitShare = 0;
-                                _techUninstallWindowShare = 0;
-                                _techUninstallFreestandingShare = 0;
-                                _techBracketShare = 0;
-                              }
-                            }),
-                          ),
+                          if (!_fromAggregate)
+                            SwitchListTile.adaptive(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(l.sharedInstall),
+                              subtitle: Text(l.sharedInstallHint),
+                              value: _isSharedInstall,
+                              onChanged: (value) => setState(() {
+                                _isSharedInstall = value;
+                                if (!value) {
+                                  _sharedSplitUnits = 0;
+                                  _sharedWindowUnits = 0;
+                                  _sharedFreestandingUnits = 0;
+                                  _sharedUninstallSplitUnits = 0;
+                                  _sharedUninstallWindowUnits = 0;
+                                  _sharedUninstallFreestandingUnits = 0;
+                                  _sharedBracketQty = 0;
+                                  _sharedTeamSize = 0;
+                                  _selectedTeamMembers = [];
+                                  _techSplitShare = 0;
+                                  _techWindowShare = 0;
+                                  _techFreestandingShare = 0;
+                                  _techUninstallSplitShare = 0;
+                                  _techUninstallWindowShare = 0;
+                                  _techUninstallFreestandingShare = 0;
+                                  _techBracketShare = 0;
+                                }
+                              }),
+                            ),
                           if (_isSharedInstall) ...[
                             const SizedBox(height: 8),
                             Text(
@@ -482,6 +622,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.splitAcLabel,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedSplitUnits,
                               shareValue: _techSplitShare,
                               onTotalChanged: (value) => setState(() {
@@ -501,6 +642,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.windowAcLabel,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedWindowUnits,
                               shareValue: _techWindowShare,
                               onTotalChanged: (value) => setState(() {
@@ -520,6 +662,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.freestandingAcLabel,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedFreestandingUnits,
                               shareValue: _techFreestandingShare,
                               onTotalChanged: (value) => setState(() {
@@ -539,6 +682,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.acOutdoorBracket,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedBracketQty,
                               shareValue: _techBracketShare,
                               onTotalChanged: (value) => setState(() {
@@ -558,6 +702,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.uninstallSplit,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedUninstallSplitUnits,
                               shareValue: _techUninstallSplitShare,
                               onTotalChanged: (value) => setState(() {
@@ -577,6 +722,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.uninstallWindow,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedUninstallWindowUnits,
                               shareValue: _techUninstallWindowShare,
                               onTotalChanged: (value) => setState(() {
@@ -596,6 +742,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             const SizedBox(height: 8),
                             _SharedInstallTypeRow(
                               title: l.uninstallStanding,
+                              totalReadOnly: _fromAggregate,
                               totalValue: _sharedUninstallFreestandingUnits,
                               shareValue: _techUninstallFreestandingShare,
                               onTotalChanged: (value) => setState(() {
@@ -613,19 +760,8 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                               }),
                             ),
                             const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.sharedTeamSize,
-                                    value: _sharedTeamSize,
-                                    onChanged: (value) =>
-                                        setState(() => _sharedTeamSize = value),
-                                  ),
-                                ),
-                                const Spacer(),
-                              ],
-                            ),
+                            if (!_fromAggregate)
+                              _buildTeamSelectorSection(context, l),
                             const SizedBox(height: 8),
                           ],
                           if (!_isSharedInstall) ...[
@@ -797,6 +933,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                       controller: _invoiceController,
                       textInputAction: TextInputAction.next,
                       enableInteractiveSelection: true,
+                      readOnly: _fromAggregate,
                       decoration: InputDecoration(
                         hintText: l.invoiceNumber,
                         labelText: l.invoiceNumber,
@@ -804,6 +941,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                           Icons.receipt_outlined,
                           color: ArcticTheme.arcticTextSecondary,
                         ),
+                        suffixIcon: _fromAggregate
+                            ? const Icon(
+                                Icons.lock_outline,
+                                size: 18,
+                                color: ArcticTheme.arcticTextSecondary,
+                              )
+                            : null,
                       ),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? l.required : null,
@@ -877,6 +1021,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             ),
                             textInputAction: TextInputAction.next,
                             enableInteractiveSelection: true,
+                            readOnly: _fromAggregate,
                             decoration: InputDecoration(
                               hintText: _isSharedInstall
                                   ? l.sharedInvoiceDeliveryAmount
@@ -885,6 +1030,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                 Icons.payments_outlined,
                                 color: ArcticTheme.arcticTextSecondary,
                               ),
+                              suffixIcon: _fromAggregate
+                                  ? const Icon(
+                                      Icons.lock_outline,
+                                      size: 18,
+                                      color: ArcticTheme.arcticTextSecondary,
+                                    )
+                                  : null,
                               isDense: true,
                             ),
                           ),
@@ -956,6 +1108,105 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     );
   }
 
+  Widget _buildTeamSelectorSection(BuildContext context, AppLocalizations l) {
+    final theme = Theme.of(context);
+    final currentUserUid = ref.watch(currentUserProvider).value?.uid ?? '';
+    final allTechsAsync = ref.watch(activeTechniciansForTeamProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l.sharedTeamMembers,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _selectedTeamMembers.length >= 9
+                  ? null
+                  : () => _showAddTeamMemberDialog(
+                      context,
+                      l,
+                      allTechsAsync.value ?? [],
+                      currentUserUid,
+                    ),
+              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+              label: Text(l.addTeamMember),
+            ),
+          ],
+        ),
+        if (_selectedTeamMembers.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: _selectedTeamMembers
+                .map(
+                  (member) => Chip(
+                    label: Text(member.name),
+                    onDeleted: () => setState(
+                      () => _selectedTeamMembers.removeWhere(
+                        (m) => m.uid == member.uid,
+                      ),
+                    ),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    padding: EdgeInsets.zero,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 4),
+        ],
+        Text(
+          l.sharedTeamCount(_effectiveTeamCount > 0 ? _effectiveTeamCount : 1),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: ArcticTheme.arcticTextSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showAddTeamMemberDialog(
+    BuildContext context,
+    AppLocalizations l,
+    List<UserModel> allTechs,
+    String selfUid,
+  ) async {
+    final eligible = allTechs
+        .where(
+          (t) =>
+              t.uid != selfUid &&
+              !_selectedTeamMembers.any((s) => s.uid == t.uid),
+        )
+        .toList();
+
+    if (eligible.isEmpty) return;
+
+    final selected = await showDialog<UserModel>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(l.addTeamMember),
+        children: eligible
+            .map(
+              (tech) => SimpleDialogOption(
+                onPressed: () => Navigator.of(dialogContext).pop(tech),
+                child: Text(tech.name),
+              ),
+            )
+            .toList(),
+      ),
+    );
+
+    if (selected != null) {
+      setState(() => _selectedTeamMembers.add(selected));
+    }
+  }
+
   String _buildInvoiceNumber() {
     var entered = _invoiceController.text.trim();
     final upper = entered.toUpperCase();
@@ -993,13 +1244,16 @@ class _QtyTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.readOnly = false,
   });
 
   final String label;
   final int value;
   final ValueChanged<int> onChanged;
+  final bool readOnly;
 
   Future<void> _showManualQuantityDialog(BuildContext context) async {
+    if (readOnly) return;
     final l = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: '$value');
 
@@ -1064,7 +1318,11 @@ class _QtyTile extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            color: isDark ? ArcticTheme.arcticCard : scheme.surface,
+            color: readOnly
+                ? (isDark
+                      ? ArcticTheme.arcticCard.withValues(alpha: 0.5)
+                      : scheme.surface.withValues(alpha: 0.5))
+                : (isDark ? ArcticTheme.arcticCard : scheme.surface),
             border: Border.all(
               color: ArcticTheme.arcticBlue.withValues(
                 alpha: isDark ? 0.18 : 0.28,
@@ -1081,7 +1339,9 @@ class _QtyTile extends StatelessWidget {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   splashRadius: 22,
-                  onPressed: value > 0 ? () => onChanged(value - 1) : null,
+                  onPressed: (readOnly || value <= 0)
+                      ? null
+                      : () => onChanged(value - 1),
                   icon: Icon(
                     Icons.remove_circle_outline,
                     size: 28,
@@ -1116,7 +1376,7 @@ class _QtyTile extends StatelessWidget {
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   splashRadius: 22,
-                  onPressed: () => onChanged(value + 1),
+                  onPressed: readOnly ? null : () => onChanged(value + 1),
                   icon: const Icon(
                     Icons.add_circle_outline,
                     size: 28,
@@ -1139,6 +1399,7 @@ class _SharedInstallTypeRow extends StatelessWidget {
     required this.shareValue,
     required this.onTotalChanged,
     required this.onShareChanged,
+    this.totalReadOnly = false,
   });
 
   final String title;
@@ -1146,6 +1407,7 @@ class _SharedInstallTypeRow extends StatelessWidget {
   final int shareValue;
   final ValueChanged<int> onTotalChanged;
   final ValueChanged<int> onShareChanged;
+  final bool totalReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1163,6 +1425,7 @@ class _SharedInstallTypeRow extends StatelessWidget {
                 label: l.totalOnInvoice,
                 value: totalValue,
                 onChanged: onTotalChanged,
+                readOnly: totalReadOnly,
               ),
             ),
             const SizedBox(width: 8),

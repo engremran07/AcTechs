@@ -138,6 +138,8 @@ scripts/
 - Invoice ownership tracked in `invoice_claims`
 - Cross-company duplicate protection
 - Rejection releases reservations
+- **Team Roster Model:** Each aggregate stores `teamMemberIds` (list of UIDs, element[0] = creator) and `teamMemberNames` (parallel array). Technicians select teammates from a live dropdown — no manual count entry. Any team member can submit their contribution. Max team size: 10.
+- Aggregate `consumed*` counters are append-only. Archiving a shared install job does NOT decrement them. Admin flush + rebuild is the reconciliation path if discrepancy is detected.
 
 #### Historical import
 
@@ -206,16 +208,18 @@ Versioning is centralized in `scripts/versioning.ps1` and shared by:
 ### Policy
 
 - Every release action increments the build number automatically.
-- Builds cycle from `1` to `10` within the same patch version.
-- After build `10`, the next increment advances the patch and resets build to `1`.
+- Build number is strictly monotonic and never resets.
+- Patch/minor/major changes are managed separately from build monotonicity.
 
 ### Examples
 
 | Current | Next |
 | --- | --- |
 | `1.0.1+1` | `1.0.1+2` |
-| `1.0.1+9` | `1.0.1+10` |
-| `1.0.1+10` | `1.0.2+1` |
+| `1.0.9+15` | `1.0.9+16` |
+| `1.0.1+10` | `1.0.1+11` |
+
+Minimum next versionCode in this repo: **16**.
 
 ## 🧹 Local Cache and Uninstall Behavior
 
@@ -251,7 +255,18 @@ Full database flush currently removes:
 
 Optional behavior:
 
-- Non-admin user documents can also be deleted when explicitly selected.
+- Non-admin user documents can also be **archived** (set `isActive: false`) when explicitly selected — not hard-deleted.
+
+### Soft Archive (Expenses, Earnings, AC Installs)
+
+Technician-owned records are never hard-deleted. Instead:
+- Swipe-to-dismiss marks the record with `isDeleted: true` + `deletedAt` timestamp
+- A 4-second undo SnackBar lets the tech immediately reverse the action
+- Admins can restore soft-archived records from the admin panel
+- Archived records are filtered out on the client in Dart (no new Firestore index required)
+
+> [!WARNING]
+> Flush is destructive and intentionally guarded by countdown and password confirmation.
 
 > [!WARNING]
 > Flush is destructive and intentionally guarded by countdown and password confirmation.
@@ -544,3 +559,27 @@ If you change approval behavior, shared-install rules, model fields, or backend 
 - indexes
 - tests
 - operational documentation
+
+## 🛟 Troubleshooting
+
+### PERMISSION_DENIED on shared install submit
+- Verify the aggregate `teamMemberIds` field includes the submitting tech's UID
+- Verify `allow list` on `/users/{userId}` is deployed to Firestore (`firebase deploy --only firestore`)
+- Check `shared_install_aggregates` composite index on `teamMemberIds` exists in `firestore.indexes.json`
+
+### Period lock errors on delete
+- The record's `date` field falls within the locked period. Admin must unlock the period in app settings before archiving old records.
+
+### Shared group totals mismatch error
+- Two techs submitted the same invoice number with different `sharedInvoice*` values.
+- The first submission owns the totals — subsequent submitters must use the same invoice totals.
+- Admin can correct totals via the aggregate admin update payload.
+
+### Archived record still showing in list
+- Stream mapper filter may be missing. Verify `isDeleted != true` Dart-layer filter in the repository stream.
+- If using Firestore offline cache, a full sign-out + sign-in cycle clears stale cached data.
+
+### versionCode must increase error in CI
+- The `pubspec.yaml` build number (after `+`) must be strictly greater than the previous tag.
+- Run `scripts/bump_version.ps1 -Build` to increment automatically.
+- Minimum next versionCode: **16**.

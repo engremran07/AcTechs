@@ -91,6 +91,13 @@ jobs:
           cache: npm
           cache-dependency-path: scripts/package-lock.json
 
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: scripts/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('scripts/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-modules-
+
       - name: Install rules test dependencies
         working-directory: scripts
         run: npm ci

@@ -3242,6 +3242,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unpaid'**
   String get unpaid;
+
+  /// No description provided for @sharedTeamMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Team Members'**
+  String get sharedTeamMembers;
+
+  /// No description provided for @addTeamMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Team Member'**
+  String get addTeamMember;
+
+  /// No description provided for @removeTeamMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeTeamMember;
+
+  /// No description provided for @sharedTeamCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Team size: {count}'**
+  String sharedTeamCount(int count);
+
+  /// No description provided for @notTeamMember.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not enrolled in this shared invoice team. Ask the first submitter to add you.'**
+  String get notTeamMember;
+
+  /// No description provided for @yourSharedTeams.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Shared Teams'**
+  String get yourSharedTeams;
+
+  /// No description provided for @pendingSharedInstalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Shared Installs'**
+  String get pendingSharedInstalls;
+
+  /// No description provided for @tapToAddYourShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to insert your share'**
+  String get tapToAddYourShare;
+
+  /// No description provided for @addYourShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Your Share'**
+  String get addYourShare;
+
+  /// No description provided for @preFilledFromSharedInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice data pre-filled from your team’s shared install. Enter only your unit share.'**
+  String get preFilledFromSharedInstall;
+
+  /// No description provided for @teamJobPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending your contribution'**
+  String get teamJobPending;
+
+  /// No description provided for @teamJobSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your contribution submitted'**
+  String get teamJobSubmitted;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
 }
 
 class _AppLocalizationsDelegate

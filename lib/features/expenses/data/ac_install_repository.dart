@@ -71,7 +71,12 @@ class AcInstallRepository {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
+        .map(
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map(AcInstallModel.fromFirestore)
+              .toList(),
+        );
   }
 
   /// Stream of all AC install records for a technician (for monthly summaries).
@@ -80,7 +85,12 @@ class AcInstallRepository {
         .where('techId', isEqualTo: techId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
+        .map(
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map(AcInstallModel.fromFirestore)
+              .toList(),
+        );
   }
 
   /// Admin: stream of all pending AC install records.
@@ -89,7 +99,12 @@ class AcInstallRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(AcInstallModel.fromFirestore).toList());
+        .map(
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map(AcInstallModel.fromFirestore)
+              .toList(),
+        );
   }
 
   Future<List<ApprovalHistoryEntry>> fetchInstallHistory(
@@ -128,21 +143,42 @@ class AcInstallRepository {
     }
   }
 
-  Future<void> deleteInstall(String id) async {
+  // NEVER call doc.delete() for technician-owned records — use archiveInstall().
+  // Admin restore is available via restoreInstall().
+  // NOTE: Archiving a shared AC install does NOT decrement aggregate consumed*
+  // counters. Counter rollback requires a cross-collection transaction that
+  // breaks the free-tier read budget. Discrepancies must be fixed via admin
+  // flush + rebuild. Document this at all archive call sites.
+  Future<void> archiveInstall(String id) async {
     try {
       await _periodLockGuard.ensureUnlockedDocument(_ref.doc(id));
       await _ensureMutableRecord(id);
-      await _ref.doc(id).delete();
+      await _ref.doc(id).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
     } on AcInstallException {
       rethrow;
     } on PeriodException {
       rethrow;
     } on FirebaseException catch (e) {
-      debugPrint('deleteInstall error: ${e.code} — ${e.message}');
+      debugPrint('archiveInstall error: ${e.code} — ${e.message}');
       throw AcInstallException.deleteFailed();
     } catch (e) {
-      debugPrint('deleteInstall unknown: $e');
+      debugPrint('archiveInstall unknown: $e');
       throw AcInstallException.deleteFailed();
+    }
+  }
+
+  Future<void> restoreInstall(String id) async {
+    try {
+      await _ref.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on FirebaseException catch (e) {
+      debugPrint('restoreInstall error: ${e.code} — ${e.message}');
+      throw AcInstallException.saveFailed();
+    } catch (e) {
+      debugPrint('restoreInstall unknown: $e');
+      throw AcInstallException.saveFailed();
     }
   }
 

@@ -1,0 +1,83 @@
+---
+mode: agent
+description: Post-implementation gate checklist. Runs all required verification steps and reports pass/fail.
+---
+
+# /post-impl — Post-Implementation Gate Checklist
+
+Run each gate **sequentially**. Report pass ✅ or fail ❌ for each. If any gate fails, stop and report the failure details before proceeding.
+
+## Gate 1 — Static Analysis
+```
+flutter analyze --no-pub
+```
+Expected: `No issues found!`
+Fail condition: any error or warning output.
+
+## Gate 2 — Unit Tests
+```
+flutter test
+```
+Expected: all tests pass, zero failures.
+Fail condition: any test failure or error.
+
+## Gate 3 — Firestore Rules Lint
+```
+cd scripts && npm run lint:firestore-rules
+```
+Expected: exit code 0, no warnings.
+Fail condition: any lint warning or error.
+
+## Gate 4 — Firestore Rules Emulator Tests
+```
+cd scripts && npm test
+```
+Expected: all emulator test cases pass.
+Fail condition: any test failure.
+
+## Gate 5 — Code Generation Check
+Run `dart run build_runner build --delete-conflicting-outputs` and verify it exits 0 with no unresolved outputs.
+Expected: no new generated files differ from committed files.
+
+## Gate 6 — Localisation Check
+```
+flutter gen-l10n
+```
+Expected: exits 0, no missing keys.
+Fail condition: any missing ARB key or generation error.
+
+## Gate 7 — Version Consistency
+Read `pubspec.yaml` version field. Confirm:
+- versionCode (number after `+`) ≥ 16
+- versionCode is an integer
+
+## Gate 8 — Firestore Rules: teamMemberIds guard present
+Grep `firestore.rules` for `teamMemberIds.size() <= 10` — must exist.
+Grep for `authUidOrEmpty() in resource.data.teamMemberIds` — must exist.
+Grep for `allow list: if isAdmin() || isActiveUser()` in the users block — must exist.
+
+## Gate 9 — No Hard Deletes in Tech Repositories
+Grep `lib/features/expenses/data/` for `\.delete()` — must return zero matches.
+Fail condition: any `.delete()` call present in expense/earning/ac_install repositories.
+
+## Gate 10 — Archive Test Coverage
+Confirm `test/unit/expenses/archive_lifecycle_test.dart` exists.
+Fail condition: file missing.
+
+## Summary Report
+After all gates:
+```
+| Gate | Name                        | Status |
+|------|-----------------------------|--------|
+| 1    | Flutter Analyse             | ✅/❌  |
+| 2    | Unit Tests                  | ✅/❌  |
+| 3    | Firestore Rules Lint        | ✅/❌  |
+| 4    | Firestore Emulator Tests    | ✅/❌  |
+| 5    | Code Generation             | ✅/❌  |
+| 6    | Localisation                | ✅/❌  |
+| 7    | Version Consistency         | ✅/❌  |
+| 8    | Rules Guards Present        | ✅/❌  |
+| 9    | No Hard Deletes             | ✅/❌  |
+| 10   | Archive Test Exists         | ✅/❌  |
+```
+If any gate is ❌, provide the exact error output and the recommended fix.

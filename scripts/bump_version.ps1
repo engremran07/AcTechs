@@ -5,13 +5,16 @@
 
 .DESCRIPTION
     Versioning is fully automatic:
-    - each run advances the build number
-    - build 1..10 stay within the same patch version
-    - after build 10, the next run advances the patch and resets build to 1
+    - each run advances the build number AND the patch version
+    - build number is strictly monotonic and never resets
+    - patch rolls over to 0 and increments minor after reaching 10
+    - minor rolls over to 0 and increments major after reaching 10
+    - major/minor/patch explicit overrides are separate release decisions
 
     Examples:
-    1.0.1+1 -> 1.0.1+2
-    1.0.1+10 -> 1.0.2+1
+    1.0.8+17 -> 1.0.9+18
+    1.0.9+18 -> 1.0.10+19
+    1.0.10+19 -> 1.1.0+20
 
     The same version policy is used by this script and the git pre-commit hook.
 

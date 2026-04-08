@@ -67,18 +67,8 @@ class AdminJobSummary {
   int get technicianCount => technicianJobCounts.length;
 
   Map<String, int> get technicianJobsMap {
-    final duplicateCounts = <String, int>{};
-    for (final item in technicianJobCounts) {
-      duplicateCounts[item.displayName] =
-          (duplicateCounts[item.displayName] ?? 0) + 1;
-    }
-
     return UnmodifiableMapView({
-      for (final item in technicianJobCounts)
-        duplicateCounts[item.displayName] == 1
-                ? item.displayName
-                : '${item.displayName} (${item.techId})':
-            item.jobCount,
+      for (final item in technicianJobCounts) item.techId: item.jobCount,
     });
   }
 

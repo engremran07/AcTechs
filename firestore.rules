@@ -225,19 +225,17 @@ service cloud.firestore {
 
     function settlementFieldsUnchanged() {
       return settlementStatusOf(request.resource.data) == settlementStatusOf(resource.data) &&
-        (request.resource.data.settlementBatchId == resource.data.settlementBatchId ||
-          (!request.resource.data.keys().hasAny(['settlementBatchId']) && !resource.data.keys().hasAny(['settlementBatchId']))) &&
-        (request.resource.data.settlementRound == resource.data.settlementRound ||
-          (!request.resource.data.keys().hasAny(['settlementRound']) && !resource.data.keys().hasAny(['settlementRound']))) &&
-        (request.resource.data.settlementAdminNote == resource.data.settlementAdminNote ||
-          (!request.resource.data.keys().hasAny(['settlementAdminNote']) && !resource.data.keys().hasAny(['settlementAdminNote']))) &&
-        (request.resource.data.settlementTechnicianComment == resource.data.settlementTechnicianComment ||
-          (!request.resource.data.keys().hasAny(['settlementTechnicianComment']) && !resource.data.keys().hasAny(['settlementTechnicianComment']))) &&
-        (request.resource.data.settlementRequestedBy == resource.data.settlementRequestedBy ||
-          (!request.resource.data.keys().hasAny(['settlementRequestedBy']) && !resource.data.keys().hasAny(['settlementRequestedBy']))) &&
-        request.resource.data.settlementRequestedAt == resource.data.settlementRequestedAt &&
-        request.resource.data.settlementRespondedAt == resource.data.settlementRespondedAt &&
-        request.resource.data.settlementCorrectedAt == resource.data.settlementCorrectedAt;
+        request.resource.data.get('settlementBatchId', null) == resource.data.get('settlementBatchId', null) &&
+        request.resource.data.get('settlementRound', null) == resource.data.get('settlementRound', null) &&
+        request.resource.data.get('settlementAdminNote', null) == resource.data.get('settlementAdminNote', null) &&
+        request.resource.data.get('settlementTechnicianComment', null) == resource.data.get('settlementTechnicianComment', null) &&
+        request.resource.data.get('settlementRequestedBy', null) == resource.data.get('settlementRequestedBy', null) &&
+        request.resource.data.get('settlementAmount', null) == resource.data.get('settlementAmount', null) &&
+        request.resource.data.get('settlementPaymentMethod', null) == resource.data.get('settlementPaymentMethod', null) &&
+        request.resource.data.get('settlementRequestedAt', null) == resource.data.get('settlementRequestedAt', null) &&
+        request.resource.data.get('settlementRespondedAt', null) == resource.data.get('settlementRespondedAt', null) &&
+        request.resource.data.get('settlementPaidAt', null) == resource.data.get('settlementPaidAt', null) &&
+        request.resource.data.get('settlementCorrectedAt', null) == resource.data.get('settlementCorrectedAt', null);
     }
 
     function settlementFieldsOnlyChanged() {
@@ -245,11 +243,14 @@ service cloud.firestore {
         'settlementStatus',
         'settlementBatchId',
         'settlementRound',
+        'settlementAmount',
+        'settlementPaymentMethod',
         'settlementAdminNote',
         'settlementTechnicianComment',
         'settlementRequestedBy',
         'settlementRequestedAt',
         'settlementRespondedAt',
+        'settlementPaidAt',
         'settlementCorrectedAt'
       ]);
     }
@@ -400,32 +401,55 @@ service cloud.firestore {
         settlementStatusOf(resource.data) == 'unpaid' &&
         settlementStatusOf(request.resource.data) == 'awaiting_technician' &&
         request.resource.data.settlementRound == 1 &&
+        request.resource.data.settlementAmount is number &&
+        request.resource.data.settlementAmount >= 0 &&
+        request.resource.data.settlementPaymentMethod is string &&
+        request.resource.data.settlementPaymentMethod.size() > 0 &&
         request.resource.data.settlementBatchId is string &&
         request.resource.data.settlementBatchId.size() > 0 &&
         request.resource.data.settlementRequestedBy == request.auth.uid &&
         request.resource.data.settlementRequestedAt is timestamp &&
         request.resource.data.settlementRespondedAt == null &&
+        request.resource.data.settlementPaidAt is timestamp &&
         request.resource.data.settlementCorrectedAt == null &&
         request.resource.data.settlementTechnicianComment is string
       ) || (
         settlementStatusOf(resource.data) == 'correction_required' &&
         settlementStatusOf(request.resource.data) == 'awaiting_technician' &&
         request.resource.data.settlementRound == 2 &&
-        request.resource.data.settlementBatchId == resource.data.settlementBatchId &&
-        request.resource.data.settlementRequestedBy == request.auth.uid &&
+        request.resource.data.get('settlementAmount', null) == resource.data.get('settlementAmount', null) &&
+        request.resource.data.get('settlementPaymentMethod', null) == resource.data.get('settlementPaymentMethod', null) &&
+        request.resource.data.get('settlementBatchId', null) == resource.data.get('settlementBatchId', null) &&
+        request.resource.data.get('settlementRequestedBy', null) == request.auth.uid &&
         request.resource.data.settlementRequestedAt is timestamp &&
         request.resource.data.settlementRespondedAt == null &&
+        request.resource.data.get('settlementPaidAt', null) == resource.data.get('settlementPaidAt', null) &&
+        request.resource.data.settlementCorrectedAt is timestamp
+      ) || (
+        settlementStatusOf(resource.data) == 'disputed_final' &&
+        settlementStatusOf(request.resource.data) == 'confirmed' &&
+        request.resource.data.get('settlementRound', null) == resource.data.get('settlementRound', null) &&
+        request.resource.data.get('settlementAmount', null) == resource.data.get('settlementAmount', null) &&
+        request.resource.data.get('settlementPaymentMethod', null) == resource.data.get('settlementPaymentMethod', null) &&
+        request.resource.data.get('settlementBatchId', null) == resource.data.get('settlementBatchId', null) &&
+        request.resource.data.get('settlementRequestedBy', null) == resource.data.get('settlementRequestedBy', null) &&
+        request.resource.data.get('settlementRequestedAt', null) == resource.data.get('settlementRequestedAt', null) &&
+        request.resource.data.get('settlementRespondedAt', null) == resource.data.get('settlementRespondedAt', null) &&
+        request.resource.data.get('settlementPaidAt', null) == resource.data.get('settlementPaidAt', null) &&
         request.resource.data.settlementCorrectedAt is timestamp
       );
     }
 
     function validTechSettlementTransition() {
-      return request.resource.data.settlementBatchId == resource.data.settlementBatchId &&
-        request.resource.data.settlementRound == resource.data.settlementRound &&
-        request.resource.data.settlementAdminNote == resource.data.settlementAdminNote &&
-        request.resource.data.settlementRequestedBy == resource.data.settlementRequestedBy &&
-        request.resource.data.settlementRequestedAt == resource.data.settlementRequestedAt &&
-        request.resource.data.settlementCorrectedAt == resource.data.settlementCorrectedAt &&
+      return request.resource.data.get('settlementBatchId', null) == resource.data.get('settlementBatchId', null) &&
+        request.resource.data.get('settlementRound', null) == resource.data.get('settlementRound', null) &&
+        request.resource.data.get('settlementAmount', null) == resource.data.get('settlementAmount', null) &&
+        request.resource.data.get('settlementPaymentMethod', null) == resource.data.get('settlementPaymentMethod', null) &&
+        request.resource.data.get('settlementAdminNote', null) == resource.data.get('settlementAdminNote', null) &&
+        request.resource.data.get('settlementRequestedBy', null) == resource.data.get('settlementRequestedBy', null) &&
+        request.resource.data.get('settlementRequestedAt', null) == resource.data.get('settlementRequestedAt', null) &&
+        request.resource.data.get('settlementCorrectedAt', null) == resource.data.get('settlementCorrectedAt', null) &&
+        request.resource.data.get('settlementPaidAt', null) == resource.data.get('settlementPaidAt', null) &&
         request.resource.data.settlementRespondedAt is timestamp &&
         (
           settlementStatusOf(request.resource.data) == 'confirmed' ||
@@ -492,6 +516,8 @@ service cloud.firestore {
     function validSharedAggregateCreatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'clientName',
+          'clientContact',
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
@@ -511,8 +537,12 @@ service cloud.firestore {
           'consumedDeliveryAmount',
           'createdBy',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'teamMemberIds',
+          'teamMemberNames'
         ]) &&
+        request.resource.data.get('clientName', '') is string &&
+        request.resource.data.get('clientContact', '') is string &&
         request.resource.data.groupKey is string &&
         request.resource.data.groupKey.size() > 0 &&
         request.resource.data.sharedInvoiceSplitUnits is int &&
@@ -553,6 +583,13 @@ service cloud.firestore {
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.createdAt is timestamp &&
         request.resource.data.updatedAt is timestamp &&
+        // Team roster: must include creator as first member, max 10
+        request.resource.data.teamMemberIds is list &&
+        request.resource.data.teamMemberIds.size() >= 1 &&
+        request.resource.data.teamMemberIds.size() <= 10 &&
+        request.resource.data.teamMemberIds[0] == request.auth.uid &&
+        request.resource.data.teamMemberNames is list &&
+        request.resource.data.teamMemberNames.size() == request.resource.data.teamMemberIds.size() &&
         validSharedAggregateTotals(request.resource.data);
     }
 
@@ -574,6 +611,8 @@ service cloud.firestore {
     function validSharedAggregateAdminUpdatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'clientName',
+          'clientContact',
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
@@ -593,7 +632,9 @@ service cloud.firestore {
           'consumedDeliveryAmount',
           'createdBy',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'teamMemberIds',
+          'teamMemberNames'
         ]) &&
         sharedAggregateStaticFieldsUnchanged() &&
         request.resource.data.updatedAt is timestamp &&
@@ -609,6 +650,8 @@ service cloud.firestore {
     function validSharedAggregateTechUpdatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'clientName',
+          'clientContact',
           'sharedInvoiceSplitUnits',
           'sharedInvoiceWindowUnits',
           'sharedInvoiceFreestandingUnits',
@@ -628,9 +671,18 @@ service cloud.firestore {
           'consumedDeliveryAmount',
           'createdBy',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'teamMemberIds',
+          'teamMemberNames'
         ]) &&
+        request.resource.data.get('clientName', '') is string &&
+        request.resource.data.get('clientContact', '') is string &&
+        // Any team member may submit their contribution (not just the creator)
+        authUidOrEmpty() in resource.data.get('teamMemberIds', [resource.data.createdBy]) &&
         sharedAggregateStaticFieldsUnchanged() &&
+        // Team membership is immutable for techs — only admin can change it
+        request.resource.data.get('teamMemberIds', []) == resource.data.get('teamMemberIds', []) &&
+        request.resource.data.get('teamMemberNames', []) == resource.data.get('teamMemberNames', []) &&
         request.resource.data.updatedAt is timestamp &&
         request.resource.data.consumedSplitUnits is int &&
         request.resource.data.consumedSplitUnits >= resource.data.consumedSplitUnits &&
@@ -719,7 +771,11 @@ service cloud.firestore {
 
     // ─── Users ───
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      // get: own profile or admin
+      allow get: if isOwner(userId) || isAdmin();
+      // list: any active user may query the users collection (needed for team selector dropdown)
+      // Safe: this is a closed private employee system — all users are company staff
+      allow list: if isAdmin() || isActiveUser();
       allow create: if isAdmin();
       // Admins can update anything; users can update their own profile fields.
       allow update: if isAdmin() ||
@@ -758,7 +814,8 @@ service cloud.firestore {
 
     match /shared_install_aggregates/{aggregateId} {
       allow get: if isAdmin() || isActiveUser();
-      allow list: if isAdmin();
+      // Active users may list (needed for arrayContains teamMemberIds query)
+      allow list: if isAdmin() || isActiveUser();
 
       allow create: if (isAdmin() || isActiveUser()) &&
         validSharedAggregateCreatePayload();
@@ -855,15 +912,25 @@ service cloud.firestore {
           'adminNote',
           'reviewedAt'
         ])
+      ) ||
+      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      (isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        dateIsUnlocked(resource.data.date) &&
+        resource.data.status != 'approved' &&
+        request.resource.data.isDeleted == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
+      ) ||
+      // Admin restore: clear isDeleted flag
+      (isAdmin() &&
+        request.resource.data.isDeleted == false &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       );
 
-      allow delete: if (isAdmin() &&
+      // Hard delete: admin only — techs must use archiveExpense() soft-delete instead
+      allow delete: if isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
-        resource.data.status != 'approved') ||
-        (isActiveUser() &&
-         dateIsUnlocked(resource.data.date) &&
-         resource.data.techId == request.auth.uid &&
-         resource.data.status != 'approved');
+        resource.data.status != 'approved';
     }
 
     // ─── Earnings ───
@@ -941,15 +1008,25 @@ service cloud.firestore {
           'adminNote',
           'reviewedAt'
         ])
+      ) ||
+      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      (isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        dateIsUnlocked(resource.data.date) &&
+        resource.data.status != 'approved' &&
+        request.resource.data.isDeleted == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
+      ) ||
+      // Admin restore: clear isDeleted flag
+      (isAdmin() &&
+        request.resource.data.isDeleted == false &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       );
 
-      allow delete: if (isAdmin() &&
+      // Hard delete: admin only — techs must use archiveEarning() soft-delete instead
+      allow delete: if isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
-        resource.data.status != 'approved') ||
-        (isActiveUser() &&
-         dateIsUnlocked(resource.data.date) &&
-         resource.data.techId == request.auth.uid &&
-         resource.data.status != 'approved');
+        resource.data.status != 'approved';
     }
 
     // ─── AC Installs ───
@@ -1066,8 +1143,22 @@ service cloud.firestore {
           'adminNote',
           'reviewedAt'
         ])
+      ) ||
+      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      (isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        dateIsUnlocked(resource.data.date) &&
+        resource.data.status != 'approved' &&
+        request.resource.data.isDeleted == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
+      ) ||
+      // Admin restore: clear isDeleted flag
+      (isAdmin() &&
+        request.resource.data.isDeleted == false &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       );
 
+      // Hard delete: admin only — techs must use archiveInstall() soft-delete instead
       allow delete: if isAdmin() &&
         dateIsUnlocked(resource.data.date) &&
         resource.data.status != 'approved';

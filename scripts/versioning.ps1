@@ -50,13 +50,21 @@ function Get-AcTechsNextAutoVersion {
 
     $nextMajor = [int]$VersionInfo.Major
     $nextMinor = [int]$VersionInfo.Minor
-    $nextPatch = [int]$VersionInfo.Patch
+    $nextPatch = [int]$VersionInfo.Patch + 1
     $currentBuild = [Math]::Max([int]$VersionInfo.Build, 1)
     $nextBuild = $currentBuild + 1
+    # Android versionCode must always increase; never reset build number.
 
-    if ($currentBuild -ge 10) {
-        $nextPatch++
-        $nextBuild = 1
+    # Roll patch → minor when patch exceeds 10.
+    if ($nextPatch -gt 10) {
+        $nextPatch = 0
+        $nextMinor = $nextMinor + 1
+    }
+
+    # Roll minor → major when minor exceeds 10.
+    if ($nextMinor -gt 10) {
+        $nextMinor = 0
+        $nextMajor = $nextMajor + 1
     }
 
     return [pscustomobject]@{

@@ -393,8 +393,9 @@ class UserRepository {
 
   /// Flush the database: deletes all jobs, expenses, earnings, and companies.
   ///
-  /// When [deleteNonAdminUsers] is true, it also permanently deletes all
-  /// non-admin user documents. Admin documents are always preserved.
+  /// When [deleteNonAdminUsers] is true, it archives all non-admin user
+  /// documents instead of permanently deleting them. Admin documents are
+  /// always preserved.
   Future<void> flushDatabase({bool deleteNonAdminUsers = false}) async {
     try {
       // Delete all operational collections in chunks (batch limit = 500).
@@ -411,7 +412,7 @@ class UserRepository {
       }
 
       if (deleteNonAdminUsers) {
-        // Permanently delete non-admin Firestore user documents.
+        // Archive non-admin users so historical records remain attributable.
         final usersSnap = await _usersRef.get();
         if (usersSnap.docs.isNotEmpty) {
           final batch = firestore.batch();
@@ -419,7 +420,10 @@ class UserRepository {
             final role =
                 doc.data()['role'] as String? ?? AppConstants.roleTechnician;
             if (role != AppConstants.roleAdmin) {
-              batch.delete(doc.reference);
+              batch.update(doc.reference, {
+                'isActive': false,
+                'archivedAt': FieldValue.serverTimestamp(),
+              });
             }
           }
           await batch.commit();

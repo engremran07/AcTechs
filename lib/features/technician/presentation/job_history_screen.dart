@@ -626,13 +626,6 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     return !date.isBefore(start) && !date.isAfter(end);
   }
 
-  int _jobDisplayUnits(JobModel job) {
-    if (!job.isSharedInstall) return job.totalUnits;
-    return job.sharedContributionUnits > 0
-        ? job.sharedContributionUnits
-        : job.totalUnits;
-  }
-
   List<_InOutDaySummary> _applyInOutFilters(
     List<EarningModel> earnings,
     List<ExpenseModel> expenses,
@@ -704,10 +697,6 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         final rejectedCount = jobList.where((j) => j.isRejected).length;
         final sharedCount = jobList.where((j) => j.isSharedInstall).length;
         final filtered = _applyFilters(jobList);
-        final totalUnits = filtered.fold<int>(
-          0,
-          (sum, job) => sum + _jobDisplayUnits(job),
-        );
         final sharedNamesFuture = _sharedInstallerNamesByGroup(filtered);
 
         return Column(
@@ -725,36 +714,6 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                   ],
                   onSelected: (v) => setState(() => _sortNewest = v),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _HistoryMetricCard(
-                      label: l.totalJobs,
-                      value: '${filtered.length}',
-                      color: ArcticTheme.arcticBlue,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HistoryMetricCard(
-                      label: l.totalUnits,
-                      value: '$totalUnits',
-                      color: ArcticTheme.arcticWarning,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HistoryMetricCard(
-                      label: l.approved,
-                      value: '$approvedCount',
-                      color: ArcticTheme.arcticSuccess,
-                    ),
-                  ),
-                ],
               ),
             ),
             Padding(
@@ -1087,7 +1046,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                         return _InOutHistoryCard(
                               summary: s,
                               onTap: () =>
-                                  context.push('/tech/summary', extra: s.date),
+                                  context.push('/tech/inout', extra: s.date),
                             )
                             .animate(delay: (index * 70).ms)
                             .fadeIn(duration: 220.ms)

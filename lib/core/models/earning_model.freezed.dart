@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EarningModel {
 
- String get id; String get techId; String get techName; String get category; double get amount; String get note; EarningApprovalStatus get status; String get approvedBy; String get adminNote; PaymentType get paymentType;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get date;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get reviewedAt;
+ String get id; String get techId; String get techName; String get category; double get amount; String get note; EarningApprovalStatus get status; String get approvedBy; String get adminNote; PaymentType get paymentType;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get date;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get reviewedAt;@JsonKey(defaultValue: false) bool get isDeleted;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get deletedAt;
 /// Create a copy of EarningModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $EarningModelCopyWith<EarningModel> get copyWith => _$EarningModelCopyWithImpl<E
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarningModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.paymentType, paymentType) || other.paymentType == paymentType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarningModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.paymentType, paymentType) || other.paymentType == paymentType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,paymentType,date,createdAt,reviewedAt);
+int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,paymentType,date,createdAt,reviewedAt,isDeleted,deletedAt);
 
 @override
 String toString() {
-  return 'EarningModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, paymentType: $paymentType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt)';
+  return 'EarningModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, paymentType: $paymentType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt, isDeleted: $isDeleted, deletedAt: $deletedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $EarningModelCopyWith<$Res>  {
   factory $EarningModelCopyWith(EarningModel value, $Res Function(EarningModel) _then) = _$EarningModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String techId, String techName, String category, double amount, String note, EarningApprovalStatus status, String approvedBy, String adminNote, PaymentType paymentType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
+ String id, String techId, String techName, String category, double amount, String note, EarningApprovalStatus status, String approvedBy, String adminNote, PaymentType paymentType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt,@JsonKey(defaultValue: false) bool isDeleted,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? deletedAt
 });
 
 
@@ -65,7 +65,7 @@ class _$EarningModelCopyWithImpl<$Res>
 
 /// Create a copy of EarningModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? paymentType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? paymentType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,Object? isDeleted = null,Object? deletedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -80,6 +80,8 @@ as String,paymentType: null == paymentType ? _self.paymentType : paymentType // 
 as PaymentType,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,reviewedAt: freezed == reviewedAt ? _self.reviewedAt : reviewedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
+as bool,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -165,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt, @JsonKey(defaultValue: false)  bool isDeleted, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EarningModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt,_that.isDeleted,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -186,10 +188,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt, @JsonKey(defaultValue: false)  bool isDeleted, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _EarningModel():
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt,_that.isDeleted,_that.deletedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +208,10 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String techId,  String techName,  String category,  double amount,  String note,  EarningApprovalStatus status,  String approvedBy,  String adminNote,  PaymentType paymentType, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? reviewedAt, @JsonKey(defaultValue: false)  bool isDeleted, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _EarningModel() when $default != null:
-return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt);case _:
+return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount,_that.note,_that.status,_that.approvedBy,_that.adminNote,_that.paymentType,_that.date,_that.createdAt,_that.reviewedAt,_that.isDeleted,_that.deletedAt);case _:
   return null;
 
 }
@@ -221,7 +223,7 @@ return $default(_that.id,_that.techId,_that.techName,_that.category,_that.amount
 @JsonSerializable()
 
 class _EarningModel implements EarningModel {
-  const _EarningModel({this.id = '', required this.techId, required this.techName, required this.category, required this.amount, this.note = '', this.status = EarningApprovalStatus.pending, this.approvedBy = '', this.adminNote = '', this.paymentType = PaymentType.regular, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt});
+  const _EarningModel({this.id = '', required this.techId, required this.techName, required this.category, required this.amount, this.note = '', this.status = EarningApprovalStatus.pending, this.approvedBy = '', this.adminNote = '', this.paymentType = PaymentType.regular, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.date, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.reviewedAt, @JsonKey(defaultValue: false) this.isDeleted = false, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.deletedAt});
   factory _EarningModel.fromJson(Map<String, dynamic> json) => _$EarningModelFromJson(json);
 
 @override@JsonKey() final  String id;
@@ -237,6 +239,8 @@ class _EarningModel implements EarningModel {
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? date;
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? createdAt;
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? reviewedAt;
+@override@JsonKey(defaultValue: false) final  bool isDeleted;
+@override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? deletedAt;
 
 /// Create a copy of EarningModel
 /// with the given fields replaced by the non-null parameter values.
@@ -251,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarningModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.paymentType, paymentType) || other.paymentType == paymentType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarningModel&&(identical(other.id, id) || other.id == id)&&(identical(other.techId, techId) || other.techId == techId)&&(identical(other.techName, techName) || other.techName == techName)&&(identical(other.category, category) || other.category == category)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.note, note) || other.note == note)&&(identical(other.status, status) || other.status == status)&&(identical(other.approvedBy, approvedBy) || other.approvedBy == approvedBy)&&(identical(other.adminNote, adminNote) || other.adminNote == adminNote)&&(identical(other.paymentType, paymentType) || other.paymentType == paymentType)&&(identical(other.date, date) || other.date == date)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.reviewedAt, reviewedAt) || other.reviewedAt == reviewedAt)&&(identical(other.isDeleted, isDeleted) || other.isDeleted == isDeleted)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,paymentType,date,createdAt,reviewedAt);
+int get hashCode => Object.hash(runtimeType,id,techId,techName,category,amount,note,status,approvedBy,adminNote,paymentType,date,createdAt,reviewedAt,isDeleted,deletedAt);
 
 @override
 String toString() {
-  return 'EarningModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, paymentType: $paymentType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt)';
+  return 'EarningModel(id: $id, techId: $techId, techName: $techName, category: $category, amount: $amount, note: $note, status: $status, approvedBy: $approvedBy, adminNote: $adminNote, paymentType: $paymentType, date: $date, createdAt: $createdAt, reviewedAt: $reviewedAt, isDeleted: $isDeleted, deletedAt: $deletedAt)';
 }
 
 
@@ -271,7 +275,7 @@ abstract mixin class _$EarningModelCopyWith<$Res> implements $EarningModelCopyWi
   factory _$EarningModelCopyWith(_EarningModel value, $Res Function(_EarningModel) _then) = __$EarningModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String techId, String techName, String category, double amount, String note, EarningApprovalStatus status, String approvedBy, String adminNote, PaymentType paymentType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt
+ String id, String techId, String techName, String category, double amount, String note, EarningApprovalStatus status, String approvedBy, String adminNote, PaymentType paymentType,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? date,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? reviewedAt,@JsonKey(defaultValue: false) bool isDeleted,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? deletedAt
 });
 
 
@@ -288,7 +292,7 @@ class __$EarningModelCopyWithImpl<$Res>
 
 /// Create a copy of EarningModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? paymentType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? techId = null,Object? techName = null,Object? category = null,Object? amount = null,Object? note = null,Object? status = null,Object? approvedBy = null,Object? adminNote = null,Object? paymentType = null,Object? date = freezed,Object? createdAt = freezed,Object? reviewedAt = freezed,Object? isDeleted = null,Object? deletedAt = freezed,}) {
   return _then(_EarningModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,techId: null == techId ? _self.techId : techId // ignore: cast_nullable_to_non_nullable
@@ -303,6 +307,8 @@ as String,paymentType: null == paymentType ? _self.paymentType : paymentType // 
 as PaymentType,date: freezed == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,reviewedAt: freezed == reviewedAt ? _self.reviewedAt : reviewedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,isDeleted: null == isDeleted ? _self.isDeleted : isDeleted // ignore: cast_nullable_to_non_nullable
+as bool,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }

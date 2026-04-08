@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:collection';
@@ -12,9 +13,12 @@ final jobRepositoryProvider = Provider<JobRepository>((ref) {
 });
 
 class JobRepository {
-  JobRepository({required this.firestore});
+  JobRepository({required this.firestore, String? Function()? currentUid})
+    : _currentUid =
+          currentUid ?? (() => FirebaseAuth.instance.currentUser?.uid);
 
   final FirebaseFirestore firestore;
+  final String? Function() _currentUid;
   static const String _sharedBracketType = 'Bracket';
   static const String _invoiceReuseModeShared = 'shared';
   static const String _invoiceReuseModeSolo = 'solo';
@@ -101,6 +105,20 @@ class JobRepository {
     return snap.docs
         .map((doc) => ApprovalHistoryEntry.fromMap(doc.data()))
         .toList(growable: false);
+  }
+
+  /// Returns the first job belonging to [groupKey] — used to pre-fill client
+  /// name and contact when a tech joins an existing shared install from the
+  /// dashboard. Returns null if no job exists yet for that group.
+  Future<JobModel?> fetchFirstJobForGroup(String groupKey) async {
+    final key = groupKey.trim();
+    if (key.isEmpty) return null;
+    final snap = await _jobsRef
+        .where('sharedInstallGroupKey', isEqualTo: key)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    return JobModel.fromFirestore(snap.docs.first);
   }
 
   Future<Map<String, List<String>>> fetchSharedInstallerNamesByGroup(
@@ -359,10 +377,19 @@ class JobRepository {
     int uninstallWindowContribution,
     int uninstallFreestandingContribution,
     int bracketContribution,
-    double deliveryContribution,
-  ) {
+    double deliveryContribution, {
+    List<String> teamMemberIds = const [],
+    List<String> teamMemberNames = const [],
+  }) {
+    // Team size is the count of all members including creator.
+    // Falls back to job.sharedDeliveryTeamCount for legacy submits without a team roster.
+    final teamCount = teamMemberIds.isNotEmpty
+        ? teamMemberIds.length
+        : job.sharedDeliveryTeamCount;
     return {
       'groupKey': groupKey,
+      'clientName': job.clientName,
+      'clientContact': job.clientContact,
       'sharedInvoiceSplitUnits': job.sharedInvoiceSplitUnits,
       'sharedInvoiceWindowUnits': job.sharedInvoiceWindowUnits,
       'sharedInvoiceFreestandingUnits': job.sharedInvoiceFreestandingUnits,
@@ -372,7 +399,7 @@ class JobRepository {
       'sharedInvoiceUninstallFreestandingUnits':
           job.sharedInvoiceUninstallFreestandingUnits,
       'sharedInvoiceBracketCount': job.sharedInvoiceBracketCount,
-      'sharedDeliveryTeamCount': job.sharedDeliveryTeamCount,
+      'sharedDeliveryTeamCount': teamCount,
       'sharedInvoiceDeliveryAmount': job.sharedInvoiceDeliveryAmount,
       'consumedSplitUnits': splitContribution,
       'consumedWindowUnits': windowContribution,
@@ -382,6 +409,8 @@ class JobRepository {
       'consumedUninstallFreestandingUnits': uninstallFreestandingContribution,
       'consumedBracketCount': bracketContribution,
       'consumedDeliveryAmount': deliveryContribution,
+      'teamMemberIds': teamMemberIds.isEmpty ? [job.techId] : teamMemberIds,
+      'teamMemberNames': teamMemberNames,
       'createdBy': job.techId,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -452,6 +481,8 @@ class JobRepository {
   Future<JobStatus> submitJob(
     JobModel job, {
     DateTime? lockedBeforeDate,
+    List<String> teamMemberIds = const [],
+    List<String> teamMemberNames = const [],
   }) async {
     try {
       await _periodLockGuard.ensureUnlockedDate(
@@ -589,6 +620,17 @@ class JobRepository {
           if (aggregateSnap.exists) {
             final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
             _validateSharedAggregateTotals(aggregate, job, resolvedGroupKey);
+            // A12: Conflict guard — caller must be enrolled in the existing team roster.
+            // Legacy aggregates without teamMemberIds skip this check.
+            final existingTeamMemberIds = List<String>.from(
+              aggregate['teamMemberIds'] as List? ?? [],
+            );
+            final callerUid = _currentUid();
+            if (existingTeamMemberIds.isNotEmpty &&
+                callerUid != null &&
+                !existingTeamMemberIds.contains(callerUid)) {
+              throw JobException.notTeamMember();
+            }
             consumedSplitUnits = _readAggregateInt(
               aggregate,
               'consumedSplitUnits',
@@ -680,7 +722,15 @@ class JobRepository {
               consumedDeliveryAmount + deliveryShare;
 
           if (aggregateSnap.exists) {
-            tx.update(aggregateRef, {
+            // Backfill clientName/clientContact for legacy aggregates that
+            // predate these fields being stored on the aggregate document.
+            // This ensures team members can see the phone on the pre-fill form.
+            final aggregateData = aggregateSnap.data() ?? <String, dynamic>{};
+            final existingClientName =
+                (aggregateData['clientName'] as String?) ?? '';
+            final existingClientContact =
+                (aggregateData['clientContact'] as String?) ?? '';
+            final updatePayload = <String, dynamic>{
               'consumedSplitUnits': nextConsumedSplitUnits,
               'consumedWindowUnits': nextConsumedWindowUnits,
               'consumedFreestandingUnits': nextConsumedFreestandingUnits,
@@ -691,7 +741,16 @@ class JobRepository {
               'consumedBracketCount': nextConsumedBracketCount,
               'consumedDeliveryAmount': nextConsumedDeliveryAmount,
               'updatedAt': FieldValue.serverTimestamp(),
-            });
+            };
+            if (existingClientName.isEmpty &&
+                job.clientName.trim().isNotEmpty) {
+              updatePayload['clientName'] = job.clientName.trim();
+            }
+            if (existingClientContact.isEmpty &&
+                job.clientContact.trim().isNotEmpty) {
+              updatePayload['clientContact'] = job.clientContact.trim();
+            }
+            tx.update(aggregateRef, updatePayload);
           } else {
             tx.set(
               aggregateRef,
@@ -706,6 +765,8 @@ class JobRepository {
                 uninstallFreestandingContribution,
                 _bracketCount(job),
                 deliveryShare,
+                teamMemberIds: teamMemberIds,
+                teamMemberNames: teamMemberNames,
               ),
             );
           }
@@ -1206,8 +1267,8 @@ class JobRepository {
     }
   }
 
-  Stream<List<JobModel>> settlementCandidates() {
-    return _jobsRef
+  Future<List<JobModel>> fetchSettlementCandidates() async {
+    final snap = await _jobsRef
         .where('status', isEqualTo: JobStatus.approved.name)
         .where(
           'settlementStatus',
@@ -1218,11 +1279,93 @@ class JobRepository {
         )
         .orderBy('date', descending: true)
         .limit(200)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
-        );
+        .get();
+
+    return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+  }
+
+  Future<List<JobModel>> fetchSettlementHistory() async {
+    final snap = await _jobsRef
+        .where('status', isEqualTo: JobStatus.approved.name)
+        .where(
+          'settlementStatus',
+          whereIn: [
+            JobSettlementStatus.confirmed.firestoreValue,
+            JobSettlementStatus.disputedFinal.firestoreValue,
+          ],
+        )
+        .orderBy('settlementRespondedAt', descending: true)
+        .limit(200)
+        .get();
+
+    return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
+  }
+
+  Future<
+    ({
+      int unpaidCount,
+      double unpaidAmount,
+      int pendingConfirmCount,
+      int confirmedCount,
+      int disputedCount,
+    })
+  >
+  fetchSettlementSummary() async {
+    final snap = await _jobsRef
+        .where('status', isEqualTo: JobStatus.approved.name)
+        .where(
+          'settlementStatus',
+          whereIn: [
+            JobSettlementStatus.unpaid.firestoreValue,
+            JobSettlementStatus.awaitingTechnician.firestoreValue,
+            JobSettlementStatus.correctionRequired.firestoreValue,
+            JobSettlementStatus.confirmed.firestoreValue,
+            JobSettlementStatus.disputedFinal.firestoreValue,
+          ],
+        )
+        .orderBy('date', descending: true)
+        .limit(500)
+        .get();
+
+    var unpaidCount = 0;
+    var unpaidAmount = 0.0;
+    var pendingConfirmCount = 0;
+    var confirmedCount = 0;
+    var disputedCount = 0;
+
+    for (final doc in snap.docs) {
+      final data = doc.data();
+      final status = (data['settlementStatus'] as String?) ?? 'unpaid';
+      final amount = ((data['settlementAmount'] as num?) ?? 0).toDouble();
+
+      switch (status) {
+        case 'awaiting_technician':
+          pendingConfirmCount++;
+          unpaidAmount += amount;
+          break;
+        case 'correction_required':
+          unpaidCount++;
+          unpaidAmount += amount;
+          break;
+        case 'confirmed':
+          confirmedCount++;
+          break;
+        case 'disputed_final':
+          disputedCount++;
+          break;
+        default:
+          unpaidCount++;
+          unpaidAmount += amount;
+      }
+    }
+
+    return (
+      unpaidCount: unpaidCount,
+      unpaidAmount: unpaidAmount,
+      pendingConfirmCount: pendingConfirmCount,
+      confirmedCount: confirmedCount,
+      disputedCount: disputedCount,
+    );
   }
 
   Stream<List<JobModel>> technicianSettlementInbox(String techId) {
@@ -1256,6 +1399,9 @@ class JobRepository {
     List<String> jobIds,
     String adminUid, {
     String adminNote = '',
+    double amountPerJob = 0,
+    String paymentMethod = 'manual',
+    DateTime? paidAt,
   }) async {
     try {
       final normalizedIds = jobIds
@@ -1300,11 +1446,16 @@ class JobRepository {
                 JobSettlementStatus.awaitingTechnician.firestoreValue,
             'settlementBatchId': batchId,
             'settlementRound': 1,
+            'settlementAmount': amountPerJob,
+            'settlementPaymentMethod': paymentMethod,
             'settlementAdminNote': adminNote,
             'settlementTechnicianComment': '',
             'settlementRequestedBy': adminUid,
             'settlementRequestedAt': FieldValue.serverTimestamp(),
             'settlementRespondedAt': null,
+            'settlementPaidAt': paidAt == null
+                ? FieldValue.serverTimestamp()
+                : Timestamp.fromDate(paidAt),
             'settlementCorrectedAt': null,
           });
           tx.set(ref.collection('history').doc(), {
@@ -1334,10 +1485,16 @@ class JobRepository {
     }
   }
 
-  Future<void> confirmSettlementBatch(String batchId, String techId) async {
+  Future<void> confirmSettlementBatch(String batchId) async {
     try {
+      final techId = _currentUid();
+      if (techId == null || techId.trim().isEmpty) {
+        throw JobException.permissionDenied();
+      }
+
       final docRefs = await _jobsRef
           .where('settlementBatchId', isEqualTo: batchId)
+          .where('techId', isEqualTo: techId)
           .get()
           .then(
             (snap) =>
@@ -1388,12 +1545,13 @@ class JobRepository {
     }
   }
 
-  Future<void> rejectSettlementBatch(
-    String batchId,
-    String techId,
-    String comment,
-  ) async {
+  Future<void> rejectSettlementBatch(String batchId, String comment) async {
     try {
+      final techId = _currentUid();
+      if (techId == null || techId.trim().isEmpty) {
+        throw JobException.permissionDenied();
+      }
+
       final normalizedComment = comment.trim();
       if (normalizedComment.isEmpty) {
         throw JobException.saveFailed();
@@ -1401,6 +1559,7 @@ class JobRepository {
 
       final docRefs = await _jobsRef
           .where('settlementBatchId', isEqualTo: batchId)
+          .where('techId', isEqualTo: techId)
           .get()
           .then(
             (snap) =>
@@ -1519,6 +1678,63 @@ class JobRepository {
       throw JobException.saveFailed();
     } catch (e) {
       debugPrint('resubmitSettlementBatch unknown: $e');
+      throw JobException.saveFailed();
+    }
+  }
+
+  Future<void> resolveDisputedSettlement(
+    String batchId,
+    String adminUid, {
+    String resolutionNote = '',
+  }) async {
+    try {
+      final docRefs = await _jobsRef
+          .where('settlementBatchId', isEqualTo: batchId)
+          .get()
+          .then(
+            (snap) =>
+                snap.docs.map((doc) => doc.reference).toList(growable: false),
+          );
+      if (docRefs.isEmpty) {
+        throw JobException.settlementBatchNotFound();
+      }
+
+      await firestore.runTransaction((tx) async {
+        for (final ref in docRefs) {
+          final snap = await tx.get(ref);
+          if (!snap.exists) {
+            throw JobException.settlementBatchNotFound();
+          }
+          final job = JobModel.fromFirestore(snap);
+          if (!job.isSettlementDisputedFinal) {
+            throw JobException.settlementAlreadyFinalized();
+          }
+
+          tx.update(ref, {
+            'settlementStatus': JobSettlementStatus.confirmed.firestoreValue,
+            'settlementAdminNote': resolutionNote,
+          });
+          tx.set(ref.collection('history').doc(), {
+            'changedBy': adminUid,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': job.settlementStatus.firestoreValue,
+            'newStatus': JobSettlementStatus.confirmed.firestoreValue,
+            'flow': 'settlement',
+            'action': 'admin_resolution',
+            'reason': resolutionNote,
+          });
+        }
+      });
+    } on JobException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('resolveDisputedSettlement error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') {
+        throw JobException.permissionDenied();
+      }
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('resolveDisputedSettlement unknown: $e');
       throw JobException.saveFailed();
     }
   }
@@ -1683,7 +1899,7 @@ class JobRepository {
     try {
       if (jobs.isEmpty) return 0;
       final chunks = <List<JobModel>>[];
-      const chunkSize = 400;
+      const chunkSize = 100;
       for (var i = 0; i < jobs.length; i += chunkSize) {
         final end = (i + chunkSize > jobs.length) ? jobs.length : i + chunkSize;
         chunks.add(jobs.sublist(i, end));
@@ -1719,71 +1935,105 @@ class JobRepository {
         final claimBumps = <String, Map<String, dynamic>>{};
         for (final item in jobsToCreate) {
           final claimId = _invoiceClaimDocId(item.job.invoiceNumber);
+          final nextReuseMode = _invoiceReuseModeFor(item.job);
           final entry = claimBumps.putIfAbsent(
             claimId,
             () => {
               'invoiceNumber': item.job.invoiceNumber,
               'companyId': item.job.companyId,
               'companyName': item.job.companyName,
-              'reuseMode': _invoiceReuseModeFor(item.job),
+              'reuseMode': nextReuseMode,
               'activeJobCount': 0,
               'createdBy': item.job.techId,
             },
           );
+
+          final existingCompanyId = (entry['companyId'] as String?) ?? '';
+          final existingReuseMode =
+              (entry['reuseMode'] as String?) ?? _invoiceReuseModeSolo;
+          if (existingCompanyId != item.job.companyId ||
+              existingReuseMode != nextReuseMode) {
+            throw JobException.duplicateInvoice();
+          }
+
           entry['activeJobCount'] =
               ((entry['activeJobCount'] as int?) ?? 0) + 1;
         }
 
-        final existingClaimDocs = await Future.wait(
-          claimBumps.keys.map(
-            (claimId) => _invoiceClaimsRef.doc(claimId).get(),
-          ),
-        );
-
-        final batch = firestore.batch();
-        for (final item in jobsToCreate) {
-          final data = item.job.toFirestore();
-          data['date'] ??= FieldValue.serverTimestamp();
-          data['submittedAt'] ??= FieldValue.serverTimestamp();
-          batch.set(item.ref, data);
-          imported++;
-        }
-
-        for (final existingClaimDoc in existingClaimDocs) {
-          final claimRef = existingClaimDoc.reference;
-          final bump = claimBumps[claimRef.id]!;
-          final increment = bump['activeJobCount'] as int? ?? 0;
-          if (existingClaimDoc.exists) {
-            final existingData = existingClaimDoc.data() ?? <String, dynamic>{};
-            batch.set(claimRef, {
-              'invoiceNumber':
-                  existingData['invoiceNumber'] ?? bump['invoiceNumber'],
-              'companyId': existingData['companyId'] ?? bump['companyId'],
-              'companyName': existingData['companyName'] ?? bump['companyName'],
-              'reuseMode': existingData['reuseMode'] ?? bump['reuseMode'],
-              'activeJobCount':
-                  ((existingData['activeJobCount'] as num?)?.toInt() ?? 0) +
-                  increment,
-              'createdBy': existingData['createdBy'] ?? bump['createdBy'],
-              'createdAt':
-                  existingData['createdAt'] ?? FieldValue.serverTimestamp(),
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
-          } else {
-            batch.set(claimRef, {
-              'invoiceNumber': bump['invoiceNumber'],
-              'companyId': bump['companyId'],
-              'companyName': bump['companyName'],
-              'reuseMode': bump['reuseMode'],
-              'activeJobCount': increment,
-              'createdBy': bump['createdBy'],
-              'createdAt': FieldValue.serverTimestamp(),
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+        await firestore.runTransaction((tx) async {
+          final existingJobs =
+              <String, DocumentSnapshot<Map<String, dynamic>>>{};
+          for (final item in jobsToCreate) {
+            existingJobs[item.ref.id] = await tx.get(item.ref);
           }
-        }
 
-        await batch.commit();
+          final existingClaims =
+              <String, DocumentSnapshot<Map<String, dynamic>>>{};
+          for (final entry in claimBumps.entries) {
+            final claimRef = _invoiceClaimsRef.doc(entry.key);
+            existingClaims[entry.key] = await tx.get(claimRef);
+          }
+
+          for (final item in jobsToCreate) {
+            final existing = existingJobs[item.ref.id];
+            if (existing != null && existing.exists) {
+              continue;
+            }
+            final data = item.job.toFirestore();
+            data['date'] ??= FieldValue.serverTimestamp();
+            data['submittedAt'] ??= FieldValue.serverTimestamp();
+            tx.set(item.ref, data);
+            imported++;
+          }
+
+          for (final entry in claimBumps.entries) {
+            final claimRef = _invoiceClaimsRef.doc(entry.key);
+            final bump = entry.value;
+            final increment = bump['activeJobCount'] as int? ?? 0;
+            final existingClaimDoc = existingClaims[entry.key];
+
+            if (existingClaimDoc != null && existingClaimDoc.exists) {
+              final existingData =
+                  existingClaimDoc.data() ?? <String, dynamic>{};
+              final existingCompanyId =
+                  (existingData['companyId'] as String?) ?? '';
+              final existingReuseMode =
+                  (existingData['reuseMode'] as String?) ??
+                  _invoiceReuseModeSolo;
+              if (existingCompanyId != bump['companyId'] ||
+                  existingReuseMode != bump['reuseMode']) {
+                throw JobException.duplicateInvoice();
+              }
+
+              tx.set(claimRef, {
+                'invoiceNumber':
+                    existingData['invoiceNumber'] ?? bump['invoiceNumber'],
+                'companyId': existingData['companyId'] ?? bump['companyId'],
+                'companyName':
+                    existingData['companyName'] ?? bump['companyName'],
+                'reuseMode': existingData['reuseMode'] ?? bump['reuseMode'],
+                'activeJobCount':
+                    ((existingData['activeJobCount'] as num?)?.toInt() ?? 0) +
+                    increment,
+                'createdBy': existingData['createdBy'] ?? bump['createdBy'],
+                'createdAt':
+                    existingData['createdAt'] ?? FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+            } else {
+              tx.set(claimRef, {
+                'invoiceNumber': bump['invoiceNumber'],
+                'companyId': bump['companyId'],
+                'companyName': bump['companyName'],
+                'reuseMode': bump['reuseMode'],
+                'activeJobCount': increment,
+                'createdBy': bump['createdBy'],
+                'createdAt': FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+            }
+          }
+        });
       }
       return imported;
     } on FirebaseException catch (e) {

@@ -48,6 +48,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void refresh() {
     ref.invalidate(adminJobSummaryProvider);
     ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(settlementSummaryProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allCompaniesProvider);
     ref.invalidate(invoicePrefixMigrationProvider);
@@ -77,6 +78,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final l = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider).value;
     final adminSummary = ref.watch(adminJobSummaryProvider);
+    final settlementSummary = ref.watch(settlementSummaryProvider);
     final pending = ref.watch(pendingApprovalsProvider);
     final technicians = ref.watch(allTechniciansProvider);
     final companies = ref.watch(allCompaniesProvider);
@@ -335,6 +337,42 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  settlementSummary.when(
+                    data: (summary) => ArcticCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.invoiceSettlements,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 6,
+                            children: [
+                              Text('${l.unpaid}: ${summary.unpaidCount}'),
+                              Text(
+                                '${l.awaitingTechnicianConfirmation}: ${summary.pendingConfirmCount}',
+                              ),
+                              Text(
+                                '${l.paymentConfirmed}: ${summary.confirmedCount}',
+                              ),
+                              Text(
+                                '${l.paymentDisputed}: ${summary.disputedCount}',
+                              ),
+                              Text(
+                                '${l.amountSar}: ${AppFormatters.currency(summary.unpaidAmount)}',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    loading: () => const ArcticShimmer(height: 56, count: 1),
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 16),
                   ArcticCard(

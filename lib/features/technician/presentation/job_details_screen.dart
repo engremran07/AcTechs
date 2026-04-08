@@ -17,13 +17,6 @@ class JobDetailsScreen extends ConsumerWidget {
   final String jobId;
   final JobModel? initialJob;
 
-  int _displayUnits(JobModel job) {
-    if (!job.isSharedInstall) return job.totalUnits;
-    return job.sharedContributionUnits > 0
-        ? job.sharedContributionUnits
-        : job.totalUnits;
-  }
-
   Future<List<String>> _sharedTechnicianNames(
     WidgetRef ref,
     JobModel job,
@@ -150,17 +143,7 @@ class JobDetailsScreen extends ConsumerWidget {
                         label: l.technician,
                         value: job.techName,
                       ),
-                      _DetailRow(
-                        icon: Icons.calculate_outlined,
-                        label: l.expenses,
-                        value: AppFormatters.currency(job.expenses),
-                      ),
-                      if (job.expenseNote.trim().isNotEmpty)
-                        _DetailRow(
-                          icon: Icons.note_alt_outlined,
-                          label: l.expenseNote,
-                          value: job.expenseNote,
-                        ),
+                      // Expenses belong to the daily In/Out system — not displayed here.
                       if (job.adminNote.trim().isNotEmpty)
                         _DetailRow(
                           icon: Icons.info_outline_rounded,
@@ -188,9 +171,7 @@ class JobDetailsScreen extends ConsumerWidget {
                           future: _sharedTechnicianNames(ref, job),
                           builder: (context, snapshot) {
                             final names = snapshot.data ?? const <String>[];
-                            if (names.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
+                            if (names.isEmpty) return const SizedBox.shrink();
                             return _DetailRow(
                               icon: Icons.groups_rounded,
                               label: l.technicians,
@@ -198,60 +179,79 @@ class JobDetailsScreen extends ConsumerWidget {
                             );
                           },
                         ),
-                        _DetailRow(
-                          icon: Icons.receipt_long_outlined,
-                          label: l.totalOnInvoice,
-                          value: AppFormatters.units(
-                            job.sharedInvoiceTotalUnits,
+                        const Divider(height: 16),
+                        // ── Per-type breakdown: Invoice total vs. tech share ──
+                        if (job.sharedInvoiceSplitUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.ac_unit_rounded,
+                            label: l.splitAcLabel,
+                            invoiceValue: '${job.sharedInvoiceSplitUnits}',
+                            myShareValue: '${job.techSplitShare}',
                           ),
-                        ),
-                        _DetailRow(
-                          icon: Icons.person_outline_rounded,
-                          label: l.myShare,
-                          value: AppFormatters.units(_displayUnits(job)),
-                        ),
-                        if (job.sharedInvoiceUninstallSplitUnits > 0)
-                          _DetailRow(
-                            icon: Icons.build_circle_outlined,
-                            label: l.uninstallSplit,
-                            value:
-                                '${job.techUninstallSplitShare}/${job.sharedInvoiceUninstallSplitUnits}',
+                        if (job.sharedInvoiceWindowUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.window_outlined,
+                            label: l.windowAcLabel,
+                            invoiceValue: '${job.sharedInvoiceWindowUnits}',
+                            myShareValue: '${job.techWindowShare}',
                           ),
-                        if (job.sharedInvoiceUninstallWindowUnits > 0)
-                          _DetailRow(
-                            icon: Icons.build_circle_outlined,
-                            label: l.uninstallWindow,
-                            value:
-                                '${job.techUninstallWindowShare}/${job.sharedInvoiceUninstallWindowUnits}',
-                          ),
-                        if (job.sharedInvoiceUninstallFreestandingUnits > 0)
-                          _DetailRow(
-                            icon: Icons.build_circle_outlined,
-                            label: l.uninstallStanding,
-                            value:
-                                '${job.techUninstallFreestandingShare}/${job.sharedInvoiceUninstallFreestandingUnits}',
+                        if (job.sharedInvoiceFreestandingUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.vertical_align_bottom_rounded,
+                            label: l.freestandingAcLabel,
+                            invoiceValue:
+                                '${job.sharedInvoiceFreestandingUnits}',
+                            myShareValue: '${job.techFreestandingShare}',
                           ),
                         if (job.sharedInvoiceBracketCount > 0)
-                          _DetailRow(
+                          _SharedTypeRow(
                             icon: Icons.hardware_outlined,
                             label: l.acOutdoorBracket,
-                            value:
-                                '${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
+                            invoiceValue: '${job.sharedInvoiceBracketCount}',
+                            myShareValue: '${job.techBracketShare}',
                           ),
-                        if (job.sharedDeliveryTeamCount > 0)
-                          _DetailRow(
-                            icon: Icons.groups_rounded,
-                            label: l.sharedTeamSize,
-                            value: '${job.sharedDeliveryTeamCount}',
+                        if (job.sharedInvoiceUninstallSplitUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallSplit,
+                            invoiceValue:
+                                '${job.sharedInvoiceUninstallSplitUnits}',
+                            myShareValue: '${job.techUninstallSplitShare}',
                           ),
-                        if (job.sharedInvoiceDeliveryAmount > 0)
-                          _DetailRow(
+                        if (job.sharedInvoiceUninstallWindowUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallWindow,
+                            invoiceValue:
+                                '${job.sharedInvoiceUninstallWindowUnits}',
+                            myShareValue: '${job.techUninstallWindowShare}',
+                          ),
+                        if (job.sharedInvoiceUninstallFreestandingUnits > 0)
+                          _SharedTypeRow(
+                            icon: Icons.build_circle_outlined,
+                            label: l.uninstallStanding,
+                            invoiceValue:
+                                '${job.sharedInvoiceUninstallFreestandingUnits}',
+                            myShareValue:
+                                '${job.techUninstallFreestandingShare}',
+                          ),
+                        if (job.sharedInvoiceDeliveryAmount > 0) ...[
+                          const Divider(height: 16),
+                          _SharedTypeRow(
                             icon: Icons.local_shipping_outlined,
                             label: l.sharedInvoiceDeliveryAmount,
-                            value: AppFormatters.currency(
+                            invoiceValue: AppFormatters.currency(
                               job.sharedInvoiceDeliveryAmount,
                             ),
+                            myShareValue: AppFormatters.currency(
+                              job.charges?.deliveryAmount ??
+                                  (job.sharedDeliveryTeamCount > 0
+                                      ? job.sharedInvoiceDeliveryAmount /
+                                            job.sharedDeliveryTeamCount
+                                      : 0),
+                            ),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -365,6 +365,89 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[trailing!],
+        ],
+      ),
+    );
+  }
+}
+
+/// Two-column breakdown row for shared install types.
+/// Shows [Invoice total] on the left and [Your share] highlighted on the right.
+class _SharedTypeRow extends StatelessWidget {
+  const _SharedTypeRow({
+    required this.icon,
+    required this.label,
+    required this.invoiceValue,
+    required this.myShareValue,
+  });
+
+  final IconData icon;
+  final String label;
+  final String invoiceValue;
+  final String myShareValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: ArcticTheme.arcticTextSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: ArcticTheme.arcticTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Invoice',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: ArcticTheme.arcticTextSecondary,
+                            ),
+                          ),
+                          Text(invoiceValue, style: textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Your Share',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: ArcticTheme.arcticBlue,
+                            ),
+                          ),
+                          Text(
+                            myShareValue,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: ArcticTheme.arcticBlue,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

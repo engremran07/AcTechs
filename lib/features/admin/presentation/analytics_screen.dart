@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -435,8 +435,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ? '${AppFormatters.date(normalizedRange.start)} - ${AppFormatters.date(normalizedRange.end)}'
           : AppFormatters.monthLabelForLocale(options.locale, normalizedMonth);
       final reportTitle = switch (options.locale) {
-        'ur' => '${options.techName} کی رپورٹ ($languageLabel)',
-        'ar' => 'تقرير ${options.techName} ($languageLabel)',
+        'ur' => '${options.techName} ┌®█î Ï▒┘¥┘êÏ▒┘╣ ($languageLabel)',
+        'ar' => 'Ï¬┘éÏ▒┘èÏ▒ ${options.techName} ($languageLabel)',
         _ => 'Report of ${options.techName} ($languageLabel)',
       };
 
@@ -823,8 +823,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       }
 
       final reportTitle = switch (locale) {
-        'ur' => 'کمپنی انوائس رپورٹ ($companyName)',
-        'ar' => 'تقرير فواتير الشركة ($companyName)',
+        'ur' => '┌®┘à┘¥┘å█î Ïº┘å┘êÏºÏªÏ│ Ï▒┘¥┘êÏ▒┘╣ ($companyName)',
+        'ar' => 'Ï¬┘éÏ▒┘èÏ▒ ┘ü┘êÏºÏ¬┘èÏ▒ Ïº┘äÏ┤Ï▒┘âÏ® ($companyName)',
         _ => 'Company Invoice Report ($companyName)',
       };
 
@@ -998,7 +998,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       body: SafeArea(
         child: summaryAsync.when(
           data: (summary) {
-            final techJobs = summary.technicianJobsMap;
+            final techTotals = summary.technicianJobCounts;
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -1209,8 +1209,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         child: RepaintBoundary(
                           child: BarChart(
                             BarChartData(
-                              barGroups: techJobs.entries
-                                  .toList()
+                              barGroups: techTotals
                                   .asMap()
                                   .entries
                                   .map(
@@ -1218,7 +1217,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                       x: e.key,
                                       barRods: [
                                         BarChartRodData(
-                                          toY: e.value.value.toDouble(),
+                                          toY: e.value.jobCount.toDouble(),
                                           color: ArcticTheme.arcticBlue,
                                           width: 20,
                                           borderRadius:
@@ -1241,9 +1240,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                   sideTitles: SideTitles(
                                     showTitles: true,
                                     getTitlesWidget: (value, meta) {
-                                      final names = techJobs.keys.toList();
-                                      if (value.toInt() < names.length) {
-                                        final name = names[value.toInt()];
+                                      if (value.toInt() < techTotals.length) {
+                                        final name = techTotals[value.toInt()]
+                                            .displayName;
                                         return Padding(
                                           padding: const EdgeInsets.only(
                                             top: 8,

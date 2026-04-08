@@ -12,6 +12,8 @@ const _kRememberEmailKey = 'remember_email';
 const _kRememberMeKey = 'remember_me';
 const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
 const _kProfileSyncAtPrefix = 'profile_sync_at_';
+const _kLastSyncedEmailPrefix = 'profile_sync_email_';
+const _kLastSyncedNamePrefix = 'profile_sync_name_';
 const _kProfileSyncCooldown = Duration(hours: 24);
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -58,6 +60,19 @@ class AuthRepository {
 
   Future<void> _syncProfileFromAuth(User user) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final authEmail = (user.email ?? '').trim();
+      final authDisplayName = (user.displayName ?? '').trim();
+      final cachedEmail =
+          prefs.getString('$_kLastSyncedEmailPrefix${user.uid}') ?? '';
+      final cachedName =
+          prefs.getString('$_kLastSyncedNamePrefix${user.uid}') ?? '';
+
+      if (cachedEmail == authEmail && cachedName == authDisplayName) {
+        await _markProfileSynced(user.uid);
+        return;
+      }
+
       final userDocRef = firestore
           .collection(AppConstants.usersCollection)
           .doc(user.uid);
@@ -66,8 +81,6 @@ class AuthRepository {
 
       final data = userDoc.data() ?? {};
       final updates = <String, dynamic>{};
-      final authEmail = (user.email ?? '').trim();
-      final authDisplayName = (user.displayName ?? '').trim();
 
       if (authEmail.isNotEmpty && data['email'] != authEmail) {
         updates['email'] = authEmail;
@@ -79,6 +92,12 @@ class AuthRepository {
       if (updates.isNotEmpty) {
         await userDocRef.update(updates);
       }
+
+      await prefs.setString('$_kLastSyncedEmailPrefix${user.uid}', authEmail);
+      await prefs.setString(
+        '$_kLastSyncedNamePrefix${user.uid}',
+        authDisplayName,
+      );
 
       await _markProfileSynced(user.uid);
     } on FirebaseException catch (e) {

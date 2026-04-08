@@ -12,6 +12,17 @@ final allTechniciansProvider = StreamProvider.autoDispose<List<UserModel>>((
   return ref.watch(userRepositoryProvider).allTechnicians();
 });
 
+/// All active technicians, without an admin guard.
+/// Used by the shared install team selector dropdown so technicians can pick
+/// their teammates. Safe because [firestore.rules] restricts the users list
+/// to `isActiveUser() || isAdmin()` only — closed employee system.
+final activeTechniciansForTeamProvider =
+    StreamProvider.autoDispose<List<UserModel>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null) return Stream.value([]);
+      return ref.watch(userRepositoryProvider).allTechnicians();
+    });
+
 final allUsersProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);

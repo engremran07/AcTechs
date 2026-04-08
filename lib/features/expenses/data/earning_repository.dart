@@ -67,24 +67,41 @@ class EarningRepository {
     }
   }
 
-  Future<void> deleteEarning(String id, {DateTime? lockedBeforeDate}) async {
+  // NEVER call doc.delete() for technician-owned records — use archiveEarning().
+  // Admin restore is available via restoreEarning().
+  Future<void> archiveEarning(String id, {DateTime? lockedBeforeDate}) async {
     try {
       await _periodLockGuard.ensureUnlockedDocument(
         _ref.doc(id),
         cachedLockedBefore: lockedBeforeDate,
       );
       await _ensureMutableRecord(id);
-      await _ref.doc(id).delete();
+      await _ref.doc(id).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
     } on EarningException {
       rethrow;
     } on PeriodException {
       rethrow;
     } on FirebaseException catch (e) {
-      debugPrint('deleteEarning error: ${e.code} — ${e.message}');
+      debugPrint('archiveEarning error: ${e.code} — ${e.message}');
       throw EarningException.deleteFailed();
     } catch (e) {
-      debugPrint('deleteEarning unknown: $e');
+      debugPrint('archiveEarning unknown: $e');
       throw EarningException.deleteFailed();
+    }
+  }
+
+  Future<void> restoreEarning(String id) async {
+    try {
+      await _ref.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on FirebaseException catch (e) {
+      debugPrint('restoreEarning error: ${e.code} — ${e.message}');
+      throw EarningException.saveFailed();
+    } catch (e) {
+      debugPrint('restoreEarning unknown: $e');
+      throw EarningException.saveFailed();
     }
   }
 
@@ -193,8 +210,10 @@ class EarningRepository {
         .orderBy('date', descending: false)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => EarningModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -203,8 +222,10 @@ class EarningRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => EarningModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -231,7 +252,10 @@ class EarningRepository {
         );
       }
       final snap = await query.orderBy('date', descending: true).get();
-      return snap.docs.map((d) => EarningModel.fromFirestore(d)).toList();
+      return snap.docs
+          .where((d) => d.data()['isDeleted'] != true)
+          .map((d) => EarningModel.fromFirestore(d))
+          .toList();
     } on FirebaseException catch (e) {
       debugPrint('fetchEarnings error: ${e.code} — ${e.message}');
       throw EarningException.saveFailed();
@@ -248,8 +272,10 @@ class EarningRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => EarningModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -264,8 +290,10 @@ class EarningRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => EarningModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -281,8 +309,10 @@ class EarningRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => EarningModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => EarningModel.fromFirestore(d))
+              .toList(),
         );
   }
 }

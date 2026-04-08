@@ -1687,4 +1687,47 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get unpaid => 'غیر ادا شدہ';
+
+  @override
+  String get sharedTeamMembers => 'ٹیم کے ارکان';
+
+  @override
+  String get addTeamMember => 'ٹیم ممبر شامل کریں';
+
+  @override
+  String get removeTeamMember => 'ہٹائیں';
+
+  @override
+  String sharedTeamCount(int count) {
+    return 'ٹیم سائز: $count';
+  }
+
+  @override
+  String get notTeamMember =>
+      'آپ کو اس مشترکہ انوائس کی ٹیم میں شامل نہیں کیا گیا۔ پہلے ٹیکنیشن سے کہیں کہ وہ آپ کو ٹیم میں شامل کریں۔';
+
+  @override
+  String get yourSharedTeams => 'آپ کی مشترکہ ٹیمیں';
+
+  @override
+  String get pendingSharedInstalls => 'زیر التزام مشترکہ انسٹال';
+
+  @override
+  String get tapToAddYourShare => 'اپنا حصہ شامل کرنے کے لیے ٹیپ کریں';
+
+  @override
+  String get addYourShare => 'اپنا حصہ شامل کریں';
+
+  @override
+  String get preFilledFromSharedInstall =>
+      'انوائس کی معلومات آپ کی ٹیم کے مشترکہ انسٹال سے چھری گئی ہے۔ صرف اپنا یونٹ حصہ درج کریں۔';
+
+  @override
+  String get teamJobPending => 'آپ کی شراکت درکار ہے';
+
+  @override
+  String get teamJobSubmitted => 'آپ کی شراکت جمع ہو گئی';
+
+  @override
+  String get undo => 'واپس کریں';
 }

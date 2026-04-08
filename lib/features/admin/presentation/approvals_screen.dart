@@ -339,9 +339,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 Text(
                   '${l.acOutdoorBracket}: ${job.techBracketShare}/${job.sharedInvoiceBracketCount}',
                 ),
-              if (job.isSharedInstall) Text('${l.technicians}: $groupSize'),
+              if (job.isSharedInstall) Text(l.sharedTeamCount(groupSize)),
               if (job.isSharedInstall && sharedTechnicianNames.isNotEmpty)
-                Text('${l.technicians}: $sharedTechnicianNames'),
+                Text('${l.sharedTeamMembers}: $sharedTechnicianNames'),
               if (job.expenseNote.trim().isNotEmpty) Text(job.expenseNote),
               const SizedBox(height: 12),
               _ApprovalHistorySection(

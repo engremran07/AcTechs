@@ -34,12 +34,32 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 ## Architecture
 
 - **Clean Architecture**: features/ with data/domain/presentation/providers layers
-- **Feature folders**: auth, technician, admin, settings
+- **Feature folders**: auth, technician, admin, settings, **expenses** (earnings/expenses In/Out domain)
 - **Core**: shared theme, widgets, errors, extensions, utils, constants
 - **Routing**: GoRouter with shell routes for bottom nav, auth redirect guard
 - **Models**: Freezed immutable classes with JSON serialization
 - **Errors**: Custom sealed exception hierarchy — NEVER show raw Firebase/Flutter errors
 - **Offline**: Firestore local persistence enabled, connectivity_plus for detection
+
+## Domain Model Boundaries — CRITICAL
+
+AC Techs has **three completely separate data domains**. NEVER mix them:
+
+| Domain | Firestore | Model | Feature Folder |
+|--------|----------|-------|---------------|
+| **Jobs** | `jobs/` | `JobModel` | `features/jobs/` + `features/technician/` |
+| **In/Out** | `expenses/` + `earnings/` | `ExpenseModel` + `EarningModel` | `features/expenses/` |
+| **AC Installs** | `ac_installations/` | `AcInstallModel` | `features/expenses/` |
+
+- **Jobs** = AC installation job records submitted by techs for client invoices (admin-approved)
+- **In/Out** = tech's daily personal earnings/expenses (food, petrol, bracket installs, scrap sales)
+- These are independent — a Job doc contains NO expense/earning sub-documents
+
+### In/Out Navigation Rules
+- Bottom nav In/Out → `/tech/inout` (no extra) → `DailyInOutScreen(selectedDate: null)` → today, form visible
+- History card tap → `/tech/inout` with `extra: DateTime` → `DailyInOutScreen(selectedDate: date)` → form hidden
+- Monthly overview → `/tech/summary` → `MonthlySummaryScreen` → read-only
+- **NEVER** navigate history In/Out cards to `/tech/summary` — it's read-only and confusing
 
 ## Code Style
 
@@ -61,6 +81,43 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 - Test on both Android and Chrome
 - Never commit google-services.json or firebase_options.dart to public repos
 - Deploy Firestore rules/indexes after security changes: `firebase deploy --only firestore --project actechs-d415e`
+
+## Version Policy
+
+- versionCode (number after `+` in pubspec version) must ALWAYS increase across releases
+- Never reset build number
+- Current minimum next versionCode: 16
+
+## Shared Install Team System Rules
+
+1. `teamMemberIds[0]` is ALWAYS the createdBy uid (first submitter)
+2. `teamMemberNames` is a parallel array — same index order as `teamMemberIds`
+3. Max team size: 10 — enforced in both Firestore rules (`teamMemberIds.size() <= 10`) and UI
+4. New contributions require caller uid to be in aggregate's existing `teamMemberIds` list
+5. Invoice totals (`sharedInvoice*` fields) are immutable after first submission — only admin can change via `validSharedAggregateAdminUpdatePayload()`
+6. **Aggregate counter reconciliation:** Archiving a shared install job does NOT decrement aggregate `consumed*` counters. If aggregate discrepancy is detected, admin must flush + rebuild. Never attempt counter rollback in app layer — it requires a cross-collection transaction that breaks free-tier read budget. Document this constraint in code comments at the archive call site.
+7. **Deactivated team member:** If a tech is archived/deactivated while listed in a `teamMemberIds` array, their UID remains in the array (historical accuracy). Remaining active teammates can still submit their contributions. The deactivated tech's slot simply has no future submissions. No cleanup of `teamMemberIds` is needed or desired.
+
+## Expense/Earning Archive Rules
+
+1. **Never call `doc.delete()` for technician-owned records** (expenses, earnings, AC installs)
+2. Always use `archiveExpense()`, `archiveEarning()`, `archiveInstall()` repository methods instead
+3. Restoration requires admin action OR in-session undo SnackBar (4-second window for techs)
+4. `isDeleted: bool` (default false) and `deletedAt: DateTime?` must be present on all archivable models
+5. Stream mappers must filter out `isDeleted == true` docs in Dart before mapping to model objects
+
+## Settlement System Rules
+
+1. Never hardcode settlement status strings in Dart; use `JobSettlementStatus.*.firestoreValue`
+2. Any new field added to `JobModel` must be evaluated for:
+	- `technicianMutableJobUpdate()` affected keys in `firestore.rules`
+	- `settlementFieldsOnlyChanged()` and `settlementFieldsUnchanged()` in `firestore.rules`
+	- `validJobCreatePayload()` where relevant
+3. Maximum settlement batch size: 200 jobs
+4. `confirmSettlementBatch` and `rejectSettlementBatch` must remain transactional
+5. Settlement transition chain must remain:
+	- unpaid -> awaiting_technician -> confirmed
+	- unpaid -> awaiting_technician -> correction_required -> awaiting_technician -> disputed_final
 
 ## Error Philosophy
 

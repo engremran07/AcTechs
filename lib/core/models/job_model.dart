@@ -89,6 +89,8 @@ abstract class JobModel with _$JobModel {
     @Default(JobSettlementStatus.unpaid) JobSettlementStatus settlementStatus,
     @Default('') String settlementBatchId,
     @Default(0) int settlementRound,
+    @Default(0.0) double settlementAmount,
+    @Default('') String settlementPaymentMethod,
     @Default('') String settlementAdminNote,
     @Default('') String settlementTechnicianComment,
     @Default('') String settlementRequestedBy,
@@ -129,6 +131,8 @@ abstract class JobModel with _$JobModel {
     DateTime? settlementRequestedAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? settlementRespondedAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? settlementPaidAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? settlementCorrectedAt,
   }) = _JobModel;
@@ -214,7 +218,9 @@ extension JobModelX on JobModel {
     final requiresApproval = isSharedInstall
         ? sharedApprovalRequired
         : approvalRequired;
-    return !requiresApproval && !isSharedInstall && isUnpaid;
+    // Approved + approval OFF → editable (both solo and shared).
+    // Approved + approval ON  → admin decision is final; non-editable.
+    return !requiresApproval && isUnpaid;
   }
 
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);

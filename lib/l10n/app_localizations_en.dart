@@ -1685,4 +1685,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unpaid => 'Unpaid';
+
+  @override
+  String get sharedTeamMembers => 'Team Members';
+
+  @override
+  String get addTeamMember => 'Add Team Member';
+
+  @override
+  String get removeTeamMember => 'Remove';
+
+  @override
+  String sharedTeamCount(int count) {
+    return 'Team size: $count';
+  }
+
+  @override
+  String get notTeamMember =>
+      'You are not enrolled in this shared invoice team. Ask the first submitter to add you.';
+
+  @override
+  String get yourSharedTeams => 'Your Shared Teams';
+
+  @override
+  String get pendingSharedInstalls => 'Pending Shared Installs';
+
+  @override
+  String get tapToAddYourShare => 'Tap to insert your share';
+
+  @override
+  String get addYourShare => 'Add Your Share';
+
+  @override
+  String get preFilledFromSharedInstall =>
+      'Invoice data pre-filled from your team’s shared install. Enter only your unit share.';
+
+  @override
+  String get teamJobPending => 'Pending your contribution';
+
+  @override
+  String get teamJobSubmitted => 'Your contribution submitted';
+
+  @override
+  String get undo => 'Undo';
 }

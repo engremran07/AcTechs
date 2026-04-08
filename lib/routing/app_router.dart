@@ -177,9 +177,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               final initialJob = state.extra is JobModel
                   ? state.extra as JobModel
                   : null;
+              final initialAggregate = state.extra is SharedInstallAggregate
+                  ? state.extra as SharedInstallAggregate
+                  : null;
               return _slideFadePage(
                 pageKey: state.pageKey,
-                child: SubmitJobScreen(initialJob: initialJob),
+                child: SubmitJobScreen(
+                  initialJob: initialJob,
+                  initialAggregate: initialAggregate,
+                ),
               );
             },
           ),
@@ -187,7 +193,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/tech/inout',
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
-              child: const DailyInOutScreen(),
+              child: DailyInOutScreen(
+                selectedDate: state.extra is DateTime
+                    ? state.extra as DateTime
+                    : null,
+              ),
             ),
           ),
           GoRoute(

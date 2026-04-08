@@ -1680,4 +1680,47 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get unpaid => 'غير مدفوع';
+
+  @override
+  String get sharedTeamMembers => 'أعضاء الفريق';
+
+  @override
+  String get addTeamMember => 'إضافة عضو فريق';
+
+  @override
+  String get removeTeamMember => 'إزالة';
+
+  @override
+  String sharedTeamCount(int count) {
+    return 'حجم الفريق: $count';
+  }
+
+  @override
+  String get notTeamMember =>
+      'أنت لست مدرجاً كعضو في فريق هذه الفاتورة المشتركة. اطلب من الفني الأول الذي قدّم هذه الفاتورة إضافتك إلى الفريق.';
+
+  @override
+  String get yourSharedTeams => 'فرقك المشتركة';
+
+  @override
+  String get pendingSharedInstalls => 'تنفيذ مشترك قيد الانتظار';
+
+  @override
+  String get tapToAddYourShare => 'اضغط لإدخال حصتك';
+
+  @override
+  String get addYourShare => 'أضف حصتك';
+
+  @override
+  String get preFilledFromSharedInstall =>
+      'تم تعبئة بيانات الفاتورة مسبقاً من التنفيذ المشترك لفريقك. أدخل حصتك من الوحدات فقط.';
+
+  @override
+  String get teamJobPending => 'في انتظار مساهمتك';
+
+  @override
+  String get teamJobSubmitted => 'تم تقديم مساهمتك';
+
+  @override
+  String get undo => 'تراجع';
 }

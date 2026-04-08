@@ -22,8 +22,13 @@ import 'package:ac_techs/core/providers/locale_provider.dart';
 
 /// Unified daily In/Out screen — techs add earnings (IN) and expenses (OUT)
 /// in a single view with a running profit/loss summary on top.
+///
+/// Pass [selectedDate] to view/edit entries for a historical date rather than
+/// today. When [selectedDate] is set, the add-entry form is hidden.
 class DailyInOutScreen extends ConsumerStatefulWidget {
-  const DailyInOutScreen({super.key});
+  final DateTime? selectedDate;
+
+  const DailyInOutScreen({super.key, this.selectedDate});
 
   @override
   ConsumerState<DailyInOutScreen> createState() => _DailyInOutScreenState();
@@ -275,11 +280,18 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           ?.lockedBeforeDate;
       await ref
           .read(earningRepositoryProvider)
-          .deleteEarning(id, lockedBeforeDate: lockedBeforeDate);
+          .archiveEarning(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
-        AppFeedback.success(
-          context,
-          message: AppLocalizations.of(context)!.entryDeleted,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.entryDeleted),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: AppLocalizations.of(context)!.undo,
+              onPressed: () =>
+                  ref.read(earningRepositoryProvider).restoreEarning(id),
+            ),
+          ),
         );
       }
     } on AppException catch (e) {
@@ -298,11 +310,18 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           ?.lockedBeforeDate;
       await ref
           .read(expenseRepositoryProvider)
-          .deleteExpense(id, lockedBeforeDate: lockedBeforeDate);
+          .archiveExpense(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
-        AppFeedback.success(
-          context,
-          message: AppLocalizations.of(context)!.entryDeleted,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.entryDeleted),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: AppLocalizations.of(context)!.undo,
+              onPressed: () =>
+                  ref.read(expenseRepositoryProvider).restoreExpense(id),
+            ),
+          ),
         );
       }
     } on AppException catch (e) {
@@ -1137,8 +1156,13 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
     final l = AppLocalizations.of(context)!;
     final allEarningsAsync = ref.watch(techEarningsProvider);
     final allExpensesAsync = ref.watch(techExpensesProvider);
-    final earningsAsync = ref.watch(todaysEarningsProvider);
-    final expensesAsync = ref.watch(todaysExpensesProvider);
+    final selectedDate = widget.selectedDate;
+    final earningsAsync = selectedDate != null
+        ? ref.watch(dailyEarningsProvider(selectedDate))
+        : ref.watch(todaysEarningsProvider);
+    final expensesAsync = selectedDate != null
+        ? ref.watch(dailyExpensesProvider(selectedDate))
+        : ref.watch(todaysExpensesProvider);
     final allEarnings = allEarningsAsync.value ?? const <EarningModel>[];
     final allExpenses = allExpensesAsync.value ?? const <ExpenseModel>[];
     final monthsWithData = _availableReportMonths(
@@ -1181,7 +1205,14 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: FittedBox(fit: BoxFit.scaleDown, child: Text(l.todaysInOut)),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            widget.selectedDate != null
+                ? AppFormatters.dateTime(widget.selectedDate)
+                : l.todaysInOut,
+          ),
+        ),
         actions: [
           IconButton(
             icon: _isExportingTodayPdf
@@ -1239,9 +1270,11 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               _buildSummaryCard(theme, earningsAsync, expensesAsync),
               const SizedBox(height: 20),
 
-              // ── Add Entry Form ──
-              _buildAddForm(theme),
-              const SizedBox(height: 24),
+              // ── Add Entry Form (hidden when viewing a historical date) ──
+              if (widget.selectedDate == null) ...[
+                _buildAddForm(theme),
+                const SizedBox(height: 24),
+              ],
 
               // ── Today's Entries ──
               Row(

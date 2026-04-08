@@ -39,6 +39,9 @@ abstract class AcInstallModel with _$AcInstallModel {
     DateTime? createdAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? reviewedAt,
+    @JsonKey(defaultValue: false) @Default(false) bool isDeleted,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? deletedAt,
   }) = _AcInstallModel;
 
   factory AcInstallModel.fromJson(Map<String, dynamic> json) =>

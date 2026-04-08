@@ -67,24 +67,41 @@ class ExpenseRepository {
     }
   }
 
-  Future<void> deleteExpense(String id, {DateTime? lockedBeforeDate}) async {
+  // NEVER call doc.delete() for technician-owned records — use archiveExpense().
+  // Admin restore is available via restoreExpense().
+  Future<void> archiveExpense(String id, {DateTime? lockedBeforeDate}) async {
     try {
       await _periodLockGuard.ensureUnlockedDocument(
         _ref.doc(id),
         cachedLockedBefore: lockedBeforeDate,
       );
       await _ensureMutableRecord(id);
-      await _ref.doc(id).delete();
+      await _ref.doc(id).update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
     } on ExpenseException {
       rethrow;
     } on PeriodException {
       rethrow;
     } on FirebaseException catch (e) {
-      debugPrint('deleteExpense error: ${e.code} — ${e.message}');
+      debugPrint('archiveExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.deleteFailed();
     } catch (e) {
-      debugPrint('deleteExpense unknown: $e');
+      debugPrint('archiveExpense unknown: $e');
       throw ExpenseException.deleteFailed();
+    }
+  }
+
+  Future<void> restoreExpense(String id) async {
+    try {
+      await _ref.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on FirebaseException catch (e) {
+      debugPrint('restoreExpense error: ${e.code} — ${e.message}');
+      throw ExpenseException.saveFailed();
+    } catch (e) {
+      debugPrint('restoreExpense unknown: $e');
+      throw ExpenseException.saveFailed();
     }
   }
 
@@ -193,8 +210,10 @@ class ExpenseRepository {
         .orderBy('date', descending: false)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => ExpenseModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -203,8 +222,10 @@ class ExpenseRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => ExpenseModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -248,8 +269,10 @@ class ExpenseRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => ExpenseModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -264,8 +287,10 @@ class ExpenseRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => ExpenseModel.fromFirestore(d))
+              .toList(),
         );
   }
 
@@ -281,8 +306,10 @@ class ExpenseRepository {
         .orderBy('date', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => ExpenseModel.fromFirestore(d)).toList(),
+          (snap) => snap.docs
+              .where((d) => d.data()['isDeleted'] != true)
+              .map((d) => ExpenseModel.fromFirestore(d))
+              .toList(),
         );
   }
 

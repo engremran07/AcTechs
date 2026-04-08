@@ -25,6 +25,8 @@ _EarningModel _$EarningModelFromJson(Map<String, dynamic> json) =>
       date: _timestampFromJson(json['date']),
       createdAt: _timestampFromJson(json['createdAt']),
       reviewedAt: _timestampFromJson(json['reviewedAt']),
+      isDeleted: json['isDeleted'] as bool? ?? false,
+      deletedAt: _timestampFromJson(json['deletedAt']),
     );
 
 Map<String, dynamic> _$EarningModelToJson(_EarningModel instance) =>
@@ -42,6 +44,8 @@ Map<String, dynamic> _$EarningModelToJson(_EarningModel instance) =>
       'date': _timestampToJson(instance.date),
       'createdAt': _timestampToJson(instance.createdAt),
       'reviewedAt': _timestampToJson(instance.reviewedAt),
+      'isDeleted': instance.isDeleted,
+      'deletedAt': _timestampToJson(instance.deletedAt),
     };
 
 const _$EarningApprovalStatusEnumMap = {

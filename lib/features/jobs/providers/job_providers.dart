@@ -140,10 +140,41 @@ final approvedSharedInstallsProvider =
     });
 
 final adminSettlementCandidatesProvider =
-    StreamProvider.autoDispose<List<JobModel>>((ref) {
+    FutureProvider.autoDispose<List<JobModel>>((ref) async {
       final user = ref.watch(currentUserProvider).value;
-      if (user == null || !user.isAdmin) return Stream.value([]);
-      return ref.watch(jobRepositoryProvider).settlementCandidates();
+      if (user == null || !user.isAdmin) return const <JobModel>[];
+      return ref.watch(jobRepositoryProvider).fetchSettlementCandidates();
+    });
+
+final adminSettlementHistoryProvider =
+    FutureProvider.autoDispose<List<JobModel>>((ref) async {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return const <JobModel>[];
+      return ref.watch(jobRepositoryProvider).fetchSettlementHistory();
+    });
+
+final settlementSummaryProvider =
+    FutureProvider.autoDispose<
+      ({
+        int unpaidCount,
+        double unpaidAmount,
+        int pendingConfirmCount,
+        int confirmedCount,
+        int disputedCount,
+      })
+    >((ref) async {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) {
+        return (
+          unpaidCount: 0,
+          unpaidAmount: 0.0,
+          pendingConfirmCount: 0,
+          confirmedCount: 0,
+          disputedCount: 0,
+        );
+      }
+
+      return ref.watch(jobRepositoryProvider).fetchSettlementSummary();
     });
 
 final technicianSettlementInboxProvider =

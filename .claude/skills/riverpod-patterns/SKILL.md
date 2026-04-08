@@ -71,3 +71,125 @@ final authStateProvider = StreamProvider<User?>((ref) {
 - Handle all three AsyncValue states (loading, error, data)
 - Keep providers thin — business logic in repositories
 - Keep expensive filtered subsets memoized in providers when reused by multiple screens
+
+## Shared Install Providers Pattern
+
+### pendingSharedInstallAggregatesProvider
+Watches all shared install groups the current tech belongs to, using Firestore `arrayContains`:
+```dart
+final pendingSharedInstallAggregatesProvider =
+    StreamProvider.autoDispose<List<SharedInstallAggregate>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null) return Stream.value([]);
+  return ref.watch(sharedInstallRepositoryProvider)
+      .watchGroupsForMember(user.uid);
+});
+```
+
+### Cross-referencing two providers for derived status
+To show whether a tech has already submitted their contribution for a shared group:
+```dart
+final techSharedJobsAsync = ref.watch(techJobsProvider(uid));
+final groupsAsync = ref.watch(pendingSharedInstallAggregatesProvider);
+
+// Combine in widget using .when chains or use a derived FutureProvider
+final submittedGroupKeys = techJobsAsync.value
+    ?.where((j) => j.isShared)
+    .map((j) => j.sharedInstallGroupKey)
+    .toSet() ?? {};
+
+final pendingGroups = groupsAsync.value
+    ?.where((g) => !submittedGroupKeys.contains(g.groupKey))
+    .toList() ?? [];
+```
+
+### activeTechniciansForTeamProvider
+Provider that returns all active technicians — WITHOUT admin guard — so that technicians can use it to populate the team selector dropdown:
+```dart
+final activeTechniciansForTeamProvider =
+    StreamProvider.autoDispose<List<UserModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null) return Stream.value([]);
+  // No isAdmin check — all active users are employees in a closed system
+  return ref.watch(userRepositoryProvider).allTechnicians();
+});
+```
+This is safe because `firestore.rules` already limits `/users` list to `isActiveUser() || isAdmin()`.
+
+## Stream Filtering Tradeoffs
+
+### Dart-layer filter (preferred for small datasets)
+```dart
+// No new Firestore index required
+stream.map((snap) => snap.docs
+  .where((d) => d.data()['isDeleted'] != true)
+  .map((d) => Model.fromFirestore(d))
+  .toList())
+```
+Use when: per-user dataset < ~500 docs, or when adding a Firestore index would exceed free-tier index limits.
+
+### Firestore-layer filter (for large or shared datasets)
+```dart
+collection.where('isDeleted', isEqualTo: false).snapshots()
+```
+Use when: dataset grows large, already have a composite index covering the query, or query-layer filtering is needed for pagination.
+
+**AC Techs policy:** Prefer Dart-layer filtering for isDeleted. The per-tech dataset for expenses/earnings is well under 500 docs, so Dart filtering is correct and avoids new index costs.
+
+---
+
+## In/Out Provider Hierarchy (expenses_providers.dart)
+
+### ⚠️ Domain boundary: always use expense_providers — NEVER job_providers for In/Out screens
+
+The `DailyInOutScreen` and `JobHistoryScreen` In/Out tab use ONLY providers from `expense_providers.dart`.
+Never watch `technicianJobsProvider` or `todaysJobsProvider` to get earnings/expense data.
+
+### Provider stack (no extra Firestore listeners for sub-day views)
+```
+Firestore listeners (1 per month per domain, autoDispose):
+  monthlyEarningsProvider(DateTime)    → StreamProvider.family
+  monthlyExpensesProvider(DateTime)    → StreamProvider.family
+
+Derived (today, zero extra Firestore reads):
+  todaysEarningsProvider               → derives from monthlyEarningsProvider(thisMonth)
+  todaysExpensesProvider               → derives from monthlyExpensesProvider(thisMonth)
+
+Derived (single historical day, zero extra Firestore reads):
+  dailyEarningsProvider(DateTime)      → derives from monthlyEarningsProvider(month of date)
+  dailyExpensesProvider(DateTime)      → derives from monthlyExpensesProvider(month of date)
+
+All-time (for history + PDF export):
+  techEarningsProvider                 → StreamProvider (all earnings for logged-in tech)
+  techExpensesProvider                 → StreamProvider (all expenses for logged-in tech)
+```
+
+### dailyEarningsProvider / dailyExpensesProvider pattern
+```dart
+/// Single day's earnings — derives from monthlyEarningsProvider (no extra Firestore listener).
+final dailyEarningsProvider = Provider.autoDispose
+    .family<AsyncValue<List<EarningModel>>, DateTime>((ref, date) {
+  final month = DateTime(date.year, date.month);
+  return ref.watch(monthlyEarningsProvider(month)).whenData(
+    (list) => list
+        .where((e) =>
+            e.date?.year == date.year &&
+            e.date?.month == date.month &&
+            e.date?.day == date.day)
+        .toList(),
+  );
+});
+```
+Use this whenever `DailyInOutScreen(selectedDate: someDate)` is shown from history navigation.
+
+### DailyInOutScreen provider selection
+```dart
+// In DailyInOutScreen.build():
+final selectedDate = widget.selectedDate;
+final earningsAsync = selectedDate != null
+    ? ref.watch(dailyEarningsProvider(selectedDate))   // historical date
+    : ref.watch(todaysEarningsProvider);               // today
+final expensesAsync = selectedDate != null
+    ? ref.watch(dailyExpensesProvider(selectedDate))   // historical date
+    : ref.watch(todaysExpensesProvider);               // today
+```

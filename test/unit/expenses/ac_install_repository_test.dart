@@ -111,7 +111,7 @@ void main() {
     expect(history.single.reason, 'Missing invoice match');
   });
 
-  test('deleteInstall rejects approved records', () async {
+  test('archiveInstall rejects approved records', () async {
     final doc = await firestore
         .collection(AppConstants.acInstallsCollection)
         .add({
@@ -128,7 +128,7 @@ void main() {
         });
 
     await expectLater(
-      () => repository.deleteInstall(doc.id),
+      () => repository.archiveInstall(doc.id),
       throwsA(isA<AcInstallException>()),
     );
   });

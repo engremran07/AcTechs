@@ -98,7 +98,7 @@ void main() {
     );
   });
 
-  test('deleteExpense rejects approved records', () async {
+  test('archiveExpense rejects approved records', () async {
     final doc = await firestore
         .collection(AppConstants.expensesCollection)
         .add({
@@ -117,7 +117,7 @@ void main() {
         });
 
     await expectLater(
-      () => repository.deleteExpense(doc.id),
+      () => repository.archiveExpense(doc.id),
       throwsA(isA<ExpenseException>()),
     );
   });

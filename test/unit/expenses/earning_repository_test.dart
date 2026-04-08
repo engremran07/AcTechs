@@ -41,7 +41,7 @@ void main() {
     },
   );
 
-  test('deleteEarning rejects records inside the locked period', () async {
+  test('archiveEarning rejects records inside the locked period', () async {
     await lockBefore(DateTime(2026, 4, 1));
 
     final doc = await firestore
@@ -62,7 +62,7 @@ void main() {
         });
 
     await expectLater(
-      () => repository.deleteEarning(doc.id),
+      () => repository.archiveEarning(doc.id),
       throwsA(isA<PeriodException>()),
     );
   });

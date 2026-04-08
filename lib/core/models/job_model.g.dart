@@ -64,6 +64,8 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
       JobSettlementStatus.unpaid,
   settlementBatchId: json['settlementBatchId'] as String? ?? '',
   settlementRound: (json['settlementRound'] as num?)?.toInt() ?? 0,
+  settlementAmount: (json['settlementAmount'] as num?)?.toDouble() ?? 0.0,
+  settlementPaymentMethod: json['settlementPaymentMethod'] as String? ?? '',
   settlementAdminNote: json['settlementAdminNote'] as String? ?? '',
   settlementTechnicianComment:
       json['settlementTechnicianComment'] as String? ?? '',
@@ -113,6 +115,7 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   reviewedAt: _timestampFromJson(json['reviewedAt']),
   settlementRequestedAt: _timestampFromJson(json['settlementRequestedAt']),
   settlementRespondedAt: _timestampFromJson(json['settlementRespondedAt']),
+  settlementPaidAt: _timestampFromJson(json['settlementPaidAt']),
   settlementCorrectedAt: _timestampFromJson(json['settlementCorrectedAt']),
 );
 
@@ -133,6 +136,8 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'settlementStatus': _$JobSettlementStatusEnumMap[instance.settlementStatus]!,
   'settlementBatchId': instance.settlementBatchId,
   'settlementRound': instance.settlementRound,
+  'settlementAmount': instance.settlementAmount,
+  'settlementPaymentMethod': instance.settlementPaymentMethod,
   'settlementAdminNote': instance.settlementAdminNote,
   'settlementTechnicianComment': instance.settlementTechnicianComment,
   'settlementRequestedBy': instance.settlementRequestedBy,
@@ -166,6 +171,7 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'reviewedAt': _timestampToJson(instance.reviewedAt),
   'settlementRequestedAt': _timestampToJson(instance.settlementRequestedAt),
   'settlementRespondedAt': _timestampToJson(instance.settlementRespondedAt),
+  'settlementPaidAt': _timestampToJson(instance.settlementPaidAt),
   'settlementCorrectedAt': _timestampToJson(instance.settlementCorrectedAt),
 };
 
