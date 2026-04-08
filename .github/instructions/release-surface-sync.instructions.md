@@ -36,3 +36,12 @@ Release verification rules:
 - Confirm the displayed app version and build in Settings/About match the built source.
 - If web looks older than APK, inspect Hosting cache behavior and the service worker before assuming source drift.
 - Do not treat generated build outputs as authoritative if source, localization, routing, or Firebase config changed afterward.
+
+Pre-commit technical debt gate (run before every commit):
+
+1. **Dead code check**: Search for any new provider defined in this PR and verify at least one `ref.watch`/`ref.read`/`ref.listen` call site exists outside its definition file.
+2. **Hardcoded string check**: Run `grep -r "\.collection('\|\.doc('" lib/` and confirm zero literal strings — all must use `AppConstants.*`.
+3. **Unused import check**: `flutter analyze` must be clean — "No issues found!" blocks any commit with unused imports.
+4. **Dependency audit**: If `pubspec.yaml` was modified to add a dependency, confirm at least one `import 'package:package_name'` exists in `lib/`.
+5. **Widget orphan check**: If a new widget class was added to `lib/core/widgets/`, confirm it is instantiated in at least one presentation file.
+

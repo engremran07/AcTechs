@@ -18,7 +18,7 @@ class AcInstallRepository {
       firestore.collection(AppConstants.acInstallsCollection);
 
   CollectionReference<Map<String, dynamic>> _historyRef(String installId) =>
-      _ref.doc(installId).collection('history');
+      _ref.doc(installId).collection(AppConstants.historySubCollection);
 
   PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
 const _kLocaleKey = 'app_locale';
@@ -51,7 +52,7 @@ class LocaleNotifier extends Notifier<String> {
     if (user != null) {
       try {
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection(AppConstants.usersCollection)
             .doc(user.uid)
             .update({'language': locale});
       } catch (_) {

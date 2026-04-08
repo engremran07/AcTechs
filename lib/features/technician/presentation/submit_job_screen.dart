@@ -155,6 +155,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
   void _populateFromAggregate(SharedInstallAggregate agg) {
     _invoiceController.text = agg.invoiceNumber;
     _isSharedInstall = true;
+    // Pre-fill company so the group key is computed correctly on submit.
+    // Without this, Tech B would submit with no company selected → wrong
+    // group key → invoice claim mismatch → duplicateInvoice error.
+    if (agg.companyId.isNotEmpty) {
+      _selectedCompanyId = agg.companyId;
+      _selectedCompanyName = agg.companyName;
+    }
     _sharedSplitUnits = agg.sharedInvoiceSplitUnits;
     _sharedWindowUnits = agg.sharedInvoiceWindowUnits;
     _sharedFreestandingUnits = agg.sharedInvoiceFreestandingUnits;

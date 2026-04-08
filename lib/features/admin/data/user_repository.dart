@@ -701,7 +701,7 @@ class UserRepository {
   ) async {
     const chunkSize = 400;
     while (true) {
-      final snap = await parentRef.collection('history').limit(chunkSize).get();
+      final snap = await parentRef.collection(AppConstants.historySubCollection).limit(chunkSize).get();
       if (snap.docs.isEmpty) break;
 
       final batch = firestore.batch();

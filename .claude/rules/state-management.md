@@ -18,6 +18,12 @@ paths:
 - Never use ref.read() in build methods — use ref.watch()
 - Use family providers for parameterized filtered views (e.g., AC-type scoped job lists)
 
+## ⛔ Zero-Consumer Provider Rule — STRICT
+
+Any provider that has NO `ref.watch()`, `ref.read()`, or `ref.listen()` call sites in presentation or other provider files is FORBIDDEN. Providers that only appear in `ref.invalidate()` calls during sign-out are NOT consumers and must be removed.
+
+**Before declaring a new provider, prove it has a consumer by writing the consumer first.**
+
 ## Domain Provider Boundaries — CRITICAL
 
 The three data domains each have their own provider file. NEVER cross them:

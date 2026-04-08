@@ -18,7 +18,7 @@ class ExpenseRepository {
       firestore.collection(AppConstants.expensesCollection);
 
   CollectionReference<Map<String, dynamic>> _historyRef(String expenseId) {
-    return _ref.doc(expenseId).collection('history');
+    return _ref.doc(expenseId).collection(AppConstants.historySubCollection);
   }
 
   PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);

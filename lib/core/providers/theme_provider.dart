@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
 const _kThemeKey = 'app_theme_mode';
@@ -45,7 +46,7 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
   Future<void> _loadFromFirestore(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance
-          .collection('users')
+          .collection(AppConstants.usersCollection)
           .doc(uid)
           .get();
       final raw = doc.data()?['themeMode'] as String?;
@@ -72,7 +73,7 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
     if (user != null) {
       try {
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection(AppConstants.usersCollection)
             .doc(user.uid)
             .update({'themeMode': mode.name});
       } catch (_) {

@@ -18,7 +18,7 @@ class EarningRepository {
       firestore.collection(AppConstants.earningsCollection);
 
   CollectionReference<Map<String, dynamic>> _historyRef(String earningId) {
-    return _ref.doc(earningId).collection('history');
+    return _ref.doc(earningId).collection(AppConstants.historySubCollection);
   }
 
   PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);

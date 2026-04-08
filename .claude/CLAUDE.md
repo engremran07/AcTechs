@@ -176,3 +176,38 @@ They are NOT bottom-nav tabs. Never write "4 tabs" for tech in any documentation
 - Historical import supports sheet-aware period naming and metadata notes
 - Shared AC-type filtered job list route is used by both technician and admin dashboards
 - Database flush has optional non-admin user deletion with explicit destructive warning UI
+
+## Technical Debt Prevention — Clean-as-You-Go
+
+This codebase runs on Firebase free tier (Spark plan). Every unused provider = one extra Firestore listener when active. Every unused dependency = APK bloat. Every hardcoded collection string = a rename liability.
+
+### Five Non-Negotiable Pre-Commit Checks
+
+1. **Zero dead providers**: Any new provider must have at least one `ref.watch/read/listen` call site. `ref.invalidate()` in sign-out does NOT count as a consumer.
+2. **Zero hardcoded collection strings**: ALL `.collection()` and `.doc()` calls in `lib/` must use `AppConstants.*` names. Add the constant FIRST, then use it.
+3. **Zero unused dependencies**: Every package in `pubspec.yaml` must be imported somewhere in `lib/`. Verify with `grep -r "package:X" lib/` before adding.
+4. **Zero orphan widgets in core**: Any widget class in `lib/core/widgets/` must be instantiated in at least one screen in `lib/features/`.
+5. **`flutter analyze` must be clean**: "No issues found!" — zero warnings, zero infos, zero hints. Any lint issue is a hard stop.
+
+### Context Collapse Prevention
+
+Context collapse occurs when AI (or developer) forgets what already exists and duplicates it. Before writing anything new:
+- **Utility function** → check `lib/core/utils/` (formatters, validators, invoice utils)
+- **UI pattern** → check `lib/core/widgets/` (cards, dialogs, form fields, swipe actions)
+- **Repository method** → check existing repo class before adding a nearly-identical query
+- **Localization string** → check all 3 ARB files; never add a new key for something that already exists
+- **Firestore pattern** → check `firestore.rules` functions before duplicating validation logic
+
+### Vibe-Coded Debt Signals — Red Flags
+
+| Signal | Action |
+|--------|--------|
+| Provider only in `ref.invalidate()` | Remove provider + invalidation |
+| Widget class with 0 screen usages | Remove widget |
+| `.collection('literal')` in `lib/` | Replace with `AppConstants.*` |
+| Imported package with 0 API calls | Remove import + remove from pubspec |
+| `Navigator.push()` in a screen | Replace with `context.push()` |
+| Inline `Color(0xFFxxxxxx)` | Replace with `ArcticTheme.*` constant |
+| Inline `TextStyle(...)` | Use `Theme.of(context).textTheme.*` |
+| Two providers reading same Firestore path | Consolidate into one |
+

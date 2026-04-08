@@ -98,7 +98,7 @@ class JobRepository {
   }) async {
     final snap = await _jobsRef
         .doc(jobId)
-        .collection('history')
+        .collection(AppConstants.historySubCollection)
         .orderBy('changedAt', descending: true)
         .limit(limit)
         .get();
@@ -388,6 +388,8 @@ class JobRepository {
         : job.sharedDeliveryTeamCount;
     return {
       'groupKey': groupKey,
+      'companyId': job.companyId,
+      'companyName': job.companyName,
       'clientName': job.clientName,
       'clientContact': job.clientContact,
       'sharedInvoiceSplitUnits': job.sharedInvoiceSplitUnits,
@@ -909,7 +911,7 @@ class JobRepository {
 
       if (canEditDirectApproved || canEditPending) {
         await jobRef.update(data);
-        await jobRef.collection('history').add({
+        await jobRef.collection(AppConstants.historySubCollection).add({
           'changedBy': updated.techId,
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': existing.status.name,
@@ -927,7 +929,7 @@ class JobRepository {
         await firestore.runTransaction((tx) async {
           await _reserveInvoiceClaim(tx, updated, normalizedInvoice);
           tx.update(jobRef, data);
-          tx.set(jobRef.collection('history').doc(), {
+          tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': updated.techId,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': existing.status.name,
@@ -1142,7 +1144,7 @@ class JobRepository {
         }
 
         tx.update(jobRef, data);
-        tx.set(jobRef.collection('history').doc(), {
+        tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
           'changedBy': updated.techId,
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': existing.status.name,
@@ -1181,7 +1183,7 @@ class JobRepository {
           'approvedBy': adminUid,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(_jobsRef.doc(jobId).collection('history').doc(), {
+        tx.set(_jobsRef.doc(jobId).collection(AppConstants.historySubCollection).doc(), {
           'changedBy': adminUid,
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': prevStatus,
@@ -1246,7 +1248,7 @@ class JobRepository {
           'adminNote': reason,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(jobRef.collection('history').doc(), {
+        tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
           'changedBy': adminUid,
           'changedAt': FieldValue.serverTimestamp(),
           'previousStatus': prevStatus,
@@ -1458,7 +1460,7 @@ class JobRepository {
                 : Timestamp.fromDate(paidAt),
             'settlementCorrectedAt': null,
           });
-          tx.set(ref.collection('history').doc(), {
+          tx.set(ref.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': adminUid,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': job.settlementStatus.firestoreValue,
@@ -1521,7 +1523,7 @@ class JobRepository {
             'settlementStatus': JobSettlementStatus.confirmed.firestoreValue,
             'settlementRespondedAt': FieldValue.serverTimestamp(),
           });
-          tx.set(ref.collection('history').doc(), {
+          tx.set(ref.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': techId,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': job.settlementStatus.firestoreValue,
@@ -1591,7 +1593,7 @@ class JobRepository {
             'settlementTechnicianComment': normalizedComment,
             'settlementRespondedAt': FieldValue.serverTimestamp(),
           });
-          tx.set(ref.collection('history').doc(), {
+          tx.set(ref.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': techId,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': job.settlementStatus.firestoreValue,
@@ -1657,7 +1659,7 @@ class JobRepository {
             'settlementCorrectedAt': FieldValue.serverTimestamp(),
             'settlementRespondedAt': null,
           });
-          tx.set(ref.collection('history').doc(), {
+          tx.set(ref.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': adminUid,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': job.settlementStatus.firestoreValue,
@@ -1714,7 +1716,7 @@ class JobRepository {
             'settlementStatus': JobSettlementStatus.confirmed.firestoreValue,
             'settlementAdminNote': resolutionNote,
           });
-          tx.set(ref.collection('history').doc(), {
+          tx.set(ref.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': adminUid,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': job.settlementStatus.firestoreValue,
@@ -1764,7 +1766,7 @@ class JobRepository {
             'approvedBy': adminUid,
             'reviewedAt': FieldValue.serverTimestamp(),
           });
-          batch.set(snap.reference.collection('history').doc(), {
+          batch.set(snap.reference.collection(AppConstants.historySubCollection).doc(), {
             'changedBy': adminUid,
             'changedAt': FieldValue.serverTimestamp(),
             'previousStatus': prevStatus,

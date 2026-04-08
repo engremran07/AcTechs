@@ -516,6 +516,8 @@ service cloud.firestore {
     function validSharedAggregateCreatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'companyId',
+          'companyName',
           'clientName',
           'clientContact',
           'sharedInvoiceSplitUnits',
@@ -545,6 +547,8 @@ service cloud.firestore {
         request.resource.data.get('clientContact', '') is string &&
         request.resource.data.groupKey is string &&
         request.resource.data.groupKey.size() > 0 &&
+        request.resource.data.get('companyId', '') is string &&
+        request.resource.data.get('companyName', '') is string &&
         request.resource.data.sharedInvoiceSplitUnits is int &&
         request.resource.data.sharedInvoiceSplitUnits >= 0 &&
         request.resource.data.sharedInvoiceWindowUnits is int &&
@@ -604,6 +608,7 @@ service cloud.firestore {
         request.resource.data.sharedInvoiceBracketCount == resource.data.sharedInvoiceBracketCount &&
         request.resource.data.sharedDeliveryTeamCount == resource.data.sharedDeliveryTeamCount &&
         request.resource.data.sharedInvoiceDeliveryAmount == resource.data.sharedInvoiceDeliveryAmount &&
+        resource.data.get('companyId', '') == request.resource.data.get('companyId', '') &&
         request.resource.data.createdBy == resource.data.createdBy &&
         request.resource.data.createdAt == resource.data.createdAt;
     }
@@ -611,6 +616,8 @@ service cloud.firestore {
     function validSharedAggregateAdminUpdatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'companyId',
+          'companyName',
           'clientName',
           'clientContact',
           'sharedInvoiceSplitUnits',
@@ -650,6 +657,8 @@ service cloud.firestore {
     function validSharedAggregateTechUpdatePayload() {
       return request.resource.data.keys().hasOnly([
           'groupKey',
+          'companyId',
+          'companyName',
           'clientName',
           'clientContact',
           'sharedInvoiceSplitUnits',

@@ -15,6 +15,7 @@ class AppConstants {
   static const String sharedInstallAggregatesCollection =
       'shared_install_aggregates';
   static const String invoiceClaimsCollection = 'invoice_claims';
+  static const String historySubCollection = 'history';
   static const String approvalConfigDocId = 'approval_config';
   static const String companyBrandingDocId = 'company_branding';
 

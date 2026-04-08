@@ -13,6 +13,8 @@ class SharedInstallAggregate {
   const SharedInstallAggregate({
     required this.id,
     required this.groupKey,
+    required this.companyId,
+    required this.companyName,
     required this.createdBy,
     required this.teamMemberIds,
     required this.teamMemberNames,
@@ -41,6 +43,15 @@ class SharedInstallAggregate {
 
   final String id;
   final String groupKey;
+
+  /// Company that owns this shared install invoice.
+  /// Stored directly on the aggregate so team members can pre-fill the
+  /// company selector without querying each other's jobs (which would be
+  /// PERMISSION_DENIED). Falls back to extracting from [groupKey] for
+  /// legacy aggregates created before this field was added.
+  final String companyId;
+  final String companyName;
+
   final String createdBy;
 
   /// UIDs of all team members. Element[0] == [createdBy].
@@ -84,6 +95,8 @@ class SharedInstallAggregate {
     return SharedInstallAggregate(
       id: snap.id,
       groupKey: (data['groupKey'] as String?) ?? '',
+      companyId: (data['companyId'] as String?) ?? '',
+      companyName: (data['companyName'] as String?) ?? '',
       createdBy: (data['createdBy'] as String?) ?? '',
       teamMemberIds: List<String>.from(data['teamMemberIds'] as List? ?? []),
       teamMemberNames: List<String>.from(
