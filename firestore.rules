@@ -495,7 +495,8 @@ service cloud.firestore {
         request.resource.data.createdBy is string &&
         request.resource.data.createdBy == request.auth.uid &&
         request.resource.data.createdAt is timestamp &&
-        request.resource.data.updatedAt is timestamp;
+        request.resource.data.updatedAt is timestamp &&
+        validSharedAggregateTotals(request.resource.data);
     }
 
     function sharedAggregateStaticFieldsUnchanged() {
@@ -554,7 +555,8 @@ service cloud.firestore {
         request.resource.data.consumedBracketCount >= 0 &&
         request.resource.data.consumedDeliveryAmount is number &&
         request.resource.data.consumedDeliveryAmount >= 0 &&
-        request.resource.data.updatedAt is timestamp;
+        request.resource.data.updatedAt is timestamp &&
+        validSharedAggregateTotals(request.resource.data);
     }
 
     function validSharedAggregateTechUpdatePayload() {
@@ -671,8 +673,7 @@ service cloud.firestore {
         request.resource.data.createdAt is timestamp &&
         request.resource.data.updatedAt is timestamp;
 
-      allow update: if (isAdmin() || isActiveUser()) &&
-        request.resource.data.keys().hasOnly([
+      allow update: if request.resource.data.keys().hasOnly([
           'invoiceNumber',
           'companyId',
           'companyName',
@@ -690,9 +691,14 @@ service cloud.firestore {
         request.resource.data.createdAt == resource.data.createdAt &&
         request.resource.data.activeJobCount is int &&
         request.resource.data.activeJobCount >= 0 &&
-        request.resource.data.activeJobCount >= resource.data.activeJobCount - 1 &&
-        request.resource.data.activeJobCount <= resource.data.activeJobCount + 1 &&
-        request.resource.data.updatedAt is timestamp;
+        request.resource.data.updatedAt is timestamp &&
+        (
+          isAdmin() || (
+            isActiveUser() &&
+            request.resource.data.activeJobCount >= resource.data.activeJobCount - 1 &&
+            request.resource.data.activeJobCount <= resource.data.activeJobCount + 1
+          )
+        );
 
       allow delete: if isAdmin();
     }
