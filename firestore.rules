@@ -694,28 +694,28 @@ service cloud.firestore {
         request.resource.data.get('teamMemberNames', []) == resource.data.get('teamMemberNames', []) &&
         request.resource.data.updatedAt is timestamp &&
         request.resource.data.consumedSplitUnits is int &&
-        request.resource.data.consumedSplitUnits >= resource.data.consumedSplitUnits &&
+        request.resource.data.consumedSplitUnits >= 0 &&
         request.resource.data.consumedSplitUnits <= resource.data.sharedInvoiceSplitUnits &&
         request.resource.data.consumedWindowUnits is int &&
-        request.resource.data.consumedWindowUnits >= resource.data.consumedWindowUnits &&
+        request.resource.data.consumedWindowUnits >= 0 &&
         request.resource.data.consumedWindowUnits <= resource.data.sharedInvoiceWindowUnits &&
         request.resource.data.consumedFreestandingUnits is int &&
-        request.resource.data.consumedFreestandingUnits >= resource.data.consumedFreestandingUnits &&
+        request.resource.data.consumedFreestandingUnits >= 0 &&
         request.resource.data.consumedFreestandingUnits <= resource.data.sharedInvoiceFreestandingUnits &&
         request.resource.data.consumedUninstallSplitUnits is int &&
-        request.resource.data.consumedUninstallSplitUnits >= resource.data.consumedUninstallSplitUnits &&
+        request.resource.data.consumedUninstallSplitUnits >= 0 &&
         request.resource.data.consumedUninstallSplitUnits <= resource.data.sharedInvoiceUninstallSplitUnits &&
         request.resource.data.consumedUninstallWindowUnits is int &&
-        request.resource.data.consumedUninstallWindowUnits >= resource.data.consumedUninstallWindowUnits &&
+        request.resource.data.consumedUninstallWindowUnits >= 0 &&
         request.resource.data.consumedUninstallWindowUnits <= resource.data.sharedInvoiceUninstallWindowUnits &&
         request.resource.data.consumedUninstallFreestandingUnits is int &&
-        request.resource.data.consumedUninstallFreestandingUnits >= resource.data.consumedUninstallFreestandingUnits &&
+        request.resource.data.consumedUninstallFreestandingUnits >= 0 &&
         request.resource.data.consumedUninstallFreestandingUnits <= resource.data.sharedInvoiceUninstallFreestandingUnits &&
         request.resource.data.consumedBracketCount is int &&
-        request.resource.data.consumedBracketCount >= resource.data.consumedBracketCount &&
+        request.resource.data.consumedBracketCount >= 0 &&
         request.resource.data.consumedBracketCount <= resource.data.sharedInvoiceBracketCount &&
         request.resource.data.consumedDeliveryAmount is number &&
-        request.resource.data.consumedDeliveryAmount >= resource.data.consumedDeliveryAmount &&
+        request.resource.data.consumedDeliveryAmount >= 0 &&
         request.resource.data.consumedDeliveryAmount <= resource.data.sharedInvoiceDeliveryAmount + 0.01;
     }
 

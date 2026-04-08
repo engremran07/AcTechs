@@ -909,7 +909,9 @@ class JobRepository {
       data['status'] = nextStatus.name;
       data['sharedInstallGroupKey'] = resolvedGroupKey;
 
-      if (canEditDirectApproved || canEditPending) {
+      if (canEditDirectApproved ||
+          (canEditPending && !existing.isSharedInstall)) {
+        // Fast path: solo job pending/approved edit — no aggregate update needed.
         await jobRef.update(data);
         await jobRef.collection(AppConstants.historySubCollection).add({
           'changedBy': updated.techId,
@@ -918,6 +920,265 @@ class JobRepository {
           'newStatus': nextStatus.name,
           'flow': 'approval',
           'action': 'technician_edit',
+        });
+        return nextStatus;
+      }
+
+      if (canEditPending && existing.isSharedInstall) {
+        // Pending shared install edit: apply net-delta to aggregate consumed counters
+        // so the aggregate stays in sync when a tech corrects their unit counts.
+        _validateSupportedSharedInstallUnits(updated);
+        await firestore.runTransaction((tx) async {
+          final aggregateRef = _sharedAggregatesRef.doc(
+            _sharedAggregateDocId(resolvedGroupKey),
+          );
+          final aggregateSnap = await tx.get(aggregateRef);
+          if (aggregateSnap.exists) {
+            final agg = aggregateSnap.data() ?? <String, dynamic>{};
+
+            // Old contributions — what this job originally added to the aggregate.
+            final oldSplit = _unitsForType(
+              existing,
+              AppConstants.unitTypeSplitAc,
+            );
+            final oldWindow = _unitsForType(
+              existing,
+              AppConstants.unitTypeWindowAc,
+            );
+            final oldFreestanding = _unitsForType(
+              existing,
+              AppConstants.unitTypeFreestandingAc,
+            );
+            final oldUninstallSplit = _unitsForType(
+              existing,
+              AppConstants.unitTypeUninstallSplit,
+            );
+            final oldUninstallWindow = _unitsForType(
+              existing,
+              AppConstants.unitTypeUninstallWindow,
+            );
+            final oldUninstallFreestanding = _unitsForType(
+              existing,
+              AppConstants.unitTypeUninstallFreestanding,
+            );
+            final oldBracket = _bracketCount(existing);
+            final oldDelivery = existing.charges?.deliveryAmount ?? 0.0;
+
+            // New contributions — what the edited job will contribute.
+            final newSplit = _unitsForType(
+              updated,
+              AppConstants.unitTypeSplitAc,
+            );
+            final newWindow = _unitsForType(
+              updated,
+              AppConstants.unitTypeWindowAc,
+            );
+            final newFreestanding = _unitsForType(
+              updated,
+              AppConstants.unitTypeFreestandingAc,
+            );
+            final newUninstallSplit = _unitsForType(
+              updated,
+              AppConstants.unitTypeUninstallSplit,
+            );
+            final newUninstallWindow = _unitsForType(
+              updated,
+              AppConstants.unitTypeUninstallWindow,
+            );
+            final newUninstallFreestanding = _unitsForType(
+              updated,
+              AppConstants.unitTypeUninstallFreestanding,
+            );
+            final newBracket = _bracketCount(updated);
+            final newDelivery = updated.charges?.deliveryAmount ?? 0.0;
+
+            // Current aggregate consumed values.
+            final curSplit = _readAggregateInt(agg, 'consumedSplitUnits');
+            final curWindow = _readAggregateInt(agg, 'consumedWindowUnits');
+            final curFreestanding = _readAggregateInt(
+              agg,
+              'consumedFreestandingUnits',
+            );
+            final curUninstallSplit = _readAggregateInt(
+              agg,
+              'consumedUninstallSplitUnits',
+            );
+            final curUninstallWindow = _readAggregateInt(
+              agg,
+              'consumedUninstallWindowUnits',
+            );
+            final curUninstallFreestanding = _readAggregateInt(
+              agg,
+              'consumedUninstallFreestandingUnits',
+            );
+            final curBracket = _readAggregateInt(agg, 'consumedBracketCount');
+            final curDelivery = _readAggregateDouble(
+              agg,
+              'consumedDeliveryAmount',
+            );
+
+            // Capacity check: new contribution must fit within what remains
+            // after subtracting this tech's old contribution from the total.
+            final totalSplit = _readAggregateInt(
+              agg,
+              'sharedInvoiceSplitUnits',
+            );
+            final totalWindow = _readAggregateInt(
+              agg,
+              'sharedInvoiceWindowUnits',
+            );
+            final totalFreestanding = _readAggregateInt(
+              agg,
+              'sharedInvoiceFreestandingUnits',
+            );
+            final totalUninstallSplit = _readAggregateInt(
+              agg,
+              'sharedInvoiceUninstallSplitUnits',
+            );
+            final totalUninstallWindow = _readAggregateInt(
+              agg,
+              'sharedInvoiceUninstallWindowUnits',
+            );
+            final totalUninstallFreestanding = _readAggregateInt(
+              agg,
+              'sharedInvoiceUninstallFreestandingUnits',
+            );
+            final totalBracket = _readAggregateInt(
+              agg,
+              'sharedInvoiceBracketCount',
+            );
+
+            void checkEditCapacity(
+              String unitType,
+              int curConsumed,
+              int oldContrib,
+              int newContrib,
+              int total,
+            ) {
+              if (total <= 0 || newContrib <= 0) return;
+              final othersConsumed = curConsumed - oldContrib;
+              final remaining = (total - othersConsumed).clamp(0, total);
+              if (newContrib > remaining) {
+                throw JobException.sharedTypeUnitsExceeded(
+                  unitType: unitType,
+                  remaining: remaining,
+                );
+              }
+            }
+
+            checkEditCapacity(
+              AppConstants.unitTypeSplitAc,
+              curSplit,
+              oldSplit,
+              newSplit,
+              totalSplit,
+            );
+            checkEditCapacity(
+              AppConstants.unitTypeWindowAc,
+              curWindow,
+              oldWindow,
+              newWindow,
+              totalWindow,
+            );
+            checkEditCapacity(
+              AppConstants.unitTypeFreestandingAc,
+              curFreestanding,
+              oldFreestanding,
+              newFreestanding,
+              totalFreestanding,
+            );
+            checkEditCapacity(
+              AppConstants.unitTypeUninstallSplit,
+              curUninstallSplit,
+              oldUninstallSplit,
+              newUninstallSplit,
+              totalUninstallSplit,
+            );
+            checkEditCapacity(
+              AppConstants.unitTypeUninstallWindow,
+              curUninstallWindow,
+              oldUninstallWindow,
+              newUninstallWindow,
+              totalUninstallWindow,
+            );
+            checkEditCapacity(
+              AppConstants.unitTypeUninstallFreestanding,
+              curUninstallFreestanding,
+              oldUninstallFreestanding,
+              newUninstallFreestanding,
+              totalUninstallFreestanding,
+            );
+            checkEditCapacity(
+              _sharedBracketType,
+              curBracket,
+              oldBracket,
+              newBracket,
+              totalBracket,
+            );
+
+            // Delivery capacity check.
+            final totalDelivery = _readAggregateDouble(
+              agg,
+              'sharedInvoiceDeliveryAmount',
+            );
+            if (totalDelivery > 0 && newDelivery > 0) {
+              final othersDelivery = curDelivery - oldDelivery;
+              final remainingDelivery = totalDelivery - othersDelivery;
+              if (newDelivery - remainingDelivery > 0.01) {
+                throw JobException.sharedUnitsExceeded(
+                  remaining: remainingDelivery <= 0
+                      ? 0
+                      : remainingDelivery.floor(),
+                );
+              }
+            }
+
+            // Apply net-delta: consumed += (new - old), clamped to [0, maxInt].
+            tx.update(aggregateRef, {
+              'consumedSplitUnits': (curSplit - oldSplit + newSplit).clamp(
+                0,
+                1 << 31,
+              ),
+              'consumedWindowUnits': (curWindow - oldWindow + newWindow).clamp(
+                0,
+                1 << 31,
+              ),
+              'consumedFreestandingUnits':
+                  (curFreestanding - oldFreestanding + newFreestanding).clamp(
+                    0,
+                    1 << 31,
+                  ),
+              'consumedUninstallSplitUnits':
+                  (curUninstallSplit - oldUninstallSplit + newUninstallSplit)
+                      .clamp(0, 1 << 31),
+              'consumedUninstallWindowUnits':
+                  (curUninstallWindow - oldUninstallWindow + newUninstallWindow)
+                      .clamp(0, 1 << 31),
+              'consumedUninstallFreestandingUnits':
+                  (curUninstallFreestanding -
+                          oldUninstallFreestanding +
+                          newUninstallFreestanding)
+                      .clamp(0, 1 << 31),
+              'consumedBracketCount': (curBracket - oldBracket + newBracket)
+                  .clamp(0, 1 << 31),
+              'consumedDeliveryAmount':
+                  (curDelivery - oldDelivery + newDelivery).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          }
+          // If the aggregate document is missing (edge case), still update the job.
+          tx.update(jobRef, data);
+          tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
+            'changedBy': updated.techId,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': existing.status.name,
+            'newStatus': nextStatus.name,
+            'flow': 'approval',
+            'action': 'technician_edit',
+          });
         });
         return nextStatus;
       }
@@ -1183,12 +1444,18 @@ class JobRepository {
           'approvedBy': adminUid,
           'reviewedAt': FieldValue.serverTimestamp(),
         });
-        tx.set(_jobsRef.doc(jobId).collection(AppConstants.historySubCollection).doc(), {
-          'changedBy': adminUid,
-          'changedAt': FieldValue.serverTimestamp(),
-          'previousStatus': prevStatus,
-          'newStatus': 'approved',
-        });
+        tx.set(
+          _jobsRef
+              .doc(jobId)
+              .collection(AppConstants.historySubCollection)
+              .doc(),
+          {
+            'changedBy': adminUid,
+            'changedAt': FieldValue.serverTimestamp(),
+            'previousStatus': prevStatus,
+            'newStatus': 'approved',
+          },
+        );
       });
     } on JobException {
       rethrow;
@@ -1766,12 +2033,15 @@ class JobRepository {
             'approvedBy': adminUid,
             'reviewedAt': FieldValue.serverTimestamp(),
           });
-          batch.set(snap.reference.collection(AppConstants.historySubCollection).doc(), {
-            'changedBy': adminUid,
-            'changedAt': FieldValue.serverTimestamp(),
-            'previousStatus': prevStatus,
-            'newStatus': 'approved',
-          });
+          batch.set(
+            snap.reference.collection(AppConstants.historySubCollection).doc(),
+            {
+              'changedBy': adminUid,
+              'changedAt': FieldValue.serverTimestamp(),
+              'previousStatus': prevStatus,
+              'newStatus': 'approved',
+            },
+          );
         }
 
         await batch.commit();

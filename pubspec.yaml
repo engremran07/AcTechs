@@ -1,7 +1,7 @@
 name: ac_techs
-description: "AC Techs — Multi-role AC Technician Management App"
+description: "AC Techs - Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 1.1.6+26
+version: 1.1.7+27
 
 environment:
   sdk: ^3.11.0
@@ -82,14 +82,8 @@ flutter:
 
     - family: NotoNastaliqUrdu
       fonts:
-        - asset: assets/fonts/NotoNastaliqUrdu-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/NotoNastaliqUrdu-Bold.ttf
-          weight: 700
+        - asset: assets/fonts/NotoNastaliqUrdu.ttf
 
     - family: NotoNaskhArabic
       fonts:
-        - asset: assets/fonts/NotoNaskhArabic-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/NotoNaskhArabic-Bold.ttf
-          weight: 700
+        - asset: assets/fonts/NotoNaskhArabic.ttf
