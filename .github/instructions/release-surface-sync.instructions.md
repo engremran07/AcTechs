@@ -24,7 +24,9 @@ Required order when user asks for release or deploy:
 
 Strict quality gates (must pass with zero warnings):
 
-- Treat warnings as failures for release readiness (rules, lint, analyzer, tests, deploy checks).
+- **BLOCKING**: `flutter analyze` exit code must be 0 AND output must contain "No issues found!" before any build or deploy step. Exit code 1 even with only info-level messages is a hard stop.
+- Use `get_errors` on every recently modified file BEFORE running `flutter analyze` to catch Problems-tab issues that the IDE surfaces but the CLI may have missed in a previous run.
+- Treat warnings (including `info`) as failures for release readiness (rules, lint, analyzer, tests, deploy checks).
 - Run `npm run lint:firestore-rules` in `scripts/` before rules tests or rules deploy.
 - Run Firestore rules emulator tests and confirm there are no expression-limit evaluator messages in the run logs.
 - If any gate produces warnings or expression-limit noise, perform a micro-pass and re-run gates until clean before deploy.

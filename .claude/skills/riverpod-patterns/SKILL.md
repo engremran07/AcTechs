@@ -21,6 +21,23 @@ final monthlyAnalyticsProvider = FutureProvider.autoDispose.family<AnalyticsData
 });
 ```
 
+### FutureProvider with Pull-to-Refresh
+For admin screens that fetch heavy data once (settlement candidates, history reports):
+```dart
+final settlementCandidatesProvider = FutureProvider.autoDispose<List<JobModel>>((ref) async {
+  return ref.read(jobRepositoryProvider).fetchSettlementCandidates();
+});
+```
+In widget — trigger refresh via `ref.invalidate`:
+```dart
+IconButton(
+  icon: const Icon(Icons.refresh),
+  onPressed: () => ref.invalidate(settlementCandidatesProvider),
+)
+```
+Use `FutureProvider` (not `StreamProvider`) for settlement/history screens — one-time fetch avoids
+a persistent stream listener consuming free-tier reads.
+
 ### StateNotifierProvider — Local mutable state
 ```dart
 final jobFormProvider = StateNotifierProvider.autoDispose<JobFormNotifier, JobFormState>((ref) {

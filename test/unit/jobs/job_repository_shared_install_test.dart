@@ -469,4 +469,175 @@ void main() {
     expect(claimsSnap.docs.single.data()['activeJobCount'], 1);
     expect(claimsSnap.docs.single.data()['invoiceNumber'], '900');
   });
+
+  // ── teamMemberIds contract tests ─────────────────────────────────────────
+
+  test('teamMemberIds[0] equals the first submitting tech uid', () async {
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-1100',
+        splitShare: 1,
+      ),
+    );
+
+    final aggregateSnap = await firestore
+        .collection(AppConstants.sharedInstallAggregatesCollection)
+        .get();
+
+    expect(aggregateSnap.docs, hasLength(1));
+    final teamMemberIds =
+        aggregateSnap.docs.single.data()['teamMemberIds'] as List<dynamic>;
+    expect(teamMemberIds, contains('tech-1'));
+    expect(teamMemberIds.first, 'tech-1');
+  });
+
+  test('second tech contribution adds uid to teamMemberIds', () async {
+    await repository.submitJob(
+      buildSharedJob(
+        techId: 'tech-1',
+        techName: 'Tech One',
+        invoiceNumber: 'INV-1200',
+        splitShare: 2,
+      ),
+    );
+
+    // Seed the aggregate so tech-2 is already enrolled (simulates UI adding team roster)
+    final aggregateSnap = await firestore
+        .collection(AppConstants.sharedInstallAggregatesCollection)
+        .get();
+    await firestore
+        .collection(AppConstants.sharedInstallAggregatesCollection)
+        .doc(aggregateSnap.docs.single.id)
+        .update({
+          'teamMemberIds': FieldValue.arrayUnion(['tech-2']),
+        });
+
+    final repo2 = JobRepository(
+      firestore: firestore,
+      currentUid: () => 'tech-2',
+    );
+    await repo2.submitJob(
+      buildSharedJob(
+        techId: 'tech-2',
+        techName: 'Tech Two',
+        invoiceNumber: 'INV-1200',
+        splitShare: 1,
+      ),
+    );
+
+    final updatedSnap = await firestore
+        .collection(AppConstants.sharedInstallAggregatesCollection)
+        .get();
+    final teamMemberIds =
+        updatedSnap.docs.single.data()['teamMemberIds'] as List<dynamic>;
+    expect(teamMemberIds, containsAll(['tech-1', 'tech-2']));
+  });
+
+  test('tech not in teamMemberIds is rejected with notTeamMember', () async {
+    // Pre-seed aggregate with tech-existing-0 as sole member.
+    // Doc ID must match _sharedAggregateDocId('company-1-inv-1300') = 'shared_company-1-inv-1300'.
+    const groupKey = 'company-1-inv-1300';
+    await firestore
+        .collection(AppConstants.sharedInstallAggregatesCollection)
+        .doc('shared_company-1-inv-1300')
+        .set({
+          'groupKey': groupKey,
+          'companyId': 'company-1',
+          'companyName': 'Company',
+          'invoiceNumber': 'INV-1300',
+          'sharedInvoiceSplitUnits': 4,
+          'sharedInvoiceWindowUnits': 0,
+          'sharedInvoiceFreestandingUnits': 0,
+          'sharedInvoiceUninstallSplitUnits': 0,
+          'sharedInvoiceUninstallWindowUnits': 0,
+          'sharedInvoiceUninstallFreestandingUnits': 0,
+          'sharedInvoiceBracketCount': 0,
+          'sharedDeliveryTeamCount': 0, // must match buildSharedJob default
+          'sharedInvoiceDeliveryAmount': 0,
+          'consumedSplitUnits': 1,
+          'consumedWindowUnits': 0,
+          'consumedFreestandingUnits': 0,
+          'consumedUninstallSplitUnits': 0,
+          'consumedUninstallWindowUnits': 0,
+          'consumedUninstallFreestandingUnits': 0,
+          'consumedBracketCount': 0,
+          'consumedDeliveryAmount': 0.0,
+          'teamMemberIds': ['tech-existing-0'],
+          'teamMemberNames': ['Tech Existing 0'],
+          'createdBy': 'tech-existing-0',
+          'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+        });
+
+    // tech-1 (currentUid) is NOT in teamMemberIds → should throw notTeamMember
+    await expectLater(
+      () => repository.submitJob(
+        buildSharedJob(
+          techId: 'tech-1',
+          techName: 'Tech One',
+          invoiceNumber: 'INV-1300',
+          splitShare: 1,
+        ),
+      ),
+      throwsA(isA<JobException>()),
+    );
+  });
+
+  test(
+    'legacy aggregate without teamMemberIds allows any tech to contribute',
+    () async {
+      const groupKey = 'company-1-inv-1400';
+      // Write a "legacy" aggregate that has no teamMemberIds field.
+      // Doc ID must match _sharedAggregateDocId('company-1-inv-1400') = 'shared_company-1-inv-1400'.
+      await firestore
+          .collection(AppConstants.sharedInstallAggregatesCollection)
+          .doc('shared_company-1-inv-1400')
+          .set({
+            'groupKey': groupKey,
+            'companyId': 'company-1',
+            'companyName': 'Company',
+            'invoiceNumber': 'INV-1400',
+            'sharedInvoiceSplitUnits': 4,
+            'sharedInvoiceWindowUnits': 0,
+            'sharedInvoiceFreestandingUnits': 0,
+            'sharedInvoiceUninstallSplitUnits': 0,
+            'sharedInvoiceUninstallWindowUnits': 0,
+            'sharedInvoiceUninstallFreestandingUnits': 0,
+            'sharedInvoiceBracketCount': 0,
+            'sharedDeliveryTeamCount': 0, // must match buildSharedJob default
+            'sharedInvoiceDeliveryAmount': 0,
+            'consumedSplitUnits': 1,
+            'consumedWindowUnits': 0,
+            'consumedFreestandingUnits': 0,
+            'consumedUninstallSplitUnits': 0,
+            'consumedUninstallWindowUnits': 0,
+            'consumedUninstallFreestandingUnits': 0,
+            'consumedBracketCount': 0,
+            'consumedDeliveryAmount': 0.0,
+            'createdBy': 'tech-other',
+            'createdAt': Timestamp.fromDate(DateTime(2023, 12, 1, 9)),
+            'updatedAt': Timestamp.fromDate(DateTime(2023, 12, 1, 9)),
+            // intentionally NO teamMemberIds field
+          });
+
+      // tech-1 is not createdBy, but legacy aggregate skips membership check
+      await repository.submitJob(
+        buildSharedJob(
+          techId: 'tech-1',
+          techName: 'Tech One',
+          invoiceNumber: 'INV-1400',
+          splitShare: 1,
+        ),
+      );
+
+      // Doc ID uses the 'shared_' prefix from _sharedAggregateDocId
+      final updatedSnap = await firestore
+          .collection(AppConstants.sharedInstallAggregatesCollection)
+          .doc('shared_company-1-inv-1400')
+          .get();
+      expect(updatedSnap.data()?['consumedSplitUnits'], greaterThan(1));
+    },
+  );
 }

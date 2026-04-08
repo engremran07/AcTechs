@@ -78,6 +78,49 @@ After all gates:
 | 7    | Version Consistency         | ✅/❌  |
 | 8    | Rules Guards Present        | ✅/❌  |
 | 9    | No Hard Deletes             | ✅/❌  |
+| 10   | Archive Test Coverage       | ✅/❌  |
+| 11   | Collection Name Consistency | ✅/❌  |
+| 12   | isDeleted Query Anti-pattern| ✅/❌  |
+| 13   | Settlement Amount in Rules  | ✅/❌  |
+| 14   | Bottom Nav Docs Correct     | ✅/❌  |
+| 15   | PDF Not on Main Thread      | ✅/❌  |
+| 16   | Archive Rules: Status Guard | ✅/❌  |
+| 17   | Archive Rules: deletedAt Type| ✅/❌ |
+| 18   | Shared Install Provider Limit| ✅/❌ |
+```
+
+## Gate 11 — Collection Name Consistency
+Grep all `.md` files in `.claude/` and `.github/instructions/` for `ac_installations` — must return ZERO.
+Expected: no matches. Fail condition: any `.md` file says `ac_installations` instead of `ac_installs`.
+
+## Gate 12 — isDeleted Query Anti-Pattern
+Grep `lib/features/expenses/data/` for `where.*isDeleted` — must return zero.
+Expected: isDeleted filtering happens in Dart stream mapper, not in Firestore query.
+Fail condition: any Firestore query filters by isDeleted field.
+
+## Gate 13 — Settlement Amount in markJobsAsPaid
+Grep `lib/features/jobs/data/job_repository.dart` for `settlementAmount` — must exist.
+Fail condition: missing (means payment amount is not recorded on settlement).
+
+## Gate 14 — Bottom Nav Documentation Correct
+Grep `.claude/rules/ui-conventions.md` for pattern `4 tabs per role` or `tech.*4 tabs` — must return ZERO.
+Fail condition: documentation says tech has 4 tabs when it has 5.
+
+## Gate 15 — PDF Not on Main Thread
+Grep `lib/features/admin/presentation/analytics_screen.dart` and `lib/features/expenses/presentation/daily_in_out_screen.dart` for `await PdfGenerator.` — must be zero direct calls.
+Fail condition: any direct `await PdfGenerator.*` not wrapped in `compute()`.
+
+## Gate 16 — Archive Rules: Approved Record Status Guard
+Grep `firestore.rules` for `resource.data.status != 'approved'` — must appear at least 3 times (once per archivable collection: expenses, earnings, ac_installs).
+Fail condition: any archive rule missing the status guard allows tech to soft-delete approved ledger records.
+
+## Gate 17 — Archive Rules: deletedAt Type Validation
+Grep `firestore.rules` for `deletedAt is timestamp` — must appear at least 3 times.
+Fail condition: archive rules accept any value for deletedAt (string, null, etc.).
+
+## Gate 18 — Shared Install Provider Limit
+Grep `lib/features/jobs/providers/shared_install_providers.dart` for `.limit(` — must exist.
+Fail condition: unbounded Firestore query on shared_install_aggregates accumulates all historical records.
 | 10   | Archive Test Exists         | ✅/❌  |
 ```
 If any gate is ❌, provide the exact error output and the recommended fix.

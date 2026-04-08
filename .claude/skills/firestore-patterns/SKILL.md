@@ -10,7 +10,7 @@ description: Firestore query patterns, security rules, and offline sync strategi
 - `jobs/{jobId}` — Job records (auto-id, all work units, expenses, status, timestamps)
 - `expenses/{expenseId}` — Tech personal expenses (food, petrol, tools etc.) — **separate from jobs**
 - `earnings/{earningId}` — Tech additional earnings (bracket sold, scrap, old AC) — **separate from jobs**
-- `ac_installations/{installId}` — AC unit install logs — **separate from jobs**
+- `ac_installs/{installId}` — AC unit install logs — **separate from jobs**
 - `shared_install_aggregates/{groupKey}` — Shared team install counter docs
 
 ## Query Patterns
@@ -98,6 +98,22 @@ _ref
   .orderBy('date', descending: true)
   .snapshots()
 ```
+
+### Settlement history (one-time fetch — NOT a stream)
+Settlement history is admin-only and infrequently accessed. Use a one-time `get()` to avoid a
+persistent stream listener consuming free-tier reads. Wrap in `FutureProvider.autoDispose`.
+```dart
+Future<List<JobModel>> fetchSettlementHistory() async {
+  final snap = await _jobsRef
+    .where('status', isEqualTo: 'approved')
+    .where('settlementStatus', whereIn: ['confirmed', 'disputed_final'])
+    .orderBy('date', descending: true)
+    .limit(200)
+    .get();
+  return snap.docs.map(JobModel.fromFirestore).toList();
+}
+```
+Required composite index: `status ASC, settlementStatus ASC, date DESC`.
 
 ### Single-day view WITHOUT a new Firestore listener
 For viewing entries on a historical date (e.g., from history screen):

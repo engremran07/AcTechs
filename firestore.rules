@@ -919,6 +919,7 @@ service cloud.firestore {
         dateIsUnlocked(resource.data.date) &&
         resource.data.status != 'approved' &&
         request.resource.data.isDeleted == true &&
+        request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       ) ||
       // Admin restore: clear isDeleted flag
@@ -1015,6 +1016,7 @@ service cloud.firestore {
         dateIsUnlocked(resource.data.date) &&
         resource.data.status != 'approved' &&
         request.resource.data.isDeleted == true &&
+        request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       ) ||
       // Admin restore: clear isDeleted flag
@@ -1150,6 +1152,7 @@ service cloud.firestore {
         dateIsUnlocked(resource.data.date) &&
         resource.data.status != 'approved' &&
         request.resource.data.isDeleted == true &&
+        request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
       ) ||
       // Admin restore: clear isDeleted flag

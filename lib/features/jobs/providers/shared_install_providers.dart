@@ -18,6 +18,7 @@ final pendingSharedInstallAggregatesProvider =
           .collection(AppConstants.sharedInstallAggregatesCollection)
           .where('teamMemberIds', arrayContains: user.uid)
           .orderBy('createdAt', descending: true)
+          .limit(50)
           .snapshots()
           .map(
             (snap) =>

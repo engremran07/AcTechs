@@ -59,7 +59,7 @@ There are THREE completely separate model domains. NEVER add fields from one dom
 |--------|--------|---------------------|
 | **Jobs** | `JobModel` | `jobs/` |
 | **In/Out** | `ExpenseModel`, `EarningModel` | `expenses/`, `earnings/` |
-| **AC Installs** | `AcInstallModel` | `ac_installations/` |
+| **AC Installs** | `AcInstallModel` | `ac_installs/` |
 
 - `JobModel` does NOT have expense/earning sub-documents
 - `ExpenseModel` and `EarningModel` are NOT related to job submissions

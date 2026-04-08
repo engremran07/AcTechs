@@ -96,6 +96,14 @@ Used for the separate installation tracking flow.
 | `ac_install_delete_failed` | Couldn't delete the installation record. Please try again. |
 | `ac_install_update_failed` | Couldn't update the installation record. Please try again. |
 
+### Period Lock
+
+Used when a tech attempts to archive or edit a record that falls in an admin-locked time period.
+
+| Code | English |
+| --- | --- |
+| `period_locked` | This record falls in a locked period. Ask your admin to unlock it first. |
+
 ## Shared Install Error Semantics
 
 These are the high-value messages for current field support and admin debugging:

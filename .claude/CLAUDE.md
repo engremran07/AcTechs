@@ -49,7 +49,7 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 |--------|----------|-------|---------------|
 | **Jobs** | `jobs/` | `JobModel` | `features/jobs/` + `features/technician/` |
 | **In/Out** | `expenses/` + `earnings/` | `ExpenseModel` + `EarningModel` | `features/expenses/` |
-| **AC Installs** | `ac_installations/` | `AcInstallModel` | `features/expenses/` |
+| **AC Installs** | `ac_installs/` | `AcInstallModel` | `features/expenses/` |
 
 - **Jobs** = AC installation job records submitted by techs for client invoices (admin-approved)
 - **In/Out** = tech's daily personal earnings/expenses (food, petrol, bracket installs, scrap sales)
@@ -122,6 +122,53 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 ## Error Philosophy
 
 Every user-facing message is custom-written, contextual, and tri-lingual. No raw exception strings, no "Error: PERMISSION_DENIED", no default SnackBars. Custom error cards with icon, title, description, action button.
+
+## Breakage Chain Reference
+
+When changing any of these, ALL downstream items must be updated in the same commit:
+
+**Chain 1 — Settlement status string** (e.g. `'awaiting_technician'`):
+  → Update `JobSettlementStatus.*.firestoreValue` in the enum
+  → Update `firestore.rules`: `validAdminSettlementTransition`, `validTechSettlementTransition`
+  → Update seeded data in `scripts/tests/`
+  → NEVER use string literals in Dart — always use `.firestoreValue`
+
+**Chain 2 — New field added to `JobModel`**:
+  1. Run `dart run build_runner build --delete-conflicting-outputs`
+  2. Evaluate for `technicianMutableJobUpdate()` affected keys in `firestore.rules`
+  3. Evaluate for `settlementFieldsOnlyChanged()` if settlement-only field
+  4. Evaluate for `validJobCreatePayload()` if required at creation
+  5. Evaluate for `settlementFieldsUnchanged()` if must be immutable during settlement
+
+**Chain 3 — Change `InvoiceUtils.normalize()`**:
+  → WARNING: All `invoice_claims` doc IDs are built from normalized invoice numbers
+  → Any normalization change invalidates ALL existing claim docs — requires data migration
+  → Invoice normalization is FROZEN without a migration plan
+
+**Chain 4 — Add/remove team member slots in shared install**:
+  → Max 10 — enforce in UI: Submit button disabled when `_selectedTeamMembers.length >= 9`
+  → `teamMemberIds[0]` must ALWAYS be the createdBy uid (first submitter)
+  → `teamMemberNames` is a parallel array (same index order as `teamMemberIds`)
+  → Aggregate's `teamMemberIds` is immutable after create — only admin override via `validSharedAggregateAdminUpdatePayload()`
+
+## Documentation Sync Rule
+
+When you change `AppConstants` collection names, update ALL of these in the same commit:
+1. `.claude/CLAUDE.md` — Domain Model Boundaries table
+2. `.claude/rules/firebase.md` — Domain Collection Boundaries table
+3. `.claude/rules/in-out-model.md` — Three Completely Separate Domains table
+4. `.claude/skills/firestore-patterns/SKILL.md` — Collections section
+5. `.github/instructions/models.instructions.md` — Domain Separation table
+6. `firestore.rules` — `match /collection_name/{docId}` paths
+
+## Bottom Navigation — Authoritative Reference
+
+```
+TechShell:  5 tabs — Home / Submit / In-Out / History / Settings
+AdminShell: 4 tabs — Dashboard / Approvals / Analytics / Team
+```
+Settlement and shared-install screens are accessed from dashboard cards or history badges.
+They are NOT bottom-nav tabs. Never write "4 tabs" for tech in any documentation.
 
 ## Recent Product Behaviors To Preserve
 

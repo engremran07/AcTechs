@@ -274,3 +274,77 @@ jobs:
           name: ac-techs-debug-${{ github.run_number }}
           path: build/app/outputs/flutter-apk/ac-techs-debug-*.apk
           retention-days: 14
+
+  # ── Code Hygiene Gates ──────────────────────────────────────────────────────
+  hygiene:
+    name: Code Hygiene Gates
+    runs-on: ubuntu-latest
+    needs: [analyse]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gate — Collection name consistency
+        run: |
+          if grep -rn "ac_installations" .claude/ .github/instructions/ README.md 2>/dev/null | grep -v "\.git"; then
+            echo "❌ FAIL: docs reference 'ac_installations' but code uses 'ac_installs'"
+            echo "Fix: update all .md files to use 'ac_installs'"
+            exit 1
+          fi
+          echo "✅ Collection names consistent"
+
+      - name: Gate — ARB key parity
+        run: |
+          EN=$(python3 -c "import json; d=json.load(open('lib/l10n/app_en.arb')); print('\n'.join(sorted([k for k in d if not k.startswith('@')])))")
+          UR=$(python3 -c "import json; d=json.load(open('lib/l10n/app_ur.arb')); print('\n'.join(sorted([k for k in d if not k.startswith('@')])))")
+          AR=$(python3 -c "import json; d=json.load(open('lib/l10n/app_ar.arb')); print('\n'.join(sorted([k for k in d if not k.startswith('@')])))")
+          FAIL=0
+          if [ "$EN" != "$UR" ]; then
+            echo "❌ FAIL: ARB key mismatch between en and ur:"
+            diff <(echo "$EN") <(echo "$UR") || true
+            FAIL=1
+          fi
+          if [ "$EN" != "$AR" ]; then
+            echo "❌ FAIL: ARB key mismatch between en and ar:"
+            diff <(echo "$EN") <(echo "$AR") || true
+            FAIL=1
+          fi
+          [ $FAIL -eq 0 ] && echo "✅ ARB keys consistent across en/ur/ar"
+          exit $FAIL
+
+      - name: Gate — No hard deletes in tech repositories
+        run: |
+          if grep -rn "\.delete()" lib/features/expenses/data/ 2>/dev/null; then
+            echo "❌ FAIL: Hard .delete() call found in tech-owned repository"
+            echo "Use archiveExpense() / archiveEarning() / archiveInstall() instead"
+            exit 1
+          fi
+          echo "✅ No hard deletes in expense repositories"
+
+      - name: Gate — isDeleted Firestore query anti-pattern
+        run: |
+          if grep -rn "where.*isDeleted\|isDeleted.*where" lib/features/expenses/data/ 2>/dev/null; then
+            echo "❌ FAIL: isDeleted Firestore query found — filter in Dart, not Firestore"
+            echo "Dart-layer filtering avoids composite index costs (see firebase.md)"
+            exit 1
+          fi
+          echo "✅ No isDeleted Firestore query filters"
+
+      - name: Gate — PDF not on main thread
+        run: |
+          if grep -n "await PdfGenerator\." \
+               lib/features/admin/presentation/analytics_screen.dart \
+               lib/features/expenses/presentation/daily_in_out_screen.dart 2>/dev/null; then
+            echo "❌ FAIL: Direct await PdfGenerator call on main thread — wrap in compute()"
+            exit 1
+          fi
+          echo "✅ No direct PdfGenerator calls on main thread"
+
+      - name: Gate — Bottom nav documentation correct
+        run: |
+          if grep -q "4 tabs per role\|tech.*4 tabs\|4 tabs.*tech" .claude/rules/ui-conventions.md 2>/dev/null; then
+            echo "❌ FAIL: ui-conventions.md says tech has 4 tabs — tech has 5 tabs"
+            exit 1
+          fi
+          echo "✅ Bottom nav documentation correct"

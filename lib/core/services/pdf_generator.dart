@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:arabic_reshaper/arabic_reshaper.dart' as reshaper;
@@ -13,14 +13,14 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/theme/app_fonts.dart';
 
-// ─── Brand colours (mirrors arctic_theme.dart) ───────────────────────────────
+// â”€â”€â”€ Brand colours (mirrors arctic_theme.dart) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _kBrandBlue = PdfColor.fromInt(0xFF00D4FF); // arctic blue
 const _kBrandDark = PdfColor.fromInt(0xFF0D1117); // near-black
 const _kGreen = PdfColor.fromInt(0xFF00C853);
 const _kRed = PdfColor.fromInt(0xFFD50000);
 const _kAmber = PdfColor.fromInt(0xFFFFB300);
 
-// ─── Isolate PDF generation (to avoid UI freeze on large reports) ───────────
+// â”€â”€â”€ Isolate PDF generation (to avoid UI freeze on large reports) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /// Parameters passed to isolate PDF generation function.
 class _PdfGenerationParams {
   final List<JobModel> jobs;
@@ -45,9 +45,9 @@ class _PdfGenerationParams {
     required this.locale,
     this.rtlFontBytes,
     this.sharedInstallerNamesByGroup = const <String, List<String>>{},
-    this.technicianName, // ignore: unused_element_parameter — reserved for future filter by technician feature
-    this.fromDate, // ignore: unused_element_parameter — reserved for future date range feature
-    this.toDate, // ignore: unused_element_parameter — reserved for future date range feature
+    this.technicianName, // ignore: unused_element_parameter â€” reserved for future filter by technician feature
+    this.fromDate, // ignore: unused_element_parameter â€” reserved for future date range feature
+    this.toDate, // ignore: unused_element_parameter â€” reserved for future date range feature
     this.useDetails = false,
     this.maxPages = 2000,
     this.serviceCompanyName = '',
@@ -56,6 +56,68 @@ class _PdfGenerationParams {
     this.clientCompanyName = '',
     this.clientCompanyLogoBase64 = '',
   });
+}
+
+class _InOutReportParams {
+  _InOutReportParams({
+    required this.fontBytes,
+    required this.locale,
+    required this.earnings,
+    required this.expenses,
+    this.technicianName,
+    this.reportTitle,
+    this.reportDate,
+    this.periodLabel,
+    this.monthlyMode = false,
+    this.serviceCompanyName = '',
+    this.serviceCompanyLogoBase64 = '',
+    this.serviceCompanyPhoneNumber = '',
+    this.clientCompanyName,
+    this.clientCompanyLogoBase64,
+  });
+
+  final Uint8List? fontBytes;
+  final String locale;
+  final List<EarningModel> earnings;
+  final List<ExpenseModel> expenses;
+  final String? technicianName;
+  final String? reportTitle;
+  final DateTime? reportDate;
+  final String? periodLabel;
+  final bool monthlyMode;
+  final String serviceCompanyName;
+  final String serviceCompanyLogoBase64;
+  final String serviceCompanyPhoneNumber;
+  final String? clientCompanyName;
+  final String? clientCompanyLogoBase64;
+}
+
+class _CompanyInvoicesParams {
+  _CompanyInvoicesParams({
+    required this.fontBytes,
+    required this.locale,
+    required this.jobs,
+    this.reportTitle,
+    this.periodLabel,
+    this.companyLogoBase64 = '',
+    this.serviceCompanyName = '',
+    this.serviceCompanyLogoBase64 = '',
+    this.serviceCompanyPhoneNumber = '',
+    this.clientCompanyName,
+    this.clientCompanyLogoBase64,
+  });
+
+  final Uint8List? fontBytes;
+  final String locale;
+  final List<JobModel> jobs;
+  final String? reportTitle;
+  final String? periodLabel;
+  final String companyLogoBase64;
+  final String serviceCompanyName;
+  final String serviceCompanyLogoBase64;
+  final String serviceCompanyPhoneNumber;
+  final String? clientCompanyName;
+  final String? clientCompanyLogoBase64;
 }
 
 /// Top-level function for isolate PDF generation (called via compute()).
@@ -197,15 +259,15 @@ class PdfGenerator {
     final names = _sharedInstallerNames(job, sharedInstallerNamesByGroup);
     if (names.isEmpty) {
       return locale == 'ur'
-          ? 'مشترکہ انسٹال ٹیم'
+          ? 'Ù…Ø´ØªØ±Ú©Û Ø§Ù†Ø³Ù¹Ø§Ù„ Ù¹ÛŒÙ…'
           : locale == 'ar'
-          ? 'فريق التركيب المشترك'
+          ? 'ÙØ±ÙŠÙ‚ Ø§Ù„ØªØ±ÙƒÙŠØ¨ Ø§Ù„Ù…Ø´ØªØ±Ùƒ'
           : 'Shared Install Team';
     }
     final label = locale == 'ur'
-        ? 'مشترکہ انسٹال ٹیم'
+        ? 'Ù…Ø´ØªØ±Ú©Û Ø§Ù†Ø³Ù¹Ø§Ù„ Ù¹ÛŒÙ…'
         : locale == 'ar'
-        ? 'فريق التركيب المشترك'
+        ? 'ÙØ±ÙŠÙ‚ Ø§Ù„ØªØ±ÙƒÙŠØ¨ Ø§Ù„Ù…Ø´ØªØ±Ùƒ'
         : 'Shared Install Team';
     return '$label: ${names.join(', ')}';
   }
@@ -221,65 +283,65 @@ class PdfGenerator {
   static String _translateCategoryForPdf(String locale, String key) {
     if (locale == 'ar') {
       return switch (key) {
-        'Installed Bracket' => 'تركيب حامل',
-        'Installed Extra Pipe' => 'تركيب أنبوب إضافي',
-        'Old AC Removal' => 'إزالة مكيف قديم',
-        'Old AC Installation' => 'تركيب مكيف قديم',
-        'Sold Old AC' => 'بيع مكيف قديم',
-        'Sold Scrap' => 'بيع خردة',
-        'Food' => 'طعام',
-        'Petrol' => 'وقود',
-        'Pipes' => 'أنابيب',
-        'Tools' => 'أدوات',
-        'Tape' => 'شريط',
-        'Insulation' => 'عزل',
-        'Gas' => 'غاز',
-        'Other Consumables' => 'مستهلكات أخرى',
-        'House Rent' => 'إيجار المنزل',
-        'Other' => 'أخرى',
-        'Bread/Roti' => 'خبز/روتي',
-        'Meat' => 'لحم',
-        'Chicken' => 'دجاج',
-        'Tea' => 'شاي',
-        'Sugar' => 'سكر',
-        'Rice' => 'أرز',
-        'Vegetables' => 'خضروات',
-        'Cooking Oil' => 'زيت طبخ',
-        'Milk' => 'حليب',
-        'Spices' => 'بهارات',
-        'Other Groceries' => 'بقالة أخرى',
+        'Installed Bracket' => 'ØªØ±ÙƒÙŠØ¨ Ø­Ø§Ù…Ù„',
+        'Installed Extra Pipe' => 'ØªØ±ÙƒÙŠØ¨ Ø£Ù†Ø¨ÙˆØ¨ Ø¥Ø¶Ø§ÙÙŠ',
+        'Old AC Removal' => 'Ø¥Ø²Ø§Ù„Ø© Ù…ÙƒÙŠÙ Ù‚Ø¯ÙŠÙ…',
+        'Old AC Installation' => 'ØªØ±ÙƒÙŠØ¨ Ù…ÙƒÙŠÙ Ù‚Ø¯ÙŠÙ…',
+        'Sold Old AC' => 'Ø¨ÙŠØ¹ Ù…ÙƒÙŠÙ Ù‚Ø¯ÙŠÙ…',
+        'Sold Scrap' => 'Ø¨ÙŠØ¹ Ø®Ø±Ø¯Ø©',
+        'Food' => 'Ø·Ø¹Ø§Ù…',
+        'Petrol' => 'ÙˆÙ‚ÙˆØ¯',
+        'Pipes' => 'Ø£Ù†Ø§Ø¨ÙŠØ¨',
+        'Tools' => 'Ø£Ø¯ÙˆØ§Øª',
+        'Tape' => 'Ø´Ø±ÙŠØ·',
+        'Insulation' => 'Ø¹Ø²Ù„',
+        'Gas' => 'ØºØ§Ø²',
+        'Other Consumables' => 'Ù…Ø³ØªÙ‡Ù„ÙƒØ§Øª Ø£Ø®Ø±Ù‰',
+        'House Rent' => 'Ø¥ÙŠØ¬Ø§Ø± Ø§Ù„Ù…Ù†Ø²Ù„',
+        'Other' => 'Ø£Ø®Ø±Ù‰',
+        'Bread/Roti' => 'Ø®Ø¨Ø²/Ø±ÙˆØªÙŠ',
+        'Meat' => 'Ù„Ø­Ù…',
+        'Chicken' => 'Ø¯Ø¬Ø§Ø¬',
+        'Tea' => 'Ø´Ø§ÙŠ',
+        'Sugar' => 'Ø³ÙƒØ±',
+        'Rice' => 'Ø£Ø±Ø²',
+        'Vegetables' => 'Ø®Ø¶Ø±ÙˆØ§Øª',
+        'Cooking Oil' => 'Ø²ÙŠØª Ø·Ø¨Ø®',
+        'Milk' => 'Ø­Ù„ÙŠØ¨',
+        'Spices' => 'Ø¨Ù‡Ø§Ø±Ø§Øª',
+        'Other Groceries' => 'Ø¨Ù‚Ø§Ù„Ø© Ø£Ø®Ø±Ù‰',
         _ => key,
       };
     }
     if (locale == 'ur') {
       return switch (key) {
-        'Installed Bracket' => 'بریکٹ انسٹال',
-        'Installed Extra Pipe' => 'اضافی پائپ انسٹال',
-        'Old AC Removal' => 'پرانا اے سی ہٹایا',
-        'Old AC Installation' => 'پرانا اے سی انسٹال',
-        'Sold Old AC' => 'پرانا اے سی فروخت',
-        'Sold Scrap' => 'سکریپ فروخت',
-        'Food' => 'کھانا',
-        'Petrol' => 'پیٹرول',
-        'Pipes' => 'پائپس',
-        'Tools' => 'اوزار',
-        'Tape' => 'ٹیپ',
-        'Insulation' => 'انسولیشن',
-        'Gas' => 'گیس',
-        'Other Consumables' => 'دیگر کنزیوم ایبلز',
-        'House Rent' => 'گھر کا کرایہ',
-        'Other' => 'دیگر',
-        'Bread/Roti' => 'روٹی',
-        'Meat' => 'گوشت',
-        'Chicken' => 'چکن',
-        'Tea' => 'چائے',
-        'Sugar' => 'چینی',
-        'Rice' => 'چاول',
-        'Vegetables' => 'سبزیاں',
-        'Cooking Oil' => 'کوکنگ آئل',
-        'Milk' => 'دودھ',
-        'Spices' => 'مصالحہ',
-        'Other Groceries' => 'دیگر کریانہ',
+        'Installed Bracket' => 'Ø¨Ø±ÛŒÚ©Ù¹ Ø§Ù†Ø³Ù¹Ø§Ù„',
+        'Installed Extra Pipe' => 'Ø§Ø¶Ø§ÙÛŒ Ù¾Ø§Ø¦Ù¾ Ø§Ù†Ø³Ù¹Ø§Ù„',
+        'Old AC Removal' => 'Ù¾Ø±Ø§Ù†Ø§ Ø§Û’ Ø³ÛŒ ÛÙ¹Ø§ÛŒØ§',
+        'Old AC Installation' => 'Ù¾Ø±Ø§Ù†Ø§ Ø§Û’ Ø³ÛŒ Ø§Ù†Ø³Ù¹Ø§Ù„',
+        'Sold Old AC' => 'Ù¾Ø±Ø§Ù†Ø§ Ø§Û’ Ø³ÛŒ ÙØ±ÙˆØ®Øª',
+        'Sold Scrap' => 'Ø³Ú©Ø±ÛŒÙ¾ ÙØ±ÙˆØ®Øª',
+        'Food' => 'Ú©Ú¾Ø§Ù†Ø§',
+        'Petrol' => 'Ù¾ÛŒÙ¹Ø±ÙˆÙ„',
+        'Pipes' => 'Ù¾Ø§Ø¦Ù¾Ø³',
+        'Tools' => 'Ø§ÙˆØ²Ø§Ø±',
+        'Tape' => 'Ù¹ÛŒÙ¾',
+        'Insulation' => 'Ø§Ù†Ø³ÙˆÙ„ÛŒØ´Ù†',
+        'Gas' => 'Ú¯ÛŒØ³',
+        'Other Consumables' => 'Ø¯ÛŒÚ¯Ø± Ú©Ù†Ø²ÛŒÙˆÙ… Ø§ÛŒØ¨Ù„Ø²',
+        'House Rent' => 'Ú¯Ú¾Ø± Ú©Ø§ Ú©Ø±Ø§ÛŒÛ',
+        'Other' => 'Ø¯ÛŒÚ¯Ø±',
+        'Bread/Roti' => 'Ø±ÙˆÙ¹ÛŒ',
+        'Meat' => 'Ú¯ÙˆØ´Øª',
+        'Chicken' => 'Ú†Ú©Ù†',
+        'Tea' => 'Ú†Ø§Ø¦Û’',
+        'Sugar' => 'Ú†ÛŒÙ†ÛŒ',
+        'Rice' => 'Ú†Ø§ÙˆÙ„',
+        'Vegetables' => 'Ø³Ø¨Ø²ÛŒØ§Úº',
+        'Cooking Oil' => 'Ú©ÙˆÚ©Ù†Ú¯ Ø¢Ø¦Ù„',
+        'Milk' => 'Ø¯ÙˆØ¯Ú¾',
+        'Spices' => 'Ù…ØµØ§Ù„Ø­Û',
+        'Other Groceries' => 'Ø¯ÛŒÚ¯Ø± Ú©Ø±ÛŒØ§Ù†Û',
         _ => key,
       };
     }
@@ -299,7 +361,7 @@ class PdfGenerator {
     return value.toStringAsFixed(2);
   }
 
-  // ── Font cache ──────────────────────────────────────────────────────────────
+  // â”€â”€ Font cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Shared between ur and ar since both now use NotoNaskhArabic for PDFs.
   static pw.Font? _cachedRtlFont;
   static Uint8List? _cachedRtlFontBytes;
@@ -429,7 +491,7 @@ class PdfGenerator {
     );
   }
 
-  // ── Shared page decorators ──────────────────────────────────────────────────
+  // â”€â”€ Shared page decorators â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Top brand banner shown on every page of every report.
   static pw.Widget _pageHeader(
@@ -538,7 +600,7 @@ class PdfGenerator {
     final clientCompany = reportBranding?.clientCompany;
     final leadText = serviceCompany == null
         ? '${AppConstants.appName} - Confidential'
-        : '${serviceCompany.name.trim().isEmpty ? AppConstants.appName : serviceCompany.name}${serviceCompany.phoneNumber.trim().isEmpty ? '' : ' • ${serviceCompany.phoneNumber}'}';
+        : '${serviceCompany.name.trim().isEmpty ? AppConstants.appName : serviceCompany.name}${serviceCompany.phoneNumber.trim().isEmpty ? '' : ' â€¢ ${serviceCompany.phoneNumber}'}';
 
     return pw.Column(
       children: [
@@ -709,23 +771,23 @@ class PdfGenerator {
     );
   }
 
-  // ── Status helpers ──────────────────────────────────────────────────────────
+  // â”€â”€ Status helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   static Map<String, String> _statusLabels(String locale) => {
     'pending': locale == 'ur'
-        ? 'زیر غور'
+        ? 'Ø²ÛŒØ± ØºÙˆØ±'
         : locale == 'ar'
-        ? 'قيد الانتظار'
+        ? 'Ù‚ÙŠØ¯ Ø§Ù„Ø§Ù†ØªØ¸Ø§Ø±'
         : 'Pending',
     'approved': locale == 'ur'
-        ? 'منظور'
+        ? 'Ù…Ù†Ø¸ÙˆØ±'
         : locale == 'ar'
-        ? 'موافق عليه'
+        ? 'Ù…ÙˆØ§ÙÙ‚ Ø¹Ù„ÙŠÙ‡'
         : 'Approved',
     'rejected': locale == 'ur'
-        ? 'مسترد'
+        ? 'Ù…Ø³ØªØ±Ø¯'
         : locale == 'ar'
-        ? 'مرفوض'
+        ? 'Ù…Ø±ÙÙˆØ¶'
         : 'Rejected',
   };
 
@@ -735,7 +797,7 @@ class PdfGenerator {
     _ => _kAmber,
   };
 
-  // ── Public API ──────────────────────────────────────────────────────────────
+  // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /// Generate a paginated jobs report PDF with branded header + footer.
   static Future<Uint8List> generateJobsReport({
@@ -766,9 +828,25 @@ class PdfGenerator {
     );
 
     final tableHeaders = locale == 'ur'
-        ? ['انوائس', 'ٹیکنیشن', 'کلائنٹ', 'تاریخ', 'یونٹس', 'اخراجات', 'حالت']
+        ? [
+            'Ø§Ù†ÙˆØ§Ø¦Ø³',
+            'Ù¹ÛŒÚ©Ù†ÛŒØ´Ù†',
+            'Ú©Ù„Ø§Ø¦Ù†Ù¹',
+            'ØªØ§Ø±ÛŒØ®',
+            'ÛŒÙˆÙ†Ù¹Ø³',
+            'Ø§Ø®Ø±Ø§Ø¬Ø§Øª',
+            'Ø­Ø§Ù„Øª',
+          ]
         : locale == 'ar'
-        ? ['فاتورة', 'فني', 'عميل', 'تاريخ', 'وحدات', 'مصاريف', 'حالة']
+        ? [
+            'ÙØ§ØªÙˆØ±Ø©',
+            'ÙÙ†ÙŠ',
+            'Ø¹Ù…ÙŠÙ„',
+            'ØªØ§Ø±ÙŠØ®',
+            'ÙˆØ­Ø¯Ø§Øª',
+            'Ù…ØµØ§Ø±ÙŠÙ',
+            'Ø­Ø§Ù„Ø©',
+          ]
         : [
             'Invoice',
             'Technician',
@@ -787,14 +865,14 @@ class PdfGenerator {
 
     final totalExpenses = jobs.fold<double>(0, (s, j) => s + j.expenses);
     final totalExpensesLabel = locale == 'ur'
-        ? 'کل اخراجات'
+        ? 'Ú©Ù„ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
         : locale == 'ar'
-        ? 'إجمالي المصروفات'
+        ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª'
         : 'Total Expenses';
     final totalJobsLabel = locale == 'ur'
-        ? 'کل ملازمتیں: ${jobs.length}'
+        ? 'Ú©Ù„ Ù…Ù„Ø§Ø²Ù…ØªÛŒÚº: ${jobs.length}'
         : locale == 'ar'
-        ? 'إجمالي الوظائف: ${jobs.length}'
+        ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ¸Ø§Ø¦Ù: ${jobs.length}'
         : 'Total Jobs: ${jobs.length}';
     final totalUnits = jobs.fold<int>(0, (sum, job) => sum + job.totalUnits);
 
@@ -830,14 +908,14 @@ class PdfGenerator {
           // KPI summary box
           _statsBox(
             firstLabel: locale == 'ur'
-                ? 'کل جابز'
+                ? 'Ú©Ù„ Ø¬Ø§Ø¨Ø²'
                 : locale == 'ar'
-                ? 'إجمالي الوظائف'
+                ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ¸Ø§Ø¦Ù'
                 : 'Total Jobs',
             secondLabel: locale == 'ur'
-                ? 'کل یونٹس'
+                ? 'Ú©Ù„ ÛŒÙˆÙ†Ù¹Ø³'
                 : locale == 'ar'
-                ? 'إجمالي الوحدات'
+                ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ­Ø¯Ø§Øª'
                 : 'Total Units',
             thirdLabel: totalExpensesLabel,
             firstValue: '${jobs.length}',
@@ -893,9 +971,9 @@ class PdfGenerator {
               ),
               pw.Text(
                 locale == 'ur'
-                    ? 'کل اخراجات: ${AppFormatters.currency(totalExpenses)}'
+                    ? 'Ú©Ù„ Ø§Ø®Ø±Ø§Ø¬Ø§Øª: ${AppFormatters.currency(totalExpenses)}'
                     : locale == 'ar'
-                    ? 'إجمالي المصاريف: ${AppFormatters.currency(totalExpenses)}'
+                    ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ§Ø±ÙŠÙ: ${AppFormatters.currency(totalExpenses)}'
                     : 'Total Expenses: ${AppFormatters.currency(totalExpenses)}',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
@@ -943,39 +1021,45 @@ class PdfGenerator {
 
     // i18n labels
     final earningsLabel = locale == 'ur'
-        ? 'آمدنی (IN)'
+        ? 'Ø¢Ù…Ø¯Ù†ÛŒ (IN)'
         : locale == 'ar'
-        ? 'الإيرادات (الدخل)'
+        ? 'Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª (Ø§Ù„Ø¯Ø®Ù„)'
         : 'Earnings (IN)';
     final expensesLabel = locale == 'ur'
-        ? 'اخراجات (OUT)'
+        ? 'Ø§Ø®Ø±Ø§Ø¬Ø§Øª (OUT)'
         : locale == 'ar'
-        ? 'المصروفات (الخروج)'
+        ? 'Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª (Ø§Ù„Ø®Ø±ÙˆØ¬)'
         : 'Expenses (OUT)';
     final totalEarningsLabel = locale == 'ur'
-        ? 'کل آمدنی'
+        ? 'Ú©Ù„ Ø¢Ù…Ø¯Ù†ÛŒ'
         : locale == 'ar'
-        ? 'إجمالي الإيرادات'
+        ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø¥ÙŠØ±Ø§Ø¯Ø§Øª'
         : 'Total Earnings';
     final totalExpensesLabel = locale == 'ur'
-        ? 'کل اخراجات'
+        ? 'Ú©Ù„ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
         : locale == 'ar'
-        ? 'إجمالي المصروفات'
+        ? 'Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª'
         : 'Total Expenses';
     final netLabel = locale == 'ur'
-        ? 'خالص منافع'
+        ? 'Ø®Ø§Ù„Øµ Ù…Ù†Ø§ÙØ¹'
         : locale == 'ar'
-        ? 'صافي الربح'
+        ? 'ØµØ§ÙÙŠ Ø§Ù„Ø±Ø¨Ø­'
         : 'Net Profit';
     final earningsHeaders = locale == 'ur'
-        ? ['زمرہ', 'رقم', 'تاریخ', 'نوٹ']
+        ? ['Ø²Ù…Ø±Û', 'Ø±Ù‚Ù…', 'ØªØ§Ø±ÛŒØ®', 'Ù†ÙˆÙ¹']
         : locale == 'ar'
-        ? ['الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
+        ? ['Ø§Ù„ÙØ¦Ø©', 'Ø§Ù„Ù…Ø¨Ù„Øº', 'Ø§Ù„ØªØ§Ø±ÙŠØ®', 'Ù…Ù„Ø§Ø­Ø¸Ø©']
         : ['Category', 'Amount (SAR)', 'Date', 'Note'];
     final expensesHeaders = locale == 'ur'
-        ? ['نوع', 'زمرہ', 'رقم', 'تاریخ', 'نوٹ']
+        ? ['Ù†ÙˆØ¹', 'Ø²Ù…Ø±Û', 'Ø±Ù‚Ù…', 'ØªØ§Ø±ÛŒØ®', 'Ù†ÙˆÙ¹']
         : locale == 'ar'
-        ? ['النوع', 'الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
+        ? [
+            'Ø§Ù„Ù†ÙˆØ¹',
+            'Ø§Ù„ÙØ¦Ø©',
+            'Ø§Ù„Ù…Ø¨Ù„Øº',
+            'Ø§Ù„ØªØ§Ø±ÙŠØ®',
+            'Ù…Ù„Ø§Ø­Ø¸Ø©',
+          ]
         : ['Type', 'Category', 'Amount (SAR)', 'Date', 'Note'];
 
     final totalEarningsAmt = earnings.fold<double>(0, (s, e) => s + e.amount);
@@ -1027,7 +1111,7 @@ class PdfGenerator {
           ),
           pw.SizedBox(height: 16),
 
-          // ── Earnings section ───────────────────────────────────────────────
+          // â”€â”€ Earnings section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (earnings.isNotEmpty) ...[
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(
@@ -1081,7 +1165,7 @@ class PdfGenerator {
             pw.SizedBox(height: 16),
           ],
 
-          // ── Expenses section ───────────────────────────────────────────────
+          // â”€â”€ Expenses section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (expenses.isNotEmpty) ...[
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(
@@ -1141,7 +1225,7 @@ class PdfGenerator {
   /// Generate a professional single-job invoice PDF.
   ///
   /// Produces an A4 document with job details, unit breakdown, charges and
-  /// a signature strip — suitable for handing to the client.
+  /// a signature strip â€” suitable for handing to the client.
   static Future<Uint8List> generateJobInvoice({
     required JobModel job,
     String locale = 'en',
@@ -1184,104 +1268,104 @@ class PdfGenerator {
 
     // i18n field labels
     final invoiceLabel = locale == 'ur'
-        ? 'انوائس نمبر'
+        ? 'Ø§Ù†ÙˆØ§Ø¦Ø³ Ù†Ù…Ø¨Ø±'
         : locale == 'ar'
-        ? 'رقم الفاتورة'
+        ? 'Ø±Ù‚Ù… Ø§Ù„ÙØ§ØªÙˆØ±Ø©'
         : 'Invoice No.';
     final dateLabel = locale == 'ur'
-        ? 'تاریخ'
+        ? 'ØªØ§Ø±ÛŒØ®'
         : locale == 'ar'
-        ? 'التاريخ'
+        ? 'Ø§Ù„ØªØ§Ø±ÙŠØ®'
         : 'Date';
     final clientLabel = locale == 'ur'
-        ? 'کلائنٹ'
+        ? 'Ú©Ù„Ø§Ø¦Ù†Ù¹'
         : locale == 'ar'
-        ? 'العميل'
+        ? 'Ø§Ù„Ø¹Ù…ÙŠÙ„'
         : 'Client';
     final contactLabel = locale == 'ur'
-        ? 'رابطہ'
+        ? 'Ø±Ø§Ø¨Ø·Û'
         : locale == 'ar'
-        ? 'التواصل'
+        ? 'Ø§Ù„ØªÙˆØ§ØµÙ„'
         : 'Contact';
     final techLabel = locale == 'ur'
-        ? 'ٹیکنیشن'
+        ? 'Ù¹ÛŒÚ©Ù†ÛŒØ´Ù†'
         : locale == 'ar'
-        ? 'الفني'
+        ? 'Ø§Ù„ÙÙ†ÙŠ'
         : 'Technician';
     final statusLabel = locale == 'ur'
-        ? 'حالت'
+        ? 'Ø­Ø§Ù„Øª'
         : locale == 'ar'
-        ? 'الحالة'
+        ? 'Ø§Ù„Ø­Ø§Ù„Ø©'
         : 'Status';
     final companyLabel = locale == 'ur'
-        ? 'کمپنی'
+        ? 'Ú©Ù…Ù¾Ù†ÛŒ'
         : locale == 'ar'
-        ? 'الشركة'
+        ? 'Ø§Ù„Ø´Ø±ÙƒØ©'
         : 'Company';
     final unitsLabel = locale == 'ur'
-        ? 'اے سی یونٹس'
+        ? 'Ø§Û’ Ø³ÛŒ ÛŒÙˆÙ†Ù¹Ø³'
         : locale == 'ar'
-        ? 'وحدات التكييف'
+        ? 'ÙˆØ­Ø¯Ø§Øª Ø§Ù„ØªÙƒÙŠÙŠÙ'
         : 'AC Units';
     final chargesLabel = locale == 'ur'
-        ? 'اضافی چارجز'
+        ? 'Ø§Ø¶Ø§ÙÛŒ Ú†Ø§Ø±Ø¬Ø²'
         : locale == 'ar'
-        ? 'رسوم إضافية'
+        ? 'Ø±Ø³ÙˆÙ… Ø¥Ø¶Ø§ÙÙŠØ©'
         : 'Additional Charges';
     final expensesLabel = locale == 'ur'
-        ? 'اخراجات'
+        ? 'Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
         : locale == 'ar'
-        ? 'المصاريف'
+        ? 'Ø§Ù„Ù…ØµØ§Ø±ÙŠÙ'
         : 'Job Expenses';
     final totalLabel = locale == 'ur'
-        ? 'کل'
+        ? 'Ú©Ù„'
         : locale == 'ar'
-        ? 'الإجمالي'
+        ? 'Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ'
         : 'Total';
     final sigLabel = locale == 'ur'
-        ? 'دستخط'
+        ? 'Ø¯Ø³ØªØ®Ø·'
         : locale == 'ar'
-        ? 'التوقيع'
+        ? 'Ø§Ù„ØªÙˆÙ‚ÙŠØ¹'
         : 'Signature';
     final stampLabel = locale == 'ur'
-        ? 'مہر'
+        ? 'Ù…ÛØ±'
         : locale == 'ar'
-        ? 'الختم'
+        ? 'Ø§Ù„Ø®ØªÙ…'
         : 'Stamp';
     final unitTypeLabel = locale == 'ur'
-        ? 'قسم'
+        ? 'Ù‚Ø³Ù…'
         : locale == 'ar'
-        ? 'النوع'
+        ? 'Ø§Ù„Ù†ÙˆØ¹'
         : 'Type';
     final qtyLabel = locale == 'ur'
-        ? 'تعداد'
+        ? 'ØªØ¹Ø¯Ø§Ø¯'
         : locale == 'ar'
-        ? 'الكمية'
+        ? 'Ø§Ù„ÙƒÙ…ÙŠØ©'
         : 'Qty';
     final bracketLabel = locale == 'ur'
-        ? 'بریکٹ'
+        ? 'Ø¨Ø±ÛŒÚ©Ù¹'
         : locale == 'ar'
-        ? 'الحامل'
+        ? 'Ø§Ù„Ø­Ø§Ù…Ù„'
         : 'Bracket';
     final deliveryLabel = locale == 'ur'
-        ? 'ڈیلیوری'
+        ? 'ÚˆÛŒÙ„ÛŒÙˆØ±ÛŒ'
         : locale == 'ar'
-        ? 'التوصيل'
+        ? 'Ø§Ù„ØªÙˆØµÙŠÙ„'
         : 'Delivery';
     final yesLabel = locale == 'ur'
-        ? 'ہاں'
+        ? 'ÛØ§Úº'
         : locale == 'ar'
-        ? 'نعم'
+        ? 'Ù†Ø¹Ù…'
         : 'Yes';
     final noLabel = locale == 'ur'
-        ? 'نہیں'
+        ? 'Ù†ÛÛŒÚº'
         : locale == 'ar'
-        ? 'لا'
+        ? 'Ù„Ø§'
         : 'No';
     final invoiceTitle = locale == 'ur'
-        ? 'سروس انوائس'
+        ? 'Ø³Ø±ÙˆØ³ Ø§Ù†ÙˆØ§Ø¦Ø³'
         : locale == 'ar'
-        ? 'فاتورة الخدمة'
+        ? 'ÙØ§ØªÙˆØ±Ø© Ø§Ù„Ø®Ø¯Ù…Ø©'
         : 'Service Invoice';
 
     final statusText =
@@ -1304,7 +1388,7 @@ class PdfGenerator {
         ),
         footer: (ctx) => _pageFooter(ctx, font: font, dir: dir),
         build: (context) => [
-          // ── Invoice title + status badge ──────────────────────────────────
+          // â”€â”€ Invoice title + status badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
@@ -1333,7 +1417,7 @@ class PdfGenerator {
           ),
           pw.SizedBox(height: 12),
 
-          // ── Invoice meta grid ─────────────────────────────────────────────
+          // â”€â”€ Invoice meta grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           pw.Container(
             padding: const pw.EdgeInsets.all(10),
             decoration: pw.BoxDecoration(
@@ -1422,7 +1506,7 @@ class PdfGenerator {
           ),
           pw.SizedBox(height: 14),
 
-          // ── AC Units section ──────────────────────────────────────────────
+          // â”€â”€ AC Units section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           _sectionBanner(unitsLabel, font, sectionStyle, _kBrandBlue),
           pw.SizedBox(height: 6),
           pw.TableHelper.fromTextArray(
@@ -1458,7 +1542,7 @@ class PdfGenerator {
           ),
           pw.SizedBox(height: 14),
 
-          // ── Additional charges section ─────────────────────────────────────
+          // â”€â”€ Additional charges section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (job.charges != null) ...[
             _sectionBanner(
               chargesLabel,
@@ -1470,19 +1554,19 @@ class PdfGenerator {
             pw.TableHelper.fromTextArray(
               headers: _shapeRowForPdf(locale, [
                 locale == 'ur'
-                    ? 'آئٹم'
+                    ? 'Ø¢Ø¦Ù¹Ù…'
                     : locale == 'ar'
-                    ? 'البند'
+                    ? 'Ø§Ù„Ø¨Ù†Ø¯'
                     : 'Item',
                 locale == 'ur'
-                    ? 'شامل'
+                    ? 'Ø´Ø§Ù…Ù„'
                     : locale == 'ar'
-                    ? 'مضمن'
+                    ? 'Ù…Ø¶Ù…Ù†'
                     : 'Included',
                 locale == 'ur'
-                    ? 'رقم'
+                    ? 'Ø±Ù‚Ù…'
                     : locale == 'ar'
-                    ? 'المبلغ'
+                    ? 'Ø§Ù„Ù…Ø¨Ù„Øº'
                     : 'Amount (SAR)',
               ]),
               data: [
@@ -1534,7 +1618,7 @@ class PdfGenerator {
             pw.SizedBox(height: 14),
           ],
 
-          // ── Job expenses section ───────────────────────────────────────────
+          // â”€â”€ Job expenses section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (job.expenses > 0) ...[
             _sectionBanner(expensesLabel, font, sectionStyle, _kRed),
             pw.SizedBox(height: 6),
@@ -1559,7 +1643,7 @@ class PdfGenerator {
             pw.SizedBox(height: 14),
           ],
 
-          // ── Admin note ────────────────────────────────────────────────────
+          // â”€â”€ Admin note â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (job.adminNote.isNotEmpty) ...[
             pw.Container(
               width: double.infinity,
@@ -1571,9 +1655,9 @@ class PdfGenerator {
               ),
               child: pw.Text(
                 '${locale == "ur"
-                    ? "ایڈمن نوٹ"
+                    ? "Ø§ÛŒÚˆÙ…Ù† Ù†ÙˆÙ¹"
                     : locale == "ar"
-                    ? "ملاحظة الإدارة"
+                    ? "Ù…Ù„Ø§Ø­Ø¸Ø© Ø§Ù„Ø¥Ø¯Ø§Ø±Ø©"
                     : "Admin Note"}: ${job.adminNote}',
                 style: cellStyle.copyWith(color: PdfColors.orange900),
                 textDirection: dir,
@@ -1582,7 +1666,7 @@ class PdfGenerator {
             pw.SizedBox(height: 14),
           ],
 
-          // ── Signature strip ───────────────────────────────────────────────
+          // â”€â”€ Signature strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           pw.SizedBox(height: 30),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1591,9 +1675,9 @@ class PdfGenerator {
               _signatureBox(stampLabel, font, dir, width: 100),
               _signatureBox(
                 '${locale == "ur"
-                    ? "کلائنٹ"
+                    ? "Ú©Ù„Ø§Ø¦Ù†Ù¹"
                     : locale == "ar"
-                    ? "العميل"
+                    ? "Ø§Ù„Ø¹Ù…ÙŠÙ„"
                     : "Client"}  $sigLabel',
                 font,
                 dir,
@@ -1616,159 +1700,25 @@ class PdfGenerator {
     String companyLogoBase64 = '',
     ReportBrandingContext? reportBranding,
   }) async {
-    final font = await _getLocaleFont(locale);
-    final dir = _dir(locale);
-    final isRtl = locale == 'ur' || locale == 'ar';
-
-    final headerCellStyle = pw.TextStyle(
-      font: font,
-      fontSize: 8,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.white,
-    );
-    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
-    final subStyle = pw.TextStyle(
-      font: font,
-      fontSize: 9,
-      color: PdfColors.grey700,
-    );
-
-    final today = DateTime.now();
-    final companyMap = <String, List<JobModel>>{};
-    for (final job in jobs) {
-      final key = job.companyName.trim().isEmpty
-          ? (locale == 'ur'
-                ? 'بغیر کمپنی'
-                : locale == 'ar'
-                ? 'بدون شركة'
-                : 'No Company')
-          : job.companyName.trim();
-      companyMap.putIfAbsent(key, () => <JobModel>[]).add(job);
-    }
-
-    final sortedCompanies = companyMap.keys.toList()
-      ..sort((a, b) => a.compareTo(b));
-
-    final headers = locale == 'ur'
-        ? ['کمپنی', 'انوائسز', 'کل یونٹس', 'ٹیکنیشنز']
-        : locale == 'ar'
-        ? ['الشركة', 'عدد الفواتير', 'إجمالي الوحدات', 'الفنيون']
-        : ['Company', 'Invoices', 'Total Units', 'Technicians'];
-
-    final title =
-        reportTitle ??
-        (locale == 'ur'
-            ? 'آج کی کمپنی وائز انوائس رپورٹ'
-            : locale == 'ar'
-            ? 'تقرير فواتير اليوم حسب الشركة'
-            : 'Today Company-wise Invoices');
-
-    final totalInvoices = jobs.length;
-    final totalUnits = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
-
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(24, 16, 24, 16),
-        textDirection: dir,
-        crossAxisAlignment: isRtl
-            ? pw.CrossAxisAlignment.end
-            : pw.CrossAxisAlignment.start,
-        header: (ctx) => _pageHeader(
-          ctx,
-          reportTitle: title,
-          font: font,
-          dir: dir,
-          dateRange: periodLabel ?? AppFormatters.date(today),
-          reportBranding: reportBranding,
-          logoBase64: companyLogoBase64.isNotEmpty ? companyLogoBase64 : null,
-        ),
-        footer: (ctx) => _pageFooter(
-          ctx,
-          font: font,
-          dir: dir,
-          reportBranding: reportBranding,
-        ),
-        build: (context) => [
-          _statsBox(
-            firstLabel: locale == 'ur'
-                ? 'کل انوائسز'
-                : locale == 'ar'
-                ? 'إجمالي الفواتير'
-                : 'Total Invoices',
-            secondLabel: locale == 'ur'
-                ? 'کل یونٹس'
-                : locale == 'ar'
-                ? 'إجمالي الوحدات'
-                : 'Total Units',
-            thirdLabel: locale == 'ur'
-                ? 'کمپنیاں'
-                : locale == 'ar'
-                ? 'الشركات'
-                : 'Companies',
-            firstValue: '$totalInvoices',
-            secondValue: '$totalUnits',
-            thirdValue: '${sortedCompanies.length}',
-            font: font,
-            dir: dir,
-          ),
-          pw.SizedBox(height: 12),
-          pw.TableHelper.fromTextArray(
-            context: context,
-            headers: _shapeRowForPdf(locale, headers),
-            data: _shapeTableForPdf(
-              locale,
-              sortedCompanies.map((company) {
-                final companyJobs = companyMap[company] ?? const <JobModel>[];
-                final units = companyJobs.fold<int>(
-                  0,
-                  (s, j) => s + j.totalUnits,
-                );
-                final techs = companyJobs
-                    .map((j) => j.techName.trim())
-                    .where((n) => n.isNotEmpty)
-                    .toSet()
-                    .join(', ');
-                return [
-                  _safeTableCellText(company, maxLength: 42),
-                  '${companyJobs.length}',
-                  '$units',
-                  _safeTableCellText(techs, maxLength: 120),
-                ];
-              }).toList(),
-            ),
-            headerStyle: headerCellStyle,
-            cellStyle: cellStyle,
-            headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
-            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
-            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-            cellAlignments: {
-              0: pw.Alignment.centerLeft,
-              1: pw.Alignment.center,
-              2: pw.Alignment.center,
-              3: pw.Alignment.centerLeft,
-            },
-            cellPadding: const pw.EdgeInsets.symmetric(
-              horizontal: 5,
-              vertical: 4,
-            ),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            locale == 'ur'
-                ? 'کل انوائسز: $totalInvoices  |  کل یونٹس: $totalUnits'
-                : locale == 'ar'
-                ? 'إجمالي الفواتير: $totalInvoices  |  إجمالي الوحدات: $totalUnits'
-                : 'Total Invoices: $totalInvoices  |  Total Units: $totalUnits',
-            style: subStyle.copyWith(fontWeight: pw.FontWeight.bold),
-            textDirection: dir,
-          ),
-        ],
+    final fontBytes = await _getLocaleFontBytes(locale);
+    return compute(
+      _isolateBuildCompanyInvoicesPdf,
+      _CompanyInvoicesParams(
+        fontBytes: fontBytes,
+        locale: locale,
+        jobs: jobs,
+        reportTitle: reportTitle,
+        periodLabel: periodLabel,
+        companyLogoBase64: companyLogoBase64,
+        serviceCompanyName: reportBranding?.serviceCompany.name ?? '',
+        serviceCompanyLogoBase64:
+            reportBranding?.serviceCompany.logoBase64 ?? '',
+        serviceCompanyPhoneNumber:
+            reportBranding?.serviceCompany.phoneNumber ?? '',
+        clientCompanyName: reportBranding?.clientCompany?.name,
+        clientCompanyLogoBase64: reportBranding?.clientCompany?.logoBase64,
       ),
     );
-
-    return pdf.save();
   }
 
   /// Generate detailed jobs report with bracket/delivery breakdown.
@@ -1801,31 +1751,31 @@ class PdfGenerator {
 
     final tableHeaders = locale == 'ur'
         ? [
-            'تاریخ',
-            'انوائس نمبر',
-            'رابطہ',
-            'سپلٹ',
-            'ونڈو',
-            'اَن انسٹال',
-            'دولاب',
-            'بریکٹ',
-            'ڈیلیوری',
-            'ٹیکنیشن',
-            'تفصیل',
+            'ØªØ§Ø±ÛŒØ®',
+            'Ø§Ù†ÙˆØ§Ø¦Ø³ Ù†Ù…Ø¨Ø±',
+            'Ø±Ø§Ø¨Ø·Û',
+            'Ø³Ù¾Ù„Ù¹',
+            'ÙˆÙ†ÚˆÙˆ',
+            'Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„',
+            'Ø¯ÙˆÙ„Ø§Ø¨',
+            'Ø¨Ø±ÛŒÚ©Ù¹',
+            'ÚˆÛŒÙ„ÛŒÙˆØ±ÛŒ',
+            'Ù¹ÛŒÚ©Ù†ÛŒØ´Ù†',
+            'ØªÙØµÛŒÙ„',
           ]
         : locale == 'ar'
         ? [
-            'التاريخ',
-            'رقم الفاتورة',
-            'الاتصال',
-            'سبليت',
-            'شباك',
-            'فك تركيب',
-            'دولاب',
-            'الحامل',
-            'التوصيل',
-            'الفني',
-            'الوصف',
+            'Ø§Ù„ØªØ§Ø±ÙŠØ®',
+            'Ø±Ù‚Ù… Ø§Ù„ÙØ§ØªÙˆØ±Ø©',
+            'Ø§Ù„Ø§ØªØµØ§Ù„',
+            'Ø³Ø¨Ù„ÙŠØª',
+            'Ø´Ø¨Ø§Ùƒ',
+            'ÙÙƒ ØªØ±ÙƒÙŠØ¨',
+            'Ø¯ÙˆÙ„Ø§Ø¨',
+            'Ø§Ù„Ø­Ø§Ù…Ù„',
+            'Ø§Ù„ØªÙˆØµÙŠÙ„',
+            'Ø§Ù„ÙÙ†ÙŠ',
+            'Ø§Ù„ÙˆØµÙ',
           ]
         : [
             'Date',
@@ -2057,112 +2007,112 @@ class PdfGenerator {
             children: [
               pw.Text(
                 '${locale == "ur"
-                    ? "کل"
+                    ? "Ú©Ù„"
                     : locale == "ar"
-                    ? "الإجمالي"
+                    ? "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ"
                     : "Total"}: ${jobs.length} ${locale == "ur"
-                    ? "ملازمت"
+                    ? "Ù…Ù„Ø§Ø²Ù…Øª"
                     : locale == "ar"
-                    ? "وظائف"
+                    ? "ÙˆØ¸Ø§Ø¦Ù"
                     : "jobs"}',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "کل یونٹس"
+                    ? "Ú©Ù„ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "إجمالي الوحدات"
+                    ? "Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„ÙˆØ­Ø¯Ø§Øª"
                     : "Total Units"}: $totalUnits',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "سپلٹ یونٹس"
+                    ? "Ø³Ù¾Ù„Ù¹ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "وحدات سبليت"
+                    ? "ÙˆØ­Ø¯Ø§Øª Ø³Ø¨Ù„ÙŠØª"
                     : "Split Units"}: $totalSplitUnits',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "ونڈو یونٹس"
+                    ? "ÙˆÙ†ÚˆÙˆ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "وحدات الشباك"
+                    ? "ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø´Ø¨Ø§Ùƒ"
                     : "Window Units"}: $totalWindowUnits',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "دولاب یونٹس"
+                    ? "Ø¯ÙˆÙ„Ø§Ø¨ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "وحدات الدولاب"
+                    ? "ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ø¯ÙˆÙ„Ø§Ø¨"
                     : "Free Standing Units"}: $totalFreestandingUnits',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "کل اَن انسٹال"
+                    ? "Ú©Ù„ Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„"
                     : locale == "ar"
-                    ? "إجمالي فك التركيب"
+                    ? "Ø¥Ø¬Ù…Ø§Ù„ÙŠ ÙÙƒ Ø§Ù„ØªØ±ÙƒÙŠØ¨"
                     : "Total Uninstallations"}: $totalUninstallations',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "انسٹال بریکٹس"
+                    ? "Ø§Ù†Ø³Ù¹Ø§Ù„ Ø¨Ø±ÛŒÚ©Ù¹Ø³"
                     : locale == "ar"
-                    ? "الحوامل المركبة"
+                    ? "Ø§Ù„Ø­ÙˆØ§Ù…Ù„ Ø§Ù„Ù…Ø±ÙƒØ¨Ø©"
                     : "Brackets Installed"}: $totalInstalledBrackets',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "ڈیلیوری چارجز"
+                    ? "ÚˆÛŒÙ„ÛŒÙˆØ±ÛŒ Ú†Ø§Ø±Ø¬Ø²"
                     : locale == "ar"
-                    ? "رسوم التوصيل"
+                    ? "Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„"
                     : "Delivery Charges"}: ${_plainAmount(totalDeliveryCharges)}',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "سولو انسٹال"
+                    ? "Ø³ÙˆÙ„Ùˆ Ø§Ù†Ø³Ù¹Ø§Ù„"
                     : locale == "ar"
-                    ? "تركيبات فردية"
+                    ? "ØªØ±ÙƒÙŠØ¨Ø§Øª ÙØ±Ø¯ÙŠØ©"
                     : "Solo Installs"}: $soloJobsCount',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "شیئرڈ انسٹال"
+                    ? "Ø´ÛŒØ¦Ø±Úˆ Ø§Ù†Ø³Ù¹Ø§Ù„"
                     : locale == "ar"
-                    ? "تركيبات مشتركة"
+                    ? "ØªØ±ÙƒÙŠØ¨Ø§Øª Ù…Ø´ØªØ±ÙƒØ©"
                     : "Shared Installs"}: $sharedJobsCount',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "شیئرڈ یونٹس"
+                    ? "Ø´ÛŒØ¦Ø±Úˆ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "وحدات مشتركة"
+                    ? "ÙˆØ­Ø¯Ø§Øª Ù…Ø´ØªØ±ÙƒØ©"
                     : "Shared Units"}: $sharedUnitsTotal',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
               ),
               pw.Text(
                 '${locale == "ur"
-                    ? "سولو یونٹس"
+                    ? "Ø³ÙˆÙ„Ùˆ ÛŒÙˆÙ†Ù¹Ø³"
                     : locale == "ar"
-                    ? "وحدات فردية"
+                    ? "ÙˆØ­Ø¯Ø§Øª ÙØ±Ø¯ÙŠØ©"
                     : "Solo Units"}: $soloUnitsTotal',
                 style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                 textDirection: dir,
@@ -2173,9 +2123,9 @@ class PdfGenerator {
           if (sharedByTechnician.isNotEmpty) ...[
             _sectionBanner(
               locale == 'ur'
-                  ? 'شیئرڈ انسٹال کا تفصیل'
+                  ? 'Ø´ÛŒØ¦Ø±Úˆ Ø§Ù†Ø³Ù¹Ø§Ù„ Ú©Ø§ ØªÙØµÛŒÙ„'
                   : locale == 'ar'
-                  ? 'تفاصيل التركيبات المشتركة'
+                  ? 'ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØªØ±ÙƒÙŠØ¨Ø§Øª Ø§Ù„Ù…Ø´ØªØ±ÙƒØ©'
                   : 'Shared Installation Breakdown',
               font,
               pw.TextStyle(
@@ -2192,9 +2142,17 @@ class PdfGenerator {
               headers: _shapeRowForPdf(
                 locale,
                 locale == 'ur'
-                    ? ['ٹیکنیشن', 'شیئرڈ جابز', 'شیئرڈ یونٹس']
+                    ? [
+                        'Ù¹ÛŒÚ©Ù†ÛŒØ´Ù†',
+                        'Ø´ÛŒØ¦Ø±Úˆ Ø¬Ø§Ø¨Ø²',
+                        'Ø´ÛŒØ¦Ø±Úˆ ÛŒÙˆÙ†Ù¹Ø³',
+                      ]
                     : locale == 'ar'
-                    ? ['الفني', 'الأعمال المشتركة', 'الوحدات المشتركة']
+                    ? [
+                        'Ø§Ù„ÙÙ†ÙŠ',
+                        'Ø§Ù„Ø£Ø¹Ù…Ø§Ù„ Ø§Ù„Ù…Ø´ØªØ±ÙƒØ©',
+                        'Ø§Ù„ÙˆØ­Ø¯Ø§Øª Ø§Ù„Ù…Ø´ØªØ±ÙƒØ©',
+                      ]
                     : ['Technician', 'Shared Jobs', 'Shared Units'],
               ),
               data: _shapeTableForPdf(
@@ -2233,9 +2191,9 @@ class PdfGenerator {
           ],
           _sectionBanner(
             locale == 'ur'
-                ? 'اَن انسٹال کا تفصیل'
+                ? 'Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„ Ú©Ø§ ØªÙØµÛŒÙ„'
                 : locale == 'ar'
-                ? 'تفاصيل فك التركيب'
+                ? 'ØªÙØ§ØµÙŠÙ„ ÙÙƒ Ø§Ù„ØªØ±ÙƒÙŠØ¨'
                 : 'Uninstallation Breakdown',
             font,
             pw.TextStyle(
@@ -2254,9 +2212,9 @@ class PdfGenerator {
                 children: [
                   pw.Text(
                     locale == 'ur'
-                        ? 'سپلٹ اَن انسٹال'
+                        ? 'Ø³Ù¾Ù„Ù¹ Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„'
                         : locale == 'ar'
-                        ? 'فك تركيب سبليت'
+                        ? 'ÙÙƒ ØªØ±ÙƒÙŠØ¨ Ø³Ø¨Ù„ÙŠØª'
                         : 'Split Uninstallations',
                     style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                     textDirection: dir,
@@ -2276,9 +2234,9 @@ class PdfGenerator {
                 children: [
                   pw.Text(
                     locale == 'ur'
-                        ? 'دولاب اَن انسٹال'
+                        ? 'Ø¯ÙˆÙ„Ø§Ø¨ Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„'
                         : locale == 'ar'
-                        ? 'فك تركيب دولاب'
+                        ? 'ÙÙƒ ØªØ±ÙƒÙŠØ¨ Ø¯ÙˆÙ„Ø§Ø¨'
                         : 'Free Standing Uninstallations',
                     style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                     textDirection: dir,
@@ -2298,9 +2256,9 @@ class PdfGenerator {
                 children: [
                   pw.Text(
                     locale == 'ur'
-                        ? 'ونڈو اَن انسٹال'
+                        ? 'ÙˆÙ†ÚˆÙˆ Ø§ÙŽÙ† Ø§Ù†Ø³Ù¹Ø§Ù„'
                         : locale == 'ar'
-                        ? 'فك تركيب النافذة'
+                        ? 'ÙÙƒ ØªØ±ÙƒÙŠØ¨ Ø§Ù„Ù†Ø§ÙØ°Ø©'
                         : 'Window Uninstallations',
                     style: cellStyle.copyWith(fontWeight: pw.FontWeight.bold),
                     textDirection: dir,
@@ -2336,10 +2294,848 @@ class PdfGenerator {
     bool monthlyMode = false,
     ReportBrandingContext? reportBranding,
   }) async {
+    final fontBytes = await _getLocaleFontBytes(locale);
+    return compute(
+      _isolateBuildInOutReportPdf,
+      _InOutReportParams(
+        fontBytes: fontBytes,
+        locale: locale,
+        earnings: earnings,
+        expenses: expenses,
+        technicianName: technicianName,
+        reportTitle: reportTitle,
+        reportDate: reportDate,
+        periodLabel: periodLabel,
+        monthlyMode: monthlyMode,
+        serviceCompanyName: reportBranding?.serviceCompany.name ?? '',
+        serviceCompanyLogoBase64:
+            reportBranding?.serviceCompany.logoBase64 ?? '',
+        serviceCompanyPhoneNumber:
+            reportBranding?.serviceCompany.phoneNumber ?? '',
+        clientCompanyName: reportBranding?.clientCompany?.name,
+        clientCompanyLogoBase64: reportBranding?.clientCompany?.logoBase64,
+      ),
+    );
+  }
+
+  /// Generate earnings report with today + month summaries by category.
+  static Future<Uint8List> generateEarningsReport({
+    required List<EarningModel> earnings,
+    required String title,
+    String locale = 'en',
+    String? technicianName,
+    DateTime? fromDate,
+    DateTime? toDate,
+    ReportBrandingContext? reportBranding,
+  }) async {
     final font = await _getLocaleFont(locale);
     final dir = _dir(locale);
+    final isRtl = locale == 'ur' || locale == 'ar';
 
-    final periodDate = reportDate ?? DateTime.now();
+    final subStyle = pw.TextStyle(
+      font: font,
+      fontSize: 9,
+      color: PdfColors.grey700,
+    );
+    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
+    final headerCellStyle = pw.TextStyle(
+      font: font,
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final summaryStyle = cellStyle.copyWith(fontWeight: pw.FontWeight.bold);
+
+    final earningsHeaders = locale == 'ur'
+        ? ['Ø²Ù…Ø±Û', 'Ø±Ù‚Ù…', 'ØªØ§Ø±ÛŒØ®', 'Ù†ÙˆÙ¹']
+        : locale == 'ar'
+        ? ['Ø§Ù„ÙØ¦Ø©', 'Ø§Ù„Ù…Ø¨Ù„Øº', 'Ø§Ù„ØªØ§Ø±ÙŠØ®', 'Ù…Ù„Ø§Ø­Ø¸Ø©']
+        : ['Category', 'Amount (SAR)', 'Date', 'Note'];
+
+    final totalEarningsAmt = earnings.fold<double>(0, (s, e) => s + e.amount);
+    final today = DateTime.now();
+    final todaysEarnings = earnings
+        .where(
+          (e) =>
+              e.date != null &&
+              e.date!.year == today.year &&
+              e.date!.month == today.month &&
+              e.date!.day == today.day,
+        )
+        .toList();
+    final todaysTotal = todaysEarnings.fold<double>(0, (s, e) => s + e.amount);
+
+    final dateRange = (fromDate != null && toDate != null)
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
+        : null;
+
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(24, 16, 24, 16),
+        textDirection: dir,
+        crossAxisAlignment: isRtl
+            ? pw.CrossAxisAlignment.end
+            : pw.CrossAxisAlignment.start,
+        header: (ctx) => _pageHeader(
+          ctx,
+          reportTitle: title,
+          font: font,
+          dir: dir,
+          dateRange: dateRange,
+          reportBranding: reportBranding,
+        ),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
+        build: (context) => [
+          if (technicianName != null) ...[
+            pw.Text(technicianName, style: subStyle, textDirection: dir),
+            pw.SizedBox(height: 8),
+          ],
+          // KPI summary
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: pw.BorderRadius.circular(4),
+              color: PdfColors.grey50,
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  children: [
+                    pw.Text(
+                      locale == 'ur'
+                          ? 'Ø¢Ø¬ Ú©ÛŒ Ú©Ù…Ø§Ø¦ÛŒ'
+                          : locale == 'ar'
+                          ? 'Ø£Ø±Ø¨Ø§Ø­ Ø§Ù„ÙŠÙˆÙ…'
+                          : 'Today Earned',
+                      style: subStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      AppFormatters.currency(todaysTotal),
+                      style: summaryStyle.copyWith(color: _kGreen),
+                      textDirection: dir,
+                    ),
+                  ],
+                ),
+                pw.Container(width: 0.5, height: 32, color: PdfColors.grey300),
+                pw.Column(
+                  children: [
+                    pw.Text(
+                      locale == 'ur'
+                          ? 'Ù…Ø§Û Ú©ÛŒ Ú©Ù…Ø§Ø¦ÛŒ'
+                          : locale == 'ar'
+                          ? 'Ø£Ø±Ø¨Ø§Ø­ Ø§Ù„Ø´Ù‡Ø±'
+                          : 'Month Earned',
+                      style: subStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      AppFormatters.currency(totalEarningsAmt),
+                      style: summaryStyle.copyWith(color: _kGreen),
+                      textDirection: dir,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          // Earnings table
+          if (earnings.isNotEmpty)
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: _shapeRowForPdf(locale, earningsHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                earnings
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(color: _kGreen),
+              cellAlignments: {
+                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
+              },
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 3,
+              ),
+            )
+          else
+            pw.Text(
+              locale == 'ur'
+                  ? 'Ú©ÙˆØ¦ÛŒ Ú©Ù…Ø§Ø¦ÛŒ Ù†ÛÛŒÚº'
+                  : locale == 'ar'
+                  ? 'Ù„Ø§ ØªÙˆØ¬Ø¯ Ø£Ø±Ø¨Ø§Ø­'
+                  : 'No earnings',
+              style: cellStyle,
+              textDirection: dir,
+            ),
+        ],
+      ),
+    );
+    return pdf.save();
+  }
+
+  /// Generate detailed expenses report split by work and home categories.
+  static Future<Uint8List> generateExpensesDetailedReport({
+    required List<ExpenseModel> expenses,
+    required String title,
+    String locale = 'en',
+    String? technicianName,
+    DateTime? fromDate,
+    DateTime? toDate,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    const workExpenseType = 'work';
+    final font = await _getLocaleFont(locale);
+    final dir = _dir(locale);
+    final isRtl = locale == 'ur' || locale == 'ar';
+
+    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
+    final headerCellStyle = pw.TextStyle(
+      font: font,
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final sectionStyle = pw.TextStyle(
+      font: font,
+      fontSize: 9,
+      fontWeight: pw.FontWeight.bold,
+    );
+    final summaryStyle = cellStyle.copyWith(fontWeight: pw.FontWeight.bold);
+
+    final workHeaders = locale == 'ur'
+        ? ['Ø²Ù…Ø±Û', 'Ø±Ù‚Ù…', 'ØªØ§Ø±ÛŒØ®', 'Ù†ÙˆÙ¹']
+        : locale == 'ar'
+        ? ['Ø§Ù„ÙØ¦Ø©', 'Ø§Ù„Ù…Ø¨Ù„Øº', 'Ø§Ù„ØªØ§Ø±ÙŠØ®', 'Ù…Ù„Ø§Ø­Ø¸Ø©']
+        : ['Category', 'Amount (SAR)', 'Date', 'Note'];
+
+    final homeHeaders = locale == 'ur'
+        ? ['Ø³Ø§Ù…Ø§Ù†', 'Ø±Ù‚Ù…', 'ØªØ§Ø±ÛŒØ®', 'Ù†ÙˆÙ¹']
+        : locale == 'ar'
+        ? ['Ø§Ù„Ø¨Ù†Ø¯', 'Ø§Ù„Ù…Ø¨Ù„Øº', 'Ø§Ù„ØªØ§Ø±ÙŠØ®', 'Ù…Ù„Ø§Ø­Ø¸Ø©']
+        : ['Item', 'Amount (SAR)', 'Date', 'Note'];
+
+    final workExpenses = expenses
+        .where((e) => e.expenseType == workExpenseType)
+        .toList();
+    final homeExpenses = expenses
+        .where((e) => e.expenseType != workExpenseType)
+        .toList();
+
+    final today = DateTime.now();
+    final todaysWork = workExpenses
+        .where(
+          (e) =>
+              e.date != null &&
+              e.date!.year == today.year &&
+              e.date!.month == today.month &&
+              e.date!.day == today.day,
+        )
+        .toList();
+    final todaysHome = homeExpenses
+        .where(
+          (e) =>
+              e.date != null &&
+              e.date!.year == today.year &&
+              e.date!.month == today.month &&
+              e.date!.day == today.day,
+        )
+        .toList();
+
+    final todaysWorkTotal = todaysWork.fold<double>(0, (s, e) => s + e.amount);
+    final todaysHomeTotal = todaysHome.fold<double>(0, (s, e) => s + e.amount);
+    final monthWorkTotal = workExpenses.fold<double>(0, (s, e) => s + e.amount);
+    final monthHomeTotal = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
+
+    final dateRange = (fromDate != null && toDate != null)
+        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
+        : null;
+
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(24, 16, 24, 16),
+        textDirection: dir,
+        crossAxisAlignment: isRtl
+            ? pw.CrossAxisAlignment.end
+            : pw.CrossAxisAlignment.start,
+        header: (ctx) => _pageHeader(
+          ctx,
+          reportTitle: title,
+          font: font,
+          dir: dir,
+          dateRange: dateRange,
+          reportBranding: reportBranding,
+        ),
+        footer: (ctx) => _pageFooter(
+          ctx,
+          font: font,
+          dir: dir,
+          reportBranding: reportBranding,
+        ),
+        build: (context) => [
+          if (technicianName != null) ...[
+            pw.Text(technicianName, style: cellStyle, textDirection: dir),
+            pw.SizedBox(height: 8),
+          ],
+          // Summary KPI box
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: pw.BorderRadius.circular(4),
+              color: PdfColors.grey50,
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Today summary
+                pw.Text(
+                  locale == 'ur'
+                      ? 'Ø¢Ø¬ Ú©Û’ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
+                      : locale == 'ar'
+                      ? 'Ù†ÙÙ‚Ø§Øª Ø§Ù„ÙŠÙˆÙ…'
+                      : 'Today Expenses',
+                  style: sectionStyle,
+                  textDirection: dir,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      '${locale == "ur"
+                          ? "Ú©Ø§Ù…"
+                          : locale == "ar"
+                          ? "Ø¹Ù…Ù„"
+                          : "Work"}: ${AppFormatters.currency(todaysWorkTotal)}',
+                      style: cellStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      '${locale == "ur"
+                          ? "Ú¯Ú¾Ø±"
+                          : locale == "ar"
+                          ? "Ù…Ù†Ø²Ù„"
+                          : "Home"}: ${AppFormatters.currency(todaysHomeTotal)}',
+                      style: cellStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      AppFormatters.currency(todaysWorkTotal + todaysHomeTotal),
+                      style: summaryStyle.copyWith(color: _kRed),
+                      textDirection: dir,
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 8),
+                // Month summary
+                pw.Text(
+                  locale == 'ur'
+                      ? 'Ù…Ø§Û Ú©Û’ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
+                      : locale == 'ar'
+                      ? 'Ù†ÙÙ‚Ø§Øª Ø§Ù„Ø´Ù‡Ø±'
+                      : 'Month Expenses',
+                  style: sectionStyle,
+                  textDirection: dir,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      '${locale == "ur"
+                          ? "Ú©Ø§Ù…"
+                          : locale == "ar"
+                          ? "Ø¹Ù…Ù„"
+                          : "Work"}: ${AppFormatters.currency(monthWorkTotal)}',
+                      style: cellStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      '${locale == "ur"
+                          ? "Ú¯Ú¾Ø±"
+                          : locale == "ar"
+                          ? "Ù…Ù†Ø²Ù„"
+                          : "Home"}: ${AppFormatters.currency(monthHomeTotal)}',
+                      style: cellStyle,
+                      textDirection: dir,
+                    ),
+                    pw.Text(
+                      AppFormatters.currency(monthWorkTotal + monthHomeTotal),
+                      style: summaryStyle.copyWith(color: _kRed),
+                      textDirection: dir,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          // Work expenses section
+          if (workExpenses.isNotEmpty) ...[
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 4,
+              ),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(left: pw.BorderSide(color: _kRed, width: 3)),
+              ),
+              child: pw.Text(
+                locale == 'ur'
+                    ? 'Ú©Ø§Ù… Ú©Û’ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
+                    : locale == 'ar'
+                    ? 'Ù†ÙÙ‚Ø§Øª Ø§Ù„Ø¹Ù…Ù„'
+                    : 'Work Expenses',
+                style: sectionStyle,
+                textDirection: dir,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: _shapeRowForPdf(locale, workHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                workExpenses
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(color: _kRed),
+              cellAlignments: {
+                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
+              },
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 3,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+          // Home expenses section
+          if (homeExpenses.isNotEmpty) ...[
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 4,
+              ),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  left: pw.BorderSide(color: PdfColors.deepOrange, width: 3),
+                ),
+              ),
+              child: pw.Text(
+                locale == 'ur'
+                    ? 'Ú¯Ú¾Ø± Ú©Û’ Ø§Ø®Ø±Ø§Ø¬Ø§Øª'
+                    : locale == 'ar'
+                    ? 'Ù†ÙÙ‚Ø§Øª Ø§Ù„Ù…Ù†Ø²Ù„'
+                    : 'Home Expenses',
+                style: sectionStyle,
+                textDirection: dir,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.TableHelper.fromTextArray(
+              context: context,
+              headers: _shapeRowForPdf(locale, homeHeaders),
+              data: _shapeTableForPdf(
+                locale,
+                homeExpenses
+                    .map(
+                      (e) => [
+                        e.category,
+                        AppFormatters.currency(e.amount),
+                        AppFormatters.date(e.date),
+                        e.note,
+                      ],
+                    )
+                    .toList(),
+              ),
+              headerStyle: headerCellStyle,
+              cellStyle: cellStyle,
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColors.deepOrange,
+              ),
+              cellAlignments: {
+                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
+              },
+              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 3,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+    return pdf.save();
+  }
+
+  // â”€â”€ Helper widget builders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  static pw.Widget _metaField(
+    String label,
+    String value,
+    pw.TextStyle labelStyle,
+    pw.TextStyle valueStyle,
+    pw.TextDirection dir,
+  ) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(label, style: labelStyle, textDirection: dir),
+        pw.Text(value, style: valueStyle, textDirection: dir),
+      ],
+    );
+  }
+
+  static pw.Widget _sectionBanner(
+    String label,
+    pw.Font? font,
+    pw.TextStyle style,
+    PdfColor color,
+  ) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: pw.BoxDecoration(
+        color: color,
+        borderRadius: pw.BorderRadius.circular(3),
+      ),
+      child: pw.Text(label, style: style),
+    );
+  }
+
+  static pw.Widget _signatureBox(
+    String label,
+    pw.Font? font,
+    pw.TextDirection dir, {
+    double width = 140,
+  }) {
+    return pw.Container(
+      width: width,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Container(
+            height: 40,
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey600, width: 0.5),
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              font: font,
+              fontSize: 8,
+              color: PdfColors.grey600,
+            ),
+            textDirection: dir,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // â”€â”€ Output helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  /// Share or print the generated PDF bytes via the system share sheet.
+  static Future<void> sharePdfBytes(Uint8List bytes, String fileName) async {
+    await Printing.sharePdf(bytes: bytes, filename: fileName);
+  }
+
+  /// Show an interactive print/share preview for a jobs report.
+  /// For large reports (>20 jobs), PDF generation happens in an isolate to prevent UI freeze.
+  static Future<void> previewPdf(
+    BuildContext context,
+    List<JobModel> jobs,
+    String locale,
+    ReportBrandingContext? reportBranding,
+  ) async {
+    if (!context.mounted) return;
+
+    final reportTitle = locale == 'ur'
+        ? 'Ù…Ù„Ø§Ø²Ù…ØªÙˆÚº Ú©ÛŒ Ø±Ù¾ÙˆØ±Ù¹'
+        : locale == 'ar'
+        ? 'ØªÙ‚Ø±ÙŠØ± Ø§Ù„ÙˆØ¸Ø§Ø¦Ù'
+        : 'Jobs Report';
+
+    Uint8List bytes;
+    final rtlFontBytes = await _getLocaleFontBytes(locale);
+
+    try {
+      if (jobs.length > 20) {
+        // Use isolate for large reports to avoid UI freeze
+        bytes = await _generatePdfInIsolate(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+          rtlFontBytes: rtlFontBytes,
+          useDetails: true,
+          maxPages: 2000,
+          reportBranding: reportBranding,
+        );
+      } else {
+        // Small reports can be generated on main thread
+        bytes = await generateJobsDetailsReport(
+          jobs: jobs,
+          maxPages: 2000,
+          title: reportTitle,
+          locale: locale,
+          rtlFontBytes: rtlFontBytes,
+          reportBranding: reportBranding,
+        );
+      }
+    } catch (_) {
+      if (jobs.length > 20) {
+        // Fallback to simpler report in isolate
+        bytes = await _generatePdfInIsolate(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+          rtlFontBytes: rtlFontBytes,
+          useDetails: false,
+          reportBranding: reportBranding,
+        );
+      } else {
+        // Fallback for small reports
+        bytes = await generateJobsReport(
+          jobs: jobs,
+          title: reportTitle,
+          locale: locale,
+          rtlFontBytes: rtlFontBytes,
+          reportBranding: reportBranding,
+        );
+      }
+    }
+
+    if (context.mounted) {
+      await Printing.layoutPdf(onLayout: (_) => bytes);
+    }
+  }
+
+  /// Generate PDF in isolate for large reports.
+  static Future<Uint8List> _generatePdfInIsolate({
+    required List<JobModel> jobs,
+    required String title,
+    required String locale,
+    Uint8List? rtlFontBytes,
+    required bool useDetails,
+    Map<String, List<String>> sharedInstallerNamesByGroup =
+        const <String, List<String>>{},
+    int maxPages = 2000,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    return compute(
+      _isolatePdfGeneration,
+      _PdfGenerationParams(
+        jobs: jobs,
+        title: title,
+        locale: locale,
+        rtlFontBytes: rtlFontBytes,
+        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
+        useDetails: useDetails,
+        maxPages: maxPages,
+        serviceCompanyName: reportBranding?.serviceCompany.name ?? '',
+        serviceCompanyLogoBase64:
+            reportBranding?.serviceCompany.logoBase64 ?? '',
+        serviceCompanyPhoneNumber:
+            reportBranding?.serviceCompany.phoneNumber ?? '',
+        clientCompanyName: reportBranding?.clientCompany?.name ?? '',
+        clientCompanyLogoBase64:
+            reportBranding?.clientCompany?.logoBase64 ?? '',
+      ),
+    );
+  }
+
+  static List<String> _inOutHeaders(String locale, bool monthlyMode) {
+    if (locale == 'ur') {
+      return [
+        '\u062A\u0627\u0631\u06CC\u062E',
+        '\u06A9\u0645\u0627\u0626\u06CC \u06A9\u06CC \u062A\u0641\u0635\u06CC\u0644',
+        monthlyMode
+            ? '\u0645\u0627\u06C1 \u06A9\u06CC \u06A9\u0645\u0627\u0626\u06CC'
+            : '\u0622\u062C \u06A9\u06CC \u06A9\u0645\u0627\u0626\u06CC',
+        '\u0627\u062E\u0631\u0627\u062C\u0627\u062A',
+        '\u06AF\u06BE\u0631 \u06A9\u06D1 \u0627\u062E\u0631\u0627\u062C\u0627\u062A \u06A9\u06CC \u062A\u0641\u0635\u06CC\u0644',
+        '\u06AF\u06BE\u0631 \u06A9\u06D1 \u0627\u062E\u0631\u0627\u062C\u0627\u062A',
+        monthlyMode
+            ? '\u0645\u0627\u06C1 \u06A9\u06D1 \u06A9\u0644 \u0627\u062E\u0631\u0627\u062C\u0627\u062A'
+            : '\u0622\u062C \u06A9\u06D1 \u06A9\u0644 \u0627\u062E\u0631\u0627\u062C\u0627\u062A',
+        '\u062E\u0627\u0644\u0635 \u0645\u0646\u0627\u0641\u0639/\u0646\u0642\u0635\u0627\u0646',
+      ];
+    } else if (locale == 'ar') {
+      return [
+        '\u0627\u0644\u062A\u0627\u0631\u064A\u062E',
+        '\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0623\u0631\u0628\u0627\u062D',
+        monthlyMode
+            ? '\u0623\u0631\u0628\u0627\u062D \u0627\u0644\u0634\u0647\u0631'
+            : '\u0623\u0631\u0628\u0627\u062D \u0627\u0644\u064A\u0648\u0645',
+        '\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A',
+        '\u062A\u0641\u0627\u0635\u064A\u0644 \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0627\u0644\u0645\u0646\u0632\u0644',
+        '\u0645\u0628\u0644\u063A \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0627\u0644\u0645\u0646\u0632\u0644',
+        monthlyMode
+            ? '\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0627\u0644\u0634\u0647\u0631'
+            : '\u0625\u062C\u0645\u0627\u0644\u064A \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0627\u0644\u064A\u0648\u0645',
+        '\u0635\u0627\u0641\u064A \u0627\u0644\u0631\u0628\u062D/\u0627\u0644\u062E\u0633\u0627\u0631\u0629',
+      ];
+    }
+    return [
+      'Date',
+      'Earning Detail',
+      monthlyMode ? 'Earned This Month' : 'Earned Today',
+      'Expenses',
+      'Home Expenses Details',
+      'Home Expenses Amount',
+      monthlyMode ? 'Total Expenses This Month' : 'Total Expenses Today',
+      'Net Profit/Loss',
+    ];
+  }
+
+  static String _inOutDefaultTitle(String locale, bool monthlyMode) {
+    if (locale == 'ur') {
+      return monthlyMode
+          ? '\u0645\u0627\u06C1\u0627\u0646\u06C1 \u0627\u0646/\u0622\u0624\u0679 \u0631\u067E\u0648\u0631\u0679'
+          : '\u0622\u062C \u06A9\u06CC \u0627\u0646/\u0622\u0624\u0679 \u0631\u067E\u0648\u0631\u0679';
+    } else if (locale == 'ar') {
+      return monthlyMode
+          ? '\u062A\u0642\u0631\u064A\u0631 \u0634\u0647\u0631\u064A \u0644\u0644\u062F\u062E\u0648\u0644/\u0627\u0644\u062E\u0631\u0648\u062C'
+          : '\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u064A\u0648\u0645 \u0644\u0644\u062F\u062E\u0648\u0644/\u0627\u0644\u062E\u0631\u0648\u062C';
+    }
+    return monthlyMode ? 'Monthly In/Out Report' : 'Today In/Out Report';
+  }
+
+  static String _noCompanyLabel(String locale) {
+    if (locale == 'ur') {
+      return '\u0628\u063A\u06CC\u0631 \u06A9\u0645\u067E\u0646\u06CC';
+    }
+    if (locale == 'ar') {
+      return '\u0628\u062F\u0648\u0646 \u0634\u0631\u0643\u0629';
+    }
+    return 'No Company';
+  }
+
+  static String _companyInvoicesDefaultTitle(String locale) {
+    if (locale == 'ur') {
+      return '\u0622\u062C \u06A9\u06CC \u06A9\u0645\u067E\u0646\u06CC \u0648\u0627\u0626\u0632 \u0627\u0646\u0648\u0627\u0626\u0633 \u0631\u067E\u0648\u0631\u0679';
+    }
+    if (locale == 'ar') {
+      return '\u062A\u0642\u0631\u064A\u0631 \u0641\u0648\u0627\u062A\u064A\u0631 \u0627\u0644\u064A\u0648\u0645 \u062D\u0633\u0628 \u0627\u0644\u0634\u0631\u0643\u0629';
+    }
+    return 'Today Company-wise Invoices';
+  }
+
+  static String _companyInvoicesStatLabel(String locale, int index) {
+    const ur = [
+      '\u06A9\u0644 \u0627\u0646\u0648\u0627\u0626\u0633\u0632',
+      '\u06A9\u0644 \u06CC\u0648\u0646\u0679\u0633',
+      '\u06A9\u0645\u067E\u0646\u06CC\u0627\u06BA',
+    ];
+    const ar = [
+      '\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631',
+      '\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0648\u062D\u062F\u0627\u062A',
+      '\u0627\u0644\u0634\u0631\u0643\u0627\u062A',
+    ];
+    const en = ['Total Invoices', 'Total Units', 'Companies'];
+    if (locale == 'ur') return ur[index];
+    if (locale == 'ar') return ar[index];
+    return en[index];
+  }
+
+  static String _companyInvoicesTotalLine(
+    String locale,
+    int totalInvoices,
+    int totalUnits,
+  ) {
+    if (locale == 'ur') {
+      return '\u06A9\u0644 \u0627\u0646\u0648\u0627\u0626\u0633\u0632: $totalInvoices  |  \u06A9\u0644 \u06CC\u0648\u0646\u0679\u0633: $totalUnits';
+    } else if (locale == 'ar') {
+      return '\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631: $totalInvoices  |  \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0648\u062D\u062F\u0627\u062A: $totalUnits';
+    }
+    return 'Total Invoices: $totalInvoices  |  Total Units: $totalUnits';
+  }
+
+  // â”€â”€ Isolate builders for PDF methods that use compute() â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  static Future<Uint8List> _isolateBuildInOutReportPdf(
+    _InOutReportParams params,
+  ) => _buildInOutReportPdfInternal(params);
+
+  static Future<Uint8List> _buildInOutReportPdfInternal(
+    _InOutReportParams params,
+  ) async {
+    final pw.Font? font = params.fontBytes != null
+        ? pw.Font.ttf(params.fontBytes!.buffer.asByteData())
+        : null;
+    final locale = params.locale;
+    final dir = (locale == 'ur' || locale == 'ar')
+        ? pw.TextDirection.rtl
+        : pw.TextDirection.ltr;
+
+    final reportBranding =
+        (params.serviceCompanyName.isEmpty &&
+            params.serviceCompanyLogoBase64.isEmpty)
+        ? null
+        : ReportBrandingContext(
+            serviceCompany: ReportBrandIdentity(
+              name: params.serviceCompanyName,
+              logoBase64: params.serviceCompanyLogoBase64,
+              phoneNumber: params.serviceCompanyPhoneNumber,
+            ),
+            clientCompany:
+                (params.clientCompanyName?.trim().isNotEmpty ?? false)
+                ? ReportBrandIdentity(
+                    name: params.clientCompanyName!,
+                    logoBase64: params.clientCompanyLogoBase64 ?? '',
+                  )
+                : null,
+          );
+
+    final periodDate = params.reportDate ?? DateTime.now();
+    final earnings = params.earnings;
+    final expenses = params.expenses;
+    final monthlyMode = params.monthlyMode;
+
     final workExpenses = expenses
         .where((e) => e.expenseType == AppConstants.expenseTypeWork)
         .toList();
@@ -2452,9 +3248,9 @@ class PdfGenerator {
 
     if (monthlyMode && tableRows.length > 1) {
       final totalLabel = locale == 'ur'
-          ? 'کل'
+          ? '\u06A9\u0644'
           : locale == 'ar'
-          ? 'الإجمالي'
+          ? '\u0627\u0644\u0625\u062C\u0645\u0627\u0644\u064A'
           : 'Total';
       tableRows.add([
         totalLabel,
@@ -2468,40 +3264,10 @@ class PdfGenerator {
       ]);
     }
 
-    final headers = locale == 'ur'
-        ? [
-            'تاریخ',
-            'کمائی کی تفصیل',
-            monthlyMode ? 'ماہ کی کمائی' : 'آج کی کمائی',
-            'اخراجات',
-            'گھر کے اخراجات کی تفصیل',
-            'گھر کے اخراجات',
-            monthlyMode ? 'ماہ کے کل اخراجات' : 'آج کے کل اخراجات',
-            'خالص منافع/نقصان',
-          ]
-        : locale == 'ar'
-        ? [
-            'التاريخ',
-            'تفاصيل الأرباح',
-            monthlyMode ? 'أرباح الشهر' : 'أرباح اليوم',
-            'المصروفات',
-            'تفاصيل مصروفات المنزل',
-            'مبلغ مصروفات المنزل',
-            monthlyMode ? 'إجمالي مصروفات الشهر' : 'إجمالي مصروفات اليوم',
-            'صافي الربح/الخسارة',
-          ]
-        : [
-            'Date',
-            'Earning Detail',
-            monthlyMode ? 'Earned This Month' : 'Earned Today',
-            'Expenses',
-            'Home Expenses Details',
-            'Home Expenses Amount',
-            monthlyMode ? 'Total Expenses This Month' : 'Total Expenses Today',
-            'Net Profit/Loss',
-          ];
-
-    final shapedHeaders = _shapeRowForPdf(locale, headers);
+    final shapedHeaders = _shapeRowForPdf(
+      locale,
+      _inOutHeaders(locale, monthlyMode),
+    );
     final shapedRows = _shapeTableForPdf(locale, tableRows);
 
     final cellStyle = pw.TextStyle(font: font, fontSize: 8);
@@ -2521,22 +3287,11 @@ class PdfGenerator {
         header: (ctx) => _pageHeader(
           ctx,
           reportTitle:
-              reportTitle ??
-              (monthlyMode
-                  ? (locale == 'ur'
-                        ? 'ماہانہ ان/آؤٹ رپورٹ'
-                        : locale == 'ar'
-                        ? 'تقرير شهري للدخول/الخروج'
-                        : 'Monthly In/Out Report')
-                  : (locale == 'ur'
-                        ? 'آج کی ان/آؤٹ رپورٹ'
-                        : locale == 'ar'
-                        ? 'تقرير اليوم للدخول/الخروج'
-                        : 'Today In/Out Report')),
+              params.reportTitle ?? _inOutDefaultTitle(locale, monthlyMode),
           font: font,
           dir: dir,
           dateRange:
-              periodLabel ??
+              params.periodLabel ??
               (monthlyMode
                   ? '${periodDate.month.toString().padLeft(2, '0')}/${periodDate.year}'
                   : AppFormatters.date(periodDate)),
@@ -2549,8 +3304,12 @@ class PdfGenerator {
           reportBranding: reportBranding,
         ),
         build: (context) => [
-          if (technicianName != null) ...[
-            pw.Text(technicianName, style: cellStyle, textDirection: dir),
+          if (params.technicianName != null) ...[
+            pw.Text(
+              params.technicianName!,
+              style: cellStyle,
+              textDirection: dir,
+            ),
             pw.SizedBox(height: 6),
           ],
           pw.TableHelper.fromTextArray(
@@ -2591,56 +3350,86 @@ class PdfGenerator {
     return pdf.save();
   }
 
-  /// Generate earnings report with today + month summaries by category.
-  static Future<Uint8List> generateEarningsReport({
-    required List<EarningModel> earnings,
-    required String title,
-    String locale = 'en',
-    String? technicianName,
-    DateTime? fromDate,
-    DateTime? toDate,
-    ReportBrandingContext? reportBranding,
-  }) async {
-    final font = await _getLocaleFont(locale);
-    final dir = _dir(locale);
+  static Future<Uint8List> _isolateBuildCompanyInvoicesPdf(
+    _CompanyInvoicesParams params,
+  ) => _buildCompanyInvoicesPdfInternal(params);
+
+  static Future<Uint8List> _buildCompanyInvoicesPdfInternal(
+    _CompanyInvoicesParams params,
+  ) async {
+    final pw.Font? font = params.fontBytes != null
+        ? pw.Font.ttf(params.fontBytes!.buffer.asByteData())
+        : null;
+    final locale = params.locale;
+    final dir = (locale == 'ur' || locale == 'ar')
+        ? pw.TextDirection.rtl
+        : pw.TextDirection.ltr;
     final isRtl = locale == 'ur' || locale == 'ar';
 
+    final reportBranding =
+        (params.serviceCompanyName.isEmpty &&
+            params.serviceCompanyLogoBase64.isEmpty)
+        ? null
+        : ReportBrandingContext(
+            serviceCompany: ReportBrandIdentity(
+              name: params.serviceCompanyName,
+              logoBase64: params.serviceCompanyLogoBase64,
+              phoneNumber: params.serviceCompanyPhoneNumber,
+            ),
+            clientCompany:
+                (params.clientCompanyName?.trim().isNotEmpty ?? false)
+                ? ReportBrandIdentity(
+                    name: params.clientCompanyName!,
+                    logoBase64: params.clientCompanyLogoBase64 ?? '',
+                  )
+                : null,
+          );
+
+    final headerCellStyle = pw.TextStyle(
+      font: font,
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+    );
+    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
     final subStyle = pw.TextStyle(
       font: font,
       fontSize: 9,
       color: PdfColors.grey700,
     );
-    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
-    final headerCellStyle = pw.TextStyle(
-      font: font,
-      fontSize: 8,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.white,
-    );
-    final summaryStyle = cellStyle.copyWith(fontWeight: pw.FontWeight.bold);
 
-    final earningsHeaders = locale == 'ur'
-        ? ['زمرہ', 'رقم', 'تاریخ', 'نوٹ']
-        : locale == 'ar'
-        ? ['الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
-        : ['Category', 'Amount (SAR)', 'Date', 'Note'];
-
-    final totalEarningsAmt = earnings.fold<double>(0, (s, e) => s + e.amount);
     final today = DateTime.now();
-    final todaysEarnings = earnings
-        .where(
-          (e) =>
-              e.date != null &&
-              e.date!.year == today.year &&
-              e.date!.month == today.month &&
-              e.date!.day == today.day,
-        )
-        .toList();
-    final todaysTotal = todaysEarnings.fold<double>(0, (s, e) => s + e.amount);
+    final companyMap = <String, List<JobModel>>{};
+    for (final job in params.jobs) {
+      final key = job.companyName.trim().isEmpty
+          ? _noCompanyLabel(locale)
+          : job.companyName.trim();
+      companyMap.putIfAbsent(key, () => <JobModel>[]).add(job);
+    }
 
-    final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
-        : null;
+    final sortedCompanies = companyMap.keys.toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    final headers = locale == 'ur'
+        ? [
+            '\u06A9\u0645\u067E\u0646\u06CC',
+            '\u0627\u0646\u0648\u0627\u0626\u0633\u0632',
+            '\u06A9\u0644 \u06CC\u0648\u0646\u0679\u0633',
+            '\u0679\u06CC\u06A9\u0646\u06CC\u0634\u0646\u0632',
+          ]
+        : locale == 'ar'
+        ? [
+            '\u0627\u0644\u0634\u0631\u0643\u0629',
+            '\u0639\u062F\u062F \u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631',
+            '\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0648\u062D\u062F\u0627\u062A',
+            '\u0627\u0644\u0641\u0646\u064A\u0648\u0646',
+          ]
+        : ['Company', 'Invoices', 'Total Units', 'Technicians'];
+
+    final title = params.reportTitle ?? _companyInvoicesDefaultTitle(locale);
+
+    final totalInvoices = params.jobs.length;
+    final totalUnits = params.jobs.fold<int>(0, (s, j) => s + j.totalUnits);
 
     final pdf = pw.Document();
     pdf.addPage(
@@ -2656,8 +3445,11 @@ class PdfGenerator {
           reportTitle: title,
           font: font,
           dir: dir,
-          dateRange: dateRange,
+          dateRange: params.periodLabel ?? AppFormatters.date(today),
           reportBranding: reportBranding,
+          logoBase64: params.companyLogoBase64.isNotEmpty
+              ? params.companyLogoBase64
+              : null,
         ),
         footer: (ctx) => _pageFooter(
           ctx,
@@ -2666,598 +3458,66 @@ class PdfGenerator {
           reportBranding: reportBranding,
         ),
         build: (context) => [
-          if (technicianName != null) ...[
-            pw.Text(technicianName, style: subStyle, textDirection: dir),
-            pw.SizedBox(height: 8),
-          ],
-          // KPI summary
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300),
-              borderRadius: pw.BorderRadius.circular(4),
-              color: PdfColors.grey50,
-            ),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Column(
-                  children: [
-                    pw.Text(
-                      locale == 'ur'
-                          ? 'آج کی کمائی'
-                          : locale == 'ar'
-                          ? 'أرباح اليوم'
-                          : 'Today Earned',
-                      style: subStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      AppFormatters.currency(todaysTotal),
-                      style: summaryStyle.copyWith(color: _kGreen),
-                      textDirection: dir,
-                    ),
-                  ],
-                ),
-                pw.Container(width: 0.5, height: 32, color: PdfColors.grey300),
-                pw.Column(
-                  children: [
-                    pw.Text(
-                      locale == 'ur'
-                          ? 'ماہ کی کمائی'
-                          : locale == 'ar'
-                          ? 'أرباح الشهر'
-                          : 'Month Earned',
-                      style: subStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      AppFormatters.currency(totalEarningsAmt),
-                      style: summaryStyle.copyWith(color: _kGreen),
-                      textDirection: dir,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _statsBox(
+            firstLabel: _companyInvoicesStatLabel(locale, 0),
+            secondLabel: _companyInvoicesStatLabel(locale, 1),
+            thirdLabel: _companyInvoicesStatLabel(locale, 2),
+            firstValue: '$totalInvoices',
+            secondValue: '$totalUnits',
+            thirdValue: '${sortedCompanies.length}',
+            font: font,
+            dir: dir,
           ),
           pw.SizedBox(height: 12),
-          // Earnings table
-          if (earnings.isNotEmpty)
-            pw.TableHelper.fromTextArray(
-              context: context,
-              headers: _shapeRowForPdf(locale, earningsHeaders),
-              data: _shapeTableForPdf(
-                locale,
-                earnings
-                    .map(
-                      (e) => [
-                        e.category,
-                        AppFormatters.currency(e.amount),
-                        AppFormatters.date(e.date),
-                        e.note,
-                      ],
-                    )
-                    .toList(),
-              ),
-              headerStyle: headerCellStyle,
-              cellStyle: cellStyle,
-              headerDecoration: const pw.BoxDecoration(color: _kGreen),
-              cellAlignments: {
-                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
-              },
-              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              cellPadding: const pw.EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 3,
-              ),
-            )
-          else
-            pw.Text(
-              locale == 'ur'
-                  ? 'کوئی کمائی نہیں'
-                  : locale == 'ar'
-                  ? 'لا توجد أرباح'
-                  : 'No earnings',
-              style: cellStyle,
-              textDirection: dir,
+          pw.TableHelper.fromTextArray(
+            context: context,
+            headers: _shapeRowForPdf(locale, headers),
+            data: _shapeTableForPdf(
+              locale,
+              sortedCompanies.map((company) {
+                final companyJobs = companyMap[company] ?? const <JobModel>[];
+                final units = companyJobs.fold<int>(
+                  0,
+                  (s, j) => s + j.totalUnits,
+                );
+                final techs = companyJobs
+                    .map((j) => j.techName.trim())
+                    .where((n) => n.isNotEmpty)
+                    .toSet()
+                    .join(', ');
+                return [
+                  _safeTableCellText(company, maxLength: 42),
+                  '${companyJobs.length}',
+                  '$units',
+                  _safeTableCellText(techs, maxLength: 120),
+                ];
+              }).toList(),
             ),
-        ],
-      ),
-    );
-    return pdf.save();
-  }
-
-  /// Generate detailed expenses report split by work and home categories.
-  static Future<Uint8List> generateExpensesDetailedReport({
-    required List<ExpenseModel> expenses,
-    required String title,
-    String locale = 'en',
-    String? technicianName,
-    DateTime? fromDate,
-    DateTime? toDate,
-    ReportBrandingContext? reportBranding,
-  }) async {
-    const workExpenseType = 'work';
-    final font = await _getLocaleFont(locale);
-    final dir = _dir(locale);
-    final isRtl = locale == 'ur' || locale == 'ar';
-
-    final cellStyle = pw.TextStyle(font: font, fontSize: 8);
-    final headerCellStyle = pw.TextStyle(
-      font: font,
-      fontSize: 8,
-      fontWeight: pw.FontWeight.bold,
-      color: PdfColors.white,
-    );
-    final sectionStyle = pw.TextStyle(
-      font: font,
-      fontSize: 9,
-      fontWeight: pw.FontWeight.bold,
-    );
-    final summaryStyle = cellStyle.copyWith(fontWeight: pw.FontWeight.bold);
-
-    final workHeaders = locale == 'ur'
-        ? ['زمرہ', 'رقم', 'تاریخ', 'نوٹ']
-        : locale == 'ar'
-        ? ['الفئة', 'المبلغ', 'التاريخ', 'ملاحظة']
-        : ['Category', 'Amount (SAR)', 'Date', 'Note'];
-
-    final homeHeaders = locale == 'ur'
-        ? ['سامان', 'رقم', 'تاریخ', 'نوٹ']
-        : locale == 'ar'
-        ? ['البند', 'المبلغ', 'التاريخ', 'ملاحظة']
-        : ['Item', 'Amount (SAR)', 'Date', 'Note'];
-
-    final workExpenses = expenses
-        .where((e) => e.expenseType == workExpenseType)
-        .toList();
-    final homeExpenses = expenses
-        .where((e) => e.expenseType != workExpenseType)
-        .toList();
-
-    final today = DateTime.now();
-    final todaysWork = workExpenses
-        .where(
-          (e) =>
-              e.date != null &&
-              e.date!.year == today.year &&
-              e.date!.month == today.month &&
-              e.date!.day == today.day,
-        )
-        .toList();
-    final todaysHome = homeExpenses
-        .where(
-          (e) =>
-              e.date != null &&
-              e.date!.year == today.year &&
-              e.date!.month == today.month &&
-              e.date!.day == today.day,
-        )
-        .toList();
-
-    final todaysWorkTotal = todaysWork.fold<double>(0, (s, e) => s + e.amount);
-    final todaysHomeTotal = todaysHome.fold<double>(0, (s, e) => s + e.amount);
-    final monthWorkTotal = workExpenses.fold<double>(0, (s, e) => s + e.amount);
-    final monthHomeTotal = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
-
-    final dateRange = (fromDate != null && toDate != null)
-        ? '${AppFormatters.date(fromDate)} - ${AppFormatters.date(toDate)}'
-        : null;
-
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(24, 16, 24, 16),
-        textDirection: dir,
-        crossAxisAlignment: isRtl
-            ? pw.CrossAxisAlignment.end
-            : pw.CrossAxisAlignment.start,
-        header: (ctx) => _pageHeader(
-          ctx,
-          reportTitle: title,
-          font: font,
-          dir: dir,
-          dateRange: dateRange,
-          reportBranding: reportBranding,
-        ),
-        footer: (ctx) => _pageFooter(
-          ctx,
-          font: font,
-          dir: dir,
-          reportBranding: reportBranding,
-        ),
-        build: (context) => [
-          if (technicianName != null) ...[
-            pw.Text(technicianName, style: cellStyle, textDirection: dir),
-            pw.SizedBox(height: 8),
-          ],
-          // Summary KPI box
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300),
-              borderRadius: pw.BorderRadius.circular(4),
-              color: PdfColors.grey50,
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Today summary
-                pw.Text(
-                  locale == 'ur'
-                      ? 'آج کے اخراجات'
-                      : locale == 'ar'
-                      ? 'نفقات اليوم'
-                      : 'Today Expenses',
-                  style: sectionStyle,
-                  textDirection: dir,
-                ),
-                pw.SizedBox(height: 4),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      '${locale == "ur"
-                          ? "کام"
-                          : locale == "ar"
-                          ? "عمل"
-                          : "Work"}: ${AppFormatters.currency(todaysWorkTotal)}',
-                      style: cellStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      '${locale == "ur"
-                          ? "گھر"
-                          : locale == "ar"
-                          ? "منزل"
-                          : "Home"}: ${AppFormatters.currency(todaysHomeTotal)}',
-                      style: cellStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      AppFormatters.currency(todaysWorkTotal + todaysHomeTotal),
-                      style: summaryStyle.copyWith(color: _kRed),
-                      textDirection: dir,
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 8),
-                // Month summary
-                pw.Text(
-                  locale == 'ur'
-                      ? 'ماہ کے اخراجات'
-                      : locale == 'ar'
-                      ? 'نفقات الشهر'
-                      : 'Month Expenses',
-                  style: sectionStyle,
-                  textDirection: dir,
-                ),
-                pw.SizedBox(height: 4),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      '${locale == "ur"
-                          ? "کام"
-                          : locale == "ar"
-                          ? "عمل"
-                          : "Work"}: ${AppFormatters.currency(monthWorkTotal)}',
-                      style: cellStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      '${locale == "ur"
-                          ? "گھر"
-                          : locale == "ar"
-                          ? "منزل"
-                          : "Home"}: ${AppFormatters.currency(monthHomeTotal)}',
-                      style: cellStyle,
-                      textDirection: dir,
-                    ),
-                    pw.Text(
-                      AppFormatters.currency(monthWorkTotal + monthHomeTotal),
-                      style: summaryStyle.copyWith(color: _kRed),
-                      textDirection: dir,
-                    ),
-                  ],
-                ),
-              ],
+            headerStyle: headerCellStyle,
+            cellStyle: cellStyle,
+            headerDecoration: const pw.BoxDecoration(color: _kBrandBlue),
+            oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.center,
+              3: pw.Alignment.centerLeft,
+            },
+            cellPadding: const pw.EdgeInsets.symmetric(
+              horizontal: 5,
+              vertical: 4,
             ),
           ),
-          pw.SizedBox(height: 12),
-          // Work expenses section
-          if (workExpenses.isNotEmpty) ...[
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 4,
-              ),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(left: pw.BorderSide(color: _kRed, width: 3)),
-              ),
-              child: pw.Text(
-                locale == 'ur'
-                    ? 'کام کے اخراجات'
-                    : locale == 'ar'
-                    ? 'نفقات العمل'
-                    : 'Work Expenses',
-                style: sectionStyle,
-                textDirection: dir,
-              ),
-            ),
-            pw.SizedBox(height: 6),
-            pw.TableHelper.fromTextArray(
-              context: context,
-              headers: _shapeRowForPdf(locale, workHeaders),
-              data: _shapeTableForPdf(
-                locale,
-                workExpenses
-                    .map(
-                      (e) => [
-                        e.category,
-                        AppFormatters.currency(e.amount),
-                        AppFormatters.date(e.date),
-                        e.note,
-                      ],
-                    )
-                    .toList(),
-              ),
-              headerStyle: headerCellStyle,
-              cellStyle: cellStyle,
-              headerDecoration: const pw.BoxDecoration(color: _kRed),
-              cellAlignments: {
-                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
-              },
-              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              cellPadding: const pw.EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 3,
-              ),
-            ),
-            pw.SizedBox(height: 12),
-          ],
-          // Home expenses section
-          if (homeExpenses.isNotEmpty) ...[
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 4,
-              ),
-              decoration: const pw.BoxDecoration(
-                border: pw.Border(
-                  left: pw.BorderSide(color: PdfColors.deepOrange, width: 3),
-                ),
-              ),
-              child: pw.Text(
-                locale == 'ur'
-                    ? 'گھر کے اخراجات'
-                    : locale == 'ar'
-                    ? 'نفقات المنزل'
-                    : 'Home Expenses',
-                style: sectionStyle,
-                textDirection: dir,
-              ),
-            ),
-            pw.SizedBox(height: 6),
-            pw.TableHelper.fromTextArray(
-              context: context,
-              headers: _shapeRowForPdf(locale, homeHeaders),
-              data: _shapeTableForPdf(
-                locale,
-                homeExpenses
-                    .map(
-                      (e) => [
-                        e.category,
-                        AppFormatters.currency(e.amount),
-                        AppFormatters.date(e.date),
-                        e.note,
-                      ],
-                    )
-                    .toList(),
-              ),
-              headerStyle: headerCellStyle,
-              cellStyle: cellStyle,
-              headerDecoration: const pw.BoxDecoration(
-                color: PdfColors.deepOrange,
-              ),
-              cellAlignments: {
-                for (var i = 0; i < 4; i++) i: pw.Alignment.center,
-              },
-              oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              cellPadding: const pw.EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 3,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-    return pdf.save();
-  }
-
-  // ── Helper widget builders ──────────────────────────────────────────────────
-
-  static pw.Widget _metaField(
-    String label,
-    String value,
-    pw.TextStyle labelStyle,
-    pw.TextStyle valueStyle,
-    pw.TextDirection dir,
-  ) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(label, style: labelStyle, textDirection: dir),
-        pw.Text(value, style: valueStyle, textDirection: dir),
-      ],
-    );
-  }
-
-  static pw.Widget _sectionBanner(
-    String label,
-    pw.Font? font,
-    pw.TextStyle style,
-    PdfColor color,
-  ) {
-    return pw.Container(
-      width: double.infinity,
-      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: pw.BoxDecoration(
-        color: color,
-        borderRadius: pw.BorderRadius.circular(3),
-      ),
-      child: pw.Text(label, style: style),
-    );
-  }
-
-  static pw.Widget _signatureBox(
-    String label,
-    pw.Font? font,
-    pw.TextDirection dir, {
-    double width = 140,
-  }) {
-    return pw.Container(
-      width: width,
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          pw.Container(
-            height: 40,
-            decoration: const pw.BoxDecoration(
-              border: pw.Border(
-                bottom: pw.BorderSide(color: PdfColors.grey600, width: 0.5),
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 4),
+          pw.SizedBox(height: 10),
           pw.Text(
-            label,
-            style: pw.TextStyle(
-              font: font,
-              fontSize: 8,
-              color: PdfColors.grey600,
-            ),
+            _companyInvoicesTotalLine(locale, totalInvoices, totalUnits),
+            style: subStyle.copyWith(fontWeight: pw.FontWeight.bold),
             textDirection: dir,
           ),
         ],
       ),
     );
-  }
-
-  // ── Output helpers ──────────────────────────────────────────────────────────
-
-  /// Share or print the generated PDF bytes via the system share sheet.
-  static Future<void> sharePdfBytes(Uint8List bytes, String fileName) async {
-    await Printing.sharePdf(bytes: bytes, filename: fileName);
-  }
-
-  /// Show an interactive print/share preview for a jobs report.
-  /// For large reports (>20 jobs), PDF generation happens in an isolate to prevent UI freeze.
-  static Future<void> previewPdf(
-    BuildContext context,
-    List<JobModel> jobs,
-    String locale,
-    ReportBrandingContext? reportBranding,
-  ) async {
-    if (!context.mounted) return;
-
-    final reportTitle = locale == 'ur'
-        ? 'ملازمتوں کی رپورٹ'
-        : locale == 'ar'
-        ? 'تقرير الوظائف'
-        : 'Jobs Report';
-
-    Uint8List bytes;
-    final rtlFontBytes = await _getLocaleFontBytes(locale);
-
-    try {
-      if (jobs.length > 20) {
-        // Use isolate for large reports to avoid UI freeze
-        bytes = await _generatePdfInIsolate(
-          jobs: jobs,
-          title: reportTitle,
-          locale: locale,
-          rtlFontBytes: rtlFontBytes,
-          useDetails: true,
-          maxPages: 2000,
-          reportBranding: reportBranding,
-        );
-      } else {
-        // Small reports can be generated on main thread
-        bytes = await generateJobsDetailsReport(
-          jobs: jobs,
-          maxPages: 2000,
-          title: reportTitle,
-          locale: locale,
-          rtlFontBytes: rtlFontBytes,
-          reportBranding: reportBranding,
-        );
-      }
-    } catch (_) {
-      if (jobs.length > 20) {
-        // Fallback to simpler report in isolate
-        bytes = await _generatePdfInIsolate(
-          jobs: jobs,
-          title: reportTitle,
-          locale: locale,
-          rtlFontBytes: rtlFontBytes,
-          useDetails: false,
-          reportBranding: reportBranding,
-        );
-      } else {
-        // Fallback for small reports
-        bytes = await generateJobsReport(
-          jobs: jobs,
-          title: reportTitle,
-          locale: locale,
-          rtlFontBytes: rtlFontBytes,
-          reportBranding: reportBranding,
-        );
-      }
-    }
-
-    if (context.mounted) {
-      await Printing.layoutPdf(onLayout: (_) => bytes);
-    }
-  }
-
-  /// Generate PDF in isolate for large reports.
-  static Future<Uint8List> _generatePdfInIsolate({
-    required List<JobModel> jobs,
-    required String title,
-    required String locale,
-    Uint8List? rtlFontBytes,
-    required bool useDetails,
-    Map<String, List<String>> sharedInstallerNamesByGroup =
-        const <String, List<String>>{},
-    int maxPages = 2000,
-    ReportBrandingContext? reportBranding,
-  }) async {
-    return compute(
-      _isolatePdfGeneration,
-      _PdfGenerationParams(
-        jobs: jobs,
-        title: title,
-        locale: locale,
-        rtlFontBytes: rtlFontBytes,
-        sharedInstallerNamesByGroup: sharedInstallerNamesByGroup,
-        useDetails: useDetails,
-        maxPages: maxPages,
-        serviceCompanyName: reportBranding?.serviceCompany.name ?? '',
-        serviceCompanyLogoBase64:
-            reportBranding?.serviceCompany.logoBase64 ?? '',
-        serviceCompanyPhoneNumber:
-            reportBranding?.serviceCompany.phoneNumber ?? '',
-        clientCompanyName: reportBranding?.clientCompany?.name ?? '',
-        clientCompanyLogoBase64:
-            reportBranding?.clientCompany?.logoBase64 ?? '',
-      ),
-    );
+    return pdf.save();
   }
 }
