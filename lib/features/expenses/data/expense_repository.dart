@@ -67,7 +67,7 @@ class ExpenseRepository {
     }
   }
 
-  // NEVER call doc.delete() for technician-owned records — use archiveExpense().
+  // NEVER hard-delete technician-owned records — use archiveExpense().
   // Admin restore is available via restoreExpense().
   Future<void> archiveExpense(String id, {DateTime? lockedBeforeDate}) async {
     try {

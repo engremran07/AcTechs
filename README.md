@@ -3,8 +3,8 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](#-stack)
 [![Firebase](https://img.shields.io/badge/Firebase-Spark%20Only-FFCA28?logo=firebase&logoColor=black)](#-platform-constraints)
 [![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Web-0A84FF)](#-build--release)
-[![State](https://img.shields.io/badge/State-Riverpod%203-00C2B8)](#-architecture)
-[![License](https://img.shields.io/badge/Repo-Private-informational)](#)
+[![State](https://img.shields.io/badge/State-Riverpod%203-00C2B8)](#architecture)
+[![License](https://img.shields.io/badge/Repo-Private-informational)](https://github.com/engremran07/AcTechs)
 
 Production Flutter operations app for AC installation teams in Saudi Arabia. The system supports technicians in the field and admins in the office with invoice-based job capture, shared installs, IN/OUT tracking, approvals, analytics, branded exports, historical imports, and controlled destructive maintenance flows.
 
@@ -19,14 +19,14 @@ Production Flutter operations app for AC installation teams in Saudi Arabia. The
 - [Stack](#-stack)
 - [Platform Constraints](#-platform-constraints)
 - [Core Workflows](#-core-workflows)
-- [Architecture](#-architecture)
-- [Firestore Model](#-firestore-model)
+- [Architecture](#architecture)
+- [Firestore Model](#firestore-model)
 - [Security and Rules](#-security-and-rules)
 - [Versioning Policy](#-versioning-policy)
 - [Local Cache and Uninstall Behavior](#-local-cache-and-uninstall-behavior)
 - [Database Flush Scope](#-database-flush-scope)
 - [Build and Release](#-build--release)
-- [Developer Commands](#-developer-commands)
+- [Developer Commands](#developer-commands)
 - [Testing](#-testing)
 - [Operational Notes](#-operational-notes)
 
@@ -89,7 +89,7 @@ The following constraints are intentional and must remain true:
 - Export Excel and PDF reports
 - Run guarded database flush operations
 
-## 🏗️ Architecture
+## Architecture
 
 ```text
 lib/
@@ -122,8 +122,7 @@ scripts/
 - User-visible strings must come from localization or typed exceptions.
 - Rules, repositories, and UI behavior must stay aligned.
 
-<details>
-<summary><strong>Feature highlights</strong></summary>
+### Feature highlights
 
 #### Jobs
 
@@ -155,9 +154,7 @@ scripts/
 - Shared-install invoice-aware totals
 - Branded PDF and Excel exports
 
-</details>
-
-## 🗃️ Firestore Model
+## Firestore Model
 
 Primary collections:
 
@@ -260,13 +257,11 @@ Optional behavior:
 ### Soft Archive (Expenses, Earnings, AC Installs)
 
 Technician-owned records are never hard-deleted. Instead:
+
 - Swipe-to-dismiss marks the record with `isDeleted: true` + `deletedAt` timestamp
 - A 4-second undo SnackBar lets the tech immediately reverse the action
 - Admins can restore soft-archived records from the admin panel
 - Archived records are filtered out on the client in Dart (no new Firestore index required)
-
-> [!WARNING]
-> Flush is destructive and intentionally guarded by countdown and password confirmation.
 
 > [!WARNING]
 > Flush is destructive and intentionally guarded by countdown and password confirmation.
@@ -312,7 +307,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bump_version.ps1 -Build -Web 
 - Commits with the bumped version when `-Commit` is used
 - Pushes the commit when `-Push` is used
 
-## 🛠️ Developer Commands
+## Developer Commands
 
 | Command | Purpose |
 | --- | --- |
@@ -373,6 +368,9 @@ If you change approval logic, invoice ownership, import behavior, or destructive
 1. UI behavior
 2. Repository enforcement
 3. Firestore rules
+
+Key Firestore path:
+
 - `app_settings/company_branding`
 
 Important implementation notes:
@@ -582,23 +580,28 @@ If you change approval behavior, shared-install rules, model fields, or backend 
 ## 🛟 Troubleshooting
 
 ### PERMISSION_DENIED on shared install submit
+
 - Verify the aggregate `teamMemberIds` field includes the submitting tech's UID
 - Verify `allow list` on `/users/{userId}` is deployed to Firestore (`firebase deploy --only firestore`)
 - Check `shared_install_aggregates` composite index on `teamMemberIds` exists in `firestore.indexes.json`
 
 ### Period lock errors on delete
+
 - The record's `date` field falls within the locked period. Admin must unlock the period in app settings before archiving old records.
 
 ### Shared group totals mismatch error
+
 - Two techs submitted the same invoice number with different `sharedInvoice*` values.
 - The first submission owns the totals — subsequent submitters must use the same invoice totals.
 - Admin can correct totals via the aggregate admin update payload.
 
 ### Archived record still showing in list
+
 - Stream mapper filter may be missing. Verify `isDeleted != true` Dart-layer filter in the repository stream.
 - If using Firestore offline cache, a full sign-out + sign-in cycle clears stale cached data.
 
 ### versionCode must increase error in CI
+
 - The `pubspec.yaml` build number (after `+`) must be strictly greater than the previous tag.
 - Run `scripts/bump_version.ps1 -Build` to increment automatically.
 - Minimum next versionCode: **16**.

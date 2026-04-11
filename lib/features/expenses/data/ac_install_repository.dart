@@ -143,7 +143,7 @@ class AcInstallRepository {
     }
   }
 
-  // NEVER call doc.delete() for technician-owned records — use archiveInstall().
+  // NEVER hard-delete technician-owned records — use archiveInstall().
   // Admin restore is available via restoreInstall().
   // NOTE: Archiving a shared AC install does NOT decrement aggregate consumed*
   // counters. Counter rollback requires a cross-collection transaction that

@@ -67,7 +67,7 @@ class EarningRepository {
     }
   }
 
-  // NEVER call doc.delete() for technician-owned records — use archiveEarning().
+  // NEVER hard-delete technician-owned records — use archiveEarning().
   // Admin restore is available via restoreEarning().
   Future<void> archiveEarning(String id, {DateTime? lockedBeforeDate}) async {
     try {

@@ -1,0 +1,6 @@
+{
+  "markdownlint.ignore": [
+    ".claude/**",
+    ".github/instructions/**"
+  ]
+}
