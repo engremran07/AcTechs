@@ -860,7 +860,14 @@ service cloud.firestore {
 
       match /history/{historyId} {
         allow read: if isAdmin();
-        allow create: if isAdmin();
+        // Admins write history for approval/rejection/admin-edit actions.
+        // Techs write history only for their own edits (changedBy must match
+        // their uid) — this enables all technician edit paths to record
+        // history without a permission-denied (BUG A fix).
+        allow create: if isAdmin() ||
+          (isActiveUser() &&
+            request.resource.data.changedBy is string &&
+            request.resource.data.changedBy == request.auth.uid);
         allow update: if false;
         allow delete: if isAdmin();
       }
@@ -964,6 +971,9 @@ service cloud.firestore {
         dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
         resource.data.status != 'approved') || (
+        // Tech may edit their own pending entries. The status==pending guard
+        // is sufficient — no need to gate on inOutApprovalRequired() because
+        // the config may have changed since the entry was created (BUG F fix).
         isActiveUser() &&
         dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
@@ -971,7 +981,6 @@ service cloud.firestore {
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
-        inOutApprovalRequired() &&
         request.resource.data.status == 'pending' &&
         request.resource.data.approvedBy == '' &&
         request.resource.data.adminNote == '' &&
@@ -1061,6 +1070,7 @@ service cloud.firestore {
         dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
         resource.data.status != 'approved') || (
+        // Tech may edit their own pending entries (BUG F fix — mirror of expenses).
         isActiveUser() &&
         dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
@@ -1068,7 +1078,6 @@ service cloud.firestore {
         resource.data.techId == request.auth.uid &&
         request.resource.data.techId == resource.data.techId &&
         request.resource.data.createdAt == resource.data.createdAt &&
-        inOutApprovalRequired() &&
         request.resource.data.status == 'pending' &&
         request.resource.data.approvedBy == '' &&
         request.resource.data.adminNote == '' &&

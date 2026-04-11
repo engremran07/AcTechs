@@ -218,9 +218,11 @@ extension JobModelX on JobModel {
     final requiresApproval = isSharedInstall
         ? sharedApprovalRequired
         : approvalRequired;
-    // Approved + approval OFF → editable (both solo and shared).
-    // Approved + approval ON  → admin decision is final; non-editable.
-    return !requiresApproval && isUnpaid;
+    // Approved + approval OFF → editable for solo jobs only.
+    // Approved shared installs are excluded: the repository's canEditDirectApproved
+    // does not support this path — the aggregate delta logic for approved shared
+    // installs is not yet implemented (BUG C fix: align UI with repo behaviour).
+    return !requiresApproval && isUnpaid && !isSharedInstall;
   }
 
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);

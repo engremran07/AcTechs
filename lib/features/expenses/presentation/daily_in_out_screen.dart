@@ -866,16 +866,21 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.of(ctx).pop();
-                            _showEditEntryDialog(item);
-                          },
-                          icon: const Icon(Icons.edit_outlined),
-                          label: Text(l.editEntry),
+                      // Edit is only meaningful for pending entries.
+                      // Approved entries are locked by the repository.
+                      // Rejected entries have no resubmit Firestore path;
+                      // tech should delete and re-add instead (BUG E fix).
+                      if (item.status == 'pending')
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              _showEditEntryDialog(item);
+                            },
+                            icon: const Icon(Icons.edit_outlined),
+                            label: Text(l.editEntry),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -1083,8 +1088,12 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           status: requiresApproval
               ? EarningApprovalStatus.pending
               : EarningApprovalStatus.approved,
-          approvedBy: requiresApproval ? '' : item.approvedBy,
-          adminNote: requiresApproval ? '' : item.adminNote,
+          // When approval is off and entry becomes approved, always clear
+          // any stale rejection metadata to prevent a conflicting state
+          // where status='approved' but adminNote still holds a rejection
+          // reason (BUG G fix).
+          approvedBy: '',
+          adminNote: '',
           date: item.date,
           createdAt: item.createdAt,
           reviewedAt: requiresApproval ? null : item.reviewedAt,
@@ -1103,8 +1112,9 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           status: requiresApproval
               ? ExpenseApprovalStatus.pending
               : ExpenseApprovalStatus.approved,
-          approvedBy: requiresApproval ? '' : item.approvedBy,
-          adminNote: requiresApproval ? '' : item.adminNote,
+          // BUG G fix: same as earning — always clear stale rejection metadata.
+          approvedBy: '',
+          adminNote: '',
           date: item.date,
           createdAt: item.createdAt,
           reviewedAt: requiresApproval ? null : item.reviewedAt,

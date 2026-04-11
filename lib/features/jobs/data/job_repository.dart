@@ -859,7 +859,9 @@ class JobRepository {
               ? approvalConfig?.sharedJobApprovalRequired
               : approvalConfig?.jobApprovalRequired) ??
           true);
-      final nextStatus = requiresApproval
+      // resubmitStatus: the target status when a rejected job is resubmitted.
+      // Computed from current approval config.
+      final resubmitStatus = requiresApproval
           ? JobStatus.pending
           : JobStatus.approved;
 
@@ -875,6 +877,13 @@ class JobRepository {
       if (!canEditDirectApproved && !canEditPending && !canResubmitRejected) {
         throw JobException.jobNotEditable();
       }
+
+      // Pending edits must keep their existing status — Firestore rules
+      // require status to be unchanged for technician pending-edit path.
+      // Only rejected→resubmit uses the config-computed status (BUG B fix).
+      // Approved direct-edit: requiresApproval==false → resubmitStatus==approved
+      // (same as existing.status, so both branches are correct here).
+      final nextStatus = canEditPending ? existing.status : resubmitStatus;
 
       final updated = job.copyWith(
         status: nextStatus,
@@ -928,6 +937,32 @@ class JobRepository {
         // Pending shared install edit: apply net-delta to aggregate consumed counters
         // so the aggregate stays in sync when a tech corrects their unit counts.
         _validateSupportedSharedInstallUnits(updated);
+
+        // Pre-flight: Firestore rules enforce that consumed counters are
+        // monotonically non-decreasing (prevents fraud via reduction). If the
+        // tech is trying to reduce any unit type, fail early with a clear error
+        // instead of surfacing a permission-denied from Firestore (BUG D fix).
+        final pr = _unitsForType(updated, AppConstants.unitTypeSplitAc);
+        final pw = _unitsForType(updated, AppConstants.unitTypeWindowAc);
+        final pf = _unitsForType(updated, AppConstants.unitTypeFreestandingAc);
+        final pus = _unitsForType(updated, AppConstants.unitTypeUninstallSplit);
+        final puw = _unitsForType(updated, AppConstants.unitTypeUninstallWindow);
+        final puf = _unitsForType(updated, AppConstants.unitTypeUninstallFreestanding);
+        final pb = _bracketCount(updated);
+        final pd = updated.charges?.deliveryAmount ?? 0.0;
+        final er = _unitsForType(existing, AppConstants.unitTypeSplitAc);
+        final ew = _unitsForType(existing, AppConstants.unitTypeWindowAc);
+        final ef = _unitsForType(existing, AppConstants.unitTypeFreestandingAc);
+        final eus = _unitsForType(existing, AppConstants.unitTypeUninstallSplit);
+        final euw = _unitsForType(existing, AppConstants.unitTypeUninstallWindow);
+        final euf = _unitsForType(existing, AppConstants.unitTypeUninstallFreestanding);
+        final eb = _bracketCount(existing);
+        final ed = existing.charges?.deliveryAmount ?? 0.0;
+        if (pr < er || pw < ew || pf < ef || pus < eus ||
+            puw < euw || puf < euf || pb < eb || pd < ed - 0.01) {
+          throw JobException.sharedUnitReductionForbidden();
+        }
+
         await firestore.runTransaction((tx) async {
           final aggregateRef = _sharedAggregatesRef.doc(
             _sharedAggregateDocId(resolvedGroupKey),

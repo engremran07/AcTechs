@@ -78,7 +78,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
             child: ArcticRefreshIndicator(
               onRefresh: () async => _refresh(),
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                // Extra bottom padding ensures the last card clears the FAB
+                // (FAB height 56 + 16 margin + 16 content gap = 88).
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
                 children: [
                   // Welcome
                   Text(
@@ -425,7 +427,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () => context.go('/tech/submit'),
+                                    onPressed: () => context.push('/tech/submit'),
                                     icon: const Icon(Icons.add_rounded),
                                     label: Text(l.submitAJob),
                                   ),
@@ -488,7 +490,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/tech/submit'),
+          onPressed: () => context.push('/tech/submit'),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           icon: const Icon(Icons.add_rounded),

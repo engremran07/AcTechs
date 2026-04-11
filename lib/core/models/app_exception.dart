@@ -323,6 +323,19 @@ class JobException extends AppException {
     'أنت لست مدرجاً كعضو في فريق هذه الفاتورة المشتركة. '
         'اطلب من الفني الأول الذي قدّم هذه الفاتورة إضافتك إلى الفريق.',
   );
+
+  /// Thrown when a pending shared install edit attempts to reduce unit counts.
+  /// Firestore rules enforce monotone non-decreasing consumed counters to
+  /// prevent fraud; this error surfaces that constraint clearly to the UI.
+  factory JobException.sharedUnitReductionForbidden() => const JobException(
+    'job_shared_unit_reduction_forbidden',
+    'Units on a shared install cannot be reduced once submitted. '
+        'Contact admin to correct the aggregate totals.',
+    'مشترکہ انسٹال میں جمع کرانے کے بعد یونٹ کم نہیں کیے جا سکتے۔ '
+        'کل مقدار درست کرنے کے لیے ایڈمن سے رابطہ کریں۔',
+    'لا يمكن تقليل الوحدات في التركيب المشترك بعد الإرسال. '
+        'تواصل مع المسؤول لتصحيح الإجماليات.',
+  );
 }
 
 class AdminException extends AppException {
