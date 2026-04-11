@@ -1131,7 +1131,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: ArcticTheme.arcticError,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(l.delete),
@@ -1740,7 +1740,10 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: const Icon(Icons.delete_rounded, color: Colors.white),
+            child: Icon(
+              Icons.delete_rounded,
+              color: Theme.of(context).colorScheme.onError,
+            ),
           ),
           onDismissed: (_) {
             if (item.isIn) {

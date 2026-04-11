@@ -36,6 +36,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   DateTime _selectedDate = DateTime.now();
   bool _isSubmitting = false;
+  String _initialFormSignature = '';
   int _bracketQty = 0;
   int _splitQty = 0;
   int _windowQty = 0;
@@ -83,6 +84,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
         _loadClientDetailsFromGroup(initialAggregate.groupKey);
       });
     }
+    _captureInitialFormSignature();
   }
 
   @override
@@ -215,10 +217,81 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           _selectedCompanyName = job.companyName;
         }
       });
+      _captureInitialFormSignature();
     } catch (_) {
       // PERMISSION_DENIED reading another tech’s job — silently ignored.
       // Client details were pre-filled from the aggregate if available.
     }
+  }
+
+  void _captureInitialFormSignature() {
+    _initialFormSignature = _formSignature();
+  }
+
+  String _formSignature() {
+    final teamIds = _selectedTeamMembers.map((user) => user.uid).toList()
+      ..sort();
+    return [
+      _invoiceController.text.trim(),
+      _clientNameController.text.trim(),
+      _normalizeContact(_clientContactController.text),
+      _deliveryAmountController.text.trim(),
+      _deliveryNoteController.text.trim(),
+      _descriptionController.text.trim(),
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _isSharedInstall,
+      _selectedCompanyId ?? '',
+      _selectedCompanyName.trim(),
+      _bracketQty,
+      _splitQty,
+      _windowQty,
+      _uninstallSplitQty,
+      _uninstallWindowQty,
+      _uninstallStandingQty,
+      _dolabQty,
+      _sharedSplitUnits,
+      _sharedWindowUnits,
+      _sharedFreestandingUnits,
+      _sharedUninstallSplitUnits,
+      _sharedUninstallWindowUnits,
+      _sharedUninstallFreestandingUnits,
+      _sharedBracketQty,
+      _sharedTeamSize,
+      teamIds.join(','),
+      _techSplitShare,
+      _techWindowShare,
+      _techFreestandingShare,
+      _techUninstallSplitShare,
+      _techUninstallWindowShare,
+      _techUninstallFreestandingShare,
+      _techBracketShare,
+    ].join('|');
+  }
+
+  bool get _hasUnsavedChanges => _formSignature() != _initialFormSignature;
+
+  Future<bool> _confirmDiscardChanges() async {
+    final l = AppLocalizations.of(context)!;
+    return (await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l.discardChangesTitle),
+            content: Text(l.discardChangesMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l.leavePage),
+              ),
+            ],
+          ),
+        )) ??
+        false;
   }
 
   int _clampShare(int nextValue, int invoiceTotal) {
@@ -292,6 +365,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     _deliveryNoteController.clear();
     _descriptionController.clear();
     setState(() {
+      _selectedDate = DateTime.now();
       _bracketQty = 0;
       _splitQty = 0;
       _windowQty = 0;
@@ -500,6 +574,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
           context.go('/tech/history');
         } else {
           _resetForm();
+          _captureInitialFormSignature();
         }
       }
     } on AppException catch (e) {
@@ -526,587 +601,608 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
     return AppShortcuts(
       onSubmit: _isSubmitting ? null : _submit,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            _fromAggregate
-                ? l.addYourShare
-                : (_isEditing ? l.editProfile : l.submitInvoice),
+      child: PopScope(
+        canPop: !_hasUnsavedChanges || _isSubmitting,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop || _isSubmitting || !_hasUnsavedChanges) return;
+          final navigator = Navigator.of(context);
+          final discard = await _confirmDiscardChanges();
+          if (!mounted || !discard) return;
+          navigator.pop();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _fromAggregate
+                  ? l.addYourShare
+                  : (_isEditing ? l.editProfile : l.submitInvoice),
+            ),
           ),
-        ),
-        body: SafeArea(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: FormFocusTraversal(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    // ── Pre-fill banner (shared install join flow) ──
-                    if (_fromAggregate) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
+          body: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: FormFocusTraversal(
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // ── Pre-fill banner (shared install join flow) ──
+                      if (_fromAggregate) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
                             color: ArcticTheme.arcticBlue.withValues(
-                              alpha: 0.3,
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: ArcticTheme.arcticBlue.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.groups_rounded,
-                              color: ArcticTheme.arcticBlue,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                l.preFilledFromSharedInstall,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: ArcticTheme.arcticBlue),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.groups_rounded,
+                                color: ArcticTheme.arcticBlue,
+                                size: 20,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l.preFilledFromSharedInstall,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: ArcticTheme.arcticBlue),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
+                      ],
 
-                    // ── AC Services (single source of truth) ──
-                    _SectionHeader(
-                      icon: Icons.ac_unit_rounded,
-                      title: l.acServices,
-                    ),
-                    const SizedBox(height: 8),
-                    ArcticCard(
-                      child: Column(
-                        children: [
-                          if (!_fromAggregate)
-                            SwitchListTile.adaptive(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(l.sharedInstall),
-                              subtitle: Text(l.sharedInstallHint),
-                              value: _isSharedInstall,
-                              onChanged: (value) => setState(() {
-                                _isSharedInstall = value;
-                                if (!value) {
-                                  _sharedSplitUnits = 0;
-                                  _sharedWindowUnits = 0;
-                                  _sharedFreestandingUnits = 0;
-                                  _sharedUninstallSplitUnits = 0;
-                                  _sharedUninstallWindowUnits = 0;
-                                  _sharedUninstallFreestandingUnits = 0;
-                                  _sharedBracketQty = 0;
-                                  _sharedTeamSize = 0;
-                                  _selectedTeamMembers = [];
-                                  _techSplitShare = 0;
-                                  _techWindowShare = 0;
-                                  _techFreestandingShare = 0;
-                                  _techUninstallSplitShare = 0;
-                                  _techUninstallWindowShare = 0;
-                                  _techUninstallFreestandingShare = 0;
-                                  _techBracketShare = 0;
-                                }
-                              }),
-                            ),
-                          if (_isSharedInstall) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              l.sharedInstallMixHint,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: ArcticTheme.arcticTextSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.splitAcLabel,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedSplitUnits,
-                              shareValue: _techSplitShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedSplitUnits = value;
-                                _techSplitShare = _clampShare(
-                                  _techSplitShare,
-                                  _sharedSplitUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techSplitShare = _clampShare(
-                                  value,
-                                  _sharedSplitUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.windowAcLabel,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedWindowUnits,
-                              shareValue: _techWindowShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedWindowUnits = value;
-                                _techWindowShare = _clampShare(
-                                  _techWindowShare,
-                                  _sharedWindowUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techWindowShare = _clampShare(
-                                  value,
-                                  _sharedWindowUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.freestandingAcLabel,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedFreestandingUnits,
-                              shareValue: _techFreestandingShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedFreestandingUnits = value;
-                                _techFreestandingShare = _clampShare(
-                                  _techFreestandingShare,
-                                  _sharedFreestandingUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techFreestandingShare = _clampShare(
-                                  value,
-                                  _sharedFreestandingUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.acOutdoorBracket,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedBracketQty,
-                              shareValue: _techBracketShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedBracketQty = value;
-                                _techBracketShare = _clampShare(
-                                  _techBracketShare,
-                                  _sharedBracketQty,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techBracketShare = _clampShare(
-                                  value,
-                                  _sharedBracketQty,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.uninstallSplit,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedUninstallSplitUnits,
-                              shareValue: _techUninstallSplitShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedUninstallSplitUnits = value;
-                                _techUninstallSplitShare = _clampShare(
-                                  _techUninstallSplitShare,
-                                  _sharedUninstallSplitUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techUninstallSplitShare = _clampShare(
-                                  value,
-                                  _sharedUninstallSplitUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.uninstallWindow,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedUninstallWindowUnits,
-                              shareValue: _techUninstallWindowShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedUninstallWindowUnits = value;
-                                _techUninstallWindowShare = _clampShare(
-                                  _techUninstallWindowShare,
-                                  _sharedUninstallWindowUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techUninstallWindowShare = _clampShare(
-                                  value,
-                                  _sharedUninstallWindowUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            _SharedInstallTypeRow(
-                              title: l.uninstallStanding,
-                              totalReadOnly: _fromAggregate,
-                              totalValue: _sharedUninstallFreestandingUnits,
-                              shareValue: _techUninstallFreestandingShare,
-                              onTotalChanged: (value) => setState(() {
-                                _sharedUninstallFreestandingUnits = value;
-                                _techUninstallFreestandingShare = _clampShare(
-                                  _techUninstallFreestandingShare,
-                                  _sharedUninstallFreestandingUnits,
-                                );
-                              }),
-                              onShareChanged: (value) => setState(() {
-                                _techUninstallFreestandingShare = _clampShare(
-                                  value,
-                                  _sharedUninstallFreestandingUnits,
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
+                      // ── AC Services (single source of truth) ──
+                      _SectionHeader(
+                        icon: Icons.ac_unit_rounded,
+                        title: l.acServices,
+                      ),
+                      const SizedBox(height: 8),
+                      ArcticCard(
+                        child: Column(
+                          children: [
                             if (!_fromAggregate)
-                              _buildTeamSelectorSection(context, l),
-                            const SizedBox(height: 8),
-                          ],
-                          if (!_isSharedInstall) ...[
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.splits,
-                                    value: _splitQty,
-                                    onChanged: (v) =>
-                                        setState(() => _splitQty = v),
-                                  ),
+                              SwitchListTile.adaptive(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(l.sharedInstall),
+                                subtitle: Text(l.sharedInstallHint),
+                                value: _isSharedInstall,
+                                onChanged: (value) => setState(() {
+                                  _isSharedInstall = value;
+                                  if (!value) {
+                                    _sharedSplitUnits = 0;
+                                    _sharedWindowUnits = 0;
+                                    _sharedFreestandingUnits = 0;
+                                    _sharedUninstallSplitUnits = 0;
+                                    _sharedUninstallWindowUnits = 0;
+                                    _sharedUninstallFreestandingUnits = 0;
+                                    _sharedBracketQty = 0;
+                                    _sharedTeamSize = 0;
+                                    _selectedTeamMembers = [];
+                                    _techSplitShare = 0;
+                                    _techWindowShare = 0;
+                                    _techFreestandingShare = 0;
+                                    _techUninstallSplitShare = 0;
+                                    _techUninstallWindowShare = 0;
+                                    _techUninstallFreestandingShare = 0;
+                                    _techBracketShare = 0;
+                                  }
+                                }),
+                              ),
+                            if (_isSharedInstall) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                l.sharedInstallMixHint,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: ArcticTheme.arcticTextSecondary,
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.windowAc,
-                                    value: _windowQty,
-                                    onChanged: (v) =>
-                                        setState(() => _windowQty = v),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.standing,
-                                    value: _dolabQty,
-                                    onChanged: (v) =>
-                                        setState(() => _dolabQty = v),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.acOutdoorBracket,
-                                    value: _bracketQty,
-                                    onChanged: (v) =>
-                                        setState(() => _bracketQty = v),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.uninstallSplit,
-                                    value: _uninstallSplitQty,
-                                    onChanged: (v) =>
-                                        setState(() => _uninstallSplitQty = v),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.uninstallWindow,
-                                    value: _uninstallWindowQty,
-                                    onChanged: (v) =>
-                                        setState(() => _uninstallWindowQty = v),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _QtyTile(
-                                    label: l.uninstallStanding,
-                                    value: _uninstallStandingQty,
-                                    onChanged: (v) => setState(
-                                      () => _uninstallStandingQty = v,
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.splitAcLabel,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedSplitUnits,
+                                shareValue: _techSplitShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedSplitUnits = value;
+                                  _techSplitShare = _clampShare(
+                                    _techSplitShare,
+                                    _sharedSplitUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techSplitShare = _clampShare(
+                                    value,
+                                    _sharedSplitUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.windowAcLabel,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedWindowUnits,
+                                shareValue: _techWindowShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedWindowUnits = value;
+                                  _techWindowShare = _clampShare(
+                                    _techWindowShare,
+                                    _sharedWindowUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techWindowShare = _clampShare(
+                                    value,
+                                    _sharedWindowUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.freestandingAcLabel,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedFreestandingUnits,
+                                shareValue: _techFreestandingShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedFreestandingUnits = value;
+                                  _techFreestandingShare = _clampShare(
+                                    _techFreestandingShare,
+                                    _sharedFreestandingUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techFreestandingShare = _clampShare(
+                                    value,
+                                    _sharedFreestandingUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.acOutdoorBracket,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedBracketQty,
+                                shareValue: _techBracketShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedBracketQty = value;
+                                  _techBracketShare = _clampShare(
+                                    _techBracketShare,
+                                    _sharedBracketQty,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techBracketShare = _clampShare(
+                                    value,
+                                    _sharedBracketQty,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.uninstallSplit,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedUninstallSplitUnits,
+                                shareValue: _techUninstallSplitShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedUninstallSplitUnits = value;
+                                  _techUninstallSplitShare = _clampShare(
+                                    _techUninstallSplitShare,
+                                    _sharedUninstallSplitUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techUninstallSplitShare = _clampShare(
+                                    value,
+                                    _sharedUninstallSplitUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.uninstallWindow,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedUninstallWindowUnits,
+                                shareValue: _techUninstallWindowShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedUninstallWindowUnits = value;
+                                  _techUninstallWindowShare = _clampShare(
+                                    _techUninstallWindowShare,
+                                    _sharedUninstallWindowUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techUninstallWindowShare = _clampShare(
+                                    value,
+                                    _sharedUninstallWindowUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              _SharedInstallTypeRow(
+                                title: l.uninstallStanding,
+                                totalReadOnly: _fromAggregate,
+                                totalValue: _sharedUninstallFreestandingUnits,
+                                shareValue: _techUninstallFreestandingShare,
+                                onTotalChanged: (value) => setState(() {
+                                  _sharedUninstallFreestandingUnits = value;
+                                  _techUninstallFreestandingShare = _clampShare(
+                                    _techUninstallFreestandingShare,
+                                    _sharedUninstallFreestandingUnits,
+                                  );
+                                }),
+                                onShareChanged: (value) => setState(() {
+                                  _techUninstallFreestandingShare = _clampShare(
+                                    value,
+                                    _sharedUninstallFreestandingUnits,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 8),
+                              if (!_fromAggregate)
+                                _buildTeamSelectorSection(context, l),
+                              const SizedBox(height: 8),
+                            ],
+                            if (!_isSharedInstall) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.splits,
+                                      value: _splitQty,
+                                      onChanged: (v) =>
+                                          setState(() => _splitQty = v),
                                     ),
                                   ),
-                                ),
-                                const Spacer(),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 10),
-                          TextFormField(
-                            controller: _descriptionController,
-                            textInputAction: TextInputAction.next,
-                            enableInteractiveSelection: true,
-                            decoration: InputDecoration(
-                              hintText: l.descriptionLabel,
-                              prefixIcon: const Icon(
-                                Icons.notes_rounded,
-                                color: ArcticTheme.arcticTextSecondary,
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.windowAc,
+                                      value: _windowQty,
+                                      onChanged: (v) =>
+                                          setState(() => _windowQty = v),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 80.ms),
-
-                    const SizedBox(height: 20),
-
-                    // ── Date Picker ──
-                    _SectionHeader(icon: Icons.calendar_today, title: l.date),
-                    const SizedBox(height: 8),
-                    ArcticCard(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime.now().subtract(
-                            const Duration(days: 30),
-                          ),
-                          lastDate: DateTime.now(),
-                        );
-                        if (date != null) setState(() => _selectedDate = date);
-                      },
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_rounded,
-                            color: ArcticTheme.arcticBlue,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          const Spacer(),
-                          Text(l.tapToChange, style: theme.textTheme.bodySmall),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 300.ms),
-                    const SizedBox(height: 20),
-
-                    // ── Invoice Details ──
-                    _SectionHeader(
-                      icon: Icons.receipt_long_rounded,
-                      title: l.invoiceDetails,
-                    ),
-                    const SizedBox(height: 16),
-                    companiesAsync
-                        .when(
-                          data: (companies) => companies.isEmpty
-                              ? const SizedBox.shrink()
-                              : CompanySelectorField(
-                                  companies: companies,
-                                  selectedCompanyId: _selectedCompanyId,
-                                  includeNoCompanyOption: true,
-                                  hintText: l.selectCompany,
-                                  onChanged: (selectedCompany) {
-                                    setState(() {
-                                      _selectedCompanyId = selectedCompany?.id;
-                                      _selectedCompanyName =
-                                          selectedCompany?.name ?? '';
-                                    });
-                                  },
-                                ),
-                          loading: () =>
-                              const ArcticShimmer(height: 56, count: 1),
-                          error: (e, _) => const SizedBox.shrink(),
-                        )
-                        .animate()
-                        .fadeIn(delay: 100.ms),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _invoiceController,
-                      textInputAction: TextInputAction.next,
-                      enableInteractiveSelection: true,
-                      readOnly: _fromAggregate,
-                      decoration: InputDecoration(
-                        hintText: l.invoiceNumber,
-                        labelText: l.invoiceNumber,
-                        prefixIcon: const Icon(
-                          Icons.receipt_outlined,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                        suffixIcon: _fromAggregate
-                            ? const Icon(
-                                Icons.lock_outline,
-                                size: 18,
-                                color: ArcticTheme.arcticTextSecondary,
-                              )
-                            : null,
-                      ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? l.required : null,
-                    ).animate().fadeIn(delay: 120.ms),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _clientNameController,
-                      textInputAction: TextInputAction.next,
-                      enableInteractiveSelection: true,
-                      decoration: InputDecoration(
-                        hintText: l.clientNameOptional,
-                        labelText: l.clientName,
-                        prefixIcon: const Icon(
-                          Icons.person_outline,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ),
-                    ).animate().fadeIn(delay: 150.ms),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _clientContactController,
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.done,
-                      enableInteractiveSelection: true,
-                      autofillHints: const [AutofillHints.telephoneNumber],
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                          RegExp(r'[0-9+\-\s\(\)]'),
-                        ),
-                        LengthLimitingTextInputFormatter(15),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: l.clientPhone,
-                        prefixIcon: const Icon(
-                          Icons.phone_outlined,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return l.required;
-                        return _normalizeContact(v).isEmpty
-                            ? l.enterValidPhone
-                            : null;
-                      },
-                    ).animate().fadeIn(delay: 200.ms),
-                    const SizedBox(height: 28),
-
-                    // ── Additional Charges ──
-                    _SectionHeader(
-                      icon: Icons.attach_money_rounded,
-                      title: l.additionalCharges,
-                    ),
-                    const SizedBox(height: 8),
-                    ArcticCard(
-                      child: Column(
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              l.deliverySubtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: ArcticTheme.arcticTextSecondary,
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.standing,
+                                      value: _dolabQty,
+                                      onChanged: (v) =>
+                                          setState(() => _dolabQty = v),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.acOutdoorBracket,
+                                      value: _bracketQty,
+                                      onChanged: (v) =>
+                                          setState(() => _bracketQty = v),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _deliveryAmountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            textInputAction: TextInputAction.next,
-                            enableInteractiveSelection: true,
-                            readOnly: _fromAggregate,
-                            decoration: InputDecoration(
-                              hintText: _isSharedInstall
-                                  ? l.sharedInvoiceDeliveryAmount
-                                  : l.deliveryChargeAmount,
-                              prefixIcon: const Icon(
-                                Icons.payments_outlined,
-                                color: ArcticTheme.arcticTextSecondary,
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.uninstallSplit,
+                                      value: _uninstallSplitQty,
+                                      onChanged: (v) => setState(
+                                        () => _uninstallSplitQty = v,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.uninstallWindow,
+                                      value: _uninstallWindowQty,
+                                      onChanged: (v) => setState(
+                                        () => _uninstallWindowQty = v,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              suffixIcon: _fromAggregate
-                                  ? const Icon(
-                                      Icons.lock_outline,
-                                      size: 18,
-                                      color: ArcticTheme.arcticTextSecondary,
-                                    )
-                                  : null,
-                              isDense: true,
-                            ),
-                          ),
-                          if (_isSharedInstall) ...[
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                l.sharedDeliverySplitHint,
-                                style: theme.textTheme.bodySmall?.copyWith(
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _QtyTile(
+                                      label: l.uninstallStanding,
+                                      value: _uninstallStandingQty,
+                                      onChanged: (v) => setState(
+                                        () => _uninstallStandingQty = v,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            TextFormField(
+                              controller: _descriptionController,
+                              textInputAction: TextInputAction.next,
+                              enableInteractiveSelection: true,
+                              decoration: InputDecoration(
+                                hintText: l.descriptionLabel,
+                                prefixIcon: const Icon(
+                                  Icons.notes_rounded,
                                   color: ArcticTheme.arcticTextSecondary,
                                 ),
                               ),
                             ),
                           ],
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _deliveryNoteController,
-                            textInputAction: TextInputAction.done,
-                            enableInteractiveSelection: true,
-                            decoration: InputDecoration(
-                              hintText: l.locationNote,
-                              prefixIcon: const Icon(
-                                Icons.location_on_outlined,
-                                color: ArcticTheme.arcticTextSecondary,
-                              ),
-                              isDense: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 350.ms),
-                    const SizedBox(height: 32),
-
-                    // ── Submit ──
-                    SizedBox(
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: _isSubmitting ? null : _submit,
-                        icon: _isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: ArcticTheme.arcticDarkBg,
-                                ),
-                              )
-                            : const Icon(Icons.send_rounded),
-                        label: Text(
-                          _isSubmitting
-                              ? l.submitting
-                              : (_isEditing
-                                    ? l.save
-                                    : (requiresApproval
-                                          ? l.submitForApproval
-                                          : l.submit)),
                         ),
+                      ).animate().fadeIn(delay: 80.ms),
+
+                      const SizedBox(height: 20),
+
+                      // ── Date Picker ──
+                      _SectionHeader(icon: Icons.calendar_today, title: l.date),
+                      const SizedBox(height: 8),
+                      ArcticCard(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime.now().subtract(
+                              const Duration(days: 30),
+                            ),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setState(() => _selectedDate = date);
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_rounded,
+                              color: ArcticTheme.arcticBlue,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const Spacer(),
+                            Text(
+                              l.tapToChange,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(duration: 300.ms),
+                      const SizedBox(height: 20),
+
+                      // ── Invoice Details ──
+                      _SectionHeader(
+                        icon: Icons.receipt_long_rounded,
+                        title: l.invoiceDetails,
                       ),
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-                    const SizedBox(height: 32),
-                  ],
+                      const SizedBox(height: 16),
+                      companiesAsync
+                          .when(
+                            data: (companies) => companies.isEmpty
+                                ? const SizedBox.shrink()
+                                : CompanySelectorField(
+                                    companies: companies,
+                                    selectedCompanyId: _selectedCompanyId,
+                                    includeNoCompanyOption: true,
+                                    hintText: l.selectCompany,
+                                    onChanged: (selectedCompany) {
+                                      setState(() {
+                                        _selectedCompanyId =
+                                            selectedCompany?.id;
+                                        _selectedCompanyName =
+                                            selectedCompany?.name ?? '';
+                                      });
+                                    },
+                                  ),
+                            loading: () =>
+                                const ArcticShimmer(height: 56, count: 1),
+                            error: (e, _) => const SizedBox.shrink(),
+                          )
+                          .animate()
+                          .fadeIn(delay: 100.ms),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _invoiceController,
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        readOnly: _fromAggregate,
+                        decoration: InputDecoration(
+                          hintText: l.invoiceNumber,
+                          labelText: l.invoiceNumber,
+                          prefixIcon: const Icon(
+                            Icons.receipt_outlined,
+                            color: ArcticTheme.arcticTextSecondary,
+                          ),
+                          suffixIcon: _fromAggregate
+                              ? const Icon(
+                                  Icons.lock_outline,
+                                  size: 18,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                )
+                              : null,
+                        ),
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? l.required : null,
+                      ).animate().fadeIn(delay: 120.ms),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _clientNameController,
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        decoration: InputDecoration(
+                          hintText: l.clientNameOptional,
+                          labelText: l.clientName,
+                          prefixIcon: const Icon(
+                            Icons.person_outline,
+                            color: ArcticTheme.arcticTextSecondary,
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 150.ms),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _clientContactController,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        enableInteractiveSelection: true,
+                        autofillHints: const [AutofillHints.telephoneNumber],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[0-9+\-\s\(\)]'),
+                          ),
+                          LengthLimitingTextInputFormatter(15),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: l.clientPhone,
+                          prefixIcon: const Icon(
+                            Icons.phone_outlined,
+                            color: ArcticTheme.arcticTextSecondary,
+                          ),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return l.required;
+                          return _normalizeContact(v).isEmpty
+                              ? l.enterValidPhone
+                              : null;
+                        },
+                      ).animate().fadeIn(delay: 200.ms),
+                      const SizedBox(height: 28),
+
+                      // ── Additional Charges ──
+                      _SectionHeader(
+                        icon: Icons.attach_money_rounded,
+                        title: l.additionalCharges,
+                      ),
+                      const SizedBox(height: 8),
+                      ArcticCard(
+                        child: Column(
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                l.deliverySubtitle,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _deliveryAmountController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              textInputAction: TextInputAction.next,
+                              enableInteractiveSelection: true,
+                              readOnly: _fromAggregate,
+                              decoration: InputDecoration(
+                                hintText: _isSharedInstall
+                                    ? l.sharedInvoiceDeliveryAmount
+                                    : l.deliveryChargeAmount,
+                                prefixIcon: const Icon(
+                                  Icons.payments_outlined,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                                suffixIcon: _fromAggregate
+                                    ? const Icon(
+                                        Icons.lock_outline,
+                                        size: 18,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      )
+                                    : null,
+                                isDense: true,
+                              ),
+                            ),
+                            if (_isSharedInstall) ...[
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  l.sharedDeliverySplitHint,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _deliveryNoteController,
+                              textInputAction: TextInputAction.done,
+                              enableInteractiveSelection: true,
+                              decoration: InputDecoration(
+                                hintText: l.locationNote,
+                                prefixIcon: const Icon(
+                                  Icons.location_on_outlined,
+                                  color: ArcticTheme.arcticTextSecondary,
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 350.ms),
+                      const SizedBox(height: 32),
+
+                      // ── Submit ──
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: _isSubmitting ? null : _submit,
+                          icon: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: ArcticTheme.arcticDarkBg,
+                                  ),
+                                )
+                              : const Icon(Icons.send_rounded),
+                          label: Text(
+                            _isSubmitting
+                                ? l.submitting
+                                : (_isEditing
+                                      ? l.save
+                                      : (requiresApproval
+                                            ? l.submitForApproval
+                                            : l.submit)),
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
             ),

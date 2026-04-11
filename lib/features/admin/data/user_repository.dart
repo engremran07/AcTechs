@@ -435,6 +435,7 @@ class UserRepository {
     try {
       onProgress?.call(FlushOperationPhase.checkingConnection);
       await _assertFlushServerReachable();
+      await _assertNoActiveSettlementBatches();
 
       onProgress?.call(FlushOperationPhase.deletingOperationalData);
       await Future.wait([
@@ -488,6 +489,7 @@ class UserRepository {
 
       onProgress?.call(FlushOperationPhase.checkingConnection);
       await _assertFlushServerReachable();
+      await _assertNoActiveSettlementBatches(techId: techId);
 
       onProgress?.call(FlushOperationPhase.scanningAffectedData);
 
@@ -582,6 +584,29 @@ class UserRepository {
         throw AdminException.flushRequiresInternet();
       }
       rethrow;
+    }
+  }
+
+  Future<void> _assertNoActiveSettlementBatches({String? techId}) async {
+    Query<Map<String, dynamic>> query = _jobsRef.where(
+      'settlementStatus',
+      whereIn: [
+        JobSettlementStatus.awaitingTechnician.firestoreValue,
+        JobSettlementStatus.correctionRequired.firestoreValue,
+        JobSettlementStatus.disputedFinal.firestoreValue,
+      ],
+    );
+
+    final normalizedTechId = techId?.trim() ?? '';
+    if (normalizedTechId.isNotEmpty) {
+      query = query.where('techId', isEqualTo: normalizedTechId);
+    }
+
+    final snap = await query
+        .limit(1)
+        .get(const GetOptions(source: Source.server));
+    if (snap.docs.isNotEmpty) {
+      throw AdminException.activeSettlementBatchesPreventFlush();
     }
   }
 

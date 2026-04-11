@@ -823,6 +823,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                         1)
                                   : 1;
                               return SwipeActionCard(
+                                    key: ValueKey(job.id),
                                     onSwipeRight: () async {
                                       // Approve on swipe right
                                       final approvedMsg = AppLocalizations.of(

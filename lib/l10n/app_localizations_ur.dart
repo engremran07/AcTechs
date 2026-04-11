@@ -302,6 +302,16 @@ class AppLocalizationsUr extends AppLocalizations {
   String get pressBackAgainToExit => 'ایپ بند کرنے کے لیے دوبارہ بیک دبائیں۔';
 
   @override
+  String get discardChangesTitle => 'تبدیلیاں چھوڑ دیں؟';
+
+  @override
+  String get discardChangesMessage =>
+      'آپ کی غیر محفوظ تبدیلیاں موجود ہیں۔ کیا آپ یہ صفحہ چھوڑ کر انہیں ضائع کرنا چاہتے ہیں؟';
+
+  @override
+  String get leavePage => 'چھوڑ دیں';
+
+  @override
   String get settings => 'سیٹنگز';
 
   @override
@@ -316,6 +326,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get jobHistory => 'کام کی تاریخ';
+
+  @override
+  String get jobDetails => 'کام کی تفصیل';
 
   @override
   String get submitJob => 'کام جمع کریں';
@@ -570,6 +583,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get amountSar => 'رقم (ریال)';
+
+  @override
+  String get amountMustBePositive => 'رقم صفر سے زیادہ ہونی چاہیے۔';
 
   @override
   String get remarksOptional => 'ریمارکس (اختیاری)';
@@ -1692,7 +1708,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get paymentConfirmed => 'ادائیگی تصدیق شدہ';
 
   @override
+  String get paymentMethod => 'ادائیگی کا طریقہ';
+
+  @override
   String get paymentDisputed => 'ادائیگی متنازع';
+
+  @override
+  String get paidOn => 'ادا کی گئی تاریخ';
 
   @override
   String get confirmPaymentReceived => 'ادائیگی موصول ہونے کی تصدیق کریں';

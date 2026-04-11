@@ -664,6 +664,24 @@ abstract class AppLocalizations {
   /// **'Press back again to exit the app.'**
   String get pressBackAgainToExit;
 
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Leave this page and lose them?'**
+  String get discardChangesMessage;
+
+  /// No description provided for @leavePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leavePage;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
@@ -693,6 +711,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Job History'**
   String get jobHistory;
+
+  /// No description provided for @jobDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Job Details'**
+  String get jobDetails;
 
   /// No description provided for @submitJob.
   ///
@@ -1191,6 +1215,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amount (SAR)'**
   String get amountSar;
+
+  /// No description provided for @amountMustBePositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be greater than zero.'**
+  String get amountMustBePositive;
 
   /// No description provided for @remarksOptional.
   ///
@@ -3237,11 +3267,23 @@ abstract class AppLocalizations {
   /// **'Payment confirmed'**
   String get paymentConfirmed;
 
+  /// No description provided for @paymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get paymentMethod;
+
   /// No description provided for @paymentDisputed.
   ///
   /// In en, this message translates to:
   /// **'Payment disputed'**
   String get paymentDisputed;
+
+  /// No description provided for @paidOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid on'**
+  String get paidOn;
 
   /// No description provided for @confirmPaymentReceived.
   ///

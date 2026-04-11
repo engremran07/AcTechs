@@ -1,0 +1,85 @@
+name: Weekly Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  audit:
+    name: Weekly Quality Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '21'
+
+      - name: Set up Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Flutter analyse
+        run: flutter analyze --no-pub
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Install Firestore rules dependencies
+        working-directory: scripts
+        run: npm ci
+
+      - name: Lint Firestore rules
+        working-directory: scripts
+        run: npm run lint:firestore-rules
+
+      - name: Run Firestore rules tests
+        working-directory: scripts
+        run: npm test
+
+      - name: Gate — Collection name consistency
+        run: |
+          if grep -rn "ac_installations" .claude/ .github/instructions/ README.md 2>/dev/null; then
+            echo "❌ FAIL: docs reference 'ac_installations' but code uses 'ac_installs'"
+            exit 1
+          fi
+          echo "✅ Collection names consistent"
+
+      - name: Gate — Detail routes use push not go
+        run: |
+          if grep -REn "context\.go\('/(admin/(settings|companies|settlements|flush|import)|tech/(summary|settlements))'" lib/ 2>/dev/null; then
+            echo "❌ FAIL: Detail or settings route uses context.go() — use context.push()"
+            exit 1
+          fi
+          echo "✅ Detail routes preserve back stack"
+
+      - name: Gate — No Colors.white in presentation screens
+        run: |
+          if grep -REn "Colors\.white" lib/features/*/presentation/ 2>/dev/null; then
+            echo "❌ FAIL: Presentation screen hardcodes Colors.white — use theme colors instead"
+            exit 1
+          fi
+          echo "✅ Presentation screens use theme colors"

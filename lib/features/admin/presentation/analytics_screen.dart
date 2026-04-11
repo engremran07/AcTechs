@@ -55,6 +55,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   String _technicianFilter = 'all';
   DateTimeRange? _customDateRange;
 
+  Color _chartLabelColor(BuildContext context, Color background) {
+    final theme = Theme.of(context);
+    final useLightForeground =
+        ThemeData.estimateBrightnessForColor(background) == Brightness.dark;
+
+    if (useLightForeground) {
+      return theme.brightness == Brightness.dark
+          ? theme.colorScheme.onSurface
+          : theme.colorScheme.surface;
+    }
+
+    return theme.brightness == Brightness.dark
+        ? theme.colorScheme.surface
+        : theme.colorScheme.onSurface;
+  }
+
   Future<({List<EarningModel> earnings, List<ExpenseModel> expenses})>
   _fetchAdminInOutData() async {
     final earnings = await ref.read(earningRepositoryProvider).fetchEarnings();
@@ -1133,7 +1149,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                               .labelSmall
                                               ?.copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                color: _chartLabelColor(
+                                                  context,
+                                                  ArcticTheme.arcticSuccess,
+                                                ),
                                               ),
                                           radius: 50,
                                         ),
@@ -1146,7 +1165,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                               .labelSmall
                                               ?.copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                color: _chartLabelColor(
+                                                  context,
+                                                  ArcticTheme.arcticPending,
+                                                ),
                                               ),
                                           radius: 50,
                                         ),
@@ -1160,7 +1182,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                               .labelSmall
                                               ?.copyWith(
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                color: _chartLabelColor(
+                                                  context,
+                                                  ArcticTheme.arcticError,
+                                                ),
                                               ),
                                           radius: 50,
                                         ),

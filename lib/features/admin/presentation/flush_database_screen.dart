@@ -341,7 +341,7 @@ class _Step1View extends StatelessWidget {
               backgroundColor: waiting
                   ? ArcticTheme.arcticTextSecondary
                   : ArcticTheme.arcticError,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onError,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: waiting ? null : onProceed,
@@ -659,7 +659,7 @@ class _Step2View extends StatelessWidget {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: null,
                     ),
                   )
                 : Icon(
@@ -678,7 +678,7 @@ class _Step2View extends StatelessWidget {
               backgroundColor: (waiting || isLoading)
                   ? ArcticTheme.arcticTextSecondary
                   : ArcticTheme.arcticError,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.onError,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: isFlushBlocked ? null : onFlush,

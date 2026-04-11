@@ -20,6 +20,10 @@ class TechShell extends ConsumerWidget {
     if (location.startsWith('/tech/history')) return 3;
     if (location.startsWith('/tech/settings')) return 4;
     if (location.startsWith('/tech/profile')) return 4;
+    if (location.startsWith('/tech/settlements')) return -1;
+    if (location.startsWith('/tech/job/')) return -1;
+    if (location.startsWith('/tech/jobs/filter/')) return -1;
+    if (location.startsWith('/tech/ac-installs')) return -1;
     return 0;
   }
 
@@ -44,126 +48,138 @@ class TechShell extends ConsumerWidget {
       homeRoute: '/tech',
       child: Scaffold(
         body: child,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex(context),
-          onDestinationSelected: (index) {
-            final current = _currentIndex(context);
-            if (current == index) {
-              HapticFeedback.selectionClick();
-              return;
-            }
-            switch (index) {
-              case 0:
-                context.go('/tech');
-              case 1:
-                context.go('/tech/submit');
-              case 2:
-                context.go('/tech/inout');
-              case 3:
-                context.go('/tech/history');
-              case 4:
-                context.go('/tech/settings');
-            }
-          },
-          destinations: [
-            NavigationDestination(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.dashboard_outlined),
-                  if (sharedTeamsCount > 0)
-                    Positioned(
-                      right: -2,
-                      top: -1,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          shape: BoxShape.circle,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: NavigationBar(
+            selectedIndex: _currentIndex(context) < 0
+                ? 0
+                : _currentIndex(context),
+            onDestinationSelected: (index) {
+              final current = _currentIndex(context);
+              if (current == index) {
+                HapticFeedback.selectionClick();
+                return;
+              }
+              switch (index) {
+                case 0:
+                  context.go('/tech');
+                case 1:
+                  context.go('/tech/submit');
+                case 2:
+                  context.go('/tech/inout');
+                case 3:
+                  context.go('/tech/history');
+                case 4:
+                  context.go('/tech/settings');
+              }
+            },
+            destinations: [
+              NavigationDestination(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.dashboard_outlined),
+                    if (sharedTeamsCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              selectedIcon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.dashboard_rounded),
-                  if (sharedTeamsCount > 0)
-                    Positioned(
-                      right: -2,
-                      top: -1,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          shape: BoxShape.circle,
+                  ],
+                ),
+                selectedIcon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.dashboard_rounded),
+                    if (sharedTeamsCount > 0)
+                      Positioned(
+                        right: -2,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
+                label: AppLocalizations.of(context)!.home,
               ),
-              label: AppLocalizations.of(context)!.home,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              selectedIcon: const Icon(Icons.add_circle_rounded),
-              label: AppLocalizations.of(context)!.submit,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.swap_vert_outlined),
-              selectedIcon: const Icon(Icons.swap_vert_rounded),
-              label: AppLocalizations.of(context)!.inOut,
-            ),
-            NavigationDestination(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.history_outlined),
-                  if (pendingSettlementBatches > 0)
-                    Positioned(
-                      right: -2,
-                      top: -1,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error,
-                          shape: BoxShape.circle,
+              NavigationDestination(
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                selectedIcon: const Icon(Icons.add_circle_rounded),
+                label: AppLocalizations.of(context)!.submit,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.swap_vert_outlined),
+                selectedIcon: const Icon(Icons.swap_vert_rounded),
+                label: AppLocalizations.of(context)!.inOut,
+              ),
+              NavigationDestination(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.history_outlined),
+                    if (pendingSettlementBatches > 0)
+                      Positioned(
+                        right: -2,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.error,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              selectedIcon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.history_rounded),
-                  if (pendingSettlementBatches > 0)
-                    Positioned(
-                      right: -2,
-                      top: -1,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error,
-                          shape: BoxShape.circle,
+                  ],
+                ),
+                selectedIcon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.history_rounded),
+                    if (pendingSettlementBatches > 0)
+                      Positioned(
+                        right: -2,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.error,
+                            shape: BoxShape.circle,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
+                label: AppLocalizations.of(context)!.history,
               ),
-              label: AppLocalizations.of(context)!.history,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings_rounded),
-              label: AppLocalizations.of(context)!.settings,
-            ),
-          ],
+              NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings_rounded),
+                label: AppLocalizations.of(context)!.settings,
+              ),
+            ],
+          ),
         ),
       ),
     );

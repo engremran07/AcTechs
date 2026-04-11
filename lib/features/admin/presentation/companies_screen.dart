@@ -107,10 +107,12 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                                         color: ArcticTheme.arcticError,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.close,
                                         size: 14,
-                                        color: Colors.white,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onError,
                                       ),
                                     ),
                                   ),

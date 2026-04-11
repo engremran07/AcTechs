@@ -1673,6 +1673,15 @@ class JobRepository {
     DateTime? paidAt,
   }) async {
     try {
+      if (amountPerJob <= 0) {
+        throw JobException.settlementAmountMustBePositive();
+      }
+
+      final normalizedPaymentMethod = paymentMethod.trim();
+      if (normalizedPaymentMethod.isEmpty) {
+        throw JobException.settlementPaymentMethodRequired();
+      }
+
       final normalizedIds = jobIds
           .map((id) => id.trim())
           .where((id) => id.isNotEmpty)
@@ -1716,7 +1725,7 @@ class JobRepository {
             'settlementBatchId': batchId,
             'settlementRound': 1,
             'settlementAmount': amountPerJob,
-            'settlementPaymentMethod': paymentMethod,
+            'settlementPaymentMethod': normalizedPaymentMethod,
             'settlementAdminNote': adminNote,
             'settlementTechnicianComment': '',
             'settlementRequestedBy': adminUid,

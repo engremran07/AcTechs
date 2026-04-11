@@ -300,6 +300,20 @@ class JobException extends AppException {
         'يسمح بدورة تصحيح دفع واحدة فقط لكل دفعة فواتير.',
       );
 
+  factory JobException.settlementAmountMustBePositive() => const JobException(
+    'job_settlement_amount_positive_required',
+    'Settlement amount must be greater than zero.',
+    'ادائیگی کی رقم صفر سے زیادہ ہونی چاہیے۔',
+    'يجب أن يكون مبلغ التسوية أكبر من صفر.',
+  );
+
+  factory JobException.settlementPaymentMethodRequired() => const JobException(
+    'job_settlement_payment_method_required',
+    'Please enter the payment method before sending the settlement batch.',
+    'سیٹلمنٹ بیچ بھیجنے سے پہلے ادائیگی کا طریقہ درج کریں۔',
+    'يرجى إدخال طريقة الدفع قبل إرسال دفعة التسوية.',
+  );
+
   factory JobException.notTeamMember() => const JobException(
     'job_not_team_member',
     'You are not listed as a team member for this shared invoice. '
@@ -360,6 +374,14 @@ class AdminException extends AppException {
     'ڈیٹا بیس فلش کے لیے فعال انٹرنیٹ کنکشن ضروری ہے۔ دوبارہ کنکٹ ہو کر کوشش کریں۔',
     'يتطلب مسح قاعدة البيانات اتصالاً مباشراً بالإنترنت. أعد الاتصال ثم حاول مرة أخرى.',
   );
+
+  factory AdminException.activeSettlementBatchesPreventFlush() =>
+      const AdminException(
+        'admin_active_settlements_prevent_flush',
+        'Flush is blocked while invoice settlement batches are still awaiting resolution.',
+        'جب تک انوائس سیٹلمنٹ بیچ زیر التواء ہیں، فلش بلاک رہے گا۔',
+        'تم حظر التفريغ ما دامت دفعات تسوية الفواتير بانتظار المعالجة.',
+      );
 }
 
 class ExpenseException extends AppException {

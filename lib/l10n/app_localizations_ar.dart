@@ -301,6 +301,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get pressBackAgainToExit => 'اضغط رجوع مرة أخرى لإغلاق التطبيق.';
 
   @override
+  String get discardChangesTitle => 'هل تريد تجاهل التغييرات؟';
+
+  @override
+  String get discardChangesMessage =>
+      'لديك تغييرات غير محفوظة. هل تريد مغادرة هذه الصفحة وفقدانها؟';
+
+  @override
+  String get leavePage => 'مغادرة';
+
+  @override
   String get settings => 'الإعدادات';
 
   @override
@@ -315,6 +325,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get jobHistory => 'سجل الأعمال';
+
+  @override
+  String get jobDetails => 'تفاصيل العمل';
 
   @override
   String get submitJob => 'إرسال عمل';
@@ -568,6 +581,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get amountSar => 'المبلغ (ريال)';
+
+  @override
+  String get amountMustBePositive => 'يجب أن يكون المبلغ أكبر من صفر.';
 
   @override
   String get remarksOptional => 'ملاحظات (اختياري)';
@@ -1687,7 +1703,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentConfirmed => 'تم تأكيد الدفع';
 
   @override
+  String get paymentMethod => 'طريقة الدفع';
+
+  @override
   String get paymentDisputed => 'الدفع محل نزاع';
+
+  @override
+  String get paidOn => 'تم الدفع في';
 
   @override
   String get confirmPaymentReceived => 'تأكيد استلام الدفع';

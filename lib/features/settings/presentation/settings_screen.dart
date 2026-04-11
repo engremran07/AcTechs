@@ -51,6 +51,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  Future<bool> _confirmDiscardChangesDialog(BuildContext context) async {
+    final l = AppLocalizations.of(context)!;
+    return (await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l.discardChangesTitle),
+            content: Text(l.discardChangesMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l.leavePage),
+              ),
+            ],
+          ),
+        )) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
@@ -235,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             label: Text(l.editOwnCompanyBranding),
                           ),
                           OutlinedButton.icon(
-                            onPressed: () => context.go('/admin/companies'),
+                            onPressed: () => context.push('/admin/companies'),
                             icon: const Icon(Icons.image_outlined),
                             label: Text(l.manageClientCompanyBranding),
                           ),
@@ -282,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           label: Text(l.editOwnCompanyBranding),
                         ),
                         OutlinedButton.icon(
-                          onPressed: () => context.go('/admin/companies'),
+                          onPressed: () => context.push('/admin/companies'),
                           icon: const Icon(Icons.image_outlined),
                           label: Text(l.manageClientCompanyBranding),
                         ),
@@ -1010,102 +1032,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l.editOwnCompanyBranding),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      final result = await FilePicker.pickFiles(
-                        type: FileType.image,
-                        withData: true,
-                      );
-                      if (result == null) return;
-                      final bytes = result.files.first.bytes;
-                      if (bytes == null) return;
-                      if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
-                        bytes,
-                      )) {
-                        if (ctx.mounted) {
-                          AppFeedback.error(ctx, message: l.logoTooLarge);
-                        }
-                        return;
-                      }
-                      setDialogState(
-                        () => pendingLogo = Base64ImageCodec.encode(bytes),
-                      );
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 88,
-                      decoration: BoxDecoration(
-                        color: ArcticTheme.arcticCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: ArcticTheme.arcticBlue.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: pendingLogo.isEmpty
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                  color: ArcticTheme.arcticBlue,
-                                  size: 28,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  l.tapToUploadLogo,
-                                  style: Theme.of(ctx).textTheme.bodySmall,
-                                ),
-                              ],
-                            )
-                          : Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(11),
-                                  child: _BrandLogoPreview(
-                                    logoBase64: pendingLogo,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        setDialogState(() => pendingLogo = ''),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: ArcticTheme.arcticError,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+        builder: (ctx, setDialogState) {
+          final hasChanges =
+              nameCtrl.text.trim() != branding.companyName.trim() ||
+              phoneCtrl.text.trim() != branding.phoneNumber.trim() ||
+              pendingLogo != branding.logoBase64;
+
+          Future<void> maybeCloseDialog() async {
+            if (!hasChanges) {
+              Navigator.pop(ctx, false);
+              return;
+            }
+
+            final discard = await _confirmDiscardChangesDialog(ctx);
+            if (discard && ctx.mounted) {
+              Navigator.pop(ctx, false);
+            }
+          }
+
+          return PopScope(
+            canPop: !hasChanges,
+            onPopInvokedWithResult: (didPop, _) async {
+              if (didPop) return;
+              await maybeCloseDialog();
+            },
+            child: AlertDialog(
+              title: Text(l.editOwnCompanyBranding),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () async {
+                      GestureDetector(
+                        onTap: () async {
                           final result = await FilePicker.pickFiles(
                             type: FileType.image,
                             withData: true,
@@ -1125,71 +1087,169 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             () => pendingLogo = Base64ImageCodec.encode(bytes),
                           );
                         },
-                        icon: const Icon(Icons.upload_file_outlined),
-                        label: Text(
-                          pendingLogo.isEmpty ? l.uploadLogo : l.replaceLogo,
-                        ),
-                      ),
-                      if (pendingLogo.isNotEmpty)
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              setDialogState(() => pendingLogo = ''),
-                          icon: const Icon(Icons.delete_outline_rounded),
-                          label: Text(l.removeLogo),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: ArcticTheme.arcticError,
-                            side: const BorderSide(
-                              color: ArcticTheme.arcticError,
+                        child: Container(
+                          width: double.infinity,
+                          height: 88,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticCard,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: ArcticTheme.arcticBlue.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
+                          child: pendingLogo.isEmpty
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                      color: ArcticTheme.arcticBlue,
+                                      size: 28,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      l.tapToUploadLogo,
+                                      style: Theme.of(ctx).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                )
+                              : Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(11),
+                                      child: _BrandLogoPreview(
+                                        logoBase64: pendingLogo,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: GestureDetector(
+                                        onTap: () => setDialogState(
+                                          () => pendingLogo = '',
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(
+                                            color: ArcticTheme.arcticError,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: Theme.of(
+                                              ctx,
+                                            ).colorScheme.onError,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.pickFiles(
+                                type: FileType.image,
+                                withData: true,
+                              );
+                              if (result == null) return;
+                              final bytes = result.files.first.bytes;
+                              if (bytes == null) return;
+                              if (!Base64ImageCodec.isWithinRecommendedLogoLimit(
+                                bytes,
+                              )) {
+                                if (ctx.mounted) {
+                                  AppFeedback.error(
+                                    ctx,
+                                    message: l.logoTooLarge,
+                                  );
+                                }
+                                return;
+                              }
+                              setDialogState(
+                                () => pendingLogo = Base64ImageCodec.encode(
+                                  bytes,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.upload_file_outlined),
+                            label: Text(
+                              pendingLogo.isEmpty
+                                  ? l.uploadLogo
+                                  : l.replaceLogo,
+                            ),
+                          ),
+                          if (pendingLogo.isNotEmpty)
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  setDialogState(() => pendingLogo = ''),
+                              icon: const Icon(Icons.delete_outline_rounded),
+                              label: Text(l.removeLogo),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: ArcticTheme.arcticError,
+                                side: const BorderSide(
+                                  color: ArcticTheme.arcticError,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: nameCtrl,
+                        textInputAction: TextInputAction.next,
+                        enableInteractiveSelection: true,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          hintText: l.companyName,
+                          prefixIcon: const Icon(Icons.business_rounded),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: phoneCtrl,
+                        textInputAction: TextInputAction.done,
+                        keyboardType: TextInputType.phone,
+                        enableInteractiveSelection: true,
+                        onChanged: (_) => setDialogState(() {}),
+                        decoration: InputDecoration(
+                          hintText: l.companyPhoneNumber,
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                        ),
+                        validator: (value) {
+                          final trimmed = value?.trim() ?? '';
+                          if (trimmed.isEmpty) return null;
+                          return trimmed.length < 7 ? l.enterValidPhone : null;
+                        },
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: nameCtrl,
-                    textInputAction: TextInputAction.next,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: l.companyName,
-                      prefixIcon: const Icon(Icons.business_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    textInputAction: TextInputAction.done,
-                    keyboardType: TextInputType.phone,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: l.companyPhoneNumber,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                    ),
-                    validator: (value) {
-                      final trimmed = value?.trim() ?? '';
-                      if (trimmed.isEmpty) return null;
-                      return trimmed.length < 7 ? l.enterValidPhone : null;
-                    },
-                  ),
-                ],
+                ),
               ),
+              actions: [
+                TextButton(onPressed: maybeCloseDialog, child: Text(l.cancel)),
+                ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(ctx, true);
+                    }
+                  },
+                  child: Text(l.save),
+                ),
+              ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(ctx, true);
-                }
-              },
-              child: Text(l.save),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 
@@ -1250,9 +1310,9 @@ class _ProfileHeader extends StatelessWidget {
             child: Center(
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineSmall?.copyWith(color: Colors.white),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               ),
             ),
           ),

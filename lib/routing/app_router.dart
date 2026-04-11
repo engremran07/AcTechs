@@ -112,7 +112,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Use a refreshListenable to trigger redirect without recreating GoRouter
   final notifier = ValueNotifier<int>(0);
   Timer? refreshDebounce;
-  Timer? refreshFollowUp;
 
   void triggerRefresh() {
     notifier.value++;
@@ -120,13 +119,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   void queueRefresh() {
     refreshDebounce?.cancel();
-    refreshFollowUp?.cancel();
-    refreshDebounce = Timer(const Duration(milliseconds: 40), () {
-      triggerRefresh();
-      refreshFollowUp = Timer(const Duration(milliseconds: 250), () {
-        triggerRefresh();
-      });
-    });
+    refreshDebounce = Timer(const Duration(milliseconds: 80), triggerRefresh);
   }
 
   ref.listen(authStateProvider, (_, _) => queueRefresh());
@@ -135,7 +128,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   ref.onDispose(() {
     refreshDebounce?.cancel();
-    refreshFollowUp?.cancel();
     notifier.dispose();
   });
 
@@ -143,6 +135,17 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _routerKey,
     initialLocation: '/splash',
     refreshListenable: notifier,
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            state.error?.toString() ?? 'Navigation error',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ),
     redirect: (context, state) {
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);

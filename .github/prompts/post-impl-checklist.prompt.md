@@ -87,6 +87,10 @@ After all gates:
 | 16   | Archive Rules: Status Guard | ✅/❌  |
 | 17   | Archive Rules: deletedAt Type| ✅/❌ |
 | 18   | Shared Install Provider Limit| ✅/❌ |
+| 19   | Detail Routes Use push()    | ✅/❌  |
+| 20   | No Colors.white in Screens  | ✅/❌  |
+| 21   | Shell Back Docs Present     | ✅/❌  |
+| 22   | Weekly Audit Workflow Exists| ✅/❌  |
 ```
 
 ## Gate 11 — Collection Name Consistency
@@ -121,6 +125,21 @@ Fail condition: archive rules accept any value for deletedAt (string, null, etc.
 ## Gate 18 — Shared Install Provider Limit
 Grep `lib/features/jobs/providers/shared_install_providers.dart` for `.limit(` — must exist.
 Fail condition: unbounded Firestore query on shared_install_aggregates accumulates all historical records.
-| 10   | Archive Test Exists         | ✅/❌  |
-```
+
+## Gate 19 — Detail Routes Use push()
+Grep `lib/` for `context.go()` targeting detail or settings routes such as `/admin/settings`, `/admin/companies`, `/admin/settlements`, `/admin/import`, `/tech/summary`, `/tech/settlements`.
+Fail condition: any of those routes use `context.go()` instead of `context.push()`.
+
+## Gate 20 — No Colors.white in Presentation Screens
+Grep `lib/features/*/presentation/` for `Colors.white`.
+Fail condition: any user-facing presentation screen hardcodes `Colors.white` instead of theme colors.
+
+## Gate 21 — Shell Back Docs Present
+Confirm `.claude/CLAUDE.md` documents `ShellBackNavigationScope` usage and shell-route back-navigation rules.
+Fail condition: docs omit the shared shell back-navigation pattern.
+
+## Gate 22 — Weekly Audit Workflow Exists
+Confirm `.github/workflows/audit.yml` exists.
+Fail condition: no scheduled audit workflow is present.
+
 If any gate is ❌, provide the exact error output and the recommended fix.

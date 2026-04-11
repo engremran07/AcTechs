@@ -73,3 +73,10 @@ After all 7 subagents complete:
 3. List any items that are OPEN (not yet implemented)
 4. List any items RULED OUT (code already correct despite the finding)
 5. Recommend next implementation priority
+
+## Mandatory Cross-Cutting Checks
+- Verify `ShellBackNavigationScope` is used by both shell roots and that shell `_currentIndex()` returns `-1` for pushed non-tab routes.
+- Verify `SwipeActionCard` is rendered with stable keys at call sites.
+- Verify no user-facing presentation files hardcode `Colors.white` where theme colors should be used.
+- Verify release/build workflows include analyzer, tests, rules lint, rules tests, and artifact verification.
+- Verify audit and post-implementation prompts remain in sync with current CI gates.

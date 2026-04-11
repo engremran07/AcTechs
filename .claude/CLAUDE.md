@@ -82,6 +82,30 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 - Never commit google-services.json or firebase_options.dart to public repos
 - Deploy Firestore rules/indexes after security changes: `firebase deploy --only firestore --project actechs-d415e`
 
+## Navigation Rules
+
+- `context.go()` is for shell-level replacement only: bottom-nav tab changes and auth redirects.
+- `context.push()` is required for detail and edit flows such as `/admin/settings`, `/admin/companies`, `/admin/settlements`, `/admin/import`, `/tech/summary`, `/tech/settlements`, and job-detail routes.
+- Never use `Navigator.push()` in presentation code.
+
+## Back Navigation — ShellBackNavigationScope
+
+- All shell-root scaffolds MUST use `ShellBackNavigationScope`.
+- `isHome` is true only on the actual shell root (`/admin` or `/tech`).
+- Non-home shell routes navigate back to `homeRoute` on back press instead of exiting.
+- Home routes use the two-second double-back confirmation before exit.
+- Do not add ad-hoc shell back handling with standalone `PopScope` unless the flow is intentionally different.
+
+## SwipeActionCard Rules
+
+- Always provide a stable key at call sites: `key: ValueKey(item.id)`.
+- Never use `UniqueKey()` for swipe cards.
+- `confirmDismiss` is spring-back behavior by default; callbacks handle the action without removing the row automatically.
+
+## Refresh Pattern
+
+- Use `ArcticRefreshIndicator` instead of raw `RefreshIndicator` so styling and haptics stay consistent.
+
 ## Version Policy
 
 - versionCode (number after `+` in pubspec version) must ALWAYS increase across releases

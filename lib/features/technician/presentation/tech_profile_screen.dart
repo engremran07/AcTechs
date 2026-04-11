@@ -114,8 +114,8 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        ArcticTheme.arcticBlue,
-                        ArcticTheme.arcticBlue.withValues(alpha: 0.6),
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
                       ],
                     ),
                     shape: BoxShape.circle,
@@ -123,9 +123,10 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
                   child: Center(
                     child: Text(
                       (user?.name ?? 'T').substring(0, 1).toUpperCase(),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineLarge?.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
                     ),
                   ),
                 ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),

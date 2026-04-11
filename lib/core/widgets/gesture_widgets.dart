@@ -55,8 +55,17 @@ class _SwipeActionCardState extends State<SwipeActionCard> {
     }
 
     return Dismissible(
-      key: UniqueKey(),
+      key:
+          widget.key ??
+          ValueKey(
+            Object.hash(
+              widget.child.runtimeType,
+              widget.onSwipeLeft != null,
+              widget.onSwipeRight != null,
+            ),
+          ),
       direction: direction,
+      resizeDuration: const Duration(milliseconds: 150),
       dismissThresholds: {
         DismissDirection.startToEnd: widget.threshold,
         DismissDirection.endToStart: widget.threshold,
@@ -64,6 +73,7 @@ class _SwipeActionCardState extends State<SwipeActionCard> {
       confirmDismiss:
           widget.confirmDismiss ??
           (dir) async {
+            await Future<void>.delayed(const Duration(milliseconds: 80));
             HapticFeedback.mediumImpact();
             if (dir == DismissDirection.startToEnd) {
               widget.onSwipeRight?.call();

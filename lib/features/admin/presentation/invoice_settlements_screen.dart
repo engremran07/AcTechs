@@ -1,3 +1,4 @@
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -96,34 +97,48 @@ class _InvoiceSettlementsScreenState
     final amountController = TextEditingController();
     final methodController = TextEditingController();
     final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     final value =
         await showDialog<({double amount, String paymentMethod, String note})>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(l.markAsPaid),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: amountController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(hintText: l.amountLabel),
+                    validator: (value) {
+                      final amount = double.tryParse(value?.trim() ?? '') ?? 0;
+                      return amount > 0 ? null : l.amountMustBePositive;
+                    },
                   ),
-                  decoration: InputDecoration(hintText: l.amountLabel),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: methodController,
-                  decoration: InputDecoration(hintText: l.notesLabel),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: noteController,
-                  maxLines: 3,
-                  decoration: InputDecoration(hintText: l.settlementAdminNote),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: methodController,
+                    decoration: InputDecoration(hintText: l.paymentMethod),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? l.required
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: noteController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: l.settlementAdminNote,
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -132,6 +147,7 @@ class _InvoiceSettlementsScreenState
               ),
               FilledButton(
                 onPressed: () {
+                  if (!(formKey.currentState?.validate() ?? false)) return;
                   final amount =
                       double.tryParse(amountController.text.trim()) ?? 0;
                   Navigator.of(dialogContext).pop((
@@ -188,16 +204,7 @@ class _InvoiceSettlementsScreenState
 
     final settlementDetails = await _promptSettlementPaymentDetails(context);
     if (!mounted) return;
-    final lAfterPrompt = AppLocalizations.of(context)!;
     if (settlementDetails == null) return;
-    if (settlementDetails.amount <= 0) {
-      AppFeedback.error(context, message: lAfterPrompt.amountLabel);
-      return;
-    }
-    if (settlementDetails.paymentMethod.trim().isEmpty) {
-      AppFeedback.error(context, message: lAfterPrompt.notesLabel);
-      return;
-    }
     final admin = ref.read(currentUserProvider).value;
     if (admin == null) return;
 
@@ -448,7 +455,7 @@ class _InvoiceSettlementsScreenState
                             onPressed: () => _resolveDisputed(selectedJobs),
                           ),
                       ],
-                    ),
+                    ).animate().fadeIn(duration: 180.ms).slideY(begin: -0.05),
                   ),
                 Expanded(
                   child: ArcticRefreshIndicator(
@@ -476,56 +483,61 @@ class _InvoiceSettlementsScreenState
                               final job = filtered[index];
                               final selected = _selected.contains(job.id);
                               return ArcticCard(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: CheckboxListTile(
-                                  value: selected,
-                                  contentPadding: EdgeInsets.zero,
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      if (value ?? false) {
-                                        _selected.add(job.id);
-                                      } else {
-                                        _selected.remove(job.id);
-                                      }
-                                    });
-                                  },
-                                  title: Text(job.invoiceNumber),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${job.techName} • ${job.clientName}',
-                                      ),
-                                      Text(
-                                        '${AppFormatters.date(job.date)} • ${_statusLabel(l, job.settlementStatus)}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: ArcticTheme
-                                                  .arcticTextSecondary,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: CheckboxListTile(
+                                      value: selected,
+                                      contentPadding: EdgeInsets.zero,
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (value ?? false) {
+                                            _selected.add(job.id);
+                                          } else {
+                                            _selected.remove(job.id);
+                                          }
+                                        });
+                                      },
+                                      title: Text(job.invoiceNumber),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${job.techName} • ${job.clientName}',
+                                          ),
+                                          Text(
+                                            '${AppFormatters.date(job.date)} • ${_statusLabel(l, job.settlementStatus)}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: ArcticTheme
+                                                      .arcticTextSecondary,
+                                                ),
+                                          ),
+                                          if (job.settlementTechnicianComment
+                                              .trim()
+                                              .isNotEmpty)
+                                            Text(
+                                              job.settlementTechnicianComment,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: ArcticTheme
+                                                        .arcticWarning,
+                                                  ),
                                             ),
+                                        ],
                                       ),
-                                      if (job.settlementTechnicianComment
-                                          .trim()
-                                          .isNotEmpty)
-                                        Text(
-                                          job.settlementTechnicianComment,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color:
-                                                    ArcticTheme.arcticWarning,
-                                              ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              );
+                                    ),
+                                  )
+                                  .animate(
+                                    delay: Duration(milliseconds: index * 60),
+                                  )
+                                  .fadeIn(duration: 220.ms)
+                                  .slideY(begin: 0.05);
                             },
                           ),
                   ),

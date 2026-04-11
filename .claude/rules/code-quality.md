@@ -85,6 +85,24 @@ Context collapse = AI (or developer) forgets what already exists and re-implemen
 
 ---
 
+## ⛔ Navigation Misuse — STRICT PROHIBITION
+
+`context.go()` is for shell-level replacement only. `context.push()` is for detail and edit routes.
+
+```dart
+// ❌ FORBIDDEN — replaces the back stack for a detail screen
+context.go('/admin/settings');
+context.go('/tech/summary');
+
+// ✓ REQUIRED
+context.push('/admin/settings');
+context.push('/tech/summary');
+```
+
+Use `context.go()` only for tab changes, auth redirects, and other intentional route replacement.
+
+---
+
 ## ⛔ Missing Localization Strings — PROHIBITION
 
 User-visible strings MUST come from ARB files (`lib/l10n/`). This includes:

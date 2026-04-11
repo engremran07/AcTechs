@@ -26,10 +26,16 @@ class _ShellBackNavigationScopeState extends State<ShellBackNavigationScope> {
 
   DateTime? _lastBackAttemptAt;
 
+  Future<void> _requestAppExit() {
+    return SystemChannels.platform.invokeMethod<void>('SystemNavigator.pop');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final router = GoRouter.of(context);
-    final canSystemPop = router.canPop();
+    final canSystemPop =
+        ModalRoute.of(context)?.canPop ??
+        Navigator.maybeOf(context)?.canPop() ??
+        false;
 
     return PopScope(
       canPop: canSystemPop,
@@ -51,7 +57,7 @@ class _ShellBackNavigationScopeState extends State<ShellBackNavigationScope> {
             now.difference(_lastBackAttemptAt!) <= _kExitWindow;
 
         if (shouldExit) {
-          SystemNavigator.pop();
+          _requestAppExit();
           return;
         }
 

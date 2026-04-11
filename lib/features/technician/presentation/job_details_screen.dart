@@ -44,9 +44,16 @@ class JobDetailsScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final jobsAsync = ref.watch(technicianJobsProvider);
     final approvalConfig = ref.watch(approvalConfigProvider).value;
+    final resolvedJob = jobsAsync.maybeWhen(
+      data: (jobs) => initialJob ?? _findJob(jobs, jobId),
+      orElse: () => initialJob,
+    );
+    final title = (resolvedJob?.invoiceNumber.trim().isNotEmpty ?? false)
+        ? resolvedJob!.invoiceNumber.trim()
+        : l.jobDetails;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.jobHistory)),
+      appBar: AppBar(leading: const BackButton(), title: Text(title)),
       body: SafeArea(
         child: jobsAsync.when(
           data: (jobs) {

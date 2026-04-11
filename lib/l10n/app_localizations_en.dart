@@ -303,6 +303,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pressBackAgainToExit => 'Press back again to exit the app.';
 
   @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesMessage =>
+      'You have unsaved changes. Leave this page and lose them?';
+
+  @override
+  String get leavePage => 'Leave';
+
+  @override
   String get settings => 'Settings';
 
   @override
@@ -317,6 +327,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jobHistory => 'Job History';
+
+  @override
+  String get jobDetails => 'Job Details';
 
   @override
   String get submitJob => 'Submit Job';
@@ -571,6 +584,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get amountSar => 'Amount (SAR)';
+
+  @override
+  String get amountMustBePositive => 'Amount must be greater than zero.';
 
   @override
   String get remarksOptional => 'Remarks (optional)';
@@ -1687,7 +1703,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentConfirmed => 'Payment confirmed';
 
   @override
+  String get paymentMethod => 'Payment method';
+
+  @override
   String get paymentDisputed => 'Payment disputed';
+
+  @override
+  String get paidOn => 'Paid on';
 
   @override
   String get confirmPaymentReceived => 'Confirm payment received';

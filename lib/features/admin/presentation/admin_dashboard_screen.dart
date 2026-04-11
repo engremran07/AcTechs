@@ -1,3 +1,4 @@
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,7 +70,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_rounded),
-              onPressed: () => context.go('/admin/settings'),
+              onPressed: () => context.push('/admin/settings'),
             ),
             IconButton(
               icon: const Icon(Icons.logout_rounded),
@@ -217,7 +218,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               value: '${items.where((c) => c.isActive).length}',
                               icon: Icons.apartment_rounded,
                               color: ArcticTheme.arcticWarning,
-                              onTap: () => context.go('/admin/companies'),
+                              onTap: () => context.push('/admin/companies'),
                             ),
                             loading: () =>
                                 const ArcticShimmer(height: 70, count: 1),
@@ -232,7 +233,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   const SizedBox(height: 24),
 
                   ArcticCard(
-                    onTap: () => context.go('/admin/import'),
+                    onTap: () => context.push('/admin/import'),
                     child: Row(
                       children: [
                         Container(
@@ -275,7 +276,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   const SizedBox(height: 16),
                   ArcticCard(
-                    onTap: () => context.go('/admin/settlements'),
+                    onTap: () => context.push('/admin/settlements'),
                     child: Row(
                       children: [
                         Container(
@@ -318,36 +319,58 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   const SizedBox(height: 16),
                   settlementSummary.when(
-                    data: (summary) => ArcticCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l.invoiceSettlements,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 6,
+                    data: (summary) => Column(
+                      children: [
+                        if (summary.disputedCount > 0)
+                          Card(
+                            color: Theme.of(context).colorScheme.errorContainer,
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.warning_rounded,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              title: Text(
+                                '${summary.disputedCount} ${l.paymentDisputed}',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              subtitle: Text(l.invoiceSettlements),
+                              onTap: () => context.push('/admin/settlements'),
+                            ),
+                          ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.04),
+                        ArcticCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('${l.unpaid}: ${summary.unpaidCount}'),
                               Text(
-                                '${l.awaitingTechnicianConfirmation}: ${summary.pendingConfirmCount}',
+                                l.invoiceSettlements,
+                                style: Theme.of(context).textTheme.titleSmall,
                               ),
-                              Text(
-                                '${l.paymentConfirmed}: ${summary.confirmedCount}',
-                              ),
-                              Text(
-                                '${l.paymentDisputed}: ${summary.disputedCount}',
-                              ),
-                              Text(
-                                '${l.amountSar}: ${AppFormatters.currency(summary.unpaidAmount)}',
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 6,
+                                children: [
+                                  Text(
+                                    '${l.unpaid}: ${summary.unpaidCount}',
+                                  ).animate().fadeIn(delay: 50.ms),
+                                  Text(
+                                    '${l.awaitingTechnicianConfirmation}: ${summary.pendingConfirmCount}',
+                                  ).animate().fadeIn(delay: 100.ms),
+                                  Text(
+                                    '${l.paymentConfirmed}: ${summary.confirmedCount}',
+                                  ).animate().fadeIn(delay: 150.ms),
+                                  Text(
+                                    '${l.paymentDisputed}: ${summary.disputedCount}',
+                                  ).animate().fadeIn(delay: 200.ms),
+                                  Text(
+                                    '${l.amountSar}: ${AppFormatters.currency(summary.unpaidAmount)}',
+                                  ).animate().fadeIn(delay: 250.ms),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     loading: () => const ArcticShimmer(height: 56, count: 1),
                     error: (_, _) => const SizedBox.shrink(),
@@ -363,7 +386,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                   ),
                   const SizedBox(height: 12),
                   ArcticCard(
-                    onTap: () => context.go('/admin/flush'),
+                    onTap: () => context.push('/admin/flush'),
                     child: Row(
                       children: [
                         Container(
