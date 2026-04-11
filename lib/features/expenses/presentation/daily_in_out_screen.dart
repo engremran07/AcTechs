@@ -713,7 +713,6 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           fallbackServiceName: l.ambiguousCompanyName,
         ),
       );
-
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(context, message: l.couldNotExport);

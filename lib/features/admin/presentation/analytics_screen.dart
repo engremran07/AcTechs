@@ -836,7 +836,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           companyName: companyName,
         ),
       );
-
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(
