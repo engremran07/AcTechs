@@ -191,7 +191,15 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Expanded(child: SizedBox()),
+                              Expanded(
+                                child: _StatCard(
+                                  title: l.rejected,
+                                  value: '${summary.rejectedJobs}',
+                                  icon: Icons.cancel_outlined,
+                                  color: ArcticTheme.arcticError,
+                                  onTap: () => context.go('/tech/history'),
+                                ),
+                              ),
                             ],
                           ),
                         ],

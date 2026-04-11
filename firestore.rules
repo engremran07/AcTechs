@@ -28,19 +28,27 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Helper: check if caller is admin
-    function isAdmin() {
-      let data = userExists() ? userData() : null;
-      return data != null &&
-        (!(data.isActive is bool) || data.isActive == true) &&
-        data.role is string &&
-        data.role == 'admin';  // Only lowercase-normalized role; console writes with ADMIN won't escalate
+    // Helper: check whether a resolved user data map has an active account.
+    // Extracted to avoid duplicating the isActive guard in isAdmin() and isActiveUser().
+    // NOTE: Only call after userExists() is confirmed true — never pass a null map.
+    function isUserActive(d) {
+      return !(d.isActive is bool) || d.isActive == true;
     }
 
+    // Helper: check if caller is admin.
+    // Uses && short-circuit so userData() is only evaluated when userExists() is true,
+    // eliminating the conditional-get ternary that the static analyser cannot model.
+    // Multiple userData() calls are safe: Firestore deduplicates same-path reads per evaluation.
+    function isAdmin() {
+      return userExists() &&
+        isUserActive(userData()) &&
+        userData().role is string &&
+        userData().role == 'admin';  // Only lowercase-normalised role; 'ADMIN' from console will not match
+    }
+
+    // Helper: check if caller is an authenticated, active user (any role).
     function isActiveUser() {
-      let data = userExists() ? userData() : null;
-      return data != null &&
-        (!(data.isActive is bool) || data.isActive == true);
+      return userExists() && isUserActive(userData());
     }
 
     function approvalConfigDocPath() {

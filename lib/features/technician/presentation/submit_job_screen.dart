@@ -399,12 +399,23 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     if (!_formKey.currentState!.validate()) return;
     HapticFeedback.mediumImpact();
     final l = AppLocalizations.of(context)!;
+
+    // Company is required when active companies exist. A job without a company
+    // cannot be corrected after approval, so we block at submission time.
+    final availableCompanies =
+        ref.read(activeCompaniesProvider).value ?? const [];
+    if (availableCompanies.isNotEmpty &&
+        (_selectedCompanyId == null || _selectedCompanyId!.isEmpty)) {
+      AppFeedback.error(context, message: l.companySelectionRequired);
+      return;
+    }
+
     final quickUnits = _unitsFromQuickTemplate();
 
     if (quickUnits.isEmpty) {
       AppFeedback.error(
         context,
-        message: AppLocalizations.of(context)!.addServiceFirst,
+        message: l.addServiceFirst,
       );
       return;
     }
@@ -1013,7 +1024,11 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                 : CompanySelectorField(
                                     companies: companies,
                                     selectedCompanyId: _selectedCompanyId,
-                                    includeNoCompanyOption: true,
+                                    // No "no-company" option when companies
+                                    // exist — company is required for correct
+                                    // invoice group-key computation and to
+                                    // prevent uneditable data after approval.
+                                    includeNoCompanyOption: false,
                                     hintText: l.selectCompany,
                                     onChanged: (selectedCompany) {
                                       setState(() {

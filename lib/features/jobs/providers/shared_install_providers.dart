@@ -21,7 +21,12 @@ final pendingSharedInstallAggregatesProvider =
           .limit(50)
           .snapshots()
           .map(
-            (snap) =>
-                snap.docs.map(SharedInstallAggregate.fromFirestore).toList(),
+            (snap) => snap.docs
+                .map(SharedInstallAggregate.fromFirestore)
+                // Hide aggregates where all unit types have been fully consumed
+                // by the team. Once consumed == invoiceTotals for every field,
+                // there is nothing left for any team member to contribute.
+                .where((agg) => !agg.isFullyConsumed)
+                .toList(),
           );
     });

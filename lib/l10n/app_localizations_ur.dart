@@ -903,7 +903,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get invoiceSuffix => 'انوائس نمبر';
 
   @override
-  String get selectCompany => 'کمپنی منتخب کریں (اختیاری)';
+  String get selectCompany => 'کمپنی منتخب کریں';
+
+  @override
+  String get companySelectionRequired =>
+      'جما کرنے سے پہلے کمپنی منتخب کریں apply۔';
 
   @override
   String get noCompany => 'کوئی کمپنی نہیں';

@@ -1813,8 +1813,14 @@ abstract class AppLocalizations {
   /// No description provided for @selectCompany.
   ///
   /// In en, this message translates to:
-  /// **'Select company (optional)'**
+  /// **'Select company'**
   String get selectCompany;
+
+  /// No description provided for @companySelectionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a company before submitting.'**
+  String get companySelectionRequired;
 
   /// No description provided for @noCompany.
   ///

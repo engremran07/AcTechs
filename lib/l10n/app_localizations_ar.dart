@@ -902,7 +902,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invoiceSuffix => 'رقم الفاتورة';
 
   @override
-  String get selectCompany => 'اختر الشركة (اختياري)';
+  String get selectCompany => 'اختر الشركة';
+
+  @override
+  String get companySelectionRequired => 'يرجى اختيار شركة قبل الإرسال.';
 
   @override
   String get noCompany => 'بدون شركة';

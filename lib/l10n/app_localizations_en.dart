@@ -905,7 +905,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoiceSuffix => 'Invoice Number';
 
   @override
-  String get selectCompany => 'Select company (optional)';
+  String get selectCompany => 'Select company';
+
+  @override
+  String get companySelectionRequired =>
+      'Please select a company before submitting.';
 
   @override
   String get noCompany => 'No company';

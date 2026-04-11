@@ -156,6 +156,39 @@ class SharedInstallAggregate {
   bool isMember(String uid) =>
       teamMemberIds.isEmpty || teamMemberIds.contains(uid);
 
+  /// Whether all expected team contributions have been consumed.
+  ///
+  /// Returns true when every consumed counter has reached the corresponding
+  /// invoice total, meaning no team member has remaining work to submit.
+  /// The delivery check uses a 0.001 epsilon to tolerate floating-point drift.
+  ///
+  /// Edge case: if ALL invoice values are 0 (e.g. a zero-unit test aggregate),
+  /// we return false so it never self-hides without any real contribution.
+  bool get isFullyConsumed {
+    final hasWork = sharedInvoiceSplitUnits > 0 ||
+        sharedInvoiceWindowUnits > 0 ||
+        sharedInvoiceFreestandingUnits > 0 ||
+        sharedInvoiceUninstallSplitUnits > 0 ||
+        sharedInvoiceUninstallWindowUnits > 0 ||
+        sharedInvoiceUninstallFreestandingUnits > 0 ||
+        sharedInvoiceBracketCount > 0 ||
+        sharedInvoiceDeliveryAmount > 0.0;
+
+    if (!hasWork) return false;
+
+    return consumedSplitUnits >= sharedInvoiceSplitUnits &&
+        consumedWindowUnits >= sharedInvoiceWindowUnits &&
+        consumedFreestandingUnits >= sharedInvoiceFreestandingUnits &&
+        consumedUninstallSplitUnits >= sharedInvoiceUninstallSplitUnits &&
+        consumedUninstallWindowUnits >= sharedInvoiceUninstallWindowUnits &&
+        consumedUninstallFreestandingUnits >=
+            sharedInvoiceUninstallFreestandingUnits &&
+        consumedBracketCount >= sharedInvoiceBracketCount &&
+        (sharedInvoiceDeliveryAmount <= 0.0 ||
+            consumedDeliveryAmount >=
+                sharedInvoiceDeliveryAmount - 0.001);
+  }
+
   /// Invoice number extracted from [groupKey].
   /// GroupKey format: "{companyId}-{invoiceNumber}". Firestore auto-IDs are
   /// base62 (no hyphens), so splitting at the first '-' is safe.

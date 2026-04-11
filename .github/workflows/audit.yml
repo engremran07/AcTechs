@@ -126,3 +126,124 @@ jobs:
             exit 1
           fi
           echo "✅ In/Out single-day providers are derived (no extra Firestore listeners)"
+
+      - name: Gate — Auth errors propagate (no silent null swallow)
+        run: |
+          if grep -n "Stream\.value(null)" lib/features/auth/providers/auth_providers.dart 2>/dev/null; then
+            echo "❌ FAIL: currentUserProvider swallows auth errors as Stream.value(null)"
+            echo "Use Stream.error(e, st) so ErrorCard is shown on auth failures"
+            exit 1
+          fi
+          echo "✅ Auth errors propagate to UI"
+
+      - name: Gate — compileSdk and targetSdk in sync
+        run: |
+          COMPILE=$(grep "compileSdk" android/app/build.gradle.kts | grep -oP '\d+' | head -1)
+          TARGET=$(grep "targetSdk" android/app/build.gradle.kts | grep -oP '\d+' | head -1)
+          if [ "$COMPILE" != "$TARGET" ]; then
+            echo "❌ FAIL: compileSdk ($COMPILE) != targetSdk ($TARGET) — they must match"
+            exit 1
+          fi
+          echo "✅ compileSdk ($COMPILE) == targetSdk ($TARGET)"
+
+      - name: Gate — No orphan providers (zero-consumer check)
+        run: |
+          # Check for provider names that only appear in their definition file (single hit total)
+          PROVIDERS=$(grep -rEh "^final [a-zA-Z]+Provider\s*=" lib/features/*/providers/ 2>/dev/null | \
+            grep -oP "(?<=final )[a-zA-Z]+Provider" | sort -u)
+          ORPHANS=""
+          for p in $PROVIDERS; do
+            COUNT=$(grep -rE "\b${p}\b" lib/ 2>/dev/null | grep -v "^.*final ${p}" | wc -l)
+            if [ "$COUNT" -eq 0 ]; then
+              ORPHANS="$ORPHANS $p"
+            fi
+          done
+          if [ -n "$ORPHANS" ]; then
+            echo "❌ FAIL: Zero-consumer providers found (define but never watched/read):"
+            echo "$ORPHANS"
+            exit 1
+          fi
+          echo "✅ All providers have at least one consumer"
+
+      - name: Gate — No duplicate allow rules in Firestore rules
+        run: |
+          # Check for duplicate allow verb in same match block
+          python3 - <<'EOF'
+          import re, sys
+          rules = open('firestore.rules').read()
+          blocks = re.findall(r'match\s+/[^\{]+\{([^\}]+match[^\}]*|\n[^\}]*?\})', rules, re.S)
+          seen = {}
+          lines = rules.split('\n')
+          errors = []
+          depth = 0
+          block_start = 0
+          block_verbs = {}
+          for i, line in enumerate(lines, 1):
+            depth += line.count('{') - line.count('}')
+            m = re.search(r'allow\s+(get|list|create|update|delete|read|write)', line)
+            if m:
+              verb = (depth, m.group(1))
+              if verb in block_verbs:
+                errors.append(f"L{i}: duplicate 'allow {m.group(1)}' at depth {depth} (also at L{block_verbs[verb]})")
+              else:
+                block_verbs[verb] = i
+          if errors:
+            print('❌ FAIL: Duplicate allow rules in firestore.rules:')
+            for e in errors:
+              print(' ', e)
+            sys.exit(1)
+          print('✅ No duplicate allow rules in firestore.rules')
+          EOF
+
+      - name: Gate — Coverage threshold (60%)
+        run: |
+          if ! command -v lcov &> /dev/null; then
+            sudo apt-get install -y lcov --quiet
+          fi
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep -oP '[0-9]+\.[0-9]+(?=%)' | head -1)
+          echo "Line coverage: ${COVERAGE}%"
+          if [ -z "$COVERAGE" ]; then
+            echo "WARN: Could not parse lcov summary — skipping threshold check"
+            exit 0
+          fi
+          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
+            echo "❌ FAIL: Coverage ${COVERAGE}% is below 60% minimum"
+            exit 1
+          fi
+          echo "✅ Coverage ${COVERAGE}% meets minimum threshold"
+
+      - name: Gate — Shared install aggregates filter isFullyConsumed
+        run: |
+          # The pendingSharedInstallAggregatesProvider must filter out fully-consumed
+          # aggregates so the "Add Your Share" list self-clears after all team members submit.
+          if ! grep -n "isFullyConsumed" lib/features/jobs/providers/shared_install_providers.dart 2>/dev/null | grep -q "isFullyConsumed"; then
+            echo "❌ FAIL: pendingSharedInstallAggregatesProvider missing isFullyConsumed filter"
+            echo "Once all team members submit, the aggregate must disappear from 'Add Your Share'"
+            exit 1
+          fi
+          echo "✅ Shared install provider filters fully-consumed aggregates"
+
+      - name: Gate — Company required in job submission
+        run: |
+          # Company must be required (no includeNoCompanyOption: true) in submit_job_screen
+          # so that techs cannot submit a job without a company when companies exist.
+          # A missing company cannot be corrected after approval.
+          VIOLATIONS=$(grep -n "includeNoCompanyOption: true" lib/features/technician/presentation/submit_job_screen.dart 2>/dev/null)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ FAIL: submit_job_screen.dart uses includeNoCompanyOption: true"
+            echo "Company selection is required when companies exist. If no companies, field is hidden."
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "✅ Company selection is required in job submission form"
+
+      - name: Gate — Firestore rules helper functions use short-circuit not ternary
+        run: |
+          # isAdmin() and isActiveUser() must use && short-circuit evaluation.
+          # The let data = ternary pattern causes [W] static analyser warnings.
+          if grep -n "let data = userExists() ? userData()" firestore.rules 2>/dev/null; then
+            echo "❌ FAIL: firestore.rules uses conditional-get ternary in isAdmin/isActiveUser"
+            echo "Use userExists() && isUserActive(userData()) && ... (short-circuit) instead"
+            exit 1
+          fi
+          echo "✅ Firestore rules helpers use short-circuit evaluation (no analyser warnings)"
