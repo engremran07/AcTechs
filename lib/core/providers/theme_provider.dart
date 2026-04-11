@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
 const _kThemeKey = 'app_theme_mode';
@@ -15,69 +16,54 @@ final appThemeModeProvider = NotifierProvider<ThemeModeNotifier, AppThemeMode>(
 );
 
 class ThemeModeNotifier extends Notifier<AppThemeMode> {
-  bool _syncedFromUser = false;
+  bool _hydratedFromPrefs = false;
+  AppThemeMode _currentMode = AppThemeMode.dark;
 
   @override
   AppThemeMode build() {
-    _init();
+    if (!_hydratedFromPrefs) {
+      _hydratedFromPrefs = true;
+      unawaited(_loadFromPrefs());
+    }
 
-    // React to auth/user changes via watch inside build.
     final user = ref.watch(currentUserProvider).value;
-    if (user != null && !_syncedFromUser) {
-      _syncedFromUser = true;
-      _loadFromFirestore(user.uid);
-    }
-    if (user == null) {
-      _syncedFromUser = false;
+    if (user != null) {
+      final remoteMode = _parse(user.themeMode);
+      if (remoteMode != _currentMode) {
+        _currentMode = remoteMode;
+        unawaited(_saveModeToPrefs(remoteMode));
+      }
     }
 
-    return AppThemeMode.dark;
+    return _currentMode;
   }
 
-  Future<void> _init() async {
-    // Load from SharedPreferences (works pre-login)
+  Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_kThemeKey);
     if (saved != null) {
-      state = _parse(saved);
+      final parsed = _parse(saved);
+      _currentMode = parsed;
+      state = parsed;
     }
   }
 
-  Future<void> _loadFromFirestore(String uid) async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .get();
-      final raw = doc.data()?['themeMode'] as String?;
-      if (raw != null) {
-        final mode = _parse(raw);
-        state = mode;
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_kThemeKey, mode.name);
-      }
-    } catch (_) {
-      // Keep current state on failure
-    }
+  Future<void> _saveModeToPrefs(AppThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kThemeKey, mode.name);
   }
 
   Future<void> setMode(AppThemeMode mode) async {
+    _currentMode = mode;
     state = mode;
+    await _saveModeToPrefs(mode);
 
-    // Save to SharedPreferences (always works)
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kThemeKey, mode.name);
-
-    // Save to Firestore if logged in
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection(AppConstants.usersCollection)
-            .doc(user.uid)
-            .update({'themeMode': mode.name});
+        await ref.read(authRepositoryProvider).updateThemeMode(mode.name);
       } catch (_) {
-        // Fail silently — local state is already updated
+        // Keep local state even if cloud sync fails.
       }
     }
   }

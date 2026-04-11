@@ -13,7 +13,6 @@ const _kRememberMeKey = 'remember_me';
 const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
 const _kProfileSyncAtPrefix = 'profile_sync_at_';
 const _kLastSyncedEmailPrefix = 'profile_sync_email_';
-const _kLastSyncedNamePrefix = 'profile_sync_name_';
 const _kProfileSyncCooldown = Duration(hours: 24);
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -25,6 +24,14 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 class AuthRepository {
   AuthRepository({required this.auth, required this.firestore});
+
+  static const Set<String> _supportedLanguages = {'en', 'ur', 'ar'};
+  static const Set<String> _supportedThemeModes = {
+    'auto',
+    'dark',
+    'light',
+    'highContrast',
+  };
 
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
@@ -39,7 +46,13 @@ class AuthRepository {
 
   User? get currentUser => auth.currentUser;
 
+  DocumentReference<Map<String, dynamic>> _userDocRef(String uid) {
+    return firestore.collection(AppConstants.usersCollection).doc(uid);
+  }
+
   String _profileSyncKey(String uid) => '$_kProfileSyncAtPrefix$uid';
+
+  String _normalizedEmail(String email) => email.trim().toLowerCase();
 
   Future<bool> _shouldSyncProfile(String uid) async {
     final prefs = await SharedPreferences.getInstance();
@@ -58,35 +71,54 @@ class AuthRepository {
     );
   }
 
+  Future<void> _prepareForSignOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kRememberMeKey);
+    await prefs.remove(_kRememberEmailKey);
+    await prefs.setBool(_kClearFirestoreCacheOnLaunchKey, true);
+  }
+
+  Future<void> _forceSessionSignOut() async {
+    await _prepareForSignOut();
+    await auth.signOut();
+  }
+
+  Map<String, dynamic> _authProfileMirrorUpdates({
+    required Map<String, dynamic> currentData,
+    required User user,
+  }) {
+    final authEmail = (user.email ?? '').trim();
+    if (authEmail.isEmpty) {
+      return const <String, dynamic>{};
+    }
+
+    final normalizedEmail = _normalizedEmail(authEmail);
+    final updates = <String, dynamic>{};
+    if (currentData['email'] != authEmail) {
+      updates['email'] = authEmail;
+    }
+    if (currentData['emailLower'] != normalizedEmail) {
+      updates['emailLower'] = normalizedEmail;
+    }
+    return updates;
+  }
+
   Future<void> _syncProfileFromAuth(User user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final authEmail = (user.email ?? '').trim();
-      final authDisplayName = (user.displayName ?? '').trim();
       final cachedEmail =
           prefs.getString('$_kLastSyncedEmailPrefix${user.uid}') ?? '';
-      final cachedName =
-          prefs.getString('$_kLastSyncedNamePrefix${user.uid}') ?? '';
-
-      if (cachedEmail == authEmail && cachedName == authDisplayName) {
-        await _markProfileSynced(user.uid);
-        return;
-      }
-
-      final userDocRef = firestore
-          .collection(AppConstants.usersCollection)
-          .doc(user.uid);
+      final userDocRef = _userDocRef(user.uid);
       final userDoc = await userDocRef.get();
       if (!userDoc.exists) return;
 
       final data = userDoc.data() ?? {};
-      final updates = <String, dynamic>{};
+      final updates = _authProfileMirrorUpdates(currentData: data, user: user);
 
-      if (authEmail.isNotEmpty && data['email'] != authEmail) {
-        updates['email'] = authEmail;
-      }
-      if (authDisplayName.isNotEmpty && data['name'] != authDisplayName) {
-        updates['name'] = authDisplayName;
+      if (cachedEmail == authEmail && updates.isEmpty) {
+        await _markProfileSynced(user.uid);
+        return;
       }
 
       if (updates.isNotEmpty) {
@@ -94,10 +126,6 @@ class AuthRepository {
       }
 
       await prefs.setString('$_kLastSyncedEmailPrefix${user.uid}', authEmail);
-      await prefs.setString(
-        '$_kLastSyncedNamePrefix${user.uid}',
-        authDisplayName,
-      );
 
       await _markProfileSynced(user.uid);
     } on FirebaseException catch (e) {
@@ -114,47 +142,32 @@ class AuthRepository {
         password: password,
       );
       final uid = credential.user!.uid;
-      final userDocRef = firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid);
+      final userDocRef = _userDocRef(uid);
       var userDoc = await userDocRef.get();
-      final authEmail = credential.user!.email ?? '';
-      final authDisplayName = credential.user!.displayName;
 
       if (!userDoc.exists) {
-        await auth.signOut();
+        await _forceSessionSignOut();
         throw AuthException.accountNotProvisioned();
       } else {
-        // Sync Firebase Auth changes to Firestore (e.g., email or displayName
-        // changed in the Firebase Console will now reflect in the app).
         final data = userDoc.data() ?? {};
-        final Map<String, dynamic> updates = {};
-        final rawRole = (data['role'] as String? ?? '').trim().toLowerCase();
-        final normalizedRole = rawRole == 'admin' || rawRole == 'administrator'
-            ? AppConstants.roleAdmin
-            : AppConstants.roleTechnician;
-
-        if (authEmail.isNotEmpty && data['email'] != authEmail) {
-          updates['email'] = authEmail;
-        }
-        if (authDisplayName != null &&
-            authDisplayName.isNotEmpty &&
-            data['name'] != authDisplayName) {
-          updates['name'] = authDisplayName;
-        }
-        if (data['role'] != normalizedRole) {
-          updates['role'] = normalizedRole;
-        }
+        final updates = _authProfileMirrorUpdates(
+          currentData: data,
+          user: credential.user!,
+        );
         if (updates.isNotEmpty) {
-          await userDocRef.update(updates);
-          userDoc = await userDocRef.get();
+          try {
+            await userDocRef.update(updates);
+            userDoc = await userDocRef.get();
+          } on FirebaseException catch (e) {
+            debugPrint('signIn profile sync error: ${e.code} — ${e.message}');
+          }
         }
       }
 
       final user = UserModel.fromFirestore(userDoc);
 
       if (!user.isActive) {
-        await auth.signOut();
+        await _forceSessionSignOut();
         throw AuthException.accountDisabled();
       }
 
@@ -164,7 +177,7 @@ class AuthRepository {
     } on FirebaseException catch (e) {
       // If user profile document cannot be read (for example permission denied
       // or doc path mismatch), force sign-out to avoid auth/profile drift.
-      await auth.signOut();
+      await _forceSessionSignOut();
       debugPrint('signIn Firestore error: ${e.code} — ${e.message}');
       if (e.code == 'permission-denied') {
         throw AuthException.accountNotProvisioned();
@@ -184,16 +197,51 @@ class AuthRepository {
   Future<void> updateDisplayName(String name) async {
     try {
       final user = auth.currentUser;
-      if (user == null) return;
+      if (user == null) throw AuthException.sessionExpired();
+      final trimmedName = name.trim();
+      if (trimmedName.isEmpty) throw AuthException.updateFailed();
       // Update Firebase Auth displayName
-      await user.updateDisplayName(name);
+      await user.updateDisplayName(trimmedName);
       // Update Firestore
-      await firestore
-          .collection(AppConstants.usersCollection)
-          .doc(user.uid)
-          .update({'name': name});
+      await _userDocRef(user.uid).update({'name': trimmedName});
+    } on AuthException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('updateDisplayName error: ${e.code} — ${e.message}');
+      throw AuthException.updateFailed();
+    }
+  }
+
+  Future<void> updateLanguage(String language) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) throw AuthException.sessionExpired();
+      final normalizedLanguage = language.trim().toLowerCase();
+      if (!_supportedLanguages.contains(normalizedLanguage)) {
+        throw AuthException.updateFailed();
+      }
+      await _userDocRef(user.uid).update({'language': normalizedLanguage});
+    } on AuthException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('updateLanguage error: ${e.code} — ${e.message}');
+      throw AuthException.updateFailed();
+    }
+  }
+
+  Future<void> updateThemeMode(String themeMode) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) throw AuthException.sessionExpired();
+      final normalizedThemeMode = themeMode.trim();
+      if (!_supportedThemeModes.contains(normalizedThemeMode)) {
+        throw AuthException.updateFailed();
+      }
+      await _userDocRef(user.uid).update({'themeMode': normalizedThemeMode});
+    } on AuthException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('updateThemeMode error: ${e.code} — ${e.message}');
       throw AuthException.updateFailed();
     }
   }
@@ -298,10 +346,7 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kRememberMeKey);
-    await prefs.remove(_kRememberEmailKey);
-    await prefs.setBool(_kClearFirestoreCacheOnLaunchKey, true);
+    await _prepareForSignOut();
     await auth.signOut();
     // NOTE: We do NOT call firestore.terminate() / clearPersistence() here.
     // Doing so kills the singleton Firestore instance, breaking all
@@ -314,10 +359,7 @@ class AuthRepository {
     final user = auth.currentUser;
     if (user == null) return null;
 
-    final doc = await firestore
-        .collection(AppConstants.usersCollection)
-        .doc(user.uid)
-        .get();
+    final doc = await _userDocRef(user.uid).get();
 
     if (!doc.exists) return null;
     return UserModel.fromFirestore(doc);
@@ -332,6 +374,7 @@ class AuthRepository {
         .listen(
           (doc) {
             if (!doc.exists) {
+              unawaited(_forceSessionSignOut());
               controller.add(null);
               return;
             }
@@ -340,13 +383,14 @@ class AuthRepository {
             controller.add(userModel);
 
             if (!userModel.isActive) {
-              unawaited(auth.signOut());
+              unawaited(_forceSessionSignOut());
             }
           },
           onError: (error, stackTrace) {
             if (error is FirebaseException &&
                 error.code == 'permission-denied') {
               debugPrint('userStream permission denied for uid=$uid');
+              unawaited(_forceSessionSignOut());
               controller.add(null);
               return;
             }

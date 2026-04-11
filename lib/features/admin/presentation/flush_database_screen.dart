@@ -134,7 +134,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
         title: Text(l.flushDatabase),
         leading: isLoading
             ? const SizedBox.shrink()
-            : BackButton(onPressed: () => context.go('/admin')),
+            : BackButton(onPressed: () => context.pop()),
       ),
       body: SafeArea(
         child: AnimatedSwitcher(
@@ -144,7 +144,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   key: const ValueKey(1),
                   countdown: _countdown,
                   onProceed: _goToStep2,
-                  onCancel: () => context.go('/admin'),
+                  onCancel: () => context.pop(),
                 )
               : _Step2View(
                   key: const ValueKey(2),
@@ -158,7 +158,7 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   onToggleObscure: () =>
                       setState(() => _obscurePassword = !_obscurePassword),
                   onFlush: _executeFlush,
-                  onCancel: () => context.go('/admin'),
+                  onCancel: () => context.pop(),
                   isLoading: isLoading,
                   isOffline: isOffline,
                   progress: progress,

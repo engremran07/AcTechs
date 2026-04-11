@@ -104,50 +104,63 @@ class UserRepository {
 
   Query<Map<String, dynamic>> get _allUsersQuery => _usersRef.orderBy('name');
 
+  String _normalizedEmail(String email) => email.trim().toLowerCase();
+
   Stream<List<UserModel>> allTechnicians() {
     return _activeTechniciansQuery.snapshots().map(
-      (snap) => _dedupeUsers(snap.docs),
+      (snap) => _sortedUsers(snap.docs),
     );
   }
 
   Stream<List<UserModel>> allUsers() {
-    return _allUsersQuery.snapshots().map((snap) => _dedupeUsers(snap.docs));
+    return _allUsersQuery.snapshots().map((snap) => _sortedUsers(snap.docs));
   }
 
   Future<List<UserModel>> usersForImport() async {
     try {
       final snap = await _activeTechniciansQuery.get();
-      return _dedupeUsers(snap.docs);
+      return _sortedUsers(snap.docs);
     } on FirebaseException catch (e) {
       debugPrint('usersForImport error code: ${e.code}');
       throw AdminException.noPermission();
     }
   }
 
-  List<UserModel> _dedupeUsers(
+  List<UserModel> _sortedUsers(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
   ) {
-    final uniqueUsers = <String, UserModel>{};
-
-    for (final doc in docs) {
-      final user = UserModel.fromFirestore(doc);
-      final normalizedEmail = user.email.trim().toLowerCase();
-      final normalizedName = user.name.trim().toLowerCase();
-      final dedupeKey = normalizedEmail.isNotEmpty
-          ? 'email:$normalizedEmail'
-          : 'name:$normalizedName';
-
-      uniqueUsers.putIfAbsent(dedupeKey, () => user);
-    }
-
-    final users = uniqueUsers.values.toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final users = docs.map(UserModel.fromFirestore).toList()
+      ..sort((a, b) {
+        final nameCompare = a.name.toLowerCase().compareTo(
+          b.name.toLowerCase(),
+        );
+        if (nameCompare != 0) {
+          return nameCompare;
+        }
+        return a.uid.compareTo(b.uid);
+      });
     return users;
   }
 
   Future<UserModel?> _findUserByEmail(String email) async {
-    final normalized = email.trim().toLowerCase();
+    final normalized = _normalizedEmail(email);
     if (normalized.isEmpty) return null;
+
+    final lowerSnap = await _usersRef
+        .where('emailLower', isEqualTo: normalized)
+        .limit(1)
+        .get();
+    if (lowerSnap.docs.isNotEmpty) {
+      return UserModel.fromFirestore(lowerSnap.docs.first);
+    }
+
+    final exactSnap = await _usersRef
+        .where('email', isEqualTo: email.trim())
+        .limit(1)
+        .get();
+    if (exactSnap.docs.isNotEmpty) {
+      return UserModel.fromFirestore(exactSnap.docs.first);
+    }
 
     final snap = await _usersRef.get();
     for (final doc in snap.docs) {
@@ -179,18 +192,6 @@ class UserRepository {
     }
   }
 
-  Future<void> updateLanguage(String uid, String language) async {
-    try {
-      await _usersRef.doc(uid).update({'language': language});
-    } on FirebaseException catch (e) {
-      debugPrint('updateLanguage error code: ${e.code}');
-      if (e.code == 'permission-denied') {
-        throw AdminException.noPermission();
-      }
-      throw AdminException.userSaveFailed();
-    }
-  }
-
   /// Create a new user (technician or admin) via a secondary Firebase App.
   /// Admin session is preserved since createUserWithEmailAndPassword on a
   /// secondary app doesn't sign out the primary auth context.
@@ -201,6 +202,7 @@ class UserRepository {
     required String role,
   }) async {
     FirebaseApp? secondaryApp;
+    User? secondaryUser;
     final appName = 'userCreation_${DateTime.now().millisecondsSinceEpoch}';
     try {
       // Use a secondary Firebase App to avoid signing out the admin
@@ -214,18 +216,22 @@ class UserRepository {
         email: email,
         password: password,
       );
+      secondaryUser = credential.user;
       final uid = credential.user!.uid;
       final normalizedRole = role.trim().toLowerCase() == AppConstants.roleAdmin
           ? AppConstants.roleAdmin
           : AppConstants.roleTechnician;
+      final normalizedEmail = _normalizedEmail(email);
 
       // Create the Firestore user document with the specified role
       await _usersRef.doc(uid).set({
         'name': name,
         'email': email,
+        'emailLower': normalizedEmail,
         'role': normalizedRole,
         'isActive': true,
         'language': 'en',
+        'themeMode': 'dark',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -236,6 +242,11 @@ class UserRepository {
     } catch (e) {
       // Always clean up the secondary app
       if (secondaryApp != null) {
+        if (secondaryUser != null) {
+          try {
+            await secondaryUser.delete();
+          } catch (_) {}
+        }
         try {
           await secondaryApp.delete();
         } catch (_) {}
@@ -297,16 +308,6 @@ class UserRepository {
         );
       }
       throw AdminException.userSaveFailed();
-    }
-  }
-
-  /// Update own display name (any authenticated user).
-  Future<void> updateSelfName(String uid, String name) async {
-    try {
-      await _usersRef.doc(uid).update({'name': name});
-    } on FirebaseException catch (e) {
-      debugPrint('updateSelfName error code: ${e.code}');
-      throw AuthException.updateFailed();
     }
   }
 

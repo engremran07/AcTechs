@@ -1,6 +1,9 @@
 # ProGuard rules for AC Techs release build
-# Keep Firebase
--keep class com.google.firebase.** { *; }
+# Keep Firebase — scoped to components in use (auth, firestore, appcheck only)
+# Broad wildcard kept intentionally resticted to not defeat R8 tree-shaking
+-keep class com.google.firebase.auth.** { *; }
+-keep class com.google.firebase.firestore.** { *; }
+-keep class com.google.firebase.appcheck.** { *; }
 -keep class com.google.android.gms.** { *; }
 # Keep Gson/JSON parsing
 -keepattributes Signature

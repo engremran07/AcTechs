@@ -571,7 +571,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               : l.jobSaved,
         );
         if (_isEditing) {
-          context.go('/tech/history');
+          context.pop();
         } else {
           _resetForm();
           _captureInitialFormSignature();

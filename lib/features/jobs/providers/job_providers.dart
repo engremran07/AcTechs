@@ -119,10 +119,23 @@ final technicianJobsProvider = StreamProvider.autoDispose<List<JobModel>>((
   return ref.watch(jobRepositoryProvider).technicianJobs(user.uid);
 });
 
-final todaysJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
-  final user = ref.watch(currentUserProvider).value;
-  if (user == null) return Stream.value([]);
-  return ref.watch(jobRepositoryProvider).todaysJobs(user.uid);
+final todaysJobsProvider = Provider.autoDispose<AsyncValue<List<JobModel>>>((
+  ref,
+) {
+  // Derived from technicianJobsProvider — no extra Firestore listener on jobs/.
+  final today = DateTime.now();
+  return ref
+      .watch(technicianJobsProvider)
+      .whenData(
+        (jobs) => jobs
+            .where(
+              (j) =>
+                  j.date?.year == today.year &&
+                  j.date?.month == today.month &&
+                  j.date?.day == today.day,
+            )
+            .toList(growable: false),
+      );
 });
 
 final pendingApprovalsProvider = StreamProvider.autoDispose<List<JobModel>>((

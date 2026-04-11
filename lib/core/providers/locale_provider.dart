@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
+import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
 const _kLocaleKey = 'app_locale';
@@ -13,48 +14,49 @@ final appLocaleProvider = NotifierProvider<LocaleNotifier, String>(
 );
 
 class LocaleNotifier extends Notifier<String> {
-  bool _syncedFromUser = false;
+  bool _hydratedFromPrefs = false;
+  String _currentLocale = 'en';
 
   @override
   String build() {
-    _init();
+    if (!_hydratedFromPrefs) {
+      _hydratedFromPrefs = true;
+      unawaited(_loadFromPrefs());
+    }
 
-    // Pick up Firestore language when authenticated user becomes available.
     final user = ref.watch(currentUserProvider).value;
-    if (user != null && !_syncedFromUser) {
-      _syncedFromUser = true;
-      if (user.language.isNotEmpty && user.language != state) {
+    if (user != null &&
+        user.language.isNotEmpty &&
+        user.language != _currentLocale) {
+      _currentLocale = user.language;
+      unawaited(_saveLocaleToPrefs(user.language));
+      if (state != user.language) {
         state = user.language;
-        _saveLocaleToPrefs(user.language);
       }
     }
-    if (user == null) {
-      _syncedFromUser = false;
-    }
 
-    return 'en';
+    return _currentLocale;
   }
 
-  Future<void> _init() async {
-    // Load from SharedPreferences first (pre-login)
+  Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_kLocaleKey);
-    if (saved != null && saved != state) {
+    if (saved != null && saved != _currentLocale) {
+      _currentLocale = saved;
       state = saved;
     }
   }
 
   Future<void> setLocale(String locale) async {
-    state = locale;
-    await _saveLocaleToPrefs(locale);
+    final normalizedLocale = locale.trim().toLowerCase();
+    _currentLocale = normalizedLocale;
+    state = normalizedLocale;
+    await _saveLocaleToPrefs(normalizedLocale);
 
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection(AppConstants.usersCollection)
-            .doc(user.uid)
-            .update({'language': locale});
+        await ref.read(authRepositoryProvider).updateLanguage(normalizedLocale);
       } catch (_) {
         // Keep local selection even if cloud sync fails.
       }

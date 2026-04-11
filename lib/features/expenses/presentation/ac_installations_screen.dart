@@ -32,14 +32,15 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
             icon: const Icon(Icons.add_circle_outline_rounded),
             color: ArcticTheme.arcticBlue,
             tooltip: l.logAcInstallations,
-            onPressed: () => context.go('/tech/submit'),
+            onPressed: () => context.push('/tech/submit'),
           ),
         ],
       ),
       body: SafeArea(
         child: ArcticRefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(todaysJobsProvider);
+            // Invalidate the parent stream; todaysJobsProvider is now derived from it
+            ref.invalidate(technicianJobsProvider);
           },
           child: ListView(
             padding: const EdgeInsets.all(16),

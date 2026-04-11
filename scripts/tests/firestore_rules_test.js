@@ -199,6 +199,12 @@ async function main() {
         role: 'admin',
         isActive: true,
       });
+      await seedDoc(context, 'users/admin-2', {
+        name: 'Inactive Admin',
+        email: 'admin2@example.com',
+        role: 'admin',
+        isActive: false,
+      });
       await seedDoc(context, 'users/tech-1', {
         name: 'Tech One',
         email: 'tech1@example.com',
@@ -238,8 +244,12 @@ async function main() {
     });
 
     const activeTech = testEnv.authenticatedContext('tech-1');
+    const activeTechWithUpdatedEmail = testEnv.authenticatedContext('tech-1', {
+      email: 'tech1+new@example.com',
+    });
     const inactiveTech = testEnv.authenticatedContext('tech-2');
     const admin = testEnv.authenticatedContext('admin-1');
+    const inactiveAdmin = testEnv.authenticatedContext('admin-2');
 
     await assertSucceeds(
       activeTech.firestore().collection('ac_installs').add({
@@ -296,13 +306,40 @@ async function main() {
       }),
     );
 
+    await assertSucceeds(
+      activeTech.firestore().doc('users/tech-1').update({
+        language: 'ur',
+      }),
+    );
+
+    await assertSucceeds(
+      activeTech.firestore().doc('users/tech-1').update({
+        themeMode: 'light',
+      }),
+    );
+
+    await assertSucceeds(
+      activeTechWithUpdatedEmail.firestore().doc('users/tech-1').update({
+        email: 'tech1+new@example.com',
+        emailLower: 'tech1+new@example.com',
+      }),
+    );
+
     await assertFails(
       activeTech.firestore().doc('users/tech-1').update({
         email: 'other@example.com',
       }),
     );
 
+    await assertFails(
+      activeTech.firestore().doc('users/tech-1').update({
+        themeMode: 'neon',
+      }),
+    );
+
     await assertFails(activeTech.firestore().doc('users/tech-1').delete());
+
+    await assertFails(inactiveAdmin.firestore().collection('users').get());
 
     await assertSucceeds(
       createJobWithClaim(activeTech, {
@@ -869,6 +906,175 @@ async function main() {
       .doc('ac_installs/install-1/history/event-1')
       .get();
     assert.strictEqual(historyDoc.data().newStatus, 'approved');
+
+    // ── Cross-User Isolation Tests ─────────────────────────────────────────
+    // Tech-2 (active but different tech) seeded for cross-user tests
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await seedDoc(context, 'users/tech-3', {
+        name: 'Tech Three',
+        email: 'tech3@example.com',
+        role: 'technician',
+        isActive: true,
+      });
+      await seedDoc(context, 'expenses/expense-tech1', {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Fuel',
+        amount: 100,
+        note: 'Tech 1 expense',
+        expenseType: 'work',
+        status: 'pending',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-02-01T08:00:00Z'),
+        createdAt: new Date('2024-02-01T08:00:00Z'),
+        reviewedAt: null,
+        isDeleted: false,
+        deletedAt: null,
+      });
+      await seedDoc(context, 'earnings/earning-tech1', {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Other',
+        amount: 50,
+        note: 'Tech 1 earning',
+        status: 'pending',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-02-01T08:00:00Z'),
+        createdAt: new Date('2024-02-01T08:00:00Z'),
+        reviewedAt: null,
+        isDeleted: false,
+        deletedAt: null,
+      });
+      // Seed a dedicated aggregate for the H-03 membership check
+      await seedDoc(context, 'shared_install_aggregates/iso-group-1', {
+        groupKey: 'iso-group-1',
+        companyId: '',
+        companyName: '',
+        clientName: '',
+        clientContact: '',
+        sharedInvoiceSplitUnits: 2,
+        sharedInvoiceWindowUnits: 0,
+        sharedInvoiceFreestandingUnits: 0,
+        sharedInvoiceUninstallSplitUnits: 0,
+        sharedInvoiceUninstallWindowUnits: 0,
+        sharedInvoiceUninstallFreestandingUnits: 0,
+        sharedInvoiceBracketCount: 0,
+        sharedDeliveryTeamCount: 1,
+        sharedInvoiceDeliveryAmount: 0,
+        consumedSplitUnits: 1,
+        consumedWindowUnits: 0,
+        consumedFreestandingUnits: 0,
+        consumedUninstallSplitUnits: 0,
+        consumedUninstallWindowUnits: 0,
+        consumedUninstallFreestandingUnits: 0,
+        consumedBracketCount: 0,
+        consumedDeliveryAmount: 0,
+        createdBy: 'tech-1',
+        createdAt: new Date('2024-01-12T09:00:00Z'),
+        updatedAt: new Date('2024-01-12T09:00:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
+      });
+    });
+
+    const tech3Context = testEnv.authenticatedContext('tech-3');
+
+    // Tech-3 CANNOT read Tech-1's expense
+    await assertFails(
+      tech3Context.firestore().doc('expenses/expense-tech1').get(),
+    );
+
+    // Tech-3 CANNOT read Tech-1's earning
+    await assertFails(
+      tech3Context.firestore().doc('earnings/earning-tech1').get(),
+    );
+
+    // Tech-3 CANNOT update Tech-1's expense
+    await assertFails(
+      tech3Context.firestore().doc('expenses/expense-tech1').update({
+        amount: 999,
+        note: 'tampered',
+        isDeleted: true,
+        deletedAt: new Date(),
+      }),
+    );
+
+    // Tech-3 CANNOT update Tech-1's earning
+    await assertFails(
+      tech3Context.firestore().doc('earnings/earning-tech1').update({
+        amount: 999,
+        isDeleted: true,
+        deletedAt: new Date(),
+      }),
+    );
+
+    // Tech-3 CANNOT create an expense on behalf of Tech-1
+    await assertFails(
+      tech3Context.firestore().collection('expenses').add({
+        techId: 'tech-1',
+        techName: 'Tech One',
+        category: 'Fuel',
+        amount: 1,
+        note: 'spoofed',
+        expenseType: 'work',
+        status: 'pending',
+        approvedBy: '',
+        adminNote: '',
+        date: new Date('2024-02-01T09:00:00Z'),
+        createdAt: new Date('2024-02-01T09:00:00Z'),
+        reviewedAt: null,
+      }),
+    );
+
+    // Tech-3 CANNOT update another tech's profile
+    await assertFails(
+      tech3Context.firestore().doc('users/tech-1').update({ name: 'Hacked' }),
+    );
+
+    // Tech-1 CANNOT read Tech-3's user document (cross-tech profile read)
+    await assertFails(
+      activeTech.firestore().doc('users/tech-3').get(),
+    );
+
+    // Admin CAN read any tech's expense
+    await assertSucceeds(
+      admin.firestore().doc('expenses/expense-tech1').get(),
+    );
+
+    // Admin CAN read any tech's earning
+    await assertSucceeds(
+      admin.firestore().doc('earnings/earning-tech1').get(),
+    );
+
+    // Tech-1 CAN get their own aggregate by known groupKey
+    await assertSucceeds(
+      activeTech.firestore().doc('shared_install_aggregates/iso-group-1').get(),
+    );
+
+    // Tech-3 CAN get a known aggregate by ID (low risk — requires guessing the id)
+    // but CANNOT list/query aggregates they are not a member of (H-03 fix).
+    // The list rule checks teamMemberIds per-document — tech-3 is not in iso-group-1.
+    await assertFails(
+      tech3Context.firestore()
+        .collection('shared_install_aggregates')
+        .where('groupKey', '==', 'iso-group-1')
+        .get(),
+    );
+
+    // Tech-1 CAN list aggregates where they are a team member
+    await assertSucceeds(
+      activeTech.firestore()
+        .collection('shared_install_aggregates')
+        .where('teamMemberIds', 'array-contains', 'tech-1')
+        .get(),
+    );
+
+    // Admin CAN list all aggregates without restriction
+    await assertSucceeds(
+      admin.firestore().collection('shared_install_aggregates').get(),
+    );
   } finally {
     await testEnv.cleanup();
   }

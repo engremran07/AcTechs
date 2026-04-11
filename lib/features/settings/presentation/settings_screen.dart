@@ -801,8 +801,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     try {
       await ref
-          .read(userRepositoryProvider)
-          .updateSelfName(user.uid, nameCtrl.text.trim());
+          .read(authRepositoryProvider)
+          .updateDisplayName(nameCtrl.text.trim());
       if (!context.mounted) return;
       AppFeedback.success(context, message: l.profileUpdated);
     } on AppException catch (e) {

@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -8,9 +11,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-import java.util.Properties
-import java.io.FileInputStream
-
 // Load keystore credentials from key.properties (never commit that file).
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
@@ -20,7 +20,7 @@ val hasKeystore = keystorePropertiesFile.exists().also { exists ->
 
 android {
     namespace = "com.actechs.pk"
-    compileSdk = 36
+    compileSdk = 36  // Android 16 (API 36) GA — required by plugin deps
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -35,10 +35,9 @@ android {
     defaultConfig {
         applicationId = "com.actechs.pk"
         minSdk = 29          // Android 10
-        targetSdk = 35       // Android 15 (Vanilla Ice Cream) — forward-compatible to 16
+        targetSdk = 36       // Android 16 (Baklava) — matches compileSdk
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
     }
 
     signingConfigs {

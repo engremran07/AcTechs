@@ -31,7 +31,8 @@ final currentUserProvider = StreamProvider<UserModel?>((ref) {
       return ref.watch(authRepositoryProvider).userStream(user.uid);
     },
     loading: () => Stream.value(null),
-    error: (e, _) => Stream.value(null),
+    error: (e, st) =>
+        Stream.error(e, st), // propagate — don't swallow to silent null
   );
 });
 

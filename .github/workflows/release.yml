@@ -196,7 +196,6 @@ jobs:
 
       # ── Decode release keystore (optional but recommended) ─────────────────
       - name: Decode release keystore
-        continue-on-error: true
         env:
           KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
         run: |
@@ -208,7 +207,6 @@ jobs:
           chmod 600 android/app/release.keystore
 
       - name: Write key.properties
-        continue-on-error: true
         run: |
           if [ ! -f android/app/release.keystore ]; then
             echo "⚠️  Keystore not available — skipping key.properties generation."

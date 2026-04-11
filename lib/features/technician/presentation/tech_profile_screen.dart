@@ -8,7 +8,6 @@ import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
-import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class TechProfileScreen extends ConsumerStatefulWidget {
@@ -158,19 +157,19 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
                   label: 'English',
                   code: 'en',
                   selected: user?.language == 'en',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'en'),
+                  onTap: () => _updateLanguage(ref, 'en'),
                 ),
                 _LanguageTile(
                   label: 'اردو',
                   code: 'ur',
                   selected: user?.language == 'ur',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'ur'),
+                  onTap: () => _updateLanguage(ref, 'ur'),
                 ),
                 _LanguageTile(
                   label: 'العربية',
                   code: 'ar',
                   selected: user?.language == 'ar',
-                  onTap: () => _updateLanguage(ref, user?.uid, 'ar'),
+                  onTap: () => _updateLanguage(ref, 'ar'),
                 ),
               ],
             ),
@@ -195,11 +194,8 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
     );
   }
 
-  void _updateLanguage(WidgetRef ref, String? uid, String lang) {
+  void _updateLanguage(WidgetRef ref, String lang) {
     ref.read(appLocaleProvider.notifier).setLocale(lang);
-    if (uid != null) {
-      ref.read(userRepositoryProvider).updateLanguage(uid, lang);
-    }
   }
 }
 

@@ -10,6 +10,9 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  # Promote critical async violation to error so `flutter analyze` hard-fails on dropped awaits.
+  errors:
+    unawaited_futures: error
   # Exclude directories that are not part of the app source.
   exclude:
     - docs/**

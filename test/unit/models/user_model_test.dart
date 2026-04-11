@@ -1,3 +1,4 @@
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ac_techs/core/models/user_model.dart';
 
@@ -65,6 +66,25 @@ void main() {
       expect(UserModel.fromJson(json).language, 'ur');
     });
 
+    test('applies default themeMode "dark" when absent', () {
+      final json = {
+        'uid': 'u6-theme',
+        'name': 'Default Theme',
+        'email': 'theme@example.com',
+      };
+      expect(UserModel.fromJson(json).themeMode, 'dark');
+    });
+
+    test('parses explicit themeMode "light"', () {
+      final json = {
+        'uid': 'u6-theme-light',
+        'name': 'Light Theme',
+        'email': 'light@example.com',
+        'themeMode': 'light',
+      };
+      expect(UserModel.fromJson(json).themeMode, 'light');
+    });
+
     test('parses createdAt from ISO string', () {
       final json = {
         'uid': 'u7',
@@ -98,6 +118,7 @@ void main() {
         role: 'admin',
         isActive: false,
         language: 'ar',
+        themeMode: 'light',
       );
       final json = model.toJson();
 
@@ -107,7 +128,39 @@ void main() {
       expect(json['role'], 'admin');
       expect(json['isActive'], isFalse);
       expect(json['language'], 'ar');
+      expect(json['themeMode'], 'light');
       expect(json['createdAt'], isNull);
+    });
+  });
+
+  group('UserModel.fromFirestore()', () {
+    test('normalizes legacy admin role casing', () async {
+      final firestore = FakeFirebaseFirestore();
+      await firestore.collection('users').doc('legacy-admin').set({
+        'name': 'Legacy Admin',
+        'email': 'legacy@example.com',
+        'role': 'Administrator',
+      });
+
+      final doc = await firestore.collection('users').doc('legacy-admin').get();
+      final model = UserModel.fromFirestore(doc);
+
+      expect(model.role, 'admin');
+      expect(model.isAdmin, isTrue);
+    });
+
+    test('applies default themeMode for legacy Firestore docs', () async {
+      final firestore = FakeFirebaseFirestore();
+      await firestore.collection('users').doc('legacy-theme').set({
+        'name': 'Legacy Theme',
+        'email': 'legacy-theme@example.com',
+        'role': 'technician',
+      });
+
+      final doc = await firestore.collection('users').doc('legacy-theme').get();
+      final model = UserModel.fromFirestore(doc);
+
+      expect(model.themeMode, 'dark');
     });
   });
 
@@ -212,11 +265,13 @@ void main() {
         name: 'Stored Name',
         email: 'stored@example.com',
         role: 'admin',
+        themeMode: 'highContrast',
       );
       final firestoreMap = model.toFirestore();
       expect(firestoreMap['name'], 'Stored Name');
       expect(firestoreMap['email'], 'stored@example.com');
       expect(firestoreMap['role'], 'admin');
+      expect(firestoreMap['themeMode'], 'highContrast');
     });
   });
 }

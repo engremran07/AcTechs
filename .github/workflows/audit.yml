@@ -46,7 +46,7 @@ jobs:
         run: flutter analyze --no-pub
 
       - name: Run Flutter tests
-        run: flutter test
+        run: flutter test --coverage
 
       - name: Install Firestore rules dependencies
         working-directory: scripts
@@ -83,3 +83,46 @@ jobs:
             exit 1
           fi
           echo "✅ Presentation screens use theme colors"
+
+      - name: Gate — No context.go() on detail or settings routes
+        run: |
+          if grep -REn "context\.go\('/(admin/(settings|companies|settlements|flush|import)|tech/(summary|settlements|inout|submit))'" lib/ 2>/dev/null; then
+            echo "❌ FAIL: Detail/settings route uses context.go() — must use context.push()"
+            exit 1
+          fi
+          echo "✅ No back-stack-destroying context.go() on detail routes"
+
+      - name: Gate — No hardcoded Firestore collection strings
+        run: |
+          if grep -REn "\.collection\('[a-z_]+'\)" lib/ 2>/dev/null; then
+            echo "❌ FAIL: Firestore .collection() call with hardcoded string literal — use AppConstants.*"
+            exit 1
+          fi
+          echo "✅ All Firestore collection calls use AppConstants"
+
+      - name: Gate — No Navigator.push() in presentation code
+        run: |
+          if grep -REn "Navigator\.push\(" lib/features/ 2>/dev/null; then
+            echo "❌ FAIL: Navigator.push() in presentation code — use context.push()"
+            exit 1
+          fi
+          echo "✅ No Navigator.push() in presentation layer"
+
+      - name: Gate — No continue-on-error on keystore steps
+        run: |
+          if grep -B5 "continue-on-error: true" .github/workflows/release.yml 2>/dev/null | grep -q "keystore\|key.properties"; then
+            echo "❌ FAIL: continue-on-error: true found on keystore step in release.yml"
+            exit 1
+          fi
+          echo "✅ Keystore steps will hard-fail on errors"
+
+      - name: Gate — No StreamProvider for single-day In/Out queries
+        run: |
+          VIOLATIONS=$(grep -REn "StreamProvider.*autoDispose.*for.*day\|todaysExpensesProvider.*StreamProvider\|todaysEarningsProvider.*StreamProvider\|todaysJobsProvider.*StreamProvider" lib/ 2>/dev/null)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ FAIL: Found StreamProvider for single-day In/Out data:"
+            echo "$VIOLATIONS"
+            echo "Use Provider<AsyncValue<...>> derived from monthly provider instead."
+            exit 1
+          fi
+          echo "✅ In/Out single-day providers are derived (no extra Firestore listeners)"

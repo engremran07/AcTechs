@@ -12,6 +12,12 @@ service cloud.firestore {
       return request.auth != null ? request.auth.uid : '';
     }
 
+    function authEmailOrEmpty() {
+      return request.auth != null && request.auth.token.email is string
+        ? request.auth.token.email
+        : '';
+    }
+
     function userExists() {
       return isAuth() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid));
@@ -24,21 +30,17 @@ service cloud.firestore {
 
     // Helper: check if caller is admin
     function isAdmin() {
-      return userExists() &&
-        userData().role is string &&
-        userData().role in [
-          'admin',
-          'administrator',
-          'Admin',
-          'Administrator',
-          'ADMIN',
-          'ADMINISTRATOR'
-        ];
+      let data = userExists() ? userData() : null;
+      return data != null &&
+        (!(data.isActive is bool) || data.isActive == true) &&
+        data.role is string &&
+        data.role == 'admin';  // Only lowercase-normalized role; console writes with ADMIN won't escalate
     }
 
     function isActiveUser() {
-      return userExists() &&
-        (!(userData().isActive is bool) || userData().isActive == true);
+      let data = userExists() ? userData() : null;
+      return data != null &&
+        (!(data.isActive is bool) || data.isActive == true);
     }
 
     function approvalConfigDocPath() {
@@ -101,12 +103,15 @@ service cloud.firestore {
     }
 
     function validInvoiceClaimState() {
+      // NOTE: Do NOT add isAdmin() here — it pushes the Firestore 10-read-per-eval budget
+      // over the limit for second-contributor shared installs (12 reads total), permanently
+      // blocking all shared-install second contributions. The admin path goes through
+      // adminJobCreateAllowed() which does not call validInvoiceClaimState().
       return invoiceClaimAfterExists() &&
         invoiceClaimAfterData().invoiceNumber == request.resource.data.invoiceNumber &&
         invoiceClaimAfterData().companyId == request.resource.data.companyId &&
         invoiceClaimAfterData().companyName == request.resource.data.companyName &&
         invoiceClaimAfterData().reuseMode == requestedInvoiceReuseMode() &&
-        (invoiceClaimAfterData().createdBy == request.auth.uid || isAdmin()) &&
         invoiceClaimAfterData().activeJobCount is int &&
         invoiceClaimAfterData().activeJobCount > 0 &&
         invoiceClaimAfterData().createdAt is timestamp &&
@@ -786,6 +791,47 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == uid;
     }
 
+    function validSelfLanguage(value) {
+      return value in ['en', 'ur', 'ar'];
+    }
+
+    function validSelfThemeMode(value) {
+      return value in ['auto', 'dark', 'light', 'highContrast'];
+    }
+
+    function validOwnUserUpdate(userId) {
+      let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
+      return isOwner(userId) &&
+        changedKeys.hasOnly([
+          'language',
+          'name',
+          'email',
+          'emailLower',
+          'themeMode'
+        ]) &&
+        request.resource.data.get('name', '') is string &&
+        request.resource.data.get('name', '').size() > 0 &&
+        request.resource.data.get('language', 'en') is string &&
+        validSelfLanguage(request.resource.data.get('language', 'en')) &&
+        (
+          !changedKeys.hasAny(['themeMode']) ||
+          (
+            request.resource.data.themeMode is string &&
+            validSelfThemeMode(request.resource.data.themeMode)
+          )
+        ) &&
+        (
+          !changedKeys.hasAny(['email', 'emailLower']) ||
+          (
+            request.resource.data.email is string &&
+            authEmailOrEmpty() != '' &&
+            request.resource.data.email == authEmailOrEmpty() &&
+            request.resource.data.emailLower is string &&
+            request.resource.data.emailLower == request.resource.data.email.lower()
+          )
+        );
+    }
+
     // ─── Users ───
     match /users/{userId} {
       // get: own profile or admin
@@ -795,10 +841,7 @@ service cloud.firestore {
       allow list: if isAdmin() || isActiveUser();
       allow create: if isAdmin();
       // Admins can update anything; users can update their own profile fields.
-      allow update: if isAdmin() ||
-        (isOwner(userId) &&
-         request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['language', 'name']));
+      allow update: if isAdmin() || validOwnUserUpdate(userId);
       allow delete: if isAdmin();
     }
 
@@ -829,9 +872,17 @@ service cloud.firestore {
     }
 
     match /shared_install_aggregates/{aggregateId} {
+      // get: any active user can fetch by known groupKey (low risk — requires
+      // knowing the deterministic companyId-invoiceNumber key).
       allow get: if isAdmin() || isActiveUser();
-      // Active users may list (needed for arrayContains teamMemberIds query)
-      allow list: if isAdmin() || isActiveUser();
+      // list: evaluated per-document by the emulator; each returned document
+      // must pass the teamMemberIds membership check. Restricts enumeration
+      // to members only (H-03). Tech's pendingSharedInstallAggregatesProvider
+      // uses an arrayContains query on teamMemberIds so only member docs are
+      // requested, and each is confirmed by this rule.
+      allow list: if isAdmin() ||
+        (isActiveUser() &&
+          resource.data.teamMemberIds.hasAny([request.auth.uid]));
 
       allow create: if (isAdmin() || isActiveUser()) &&
         validSharedAggregateCreatePayload();
@@ -1185,7 +1236,7 @@ service cloud.firestore {
 
     // ─── Companies ───
     match /companies/{companyId} {
-      allow read: if isAuth();
+      allow read: if isAdmin() || isActiveUser();  // isAuth() too broad — deactivated tokens (live 1h) must not read
       allow create: if isAdmin() &&
         request.resource.data.keys().hasOnly([
           'name',
@@ -1216,7 +1267,7 @@ service cloud.firestore {
 
     // ─── App Settings ───
     match /app_settings/{docId} {
-      allow read: if isAuth();
+      allow read: if isAdmin() || isActiveUser();  // isAuth() too broad — deactivated tokens (live 1h) must not read
       allow write: if isAdmin();
     }
   }
