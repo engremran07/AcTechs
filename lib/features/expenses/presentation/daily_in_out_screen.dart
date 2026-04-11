@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
-import 'package:ac_techs/core/services/pdf_generator.dart';
+import 'package:ac_techs/core/services/pdf_export_service.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
@@ -689,10 +689,17 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         'ar' => 'تقرير $personName ($languageLabel)',
         _ => 'Report of $personName ($languageLabel)',
       };
+      final personToken = AppFormatters.slugify(personName).isEmpty
+          ? 'technician'
+          : AppFormatters.slugify(personName);
+      final fileSuffix = normalizedRange != null
+          ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
+          : '${AppFormatters.monthNameToken(normalizedMonth)}-${normalizedMonth.year}';
 
-      final bytes = await PdfGenerator.generateTodayInOutReport(
+      await PdfExportService.shareInOutReport(
         earnings: earnings,
         expenses: expenses,
+        fileName: '$personToken-$reportLocale-$fileSuffix-in-out.pdf',
         locale: reportLocale,
         technicianName: personName,
         reportTitle: reportTitle,
@@ -707,16 +714,6 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         ),
       );
 
-      final personToken = AppFormatters.slugify(personName).isEmpty
-          ? 'technician'
-          : AppFormatters.slugify(personName);
-      final fileSuffix = normalizedRange != null
-          ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
-          : '${AppFormatters.monthNameToken(normalizedMonth)}-${normalizedMonth.year}';
-      await PdfGenerator.sharePdfBytes(
-        bytes,
-        '$personToken-$reportLocale-$fileSuffix-in-out.pdf',
-      );
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(context, message: l.couldNotExport);

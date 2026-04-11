@@ -6,8 +6,8 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
-import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
+import 'package:ac_techs/core/services/pdf_export_service.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -439,19 +439,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         'ar' => 'Ï¬┘éÏ▒┘èÏ▒ ${options.techName} ($languageLabel)',
         _ => 'Report of ${options.techName} ($languageLabel)',
       };
-
-      final bytes = await PdfGenerator.generateTodayInOutReport(
-        earnings: scopedEarnings,
-        expenses: scopedExpenses,
-        locale: options.locale,
-        technicianName: options.techName,
-        reportTitle: reportTitle,
-        reportDate: normalizedRange?.start ?? normalizedMonth,
-        periodLabel: periodLabel,
-        monthlyMode: true,
-        reportBranding: _appOnlyReportBranding(l),
-      );
-
       final techToken = AppFormatters.slugify(options.techName).isEmpty
           ? 'technician'
           : AppFormatters.slugify(options.techName);
@@ -459,9 +446,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           ? '${normalizedRange.start.year}-${normalizedRange.start.month.toString().padLeft(2, '0')}-${normalizedRange.start.day.toString().padLeft(2, '0')}-to-${normalizedRange.end.year}-${normalizedRange.end.month.toString().padLeft(2, '0')}-${normalizedRange.end.day.toString().padLeft(2, '0')}'
           : AppFormatters.monthToken(normalizedMonth);
 
-      await PdfGenerator.sharePdfBytes(
-        bytes,
-        '$techToken-${options.locale}-$periodToken-in-out.pdf',
+      await PdfExportService.shareInOutReport(
+        earnings: scopedEarnings,
+        expenses: scopedExpenses,
+        fileName: '$techToken-${options.locale}-$periodToken-in-out.pdf',
+        locale: options.locale,
+        technicianName: options.techName,
+        reportTitle: reportTitle,
+        reportDate: normalizedRange?.start ?? normalizedMonth,
+        periodLabel: periodLabel,
+        monthlyMode: true,
+        reportBranding: _appOnlyReportBranding(l),
       );
     } catch (_) {
       if (mounted) {
@@ -730,11 +725,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Future<void> _exportToPdf(List<JobModel> jobs) async {
     final locale = ref.read(appLocaleProvider);
     try {
-      await PdfGenerator.previewPdf(
-        context,
-        jobs,
-        locale,
-        _appOnlyReportBranding(AppLocalizations.of(context)!),
+      await PdfExportService.previewJobsReport(
+        context: context,
+        jobs: jobs,
+        locale: locale,
+        reportBranding: _appOnlyReportBranding(AppLocalizations.of(context)!),
       );
     } catch (_) {
       if (mounted) {
@@ -823,9 +818,15 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       };
 
       final periodLabel = AppFormatters.monthLabel(l, month);
+      final companyToken = AppFormatters.slugify(
+        companyName.isEmpty ? l.noCompany : companyName,
+      );
+      final fileName =
+          '${companyToken.isEmpty ? 'company' : companyToken}-${AppFormatters.monthToken(month)}-invoice-report.pdf';
 
-      final bytes = await PdfGenerator.generateTodayCompanyInvoicesReport(
+      await PdfExportService.shareCompanyInvoicesReport(
         jobs: scopedJobs,
+        fileName: fileName,
         locale: locale,
         reportTitle: reportTitle,
         periodLabel: periodLabel,
@@ -836,13 +837,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ),
       );
 
-      final companyToken = AppFormatters.slugify(
-        companyName.isEmpty ? l.noCompany : companyName,
-      );
-      final fileName =
-          '${companyToken.isEmpty ? 'company' : companyToken}-${AppFormatters.monthToken(month)}-invoice-report.pdf';
-
-      await PdfGenerator.sharePdfBytes(bytes, fileName);
     } catch (_) {
       if (mounted) {
         ErrorSnackbar.show(

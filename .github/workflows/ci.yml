@@ -115,6 +115,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Java 21 for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -128,6 +134,13 @@ jobs:
           path: scripts/node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('scripts/package-lock.json') }}
           restore-keys: ${{ runner.os }}-node-modules-
+
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ hashFiles('firebase.json') }}
+          restore-keys: ${{ runner.os }}-firebase-emulators-
 
       - name: Install rules test dependencies
         run: npm ci

@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 const command =
-  'firebase emulators:exec --config ../firebase.json --only firestore --project actechs-rules-test "node tests/firestore_rules_test.js && node tests/firestore_rules_settlement_shared_test.js"';
+  'firebase emulators:exec --config ../firebase.json --only firestore --project demo-actechs-rules-test "node tests/firestore_rules_test.js && node tests/firestore_rules_settlement_shared_test.js"';
 
 const disallowedPatterns = [
   /maximum of 1000 expressions/i,

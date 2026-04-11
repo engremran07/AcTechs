@@ -7,7 +7,7 @@ const {
   initializeTestEnvironment,
 } = require('@firebase/rules-unit-testing');
 
-const projectId = 'actechs-rules-test';
+const projectId = 'demo-actechs-rules-test';
 const rules = fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8');
 
 async function seedDoc(context, docPath, data) {
