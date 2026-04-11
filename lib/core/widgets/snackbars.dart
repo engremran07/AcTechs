@@ -45,6 +45,46 @@ class AppFeedback {
       duration: duration,
     );
   }
+
+  static void undo(
+    BuildContext context, {
+    required String message,
+    required String undoLabel,
+    required VoidCallback onUndo,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardTheme.color ?? ArcticTheme.arcticCard;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: duration,
+        backgroundColor: cardColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: undoLabel,
+          textColor: theme.colorScheme.primary,
+          onPressed: onUndo,
+        ),
+      ),
+    );
+  }
 }
 
 class _BaseSnackbar {

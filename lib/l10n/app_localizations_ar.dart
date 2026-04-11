@@ -1434,6 +1434,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذر الإرسال. يرجى تسجيل الخروج وإعادة تسجيل الدخول.';
 
   @override
+  String get loadingFailed => 'فشل التحميل. يرجى المحاولة مرة أخرى.';
+
+  @override
   String get invoiceSopTitle => 'تدفق إجراءات الفاتورة';
 
   @override

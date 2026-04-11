@@ -413,10 +413,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
     final quickUnits = _unitsFromQuickTemplate();
 
     if (quickUnits.isEmpty) {
-      AppFeedback.error(
-        context,
-        message: l.addServiceFirst,
-      );
+      AppFeedback.error(context, message: l.addServiceFirst);
       return;
     }
 
@@ -1041,7 +1038,22 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                   ),
                             loading: () =>
                                 const ArcticShimmer(height: 56, count: 1),
-                            error: (e, _) => const SizedBox.shrink(),
+                            error: (e, _) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const ArcticShimmer(height: 56, count: 1),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l.loadingFailed,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
                           )
                           .animate()
                           .fadeIn(delay: 100.ms),

@@ -165,7 +165,8 @@ class SharedInstallAggregate {
   /// Edge case: if ALL invoice values are 0 (e.g. a zero-unit test aggregate),
   /// we return false so it never self-hides without any real contribution.
   bool get isFullyConsumed {
-    final hasWork = sharedInvoiceSplitUnits > 0 ||
+    final hasWork =
+        sharedInvoiceSplitUnits > 0 ||
         sharedInvoiceWindowUnits > 0 ||
         sharedInvoiceFreestandingUnits > 0 ||
         sharedInvoiceUninstallSplitUnits > 0 ||
@@ -185,8 +186,7 @@ class SharedInstallAggregate {
             sharedInvoiceUninstallFreestandingUnits &&
         consumedBracketCount >= sharedInvoiceBracketCount &&
         (sharedInvoiceDeliveryAmount <= 0.0 ||
-            consumedDeliveryAmount >=
-                sharedInvoiceDeliveryAmount - 0.001);
+            consumedDeliveryAmount >= sharedInvoiceDeliveryAmount - 0.001);
   }
 
   /// Invoice number extracted from [groupKey].

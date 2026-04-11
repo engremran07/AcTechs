@@ -552,6 +552,7 @@
   "couldNotOpenSummary": "خلاصہ اسکرین نہیں کھل سکی۔ دوبارہ کوشش کریں۔",
   "userDataLoading": "براہ کرم انتظار فرمائیں — آپ کا پروفائل لوڈ ہو رہا ہے...",
   "couldNotSubmitJob": "جمع نہیں ہو سکا۔ براہ کرم سائن آؤٹ کریں اور دوبارہ سائن ان کریں۔",
+  "loadingFailed": "لوڈ نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔",
   "invoiceSopTitle": "انوائس SOP فلو",
   "excelStyleEntry": "ایکسل اسٹائل انٹری",
   "descriptionLabel": "تفصیل",

@@ -552,6 +552,7 @@
   "couldNotOpenSummary": "تعذر فتح شاشة الملخص. حاول مرة أخرى.",
   "userDataLoading": "يرجى الانتظار — جارٍ تحميل ملفك الشخصي...",
   "couldNotSubmitJob": "تعذر الإرسال. يرجى تسجيل الخروج وإعادة تسجيل الدخول.",
+  "loadingFailed": "فشل التحميل. يرجى المحاولة مرة أخرى.",
   "invoiceSopTitle": "تدفق إجراءات الفاتورة",
   "excelStyleEntry": "إدخال بنمط إكسل",
   "descriptionLabel": "الوصف",

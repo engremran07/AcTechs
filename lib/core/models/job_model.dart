@@ -135,6 +135,9 @@ abstract class JobModel with _$JobModel {
     DateTime? settlementPaidAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? settlementCorrectedAt,
+    @JsonKey(defaultValue: false) @Default(false) bool isDeleted,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? deletedAt,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>
@@ -253,6 +256,8 @@ extension JobModelX on JobModel {
   Map<String, dynamic> toFirestore() {
     final json = toJson();
     json.remove('id');
+    json.remove('isDeleted');
+    json.remove('deletedAt');
     return json;
   }
 }

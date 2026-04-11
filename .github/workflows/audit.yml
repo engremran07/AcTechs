@@ -179,7 +179,10 @@ jobs:
           block_start = 0
           block_verbs = {}
           for i, line in enumerate(lines, 1):
+            prev_depth = depth
             depth += line.count('{') - line.count('}')
+            if prev_depth > depth:
+              block_verbs = {}   # reset on block close — prevents false positives across sibling match blocks
             m = re.search(r'allow\s+(get|list|create|update|delete|read|write)', line)
             if m:
               verb = (depth, m.group(1))

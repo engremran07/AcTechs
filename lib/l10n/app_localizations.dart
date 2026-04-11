@@ -2745,6 +2745,12 @@ abstract class AppLocalizations {
   /// **'Could not submit. Please sign out and sign back in.'**
   String get couldNotSubmitJob;
 
+  /// No description provided for @loadingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load. Please try again.'**
+  String get loadingFailed;
+
   /// No description provided for @invoiceSopTitle.
   ///
   /// In en, this message translates to:

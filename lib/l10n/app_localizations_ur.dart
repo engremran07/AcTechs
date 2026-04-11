@@ -1438,6 +1438,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'جمع نہیں ہو سکا۔ براہ کرم سائن آؤٹ کریں اور دوبارہ سائن ان کریں۔';
 
   @override
+  String get loadingFailed => 'لوڈ نہیں ہو سکا۔ براہ کرم دوبارہ کوشش کریں۔';
+
+  @override
   String get invoiceSopTitle => 'انوائس SOP فلو';
 
   @override

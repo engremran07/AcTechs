@@ -284,16 +284,11 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           .read(earningRepositoryProvider)
           .archiveEarning(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.entryDeleted),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.undo,
-              onPressed: () =>
-                  ref.read(earningRepositoryProvider).restoreEarning(id),
-            ),
-          ),
+        AppFeedback.undo(
+          context,
+          message: AppLocalizations.of(context)!.entryDeleted,
+          undoLabel: AppLocalizations.of(context)!.undo,
+          onUndo: () => ref.read(earningRepositoryProvider).restoreEarning(id),
         );
       }
     } on AppException catch (e) {
@@ -314,16 +309,11 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
           .read(expenseRepositoryProvider)
           .archiveExpense(id, lockedBeforeDate: lockedBeforeDate);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.entryDeleted),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: AppLocalizations.of(context)!.undo,
-              onPressed: () =>
-                  ref.read(expenseRepositoryProvider).restoreExpense(id),
-            ),
-          ),
+        AppFeedback.undo(
+          context,
+          message: AppLocalizations.of(context)!.entryDeleted,
+          undoLabel: AppLocalizations.of(context)!.undo,
+          onUndo: () => ref.read(expenseRepositoryProvider).restoreExpense(id),
         );
       }
     } on AppException catch (e) {
@@ -1282,7 +1272,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               );
             },
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              // Bottom padding: FAB(56) + FAB margin(16) + gap(16) = 88
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
               children: [
                 // ── Summary Card ──
                 _buildSummaryCard(theme, earningsAsync, expensesAsync),
@@ -1740,7 +1731,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       children: items.asMap().entries.map((entry) {
         final item = entry.value;
         return Dismissible(
-          key: Key('${item.isIn ? "in" : "out"}_${item.id}'),
+          key: ValueKey(item.id),
           direction: DismissDirection.endToStart,
           background: Container(
             margin: const EdgeInsets.only(bottom: 8),

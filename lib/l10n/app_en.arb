@@ -552,6 +552,7 @@
   "couldNotOpenSummary": "Could not open summary screen. Please try again.",
   "userDataLoading": "Please wait — loading your profile...",
   "couldNotSubmitJob": "Could not submit. Please sign out and sign back in.",
+  "loadingFailed": "Failed to load. Please try again.",
   "invoiceSopTitle": "Invoice SOP Flow",
   "excelStyleEntry": "Excel Style Entry",
   "descriptionLabel": "Description",

@@ -2376,4 +2376,54 @@ class JobRepository {
       throw JobException.saveFailed();
     }
   }
+
+  /// Soft-archives a job (sets isDeleted=true, deletedAt=now).
+  /// NOTE: Archiving a shared-install job does NOT roll back aggregate consumed*
+  /// counters — counter rollback requires a cross-collection transaction that
+  /// exceeds the free-tier read budget. If discrepancy is detected, admin must
+  /// flush + rebuild the aggregate.
+  Future<void> archiveJob(
+    String id, {
+    DateTime? lockedBeforeDate,
+  }) async {
+    if (id.trim().isEmpty) throw JobException.saveFailed();
+    try {
+      final docRef = _jobsRef.doc(id);
+      final snap = await docRef.get();
+      if (!snap.exists) throw JobException.saveFailed();
+      final job = JobModel.fromFirestore(snap);
+      await _periodLockGuard.ensureUnlockedDate(
+        job.date ?? DateTime.now(),
+        cachedLockedBefore: lockedBeforeDate,
+      );
+      await docRef.update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    } catch (e) {
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Restores a soft-archived job (clears isDeleted and deletedAt).
+  /// Admin-only operation.
+  Future<void> restoreJob(String id) async {
+    if (id.trim().isEmpty) throw JobException.saveFailed();
+    try {
+      await _jobsRef.doc(id).update({
+        'isDeleted': false,
+        'deletedAt': null,
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } catch (e) {
+      throw JobException.saveFailed();
+    }
+  }
 }

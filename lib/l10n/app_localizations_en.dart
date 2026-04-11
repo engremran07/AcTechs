@@ -1434,6 +1434,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not submit. Please sign out and sign back in.';
 
   @override
+  String get loadingFailed => 'Failed to load. Please try again.';
+
+  @override
   String get invoiceSopTitle => 'Invoice SOP Flow';
 
   @override

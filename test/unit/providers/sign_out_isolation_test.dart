@@ -132,51 +132,43 @@ void main() {
     },
   );
 
-  test(
-    'technicianJobsProvider for tech-2 does not see tech-1 jobs',
-    () async {
-      await seedJob('tech-1', 'INV-100');
-      await seedJob('tech-2', 'INV-200');
+  test('technicianJobsProvider for tech-2 does not see tech-1 jobs', () async {
+    await seedJob('tech-1', 'INV-100');
+    await seedJob('tech-2', 'INV-200');
 
-      final container = buildContainer(_tech2);
+    final container = buildContainer(_tech2);
 
-      final sub = container.listen(technicianJobsProvider, (_, _) {});
-      addTearDown(sub.close);
+    final sub = container.listen(technicianJobsProvider, (_, _) {});
+    addTearDown(sub.close);
 
-      final jobs = await container.read(technicianJobsProvider.future);
-      expect(jobs, hasLength(1));
-      expect(jobs.single.invoiceNumber, 'INV-200');
-    },
-  );
+    final jobs = await container.read(technicianJobsProvider.future);
+    expect(jobs, hasLength(1));
+    expect(jobs.single.invoiceNumber, 'INV-200');
+  });
 
-  test(
-    'technicianJobsProvider is invalidated after sign-out — '
-    'switching users yields a fresh empty state',
-    () async {
-      await seedJob('tech-1', 'INV-001');
+  test('technicianJobsProvider is invalidated after sign-out — '
+      'switching users yields a fresh empty state', () async {
+    await seedJob('tech-1', 'INV-001');
 
-      // Simulate tech-1 session
-      final containerTech1 = buildContainer(_tech1);
-      final sub1 =
-          containerTech1.listen(technicianJobsProvider, (_, _) {});
-      addTearDown(sub1.close);
+    // Simulate tech-1 session
+    final containerTech1 = buildContainer(_tech1);
+    final sub1 = containerTech1.listen(technicianJobsProvider, (_, _) {});
+    addTearDown(sub1.close);
 
-      final jobsBefore = await containerTech1.read(technicianJobsProvider.future);
-      expect(jobsBefore, hasLength(1));
+    final jobsBefore = await containerTech1.read(technicianJobsProvider.future);
+    expect(jobsBefore, hasLength(1));
 
-      // Mark as invalidated (mirrors what signOut() does)
-      containerTech1.invalidate(technicianJobsProvider);
+    // Mark as invalidated (mirrors what signOut() does)
+    containerTech1.invalidate(technicianJobsProvider);
 
-      // Simulate tech-2 session (no jobs seeded for tech-2)
-      final containerTech2 = buildContainer(_tech2);
-      final sub2 =
-          containerTech2.listen(technicianJobsProvider, (_, _) {});
-      addTearDown(sub2.close);
+    // Simulate tech-2 session (no jobs seeded for tech-2)
+    final containerTech2 = buildContainer(_tech2);
+    final sub2 = containerTech2.listen(technicianJobsProvider, (_, _) {});
+    addTearDown(sub2.close);
 
-      final jobsAfter = await containerTech2.read(technicianJobsProvider.future);
-      expect(jobsAfter, isEmpty);
-    },
-  );
+    final jobsAfter = await containerTech2.read(technicianJobsProvider.future);
+    expect(jobsAfter, isEmpty);
+  });
 
   test(
     'techEarningsProvider only returns earnings for the current user',
