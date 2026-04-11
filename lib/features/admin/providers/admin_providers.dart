@@ -3,6 +3,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/expenses/providers/ac_install_providers.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
+
+class FlushProgressState {
+  const FlushProgressState({
+    required this.phase,
+    required this.step,
+    required this.totalSteps,
+  });
+
+  static const idle = FlushProgressState(
+    phase: FlushOperationPhase.idle,
+    step: 0,
+    totalSteps: 0,
+  );
+
+  final FlushOperationPhase phase;
+  final int step;
+  final int totalSteps;
+
+  bool get isRunning =>
+      phase != FlushOperationPhase.idle &&
+      phase != FlushOperationPhase.completed;
+
+  double? get progressValue => totalSteps > 0 ? step / totalSteps : null;
+}
 
 final allTechniciansProvider = StreamProvider.autoDispose<List<UserModel>>((
   ref,
@@ -30,18 +58,62 @@ final allUsersProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
 });
 
 final flushDatabaseProvider =
-    AsyncNotifierProvider<FlushDatabaseNotifier, void>(
+    AsyncNotifierProvider<FlushDatabaseNotifier, FlushProgressState>(
       FlushDatabaseNotifier.new,
     );
 
-final invoicePrefixMigrationProvider =
-    AsyncNotifierProvider<InvoicePrefixMigrationNotifier, void>(
-      InvoicePrefixMigrationNotifier.new,
-    );
-
-class FlushDatabaseNotifier extends AsyncNotifier<void> {
+class FlushDatabaseNotifier extends AsyncNotifier<FlushProgressState> {
   @override
-  FutureOr<void> build() {}
+  FutureOr<FlushProgressState> build() => FlushProgressState.idle;
+
+  List<FlushOperationPhase> _phasePlan({
+    required bool isTechnicianScope,
+    required bool deleteNonAdminUsers,
+  }) {
+    if (isTechnicianScope) {
+      return const [
+        FlushOperationPhase.verifyingPassword,
+        FlushOperationPhase.checkingConnection,
+        FlushOperationPhase.scanningAffectedData,
+        FlushOperationPhase.deletingOperationalData,
+        FlushOperationPhase.rebuildingDerivedData,
+        FlushOperationPhase.clearingLocalCache,
+        FlushOperationPhase.refreshingAppData,
+        FlushOperationPhase.completed,
+      ];
+    }
+
+    return [
+      FlushOperationPhase.verifyingPassword,
+      FlushOperationPhase.checkingConnection,
+      FlushOperationPhase.deletingOperationalData,
+      FlushOperationPhase.deletingDerivedData,
+      FlushOperationPhase.deletingCompanies,
+      if (deleteNonAdminUsers) FlushOperationPhase.archivingUsers,
+      FlushOperationPhase.clearingLocalCache,
+      FlushOperationPhase.refreshingAppData,
+      FlushOperationPhase.completed,
+    ];
+  }
+
+  void _setPhase(
+    FlushOperationPhase phase, {
+    required bool isTechnicianScope,
+    required bool deleteNonAdminUsers,
+  }) {
+    final plan = _phasePlan(
+      isTechnicianScope: isTechnicianScope,
+      deleteNonAdminUsers: deleteNonAdminUsers,
+    );
+    final stepIndex = plan.indexOf(phase);
+    state = AsyncData(
+      FlushProgressState(
+        phase: phase,
+        step: stepIndex < 0 ? 0 : stepIndex + 1,
+        totalSteps: plan.length,
+      ),
+    );
+  }
 
   /// Verifies the admin password then flushes the database.
   Future<void> flush(
@@ -49,37 +121,74 @@ class FlushDatabaseNotifier extends AsyncNotifier<void> {
     required bool deleteNonAdminUsers,
     String? targetTechnicianId,
   }) async {
-    state = const AsyncLoading();
+    final technicianId = targetTechnicianId?.trim();
+    final isTechnicianScope = technicianId != null && technicianId.isNotEmpty;
+
     try {
       final repo = ref.read(userRepositoryProvider);
+      _setPhase(
+        FlushOperationPhase.verifyingPassword,
+        isTechnicianScope: isTechnicianScope,
+        deleteNonAdminUsers: deleteNonAdminUsers,
+      );
       await repo.verifyAdminPassword(password);
-      if (targetTechnicianId != null && targetTechnicianId.trim().isNotEmpty) {
-        await repo.flushTechnicianData(targetTechnicianId);
+      if (isTechnicianScope) {
+        await repo.flushTechnicianData(
+          technicianId,
+          onProgress: (phase) => _setPhase(
+            phase,
+            isTechnicianScope: true,
+            deleteNonAdminUsers: deleteNonAdminUsers,
+          ),
+        );
       } else {
-        await repo.flushDatabase(deleteNonAdminUsers: deleteNonAdminUsers);
+        await repo.flushDatabase(
+          deleteNonAdminUsers: deleteNonAdminUsers,
+          onProgress: (phase) => _setPhase(
+            phase,
+            isTechnicianScope: false,
+            deleteNonAdminUsers: deleteNonAdminUsers,
+          ),
+        );
       }
-      state = const AsyncData(null);
-    } catch (e, st) {
-      state = AsyncError(e, st);
-      rethrow;
-    }
-  }
-}
 
-class InvoicePrefixMigrationNotifier extends AsyncNotifier<void> {
-  @override
-  FutureOr<void> build() {}
+      _setPhase(
+        FlushOperationPhase.refreshingAppData,
+        isTechnicianScope: isTechnicianScope,
+        deleteNonAdminUsers: deleteNonAdminUsers,
+      );
 
-  Future<InvoicePrefixNormalizationResult> run(String password) async {
-    state = const AsyncLoading();
-    try {
-      final repo = ref.read(userRepositoryProvider);
-      await repo.verifyAdminPassword(password);
-      final result = await repo.normalizeStoredInvoicePrefixes();
-      state = const AsyncData(null);
-      return result;
-    } catch (e, st) {
-      state = AsyncError(e, st);
+      // Invalidate all data providers so screens show fresh (empty) state.
+      // StreamProviders auto-update, but FutureProviders need manual invalidation.
+      ref.invalidate(adminJobSummaryProvider);
+      ref.invalidate(adminSettlementCandidatesProvider);
+      ref.invalidate(adminSettlementHistoryProvider);
+      ref.invalidate(settlementSummaryProvider);
+      ref.invalidate(technicianJobsProvider);
+      ref.invalidate(todaysJobsProvider);
+      ref.invalidate(pendingApprovalsProvider);
+      ref.invalidate(techExpensesProvider);
+      ref.invalidate(todaysExpensesProvider);
+      ref.invalidate(techEarningsProvider);
+      ref.invalidate(todaysEarningsProvider);
+      ref.invalidate(monthlyExpensesProvider);
+      ref.invalidate(monthlyEarningsProvider);
+      ref.invalidate(pendingExpensesProvider);
+      ref.invalidate(pendingEarningsProvider);
+      ref.invalidate(allCompaniesProvider);
+      ref.invalidate(activeCompaniesProvider);
+      ref.invalidate(allTechniciansProvider);
+      ref.invalidate(allUsersProvider);
+      ref.invalidate(technicianSettlementInboxProvider);
+      ref.invalidate(pendingAcInstallsProvider);
+
+      _setPhase(
+        FlushOperationPhase.completed,
+        isTechnicianScope: isTechnicianScope,
+        deleteNonAdminUsers: deleteNonAdminUsers,
+      );
+    } catch (e) {
+      state = const AsyncData(FlushProgressState.idle);
       rethrow;
     }
   }

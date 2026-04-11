@@ -37,13 +37,18 @@ class _AcInstallationsScreenState extends ConsumerState<AcInstallationsScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildInstallSourceCard(theme, todaysJobsAsync),
-            const SizedBox(height: 16),
-            _buildJobInstallSection(theme, todaysJobsAsync),
-          ],
+        child: ArcticRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(todaysJobsProvider);
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildInstallSourceCard(theme, todaysJobsAsync),
+              const SizedBox(height: 16),
+              _buildJobInstallSection(theme, todaysJobsAsync),
+            ],
+          ),
         ),
       ),
     );
@@ -268,7 +273,10 @@ class _InstallSummaryChip extends StatelessWidget {
           children: [
             TextSpan(
               text: '$value ',
-              style: const TextStyle(color: color, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             TextSpan(text: label),
           ],

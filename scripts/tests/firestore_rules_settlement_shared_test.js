@@ -119,6 +119,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2026-04-01T08:00:00Z'),
         updatedAt: new Date('2026-04-01T08:00:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       });
     });
 
@@ -233,6 +235,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2026-04-01T08:00:00Z'),
         updatedAt: new Date('2026-04-01T09:00:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       }),
     );
 
@@ -259,6 +263,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2026-04-01T08:00:00Z'),
         updatedAt: new Date('2026-04-01T09:05:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       }),
     );
   } finally {

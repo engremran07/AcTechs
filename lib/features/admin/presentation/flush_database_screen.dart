@@ -4,8 +4,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/providers/connectivity_status_provider.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -87,7 +89,15 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
           );
       if (!mounted) return;
       AppFeedback.success(context, message: l.flushSuccess);
-      context.go('/admin');
+      setState(() {
+        _step = 1;
+        _countdown = _kStep1Delay;
+        _passwordCtrl.clear();
+        _obscurePassword = true;
+        _deleteNonAdminUsers = false;
+        _targetTechnicianId = null;
+      });
+      _startCountdown();
     } on AppException catch (e) {
       if (!mounted) return;
       AppFeedback.error(context, message: e.message(locale));
@@ -107,11 +117,17 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final flushState = ref.watch(flushDatabaseProvider);
+    final progress = flushState.asData?.value ?? FlushProgressState.idle;
     final usersAsync = ref.watch(allUsersProvider);
+    final connectivityAsync = ref.watch(connectivityStatusProvider);
     final users = usersAsync.asData?.value;
     final technicians =
         users?.where((u) => !u.isAdmin).toList() ?? const <UserModel>[];
-    final isLoading = flushState.isLoading;
+    final isLoading = progress.isRunning;
+    final isOffline = connectivityAsync.maybeWhen(
+      data: (status) => status == AppConnectivityStatus.offline,
+      orElse: () => false,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -144,6 +160,8 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   onFlush: _executeFlush,
                   onCancel: () => context.go('/admin'),
                   isLoading: isLoading,
+                  isOffline: isOffline,
+                  progress: progress,
                   technicians: technicians,
                   targetTechnicianId: _targetTechnicianId,
                   onTargetTechnicianChanged: (value) =>
@@ -357,6 +375,8 @@ class _Step2View extends StatelessWidget {
     required this.onFlush,
     required this.onCancel,
     required this.isLoading,
+    required this.isOffline,
+    required this.progress,
     required this.deleteNonAdminUsers,
     required this.onToggleDeleteUsers,
     required this.technicians,
@@ -377,11 +397,34 @@ class _Step2View extends StatelessWidget {
   final VoidCallback onFlush;
   final VoidCallback onCancel;
   final bool isLoading;
+  final bool isOffline;
+  final FlushProgressState progress;
+
+  String _phaseLabel(AppLocalizations l) {
+    return switch (progress.phase) {
+      FlushOperationPhase.verifyingPassword => l.flushPhaseVerifyingPassword,
+      FlushOperationPhase.checkingConnection => l.flushPhaseCheckingConnection,
+      FlushOperationPhase.scanningAffectedData => l.flushPhaseScanningData,
+      FlushOperationPhase.deletingOperationalData =>
+        l.flushPhaseDeletingOperationalData,
+      FlushOperationPhase.deletingDerivedData =>
+        l.flushPhaseDeletingDerivedData,
+      FlushOperationPhase.deletingCompanies => l.flushPhaseDeletingCompanies,
+      FlushOperationPhase.archivingUsers => l.flushPhaseArchivingUsers,
+      FlushOperationPhase.rebuildingDerivedData =>
+        l.flushPhaseRebuildingDerivedData,
+      FlushOperationPhase.clearingLocalCache => l.flushPhaseClearingLocalCache,
+      FlushOperationPhase.refreshingAppData => l.flushPhaseRefreshingAppData,
+      FlushOperationPhase.completed => l.flushSuccess,
+      FlushOperationPhase.idle => l.flushInProgress,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final waiting = countdown > 0;
+    final isFlushBlocked = isOffline || waiting || isLoading;
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -548,6 +591,64 @@ class _Step2View extends StatelessWidget {
         ],
         const SizedBox(height: 32),
 
+        if (isOffline)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ArcticCard(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.cloud_off_rounded,
+                    color: ArcticTheme.arcticWarning,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l.flushRequiresInternetMessage,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        if (isLoading)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: ArcticCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _phaseLabel(l),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      minHeight: 8,
+                      value: progress.progressValue,
+                      backgroundColor: ArcticTheme.arcticTextSecondary
+                          .withValues(alpha: 0.2),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l.flushProgressStep(progress.step, progress.totalSteps),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         // Countdown / flush button
         SizedBox(
           width: double.infinity,
@@ -568,7 +669,7 @@ class _Step2View extends StatelessWidget {
                   ),
             label: Text(
               isLoading
-                  ? l.flushInProgress
+                  ? _phaseLabel(l)
                   : waiting
                   ? l.flushConfirmIn(countdown)
                   : l.flushConfirm,
@@ -580,7 +681,7 @@ class _Step2View extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            onPressed: (waiting || isLoading) ? null : onFlush,
+            onPressed: isFlushBlocked ? null : onFlush,
           ),
         ).animate().fadeIn(delay: 250.ms),
         const SizedBox(height: 12),

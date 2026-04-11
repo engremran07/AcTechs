@@ -11,6 +11,10 @@ const disallowedPatterns = [
 const child = spawn(command, {
   shell: true,
   stdio: ['inherit', 'pipe', 'pipe'],
+  env: {
+    ...process.env,
+    NODE_OPTIONS: '--no-deprecation',
+  },
 });
 
 let output = '';

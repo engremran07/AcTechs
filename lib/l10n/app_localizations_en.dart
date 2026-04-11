@@ -183,6 +183,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noJobsYet => 'No jobs submitted yet';
 
   @override
+  String get noDataYet => 'No data yet';
+
+  @override
   String get noJobsToday => 'No jobs submitted today';
 
   @override
@@ -297,10 +300,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get arabic => 'العربية';
 
   @override
+  String get pressBackAgainToExit => 'Press back again to exit the app.';
+
+  @override
   String get settings => 'Settings';
 
   @override
   String get offline => 'Offline';
+
+  @override
+  String get offlineBannerMessage =>
+      'No internet connection. You are viewing cached data until the connection returns.';
 
   @override
   String get syncing => 'Syncing...';
@@ -1145,6 +1155,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get flushFailed => 'Flush failed. Check connection and try again.';
+
+  @override
+  String get flushRequiresInternetMessage =>
+      'A live internet connection is required to verify your admin password and flush data safely.';
+
+  @override
+  String get flushPhaseVerifyingPassword => 'Verifying admin password...';
+
+  @override
+  String get flushPhaseCheckingConnection => 'Checking live connection...';
+
+  @override
+  String get flushPhaseScanningData => 'Scanning affected records...';
+
+  @override
+  String get flushPhaseDeletingOperationalData =>
+      'Deleting jobs and operational records...';
+
+  @override
+  String get flushPhaseDeletingDerivedData =>
+      'Deleting shared aggregates and invoice ledgers...';
+
+  @override
+  String get flushPhaseDeletingCompanies => 'Deleting companies...';
+
+  @override
+  String get flushPhaseArchivingUsers => 'Archiving non-admin users...';
+
+  @override
+  String get flushPhaseRebuildingDerivedData =>
+      'Rebuilding invoice ledgers and shared totals...';
+
+  @override
+  String get flushPhaseClearingLocalCache => 'Scheduling local cache reset...';
+
+  @override
+  String get flushPhaseRefreshingAppData => 'Refreshing app data...';
+
+  @override
+  String flushProgressStep(int current, int total) {
+    return 'Step $current of $total';
+  }
 
   @override
   String get flushWrongPassword => 'Incorrect password. Please try again.';

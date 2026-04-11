@@ -442,6 +442,12 @@ abstract class AppLocalizations {
   /// **'No jobs submitted yet'**
   String get noJobsYet;
 
+  /// No description provided for @noDataYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No data yet'**
+  String get noDataYet;
+
   /// No description provided for @noJobsToday.
   ///
   /// In en, this message translates to:
@@ -652,6 +658,12 @@ abstract class AppLocalizations {
   /// **'العربية'**
   String get arabic;
 
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit the app.'**
+  String get pressBackAgainToExit;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
@@ -663,6 +675,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline'**
   String get offline;
+
+  /// No description provided for @offlineBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. You are viewing cached data until the connection returns.'**
+  String get offlineBannerMessage;
 
   /// No description provided for @syncing.
   ///
@@ -2216,6 +2234,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Flush failed. Check connection and try again.'**
   String get flushFailed;
+
+  /// No description provided for @flushRequiresInternetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A live internet connection is required to verify your admin password and flush data safely.'**
+  String get flushRequiresInternetMessage;
+
+  /// No description provided for @flushPhaseVerifyingPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying admin password...'**
+  String get flushPhaseVerifyingPassword;
+
+  /// No description provided for @flushPhaseCheckingConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking live connection...'**
+  String get flushPhaseCheckingConnection;
+
+  /// No description provided for @flushPhaseScanningData.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning affected records...'**
+  String get flushPhaseScanningData;
+
+  /// No description provided for @flushPhaseDeletingOperationalData.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting jobs and operational records...'**
+  String get flushPhaseDeletingOperationalData;
+
+  /// No description provided for @flushPhaseDeletingDerivedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting shared aggregates and invoice ledgers...'**
+  String get flushPhaseDeletingDerivedData;
+
+  /// No description provided for @flushPhaseDeletingCompanies.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting companies...'**
+  String get flushPhaseDeletingCompanies;
+
+  /// No description provided for @flushPhaseArchivingUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Archiving non-admin users...'**
+  String get flushPhaseArchivingUsers;
+
+  /// No description provided for @flushPhaseRebuildingDerivedData.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuilding invoice ledgers and shared totals...'**
+  String get flushPhaseRebuildingDerivedData;
+
+  /// No description provided for @flushPhaseClearingLocalCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling local cache reset...'**
+  String get flushPhaseClearingLocalCache;
+
+  /// No description provided for @flushPhaseRefreshingAppData.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing app data...'**
+  String get flushPhaseRefreshingAppData;
+
+  /// No description provided for @flushProgressStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String flushProgressStep(int current, int total);
 
   /// No description provided for @flushWrongPassword.
   ///

@@ -323,6 +323,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    HapticFeedback.mediumImpact();
     final l = AppLocalizations.of(context)!;
     final quickUnits = _unitsFromQuickTemplate();
 

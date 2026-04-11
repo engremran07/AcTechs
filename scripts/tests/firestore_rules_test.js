@@ -149,6 +149,8 @@ async function createSharedJobWithClaimAndAggregate(context, job) {
       createdBy: job.techId,
       createdAt: now,
       updatedAt: now,
+      teamMemberIds: [job.techId],
+      teamMemberNames: [job.techName],
     });
   } else {
     const aggregate = existingAggregate.data();
@@ -174,6 +176,8 @@ async function createSharedJobWithClaimAndAggregate(context, job) {
       createdBy: aggregate.createdBy,
       createdAt: aggregate.createdAt,
       updatedAt: now,
+      teamMemberIds: aggregate.teamMemberIds || [aggregate.createdBy],
+      teamMemberNames: aggregate.teamMemberNames || [job.techName],
     });
   }
 
@@ -653,6 +657,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2024-01-12T09:00:00Z'),
         updatedAt: new Date('2024-01-12T09:00:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       }),
     );
 
@@ -679,6 +685,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2024-01-12T09:00:00Z'),
         updatedAt: new Date('2024-01-12T09:05:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       }),
     );
 
@@ -705,6 +713,8 @@ async function main() {
         createdBy: 'tech-1',
         createdAt: new Date('2024-01-12T09:00:00Z'),
         updatedAt: new Date('2024-01-12T09:06:00Z'),
+        teamMemberIds: ['tech-1'],
+        teamMemberNames: ['Tech One'],
       }),
     );
 

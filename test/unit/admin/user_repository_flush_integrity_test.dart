@@ -10,7 +10,10 @@ void main() {
 
   setUp(() {
     firestore = FakeFirebaseFirestore();
-    repository = UserRepository(firestore: firestore);
+    repository = UserRepository(
+      firestore: firestore,
+      flushPreflight: () async {},
+    );
   });
 
   Future<void> seedJob({
@@ -122,6 +125,83 @@ void main() {
       expect((await expenseRef.get()).exists, isFalse);
       expect((await jobRef.collection('history').get()).docs, isEmpty);
       expect((await expenseRef.collection('history').get()).docs, isEmpty);
+    },
+  );
+
+  test(
+    'flushDatabase deletes flat collections without probing history',
+    () async {
+      await firestore
+          .collection(AppConstants.sharedInstallAggregatesCollection)
+          .doc('aggregate-1')
+          .set({
+            'groupKey': 'company-1-100',
+            'sharedInvoiceSplitUnits': 1,
+            'sharedInvoiceWindowUnits': 0,
+            'sharedInvoiceFreestandingUnits': 0,
+            'sharedInvoiceUninstallSplitUnits': 0,
+            'sharedInvoiceUninstallWindowUnits': 0,
+            'sharedInvoiceUninstallFreestandingUnits': 0,
+            'sharedInvoiceBracketCount': 0,
+            'sharedDeliveryTeamCount': 0,
+            'sharedInvoiceDeliveryAmount': 0,
+            'consumedSplitUnits': 1,
+            'consumedWindowUnits': 0,
+            'consumedFreestandingUnits': 0,
+            'consumedUninstallSplitUnits': 0,
+            'consumedUninstallWindowUnits': 0,
+            'consumedUninstallFreestandingUnits': 0,
+            'consumedBracketCount': 0,
+            'consumedDeliveryAmount': 0,
+            'teamMemberIds': ['tech-1'],
+            'teamMemberNames': ['Tech One'],
+            'createdBy': 'tech-1',
+            'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+            'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          });
+      await firestore
+          .collection(AppConstants.invoiceClaimsCollection)
+          .doc('100')
+          .set({
+            'invoiceNumber': '100',
+            'companyId': 'company-1',
+            'companyName': 'Company',
+            'reuseMode': 'solo',
+            'activeJobCount': 1,
+            'createdBy': 'tech-1',
+            'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+            'updatedAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          });
+      await firestore
+          .collection(AppConstants.companiesCollection)
+          .doc('company-1')
+          .set({
+            'name': 'Company',
+            'invoicePrefix': 'CMP',
+            'isActive': true,
+            'logoBase64': '',
+            'createdAt': Timestamp.fromDate(DateTime(2024, 1, 10, 9)),
+          });
+
+      await repository.flushDatabase();
+
+      expect(
+        (await firestore
+                .collection(AppConstants.sharedInstallAggregatesCollection)
+                .get())
+            .docs,
+        isEmpty,
+      );
+      expect(
+        (await firestore.collection(AppConstants.invoiceClaimsCollection).get())
+            .docs,
+        isEmpty,
+      );
+      expect(
+        (await firestore.collection(AppConstants.companiesCollection).get())
+            .docs,
+        isEmpty,
+      );
     },
   );
 

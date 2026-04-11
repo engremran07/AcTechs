@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -57,7 +56,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final l = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider).value;
     final todaysJobs = ref.watch(todaysJobsProvider);
-    final allJobs = ref.watch(technicianJobsProvider);
+    final jobSummary = ref.watch(technicianJobSummaryProvider);
     final settlementInbox = ref.watch(technicianSettlementInboxProvider);
     final sharedAggregates = ref.watch(pendingSharedInstallAggregatesProvider);
 
@@ -93,46 +92,8 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                   const SizedBox(height: 24),
 
                   // Stats Row
-                  allJobs.when(
-                    data: (jobs) {
-                      final pending = jobs
-                          .where((j) => j.status == JobStatus.pending)
-                          .length;
-                      final approved = jobs
-                          .where((j) => j.status == JobStatus.approved)
-                          .length;
-
-                      // AC type breakdowns across all invoices
-                      int countByType(String type) => jobs.fold<int>(
-                        0,
-                        (sum, j) =>
-                            sum +
-                            j.acUnits
-                                .where((u) => u.type == type)
-                                .fold<int>(0, (s, u) => s + u.quantity),
-                      );
-
-                      final totalSplits = countByType(
-                        AppConstants.unitTypeSplitAc,
-                      );
-                      final totalWindow = countByType(
-                        AppConstants.unitTypeWindowAc,
-                      );
-                      final totalFreestanding = countByType(
-                        AppConstants.unitTypeFreestandingAc,
-                      );
-                      final totalBrackets = jobs.fold<int>(
-                        0,
-                        (sum, job) => sum + job.effectiveBracketCount,
-                      );
-                      final totalUninstalls =
-                          countByType(AppConstants.unitTypeUninstallOld) +
-                          countByType(AppConstants.unitTypeUninstallSplit) +
-                          countByType(AppConstants.unitTypeUninstallWindow) +
-                          countByType(
-                            AppConstants.unitTypeUninstallFreestanding,
-                          );
-
+                  jobSummary.when(
+                    data: (summary) {
                       return Column(
                         children: [
                           Row(
@@ -140,7 +101,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.totalJobs,
-                                  value: '${jobs.length}',
+                                  value: '${summary.totalJobs}',
                                   icon: Icons.work_outline_rounded,
                                   color: ArcticTheme.arcticBlue,
                                   onTap: () => context.go('/tech/history'),
@@ -150,7 +111,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.pending,
-                                  value: '$pending',
+                                  value: '${summary.pendingJobs}',
                                   icon: Icons.pending_outlined,
                                   color: ArcticTheme.arcticPending,
                                   onTap: () => context.go('/tech/history'),
@@ -160,7 +121,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.approved,
-                                  value: '$approved',
+                                  value: '${summary.approvedJobs}',
                                   icon: Icons.check_circle_outline,
                                   color: ArcticTheme.arcticSuccess,
                                   onTap: () => context.go('/tech/history'),
@@ -175,7 +136,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.splits,
-                                  value: '$totalSplits',
+                                  value: '${summary.splitUnits}',
                                   icon: Icons.ac_unit_rounded,
                                   color: ArcticTheme.arcticBlue,
                                   onTap: () => context.push(
@@ -187,7 +148,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.windowAc,
-                                  value: '$totalWindow',
+                                  value: '${summary.windowUnits}',
                                   icon: Icons.window_rounded,
                                   color: ArcticTheme.arcticSuccess,
                                   onTap: () => context.push(
@@ -199,7 +160,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.standing,
-                                  value: '$totalFreestanding',
+                                  value: '${summary.freestandingUnits}',
                                   icon: Icons.kitchen_rounded,
                                   color: ArcticTheme.arcticWarning,
                                   onTap: () => context.push(
@@ -215,7 +176,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.acOutdoorBracket,
-                                  value: '$totalBrackets',
+                                  value: '${summary.bracketCount}',
                                   icon: Icons.hardware_outlined,
                                   color: ArcticTheme.arcticPurple,
                                 ),
@@ -224,7 +185,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.uninstalls,
-                                  value: '$totalUninstalls',
+                                  value: '${summary.uninstallTotal}',
                                   icon: Icons.build_circle_outlined,
                                   color: ArcticTheme.arcticError,
                                 ),
@@ -248,6 +209,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                           .where((id) => id.isNotEmpty)
                           .toSet()
                           .length;
+                      if (batchCount == 0) return const SizedBox.shrink();
                       return ArcticCard(
                         onTap: () => context.push('/tech/settlements'),
                         child: Row(

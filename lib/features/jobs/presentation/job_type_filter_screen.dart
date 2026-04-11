@@ -183,106 +183,133 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
       body: SafeArea(
         child: widget.isAdminScope && _adminJobs.isEmpty && _isLoadingAdminJobs
             ? const Center(child: CircularProgressIndicator())
-            : jobs.isEmpty
-            ? Center(
-                child: Text(
-                  l.noMatchingJobs,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              )
-            : ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount:
-                    visibleJobs.length +
-                    (widget.isAdminScope
-                        ? ((_isLoadingAdminJobs || _hasMoreAdminJobs) ? 1 : 0)
-                        : (visibleJobs.length < jobs.length ? 1 : 0)),
-                itemBuilder: (context, index) {
-                  if (index >= visibleJobs.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
+            : ArcticRefreshIndicator(
+                onRefresh: () async {
+                  if (widget.isAdminScope) {
+                    _loadMoreAdminJobs(reset: true);
+                  } else {
+                    ref.invalidate(techJobsByAcTypeProvider(widget.filter));
                   }
-
-                  final job = visibleJobs[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ArcticCard(
-                      onTap: () => context.push(
-                        widget.isAdminScope
-                            ? '/admin/job/${job.id}'
-                            : '/tech/job/${job.id}',
-                        extra: job,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                },
+                child: jobs.isEmpty
+                    ? ListView(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  job.clientName,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: ArcticTheme.arcticBlue.withValues(
-                                    alpha: 0.18,
-                                  ),
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
-                                    color: ArcticTheme.arcticBlue.withValues(
-                                      alpha: 0.45,
-                                    ),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Matched: ${_matchedLabel(l)}',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: ArcticTheme.arcticBlue,
-                                        fontSize: 11,
-                                      ),
-                                ),
-                              ),
-                            ],
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.35,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            job.companyName.isEmpty
-                                ? l.noCompany
-                                : job.companyName,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: ArcticTheme.arcticTextSecondary,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            job.acUnits
-                                .where((u) => u.quantity > 0)
-                                .map((u) => '${u.type} x${u.quantity}')
-                                .join(' | '),
-                            style: Theme.of(context).textTheme.bodySmall,
+                          Center(
+                            child: Text(
+                              l.noMatchingJobs,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ),
                         ],
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount:
+                            visibleJobs.length +
+                            (widget.isAdminScope
+                                ? ((_isLoadingAdminJobs || _hasMoreAdminJobs)
+                                      ? 1
+                                      : 0)
+                                : (visibleJobs.length < jobs.length ? 1 : 0)),
+                        itemBuilder: (context, index) {
+                          if (index >= visibleJobs.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+
+                          final job = visibleJobs[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: ArcticCard(
+                              onTap: () => context.push(
+                                widget.isAdminScope
+                                    ? '/admin/job/${job.id}'
+                                    : '/tech/job/${job.id}',
+                                extra: job,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          job.clientName,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleSmall,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: ArcticTheme.arcticBlue
+                                              .withValues(alpha: 0.18),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                          border: Border.all(
+                                            color: ArcticTheme.arcticBlue
+                                                .withValues(alpha: 0.45),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Matched: ${_matchedLabel(l)}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: ArcticTheme.arcticBlue,
+                                                fontSize: 11,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    job.companyName.isEmpty
+                                        ? l.noCompany
+                                        : job.companyName,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color:
+                                              ArcticTheme.arcticTextSecondary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    job.acUnits
+                                        .where((u) => u.quantity > 0)
+                                        .map((u) => '${u.type} x${u.quantity}')
+                                        .join(' | '),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
               ),
       ),
     );

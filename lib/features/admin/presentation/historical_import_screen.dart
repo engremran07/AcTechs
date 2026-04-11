@@ -281,7 +281,7 @@ class _HistoricalImportScreenState
 
   Future<void> _importFiles() async {
     final l = AppLocalizations.of(context)!;
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.pickFiles(
       allowMultiple: true,
       withData: true,
       type: FileType.custom,

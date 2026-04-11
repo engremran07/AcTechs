@@ -673,18 +673,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  AsyncValue<List<JobModel>> _jobsAsync() {
-    final query = _activeAdminQuery();
-    if (query == null) return const AsyncData(<JobModel>[]);
-    return ref.watch(filteredAdminJobsProvider(query));
-  }
-
   AsyncValue<AdminJobSummary> _summaryAsync() {
     final query = _activeAdminQuery();
     if (query == null) {
       return ref.watch(adminJobSummaryProvider);
     }
-    return _jobsAsync().whenData(AdminJobSummary.fromJobs);
+    return ref.watch(adminScopedJobSummaryProvider(query));
   }
 
   Future<List<JobModel>> _fetchJobsForCurrentScope() {
@@ -1111,84 +1105,106 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: RepaintBoundary(
-                                child: PieChart(
-                                  PieChartData(
-                                    sectionsSpace: 3,
-                                    centerSpaceRadius: 40,
-                                    sections: [
-                                      PieChartSectionData(
-                                        value: summary.approvedJobs.toDouble(),
-                                        color: ArcticTheme.arcticSuccess,
-                                        title: '${summary.approvedJobs}',
-                                        titleStyle: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                        radius: 50,
-                                      ),
-                                      PieChartSectionData(
-                                        value: summary.pendingJobs.toDouble(),
-                                        color: ArcticTheme.arcticPending,
-                                        title: '${summary.pendingJobs}',
-                                        titleStyle: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                        radius: 50,
-                                      ),
-                                      PieChartSectionData(
-                                        value: summary.rejectedJobs.toDouble(),
-                                        color: ArcticTheme.arcticError,
-                                        title: '${summary.rejectedJobs}',
-                                        titleStyle: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                        radius: 50,
-                                      ),
-                                    ],
+                      if (summary.totalJobs == 0)
+                        SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.noDataYet,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          height: 200,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: RepaintBoundary(
+                                  child: PieChart(
+                                    PieChartData(
+                                      sectionsSpace: 3,
+                                      centerSpaceRadius: 40,
+                                      sections: [
+                                        PieChartSectionData(
+                                          value: summary.approvedJobs
+                                              .toDouble(),
+                                          color: ArcticTheme.arcticSuccess,
+                                          title: '${summary.approvedJobs}',
+                                          titleStyle: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                          radius: 50,
+                                        ),
+                                        PieChartSectionData(
+                                          value: summary.pendingJobs.toDouble(),
+                                          color: ArcticTheme.arcticPending,
+                                          title: '${summary.pendingJobs}',
+                                          titleStyle: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                          radius: 50,
+                                        ),
+                                        PieChartSectionData(
+                                          value: summary.rejectedJobs
+                                              .toDouble(),
+                                          color: ArcticTheme.arcticError,
+                                          title: '${summary.rejectedJobs}',
+                                          titleStyle: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                          radius: 50,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _Legend(
-                                  color: ArcticTheme.arcticSuccess,
-                                  label: AppLocalizations.of(context)!.approved,
-                                ),
-                                const SizedBox(height: 8),
-                                _Legend(
-                                  color: ArcticTheme.arcticPending,
-                                  label: AppLocalizations.of(context)!.pending,
-                                ),
-                                const SizedBox(height: 8),
-                                _Legend(
-                                  color: ArcticTheme.arcticError,
-                                  label: AppLocalizations.of(context)!.rejected,
-                                ),
-                              ],
-                            ),
-                          ],
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _Legend(
+                                    color: ArcticTheme.arcticSuccess,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.approved,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _Legend(
+                                    color: ArcticTheme.arcticPending,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.pending,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _Legend(
+                                    color: ArcticTheme.arcticError,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.rejected,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ).animate().fadeIn(delay: 200.ms),
@@ -1204,85 +1220,99 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: RepaintBoundary(
-                          child: BarChart(
-                            BarChartData(
-                              barGroups: techTotals
-                                  .asMap()
-                                  .entries
-                                  .map(
-                                    (e) => BarChartGroupData(
-                                      x: e.key,
-                                      barRods: [
-                                        BarChartRodData(
-                                          toY: e.value.jobCount.toDouble(),
-                                          color: ArcticTheme.arcticBlue,
-                                          width: 20,
-                                          borderRadius:
-                                              const BorderRadius.vertical(
-                                                top: Radius.circular(6),
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                  .toList(),
-                              titlesData: FlTitlesData(
-                                leftTitles: const AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 30,
+                      if (techTotals.isEmpty)
+                        SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.noDataYet,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
                                   ),
-                                ),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, meta) {
-                                      if (value.toInt() < techTotals.length) {
-                                        final name = techTotals[value.toInt()]
-                                            .displayName;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 8,
-                                          ),
-                                          child: Text(
-                                            name.length > 6
-                                                ? '${name.substring(0, 6)}..'
-                                                : name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelSmall
-                                                ?.copyWith(
-                                                  fontSize: 10,
-                                                  color: ArcticTheme
-                                                      .arcticTextSecondary,
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          height: 200,
+                          child: RepaintBoundary(
+                            child: BarChart(
+                              BarChartData(
+                                barGroups: techTotals
+                                    .asMap()
+                                    .entries
+                                    .map(
+                                      (e) => BarChartGroupData(
+                                        x: e.key,
+                                        barRods: [
+                                          BarChartRodData(
+                                            toY: e.value.jobCount.toDouble(),
+                                            color: ArcticTheme.arcticBlue,
+                                            width: 20,
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(6),
                                                 ),
                                           ),
-                                        );
-                                      } else {
-                                        return const SizedBox.shrink();
-                                      }
-                                    },
+                                        ],
+                                      ),
+                                    )
+                                    .toList(),
+                                titlesData: FlTitlesData(
+                                  leftTitles: const AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30,
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        if (value.toInt() < techTotals.length) {
+                                          final name = techTotals[value.toInt()]
+                                              .displayName;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 8,
+                                            ),
+                                            child: Text(
+                                              name.length > 6
+                                                  ? '${name.substring(0, 6)}..'
+                                                  : name,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall
+                                                  ?.copyWith(
+                                                    fontSize: 10,
+                                                    color: ArcticTheme
+                                                        .arcticTextSecondary,
+                                                  ),
+                                            ),
+                                          );
+                                        } else {
+                                          return const SizedBox.shrink();
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
                                   ),
                                 ),
-                                topTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
+                                borderData: FlBorderData(show: false),
+                                gridData: const FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
                                 ),
-                                rightTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                              ),
-                              borderData: FlBorderData(show: false),
-                              gridData: const FlGridData(
-                                show: true,
-                                drawVerticalLine: false,
                               ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ).animate().fadeIn(delay: 300.ms),

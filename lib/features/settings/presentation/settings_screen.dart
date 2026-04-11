@@ -1021,7 +1021,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 children: [
                   GestureDetector(
                     onTap: () async {
-                      final result = await FilePicker.platform.pickFiles(
+                      final result = await FilePicker.pickFiles(
                         type: FileType.image,
                         withData: true,
                       );
@@ -1106,7 +1106,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       OutlinedButton.icon(
                         onPressed: () async {
-                          final result = await FilePicker.platform.pickFiles(
+                          final result = await FilePicker.pickFiles(
                             type: FileType.image,
                             withData: true,
                           );

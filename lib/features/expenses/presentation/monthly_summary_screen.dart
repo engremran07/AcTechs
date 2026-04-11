@@ -7,6 +7,8 @@ import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/utils/technician_in_out_summary.dart';
+import 'package:ac_techs/core/utils/technician_job_summary.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
@@ -16,6 +18,7 @@ import 'package:ac_techs/features/settings/providers/app_branding_provider.dart'
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/technician/providers/technician_summary_providers.dart';
 
 class MonthlySummaryScreen extends ConsumerStatefulWidget {
   const MonthlySummaryScreen({super.key, this.initialMonth});
@@ -586,6 +589,9 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     final jobsAsync = ref.watch(monthlyJobsProvider(_selectedMonth));
     final expensesAsync = ref.watch(monthlyExpensesProvider(_selectedMonth));
     final earningsAsync = ref.watch(monthlyEarningsProvider(_selectedMonth));
+    final monthlyStatsAsync = ref.watch(
+      monthlyTechnicianStatsProvider(_selectedMonth),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -702,12 +708,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
               const SizedBox(height: 20),
 
               // Summary Cards
-              _buildOverviewCards(
-                context,
-                jobsAsync,
-                expensesAsync,
-                earningsAsync,
-              ),
+              _buildOverviewCards(context, monthlyStatsAsync),
               const SizedBox(height: 24),
 
               // Earnings Breakdown
@@ -783,34 +784,21 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
 
   Widget _buildOverviewCards(
     BuildContext context,
-    AsyncValue jobsAsync,
-    AsyncValue expensesAsync,
-    AsyncValue earningsAsync,
+    AsyncValue<({TechnicianJobSummary jobs, TechnicianInOutSummary inOut})>
+    monthlyStatsAsync,
   ) {
     final l = AppLocalizations.of(context)!;
-    final jobs = jobsAsync.value ?? [];
-    final expenses = expensesAsync.value ?? [];
-    final earnings = earningsAsync.value ?? [];
-
-    final totalInstallations = jobs.fold<int>(0, (s, j) => s + j.totalUnits);
-    final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
-    final workExpenses = expenses
-        .where((item) => item.expenseType != AppConstants.expenseTypeHome)
-        .fold<double>(0, (s, e) => s + e.amount);
-    final homeExpenses = expenses
-        .where((item) => item.expenseType == AppConstants.expenseTypeHome)
-        .fold<double>(0, (s, e) => s + e.amount);
-    final totalExpenses = workExpenses + homeExpenses;
-    final profit = totalEarnings - totalExpenses;
-
-    final isLoading =
-        jobsAsync.isLoading ||
-        expensesAsync.isLoading ||
-        earningsAsync.isLoading;
-
-    if (isLoading) {
+    if (monthlyStatsAsync.isLoading) {
       return const ArcticShimmer(height: 90, count: 2);
     }
+
+    final monthlyStats = monthlyStatsAsync.value;
+    if (monthlyStats == null) {
+      return const SizedBox.shrink();
+    }
+
+    final jobSummary = monthlyStats.jobs;
+    final inOutSummary = monthlyStats.inOut;
 
     return Column(
       children: [
@@ -819,7 +807,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.installations,
-                value: l.nUnits(totalInstallations),
+                value: l.nUnits(jobSummary.totalUnits),
                 icon: Icons.ac_unit_rounded,
                 color: ArcticTheme.arcticBlue,
               ),
@@ -828,7 +816,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.jobs,
-                value: '${jobs.length}',
+                value: '${jobSummary.totalJobs}',
                 icon: Icons.work_outline_rounded,
                 color: ArcticTheme.arcticTextSecondary,
               ),
@@ -841,7 +829,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.earningsIn,
-                value: AppFormatters.currency(totalEarnings),
+                value: AppFormatters.currency(inOutSummary.totalEarned),
                 icon: Icons.arrow_downward_rounded,
                 color: ArcticTheme.arcticSuccess,
               ),
@@ -850,7 +838,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.workExpenses,
-                value: AppFormatters.currency(workExpenses),
+                value: AppFormatters.currency(inOutSummary.workExpenses),
                 icon: Icons.arrow_upward_rounded,
                 color: ArcticTheme.arcticError,
               ),
@@ -863,7 +851,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.homeExpenses,
-                value: AppFormatters.currency(homeExpenses),
+                value: AppFormatters.currency(inOutSummary.homeExpenses),
                 icon: Icons.home_work_outlined,
                 color: ArcticTheme.arcticBlue,
               ),
@@ -872,11 +860,11 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
             Expanded(
               child: _SummaryCard(
                 title: l.netProfit,
-                value: AppFormatters.currency(profit),
-                icon: profit >= 0
+                value: AppFormatters.currency(inOutSummary.net),
+                icon: inOutSummary.net >= 0
                     ? Icons.trending_up_rounded
                     : Icons.trending_down_rounded,
-                color: profit >= 0
+                color: inOutSummary.net >= 0
                     ? ArcticTheme.arcticSuccess
                     : ArcticTheme.arcticError,
               ),

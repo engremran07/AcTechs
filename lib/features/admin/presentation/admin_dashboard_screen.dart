@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
-import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -51,26 +49,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     ref.invalidate(settlementSummaryProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allCompaniesProvider);
-    ref.invalidate(invoicePrefixMigrationProvider);
-  }
-
-  Future<void> _showInvoicePrefixMigrationDialog() async {
-    ref.invalidate(invoicePrefixMigrationProvider);
-    final result = await showDialog<InvoicePrefixNormalizationResult>(
-      context: context,
-      builder: (_) => const _InvoicePrefixMigrationDialog(),
-    );
-    if (!mounted || result == null) return;
-
-    final l = AppLocalizations.of(context)!;
-    AppFeedback.success(
-      context,
-      message: l.normalizeStoredInvoicesSuccess(
-        result.updatedJobs,
-        result.conflictedInvoices,
-      ),
-    );
-    refresh();
   }
 
   @override
@@ -375,49 +353,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 16),
-                  ArcticCard(
-                    onTap: _showInvoicePrefixMigrationDialog,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ArcticTheme.arcticWarning.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.auto_fix_high_rounded,
-                            color: ArcticTheme.arcticWarning,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.normalizeStoredInvoices,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              Text(
-                                l.normalizeStoredInvoicesSubtitle,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
 
                   // Danger Zone
                   Text(
@@ -538,107 +473,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
           ),
         ),
       ),
-    );
-  }
-}
-
-class _InvoicePrefixMigrationDialog extends ConsumerStatefulWidget {
-  const _InvoicePrefixMigrationDialog();
-
-  @override
-  ConsumerState<_InvoicePrefixMigrationDialog> createState() =>
-      _InvoicePrefixMigrationDialogState();
-}
-
-class _InvoicePrefixMigrationDialogState
-    extends ConsumerState<_InvoicePrefixMigrationDialog> {
-  final _passwordCtrl = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _passwordCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _runMigration() async {
-    if (_formKey.currentState?.validate() != true) return;
-
-    final locale = Localizations.localeOf(context).languageCode;
-    try {
-      final result = await ref
-          .read(invoicePrefixMigrationProvider.notifier)
-          .run(_passwordCtrl.text.trim());
-      if (!mounted) return;
-      Navigator.of(context).pop(result);
-    } on AppException catch (e) {
-      if (!mounted) return;
-      AppFeedback.error(context, message: e.message(locale));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    final migrationState = ref.watch(invoicePrefixMigrationProvider);
-    final isLoading = migrationState.isLoading;
-
-    return AlertDialog(
-      title: Text(l.normalizeStoredInvoices),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l.normalizeStoredInvoicesDescription,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _passwordCtrl,
-              obscureText: _obscurePassword,
-              enabled: !isLoading,
-              decoration: InputDecoration(
-                labelText: l.flushEnterPassword,
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                ),
-              ),
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? l.required : null,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text(l.cancel),
-        ),
-        FilledButton.icon(
-          onPressed: isLoading ? null : _runMigration,
-          icon: isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.auto_fix_high_rounded),
-          label: Text(l.normalizeStoredInvoicesAction),
-        ),
-      ],
     );
   }
 }

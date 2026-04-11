@@ -42,14 +42,22 @@ String? resolveAppRedirect({
 }) {
   final isSplashRoute = matchedLocation == '/splash';
   final isLoginRoute = matchedLocation == '/login';
-  final user = currentUser.value;
+  final user = currentUser.asData?.value;
 
-  if (isAuthLoading || (isLoggedIn && currentUser.isLoading)) {
+  if (isAuthLoading) {
     return isSplashRoute ? null : '/splash';
   }
 
   if (!isLoggedIn) {
     return isLoginRoute ? null : '/login';
+  }
+
+  // Reauthentication and profile refreshes can briefly put the user profile
+  // stream into a loading state even though the auth session is still valid.
+  // Preserve the current protected route during that transient reload instead
+  // of bouncing the user through splash and back to the dashboard.
+  if (currentUser.isLoading) {
+    return null;
   }
 
   if (currentUser.hasError || user == null) {

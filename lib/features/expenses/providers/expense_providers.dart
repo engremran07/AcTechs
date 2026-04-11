@@ -1,9 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/technician_in_out_summary.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+
+AsyncValue<T> _combineAsyncValues<A, B, T>(
+  AsyncValue<A> first,
+  AsyncValue<B> second,
+  T Function(A first, B second) combine,
+) {
+  final firstError = first.asError;
+  if (firstError != null) {
+    return AsyncError(firstError.error, firstError.stackTrace);
+  }
+
+  final secondError = second.asError;
+  if (secondError != null) {
+    return AsyncError(secondError.error, secondError.stackTrace);
+  }
+
+  if (!first.hasValue || !second.hasValue) {
+    return const AsyncLoading();
+  }
+
+  return AsyncData(combine(first.value as A, second.value as B));
+}
 
 /// All expenses for the logged-in tech (newest first).
 final techExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
@@ -23,30 +45,6 @@ final todaysExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
   return ref.watch(expenseRepositoryProvider).todaysExpenses(user.uid);
 });
 
-/// Today's work expenses — derived from todaysExpensesProvider (no extra Firestore listener).
-final todaysWorkExpensesProvider =
-    Provider.autoDispose<AsyncValue<List<ExpenseModel>>>((ref) {
-      return ref
-          .watch(todaysExpensesProvider)
-          .whenData(
-            (list) => list
-                .where((e) => e.expenseType != AppConstants.expenseTypeHome)
-                .toList(),
-          );
-    });
-
-/// Today's home expenses — derived from todaysExpensesProvider (no extra Firestore listener).
-final todaysHomeExpensesProvider =
-    Provider.autoDispose<AsyncValue<List<ExpenseModel>>>((ref) {
-      return ref
-          .watch(todaysExpensesProvider)
-          .whenData(
-            (list) => list
-                .where((e) => e.expenseType == AppConstants.expenseTypeHome)
-                .toList(),
-          );
-    });
-
 /// Monthly expenses for the logged-in tech.
 /// DateTime key is normalised to the first of the month to prevent duplicate listeners.
 final monthlyExpensesProvider = StreamProvider.autoDispose
@@ -59,32 +57,6 @@ final monthlyExpensesProvider = StreamProvider.autoDispose
           .monthlyExpenses(user.uid, normalized);
     });
 
-/// Monthly work expenses — derived from monthlyExpensesProvider (no extra Firestore listener).
-final monthlyWorkExpensesProvider = Provider.autoDispose
-    .family<AsyncValue<List<ExpenseModel>>, DateTime>((ref, month) {
-      final normalized = DateTime(month.year, month.month);
-      return ref
-          .watch(monthlyExpensesProvider(normalized))
-          .whenData(
-            (list) => list
-                .where((e) => e.expenseType != AppConstants.expenseTypeHome)
-                .toList(),
-          );
-    });
-
-/// Monthly home expenses — derived from monthlyExpensesProvider (no extra Firestore listener).
-final monthlyHomeExpensesProvider = Provider.autoDispose
-    .family<AsyncValue<List<ExpenseModel>>, DateTime>((ref, month) {
-      final normalized = DateTime(month.year, month.month);
-      return ref
-          .watch(monthlyExpensesProvider(normalized))
-          .whenData(
-            (list) => list
-                .where((e) => e.expenseType == AppConstants.expenseTypeHome)
-                .toList(),
-          );
-    });
-
 /// All earnings for the logged-in tech (newest first).
 final techEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
   ref,
@@ -93,6 +65,22 @@ final techEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
   if (user == null) return Stream.value([]);
   return ref.watch(earningRepositoryProvider).techEarnings(user.uid);
 });
+
+final technicianInOutSummaryProvider =
+    Provider.autoDispose<AsyncValue<TechnicianInOutSummary>>((ref) {
+      return _combineAsyncValues<
+        List<EarningModel>,
+        List<ExpenseModel>,
+        TechnicianInOutSummary
+      >(
+        ref.watch(techEarningsProvider),
+        ref.watch(techExpensesProvider),
+        (earnings, expenses) => TechnicianInOutSummary.fromEntries(
+          earnings: earnings,
+          expenses: expenses,
+        ),
+      );
+    });
 
 /// Today's earnings for the logged-in tech.
 final todaysEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
@@ -150,6 +138,22 @@ final monthlyEarningsProvider = StreamProvider.autoDispose
           .monthlyEarnings(user.uid, normalized);
     });
 
+final monthlyTechnicianInOutSummaryProvider = Provider.autoDispose
+    .family<AsyncValue<TechnicianInOutSummary>, DateTime>((ref, month) {
+      return _combineAsyncValues<
+        List<EarningModel>,
+        List<ExpenseModel>,
+        TechnicianInOutSummary
+      >(
+        ref.watch(monthlyEarningsProvider(month)),
+        ref.watch(monthlyExpensesProvider(month)),
+        (earnings, expenses) => TechnicianInOutSummary.fromEntries(
+          earnings: earnings,
+          expenses: expenses,
+        ),
+      );
+    });
+
 final pendingExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
   ref,
 ) {
@@ -164,20 +168,4 @@ final pendingEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
   final user = ref.watch(currentUserProvider).value;
   if (user == null || !user.isAdmin) return Stream.value([]);
   return ref.watch(earningRepositoryProvider).pendingEarnings();
-});
-
-final allExpensesProvider = StreamProvider.autoDispose<List<ExpenseModel>>((
-  ref,
-) {
-  final user = ref.watch(currentUserProvider).value;
-  if (user == null || !user.isAdmin) return Stream.value([]);
-  return ref.watch(expenseRepositoryProvider).allExpenses();
-});
-
-final allEarningsProvider = StreamProvider.autoDispose<List<EarningModel>>((
-  ref,
-) {
-  final user = ref.watch(currentUserProvider).value;
-  if (user == null || !user.isAdmin) return Stream.value([]);
-  return ref.watch(earningRepositoryProvider).allEarnings();
 });

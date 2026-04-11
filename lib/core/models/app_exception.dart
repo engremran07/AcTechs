@@ -353,6 +353,13 @@ class AdminException extends AppException {
     'صارف کی تبدیلیاں محفوظ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
     'تعذر حفظ تغييرات المستخدم. حاول مرة أخرى.',
   );
+
+  factory AdminException.flushRequiresInternet() => const AdminException(
+    'admin_flush_requires_internet',
+    'Database flush requires a live internet connection. Reconnect and try again.',
+    'ڈیٹا بیس فلش کے لیے فعال انٹرنیٹ کنکشن ضروری ہے۔ دوبارہ کنکٹ ہو کر کوشش کریں۔',
+    'يتطلب مسح قاعدة البيانات اتصالاً مباشراً بالإنترنت. أعد الاتصال ثم حاول مرة أخرى.',
+  );
 }
 
 class ExpenseException extends AppException {

@@ -183,6 +183,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noJobsYet => 'لم يتم إرسال أعمال بعد';
 
   @override
+  String get noDataYet => 'لا توجد بيانات بعد';
+
+  @override
   String get noJobsToday => 'لا توجد أعمال اليوم';
 
   @override
@@ -295,10 +298,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get arabic => 'العربية';
 
   @override
+  String get pressBackAgainToExit => 'اضغط رجوع مرة أخرى لإغلاق التطبيق.';
+
+  @override
   String get settings => 'الإعدادات';
 
   @override
   String get offline => 'غير متصل';
+
+  @override
+  String get offlineBannerMessage =>
+      'لا يوجد اتصال بالإنترنت. أنت تشاهد بيانات مخزنة مؤقتاً حتى يعود الاتصال.';
 
   @override
   String get syncing => 'جارٍ المزامنة...';
@@ -1143,6 +1153,52 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get flushFailed => 'فشل المسح. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String get flushRequiresInternetMessage =>
+      'يلزم اتصال مباشر بالإنترنت للتحقق من كلمة مرور المسؤول ومسح البيانات بأمان.';
+
+  @override
+  String get flushPhaseVerifyingPassword =>
+      'جارٍ التحقق من كلمة مرور المسؤول...';
+
+  @override
+  String get flushPhaseCheckingConnection =>
+      'جارٍ التحقق من الاتصال المباشر...';
+
+  @override
+  String get flushPhaseScanningData => 'جارٍ فحص السجلات المتأثرة...';
+
+  @override
+  String get flushPhaseDeletingOperationalData =>
+      'جارٍ حذف الوظائف والسجلات التشغيلية...';
+
+  @override
+  String get flushPhaseDeletingDerivedData =>
+      'جارٍ حذف المجاميع المشتركة ودفاتر الفواتير...';
+
+  @override
+  String get flushPhaseDeletingCompanies => 'جارٍ حذف الشركات...';
+
+  @override
+  String get flushPhaseArchivingUsers =>
+      'جارٍ أرشفة المستخدمين غير المسؤولين...';
+
+  @override
+  String get flushPhaseRebuildingDerivedData =>
+      'جارٍ إعادة بناء دفاتر الفواتير والإجماليات المشتركة...';
+
+  @override
+  String get flushPhaseClearingLocalCache =>
+      'جارٍ جدولة إعادة ضبط التخزين المحلي...';
+
+  @override
+  String get flushPhaseRefreshingAppData => 'جارٍ تحديث بيانات التطبيق...';
+
+  @override
+  String flushProgressStep(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
 
   @override
   String get flushWrongPassword => 'كلمة المرور غير صحيحة. حاول مرة أخرى.';

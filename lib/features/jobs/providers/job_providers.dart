@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/technician_job_summary.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
@@ -204,6 +205,16 @@ final adminJobSummaryProvider = FutureProvider.autoDispose<AdminJobSummary>((
   return ref.watch(jobRepositoryProvider).fetchAdminJobSummary();
 });
 
+final adminScopedJobSummaryProvider = FutureProvider.autoDispose
+    .family<AdminJobSummary, AdminJobsQuery>((ref, query) async {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) {
+        return AdminJobSummary.empty();
+      }
+      final jobs = await ref.watch(filteredAdminJobsProvider(query).future);
+      return AdminJobSummary.fromJobs(jobs);
+    });
+
 final filteredAdminJobsProvider = FutureProvider.autoDispose
     .family<List<JobModel>, AdminJobsQuery>((ref, query) {
       final user = ref.watch(currentUserProvider).value;
@@ -237,10 +248,24 @@ final techJobsByAcTypeProvider = Provider.autoDispose
       return _jobsByType(jobs, filter);
     });
 
+final technicianJobSummaryProvider =
+    Provider.autoDispose<AsyncValue<TechnicianJobSummary>>((ref) {
+      return ref
+          .watch(technicianJobsProvider)
+          .whenData(TechnicianJobSummary.fromJobs);
+    });
+
 /// Monthly jobs for the logged-in tech.
 final monthlyJobsProvider = StreamProvider.autoDispose
     .family<List<JobModel>, DateTime>((ref, month) {
       final user = ref.watch(currentUserProvider).value;
       if (user == null) return Stream.value([]);
       return ref.watch(jobRepositoryProvider).monthlyJobs(user.uid, month);
+    });
+
+final monthlyTechnicianJobSummaryProvider = Provider.autoDispose
+    .family<AsyncValue<TechnicianJobSummary>, DateTime>((ref, month) {
+      return ref
+          .watch(monthlyJobsProvider(month))
+          .whenData(TechnicianJobSummary.fromJobs);
     });

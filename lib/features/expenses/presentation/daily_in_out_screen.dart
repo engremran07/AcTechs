@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -159,6 +160,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
   }
 
   Future<void> _addEntries() async {
+    HapticFeedback.mediumImpact();
     // Validate all rows have amounts
     bool hasValid = false;
     for (final row in _entryRows) {
@@ -1263,35 +1265,46 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () => FocusScope.of(context).unfocus(),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // ── Summary Card ──
-              _buildSummaryCard(theme, earningsAsync, expensesAsync),
-              const SizedBox(height: 20),
+          child: ArcticRefreshIndicator(
+            onRefresh: () async {
+              final month = widget.selectedDate ?? DateTime.now();
+              ref.invalidate(
+                monthlyEarningsProvider(DateTime(month.year, month.month)),
+              );
+              ref.invalidate(
+                monthlyExpensesProvider(DateTime(month.year, month.month)),
+              );
+            },
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ── Summary Card ──
+                _buildSummaryCard(theme, earningsAsync, expensesAsync),
+                const SizedBox(height: 20),
 
-              // ── Add Entry Form (hidden when viewing a historical date) ──
-              if (widget.selectedDate == null) ...[
-                _buildAddForm(theme),
-                const SizedBox(height: 24),
-              ],
-
-              // ── Today's Entries ──
-              Row(
-                children: [
-                  const Icon(
-                    Icons.list_alt_rounded,
-                    color: ArcticTheme.arcticBlue,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(l.todaysEntries, style: theme.textTheme.titleLarge),
+                // ── Add Entry Form (hidden when viewing a historical date) ──
+                if (widget.selectedDate == null) ...[
+                  _buildAddForm(theme),
+                  const SizedBox(height: 24),
                 ],
-              ),
-              const SizedBox(height: 12),
 
-              _buildEntryList(theme, earningsAsync, expensesAsync),
-            ],
+                // ── Today's Entries ──
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.list_alt_rounded,
+                      color: ArcticTheme.arcticBlue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(l.todaysEntries, style: theme.textTheme.titleLarge),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                _buildEntryList(theme, earningsAsync, expensesAsync),
+              ],
+            ),
           ),
         ),
       ),

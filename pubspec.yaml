@@ -1,7 +1,7 @@
 name: ac_techs
 description: "AC Techs - Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 1.1.7+27
+version: 1.1.9+29
 
 environment:
   sdk: ^3.11.0
@@ -23,7 +23,7 @@ dependencies:
   riverpod_annotation: ^4.0.2
 
   # Navigation
-  go_router: ^17.1.0
+  go_router: ^17.2.0
 
   # Code Generation (runtime)
   freezed_annotation: ^3.0.0
@@ -37,9 +37,11 @@ dependencies:
 
   # Utilities
   intl: ^0.20.2
+  # Fast online/offline banner and destructive-action connectivity preflight.
+  connectivity_plus: ^6.1.4
   share_plus: ^12.0.2
   excel: ^4.0.6
-  file_picker: ^10.3.2
+  file_picker: ^11.0.2
   cross_file: ^0.3.4+2
   desktop_drop: ^0.7.0
   url_launcher: ^6.3.1

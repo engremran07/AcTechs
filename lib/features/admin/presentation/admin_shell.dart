@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class AdminShell extends StatelessWidget {
@@ -24,30 +25,15 @@ class AdminShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final idx = _currentIndex(context);
-    // Only the root admin dashboard is "home" — all other routes (including
-    // settings and companies with idx=-1) should navigate back to /admin.
     final isHome = idx == 0;
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        // Allow router to pop pushed screens first
-        final router = GoRouter.of(context);
-        if (router.canPop()) {
-          router.pop();
-          return;
-        }
-        if (!isHome) {
-          context.go('/admin');
-        } else {
-          SystemNavigator.pop();
-        }
-      },
+    return ShellBackNavigationScope(
+      isHome: isHome,
+      homeRoute: '/admin',
       child: Scaffold(
         body: child,
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: idx < 0 ? 0 : idx,
-          onTap: (index) {
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: idx < 0 ? 0 : idx,
+          onDestinationSelected: (index) {
             final current = idx;
             if (current == index) {
               HapticFeedback.selectionClick();
@@ -64,21 +50,25 @@ class AdminShell extends StatelessWidget {
                 context.go('/admin/team');
             }
           },
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.dashboard_rounded),
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.dashboard_outlined),
+              selectedIcon: const Icon(Icons.dashboard_rounded),
               label: AppLocalizations.of(context)!.dashboard,
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.pending_actions_rounded),
+            NavigationDestination(
+              icon: const Icon(Icons.pending_actions_outlined),
+              selectedIcon: const Icon(Icons.pending_actions_rounded),
               label: AppLocalizations.of(context)!.approvals,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: const Icon(Icons.analytics_outlined),
+              selectedIcon: const Icon(Icons.analytics_rounded),
               label: AppLocalizations.of(context)!.analytics,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: const Icon(Icons.people_outline_rounded),
+              selectedIcon: const Icon(Icons.people_rounded),
               label: AppLocalizations.of(context)!.team,
             ),
           ],

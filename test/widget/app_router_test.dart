@@ -63,6 +63,21 @@ void main() {
     expect(redirect, isNull);
   });
 
+  test(
+    'authenticated profile reload does not redirect away from admin flush',
+    () {
+      final redirect = resolveAppRedirect(
+        matchedLocation: '/admin/flush',
+        isAuthLoading: false,
+        isLoggedIn: true,
+        currentUser: const AsyncLoading(),
+        approvalConfig: ApprovalConfig.defaults(),
+      );
+
+      expect(redirect, isNull);
+    },
+  );
+
   test('admin users are redirected away from technician routes', () {
     final redirect = resolveAppRedirect(
       matchedLocation: '/tech/ac-installs',

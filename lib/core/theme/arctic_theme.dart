@@ -208,6 +208,159 @@ class ArcticTheme {
         color: arcticCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: arcticBlue,
+          foregroundColor: arcticDarkBg,
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: arcticBlue,
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: arcticCard,
+        selectedColor: arcticBlue.withValues(alpha: 0.2),
+        labelStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: arcticTextPrimary,
+        ),
+        secondaryLabelStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: arcticBlue,
+        ),
+        side: const BorderSide(color: arcticDivider),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: arcticBlue,
+        unselectedLabelColor: arcticTextSecondary,
+        indicatorColor: arcticBlue,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: AppFonts.body(
+          locale,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: AppFonts.body(locale, fontSize: 14),
+        dividerColor: arcticDivider,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return arcticBlue;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(arcticDarkBg),
+        side: const BorderSide(color: arcticTextSecondary, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: arcticTextSecondary,
+        textColor: arcticTextPrimary,
+        subtitleTextStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: arcticTextSecondary,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: arcticTextPrimary),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: arcticSurface,
+        headerBackgroundColor: arcticCard,
+        headerForegroundColor: arcticBlue,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return arcticDarkBg;
+          return arcticTextPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return arcticBlue;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.all(arcticBlue),
+        todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+        todayBorder: const BorderSide(color: arcticBlue),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      tooltipTheme: TooltipThemeData(
+        textStyle: AppFonts.body(locale, fontSize: 13, color: arcticDarkBg),
+        decoration: BoxDecoration(
+          color: arcticBlue,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: arcticSurface,
+        indicatorColor: arcticBlue.withValues(alpha: 0.15),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: arcticBlue);
+          }
+          return const IconThemeData(color: arcticTextSecondary);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppFonts.body(
+              locale,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: arcticBlue,
+            );
+          }
+          return AppFonts.body(
+            locale,
+            fontSize: 12,
+            color: arcticTextSecondary,
+          );
+        }),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: arcticBlue,
+        foregroundColor: arcticDarkBg,
+        elevation: 4,
+        shape: CircleBorder(),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: arcticBlue,
+        linearTrackColor: arcticDivider,
+        circularTrackColor: arcticDivider,
+      ),
+      badgeTheme: const BadgeThemeData(
+        backgroundColor: arcticError,
+        textColor: Colors.white,
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: arcticCard,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: arcticDivider),
+          ),
+        ),
+      ),
     );
   }
 
@@ -362,6 +515,155 @@ class ArcticTheme {
       popupMenuTheme: PopupMenuThemeData(
         color: lightCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: lightBlue,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: lightBlue,
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: lightSurface,
+        selectedColor: lightBlue.withValues(alpha: 0.12),
+        labelStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: lightTextPrimary,
+        ),
+        secondaryLabelStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: lightBlue,
+        ),
+        side: const BorderSide(color: lightDivider),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: lightBlue,
+        unselectedLabelColor: lightTextSecondary,
+        indicatorColor: lightBlue,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: AppFonts.body(
+          locale,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: AppFonts.body(locale, fontSize: 14),
+        dividerColor: lightDivider,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return lightBlue;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(Colors.white),
+        side: const BorderSide(color: lightTextSecondary, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: lightTextSecondary,
+        textColor: lightTextPrimary,
+        subtitleTextStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: lightTextSecondary,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: lightTextPrimary),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: lightSurface,
+        headerBackgroundColor: lightBlue,
+        headerForegroundColor: Colors.white,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return Colors.white;
+          return lightTextPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return lightBlue;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.all(lightBlue),
+        todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+        todayBorder: const BorderSide(color: lightBlue),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      tooltipTheme: TooltipThemeData(
+        textStyle: AppFonts.body(locale, fontSize: 13, color: Colors.white),
+        decoration: BoxDecoration(
+          color: lightTextPrimary,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: lightSurface,
+        indicatorColor: lightBlue.withValues(alpha: 0.12),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: lightBlue);
+          }
+          return const IconThemeData(color: lightTextSecondary);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppFonts.body(
+              locale,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: lightBlue,
+            );
+          }
+          return AppFonts.body(locale, fontSize: 12, color: lightTextSecondary);
+        }),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        elevation: 2,
+        surfaceTintColor: Colors.transparent,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: lightBlue,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: CircleBorder(),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: lightBlue,
+        linearTrackColor: lightDivider,
+        circularTrackColor: lightDivider,
+      ),
+      badgeTheme: const BadgeThemeData(
+        backgroundColor: lightError,
+        textColor: Colors.white,
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: lightCard,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: lightDivider),
+          ),
+        ),
       ),
     );
   }
@@ -525,6 +827,141 @@ class ArcticTheme {
         decoration: BoxDecoration(
           color: hcBlue,
           borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: hcBlue,
+          foregroundColor: hcBg,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: hcBlue, width: 2),
+          ),
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: hcBlue,
+          textStyle: AppFonts.body(
+            locale,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: hcCard,
+        selectedColor: hcBlue.withValues(alpha: 0.3),
+        labelStyle: AppFonts.body(locale, fontSize: 14, color: hcTextPrimary),
+        secondaryLabelStyle: AppFonts.body(locale, fontSize: 14, color: hcBlue),
+        side: const BorderSide(color: hcDivider, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: hcBlue,
+        unselectedLabelColor: hcTextSecondary,
+        indicatorColor: hcBlue,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: AppFonts.body(
+          locale,
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+        ),
+        unselectedLabelStyle: AppFonts.body(locale, fontSize: 14),
+        dividerColor: hcDivider,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return hcBlue;
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(hcBg),
+        side: const BorderSide(color: hcDivider, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: hcTextSecondary,
+        textColor: hcTextPrimary,
+        subtitleTextStyle: AppFonts.body(
+          locale,
+          fontSize: 13,
+          color: hcTextSecondary,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: hcTextPrimary),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: hcSurface,
+        headerBackgroundColor: hcCard,
+        headerForegroundColor: hcBlue,
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return hcBg;
+          return hcTextPrimary;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return hcBlue;
+          return Colors.transparent;
+        }),
+        todayForegroundColor: WidgetStateProperty.all(hcBlue),
+        todayBackgroundColor: WidgetStateProperty.all(Colors.transparent),
+        todayBorder: const BorderSide(color: hcBlue, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: hcSurface,
+        indicatorColor: hcBlue.withValues(alpha: 0.25),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: hcBlue, size: 28);
+          }
+          return const IconThemeData(color: hcTextSecondary, size: 28);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppFonts.body(
+              locale,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: hcBlue,
+            );
+          }
+          return AppFonts.body(locale, fontSize: 12, color: hcTextSecondary);
+        }),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: hcBlue,
+        foregroundColor: hcBg,
+        elevation: 0,
+        shape: CircleBorder(),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: hcBlue,
+        linearTrackColor: hcDivider,
+        circularTrackColor: hcDivider,
+      ),
+      badgeTheme: const BadgeThemeData(
+        backgroundColor: hcError,
+        textColor: hcBg,
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: hcCard,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: hcDivider, width: 2),
+          ),
         ),
       ),
     );

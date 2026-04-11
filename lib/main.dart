@@ -11,6 +11,7 @@ import 'firebase_options.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
+import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/routing/app_router.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -87,6 +88,10 @@ class AcTechsApp extends ConsumerWidget {
       ),
       locale: Locale(locale),
       routerConfig: goRouter,
+      builder: (context, child) {
+        final routedChild = child ?? const SizedBox.shrink();
+        return Stack(children: [routedChild, const NetworkStatusBanner()]);
+      },
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

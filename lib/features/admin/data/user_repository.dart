@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/invoice_utils.dart';
@@ -10,6 +11,23 @@ import 'package:ac_techs/core/utils/invoice_utils.dart';
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository(firestore: FirebaseFirestore.instance);
 });
+
+enum FlushOperationPhase {
+  idle,
+  verifyingPassword,
+  checkingConnection,
+  scanningAffectedData,
+  deletingOperationalData,
+  deletingDerivedData,
+  deletingCompanies,
+  archivingUsers,
+  rebuildingDerivedData,
+  clearingLocalCache,
+  refreshingAppData,
+  completed,
+}
+
+typedef FlushProgressCallback = void Function(FlushOperationPhase phase);
 
 class InvoicePrefixNormalizationResult {
   const InvoicePrefixNormalizationResult({
@@ -56,9 +74,20 @@ class _InvoiceMigrationJobState {
 }
 
 class UserRepository {
-  UserRepository({required this.firestore});
+  UserRepository({
+    required this.firestore,
+    Future<void> Function()? flushPreflight,
+  }) : _flushPreflight = flushPreflight;
+
+  static const Set<String> _historyCollections = {
+    AppConstants.jobsCollection,
+    AppConstants.expensesCollection,
+    AppConstants.earningsCollection,
+    AppConstants.acInstallsCollection,
+  };
 
   final FirebaseFirestore firestore;
+  final Future<void> Function()? _flushPreflight;
 
   CollectionReference<Map<String, dynamic>> get _usersRef =>
       firestore.collection(AppConstants.usersCollection);
@@ -385,6 +414,9 @@ class UserRepository {
       rethrow;
     } on FirebaseAuthException catch (e) {
       debugPrint('verifyAdminPassword error code: ${e.code}');
+      if (e.code == 'network-request-failed') {
+        throw AdminException.flushRequiresInternet();
+      }
       throw AdminException.wrongPassword();
     } catch (_) {
       throw AdminException.wrongPassword();
@@ -396,39 +428,40 @@ class UserRepository {
   /// When [deleteNonAdminUsers] is true, it archives all non-admin user
   /// documents instead of permanently deleting them. Admin documents are
   /// always preserved.
-  Future<void> flushDatabase({bool deleteNonAdminUsers = false}) async {
+  Future<void> flushDatabase({
+    bool deleteNonAdminUsers = false,
+    FlushProgressCallback? onProgress,
+  }) async {
     try {
-      // Delete all operational collections in chunks (batch limit = 500).
-      for (final collection in [
-        AppConstants.jobsCollection,
-        AppConstants.expensesCollection,
-        AppConstants.earningsCollection,
-        AppConstants.acInstallsCollection,
-        AppConstants.sharedInstallAggregatesCollection,
-        AppConstants.invoiceClaimsCollection,
-        AppConstants.companiesCollection,
-      ]) {
-        await _deleteCollectionInChunks(collection);
-      }
+      onProgress?.call(FlushOperationPhase.checkingConnection);
+      await _assertFlushServerReachable();
+
+      onProgress?.call(FlushOperationPhase.deletingOperationalData);
+      await Future.wait([
+        _deleteCollectionInChunks(AppConstants.jobsCollection),
+        _deleteCollectionInChunks(AppConstants.expensesCollection),
+        _deleteCollectionInChunks(AppConstants.earningsCollection),
+        _deleteCollectionInChunks(AppConstants.acInstallsCollection),
+      ]);
+
+      onProgress?.call(FlushOperationPhase.deletingDerivedData);
+      await Future.wait([
+        _deleteCollectionInChunks(
+          AppConstants.sharedInstallAggregatesCollection,
+        ),
+        _deleteCollectionInChunks(AppConstants.invoiceClaimsCollection),
+      ]);
+
+      onProgress?.call(FlushOperationPhase.deletingCompanies);
+      await _deleteCollectionInChunks(AppConstants.companiesCollection);
 
       if (deleteNonAdminUsers) {
-        // Archive non-admin users so historical records remain attributable.
-        final usersSnap = await _usersRef.get();
-        if (usersSnap.docs.isNotEmpty) {
-          final batch = firestore.batch();
-          for (final doc in usersSnap.docs) {
-            final role =
-                doc.data()['role'] as String? ?? AppConstants.roleTechnician;
-            if (role != AppConstants.roleAdmin) {
-              batch.update(doc.reference, {
-                'isActive': false,
-                'archivedAt': FieldValue.serverTimestamp(),
-              });
-            }
-          }
-          await batch.commit();
-        }
+        onProgress?.call(FlushOperationPhase.archivingUsers);
+        await _archiveNonAdminUsersInChunks();
       }
+
+      onProgress?.call(FlushOperationPhase.clearingLocalCache);
+      await _scheduleCacheClearOnNextLaunch();
     } on FirebaseException catch (e) {
       debugPrint('flushDatabase error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -439,13 +472,24 @@ class UserRepository {
           'تم حظر مسح قاعدة البيانات بواسطة قواعد الأمان. تواصل مع دعم المسؤول.',
         );
       }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw AdminException.flushRequiresInternet();
+      }
       throw AdminException.flushFailed();
     }
   }
 
-  Future<void> flushTechnicianData(String techId) async {
+  Future<void> flushTechnicianData(
+    String techId, {
+    FlushProgressCallback? onProgress,
+  }) async {
     try {
       if (techId.trim().isEmpty) return;
+
+      onProgress?.call(FlushOperationPhase.checkingConnection);
+      await _assertFlushServerReachable();
+
+      onProgress?.call(FlushOperationPhase.scanningAffectedData);
 
       final jobsToDelete = await _jobsRef
           .where('techId', isEqualTo: techId)
@@ -467,29 +511,38 @@ class UserRepository {
         }
       }
 
-      await _deleteCollectionByFieldInChunks(
-        AppConstants.jobsCollection,
-        'techId',
-        techId,
-      );
-      await _deleteCollectionByFieldInChunks(
-        AppConstants.expensesCollection,
-        'techId',
-        techId,
-      );
-      await _deleteCollectionByFieldInChunks(
-        AppConstants.earningsCollection,
-        'techId',
-        techId,
-      );
-      await _deleteCollectionByFieldInChunks(
-        AppConstants.acInstallsCollection,
-        'techId',
-        techId,
-      );
+      onProgress?.call(FlushOperationPhase.deletingOperationalData);
+      await Future.wait([
+        _deleteCollectionByFieldInChunks(
+          AppConstants.jobsCollection,
+          'techId',
+          techId,
+        ),
+        _deleteCollectionByFieldInChunks(
+          AppConstants.expensesCollection,
+          'techId',
+          techId,
+        ),
+        _deleteCollectionByFieldInChunks(
+          AppConstants.earningsCollection,
+          'techId',
+          techId,
+        ),
+        _deleteCollectionByFieldInChunks(
+          AppConstants.acInstallsCollection,
+          'techId',
+          techId,
+        ),
+      ]);
 
-      await _rebuildInvoiceClaimsForInvoices(affectedInvoices);
-      await _rebuildSharedAggregatesForGroups(affectedGroupKeys);
+      onProgress?.call(FlushOperationPhase.rebuildingDerivedData);
+      await Future.wait([
+        _rebuildInvoiceClaimsForInvoices(affectedInvoices),
+        _rebuildSharedAggregatesForGroups(affectedGroupKeys),
+      ]);
+
+      onProgress?.call(FlushOperationPhase.clearingLocalCache);
+      await _scheduleCacheClearOnNextLaunch();
     } on FirebaseException catch (e) {
       debugPrint('flushTechnicianData error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -500,7 +553,76 @@ class UserRepository {
           'تم حظر مسح قاعدة البيانات بواسطة قواعد الأمان. تواصل مع دعم المسؤول.',
         );
       }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw AdminException.flushRequiresInternet();
+      }
       throw AdminException.flushFailed();
+    }
+  }
+
+  Future<void> _assertFlushServerReachable() async {
+    final preflight = _flushPreflight;
+    if (preflight != null) {
+      await preflight();
+      return;
+    }
+
+    try {
+      await firestore
+          .collection(AppConstants.appSettingsCollection)
+          .doc('approval_config')
+          .get(const GetOptions(source: Source.server));
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
+      }
+      if (e.code == 'unavailable' ||
+          e.code == 'deadline-exceeded' ||
+          e.code == 'cancelled') {
+        throw AdminException.flushRequiresInternet();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _archiveNonAdminUsersInChunks() async {
+    const chunkSize = 400;
+    while (true) {
+      final usersSnap = await _usersRef.limit(chunkSize).get();
+      if (usersSnap.docs.isEmpty) break;
+
+      final batch = firestore.batch();
+      var updatedAny = false;
+      for (final doc in usersSnap.docs) {
+        final role =
+            doc.data()['role'] as String? ?? AppConstants.roleTechnician;
+        if (role != AppConstants.roleAdmin) {
+          batch.update(doc.reference, {
+            'isActive': false,
+            'archivedAt': FieldValue.serverTimestamp(),
+          });
+          updatedAny = true;
+        }
+      }
+
+      if (!updatedAny) {
+        break;
+      }
+
+      await batch.commit();
+      if (usersSnap.docs.length < chunkSize) {
+        break;
+      }
+    }
+  }
+
+  Future<void> _scheduleCacheClearOnNextLaunch() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('clear_firestore_cache_on_launch', true);
+    } catch (_) {
+      // Non-critical: cache flag may fail in test environments without
+      // binding initialization. Flush itself already succeeded.
     }
   }
 
@@ -655,14 +777,17 @@ class UserRepository {
   /// Deletes all documents in [collectionName] in chunks of 400.
   Future<void> _deleteCollectionInChunks(String collectionName) async {
     const chunkSize = 400;
+    final hasHistory = _historyCollections.contains(collectionName);
     while (true) {
       final snap = await firestore
           .collection(collectionName)
           .limit(chunkSize)
           .get();
       if (snap.docs.isEmpty) break;
-      for (final doc in snap.docs) {
-        await _deleteHistorySubcollectionInChunks(doc.reference);
+      if (hasHistory) {
+        for (final doc in snap.docs) {
+          await _deleteHistorySubcollectionInChunks(doc.reference);
+        }
       }
       final batch = firestore.batch();
       for (final doc in snap.docs) {
@@ -678,6 +803,7 @@ class UserRepository {
     String value,
   ) async {
     const chunkSize = 400;
+    final hasHistory = _historyCollections.contains(collectionName);
     while (true) {
       final snap = await firestore
           .collection(collectionName)
@@ -685,8 +811,10 @@ class UserRepository {
           .limit(chunkSize)
           .get();
       if (snap.docs.isEmpty) break;
-      for (final doc in snap.docs) {
-        await _deleteHistorySubcollectionInChunks(doc.reference);
+      if (hasHistory) {
+        for (final doc in snap.docs) {
+          await _deleteHistorySubcollectionInChunks(doc.reference);
+        }
       }
       final batch = firestore.batch();
       for (final doc in snap.docs) {
@@ -701,7 +829,10 @@ class UserRepository {
   ) async {
     const chunkSize = 400;
     while (true) {
-      final snap = await parentRef.collection(AppConstants.historySubCollection).limit(chunkSize).get();
+      final snap = await parentRef
+          .collection(AppConstants.historySubCollection)
+          .limit(chunkSize)
+          .get();
       if (snap.docs.isEmpty) break;
 
       final batch = firestore.batch();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -38,27 +39,14 @@ class TechShell extends ConsumerWidget {
         .watch(pendingSharedInstallAggregatesProvider)
         .maybeWhen(data: (aggs) => aggs.length, orElse: () => 0);
     final isHome = _currentIndex(context) == 0;
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        // Allow router to pop pushed screens (e.g., monthly summary pushed from in/out)
-        final router = GoRouter.of(context);
-        if (router.canPop()) {
-          router.pop();
-          return;
-        }
-        if (!isHome) {
-          context.go('/tech');
-        } else {
-          SystemNavigator.pop();
-        }
-      },
+    return ShellBackNavigationScope(
+      isHome: isHome,
+      homeRoute: '/tech',
       child: Scaffold(
         body: child,
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex(context),
-          onTap: (index) {
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex(context),
+          onDestinationSelected: (index) {
             final current = _currentIndex(context);
             if (current == index) {
               HapticFeedback.selectionClick();
@@ -77,9 +65,28 @@ class TechShell extends ConsumerWidget {
                 context.go('/tech/settings');
             }
           },
-          items: [
-            BottomNavigationBarItem(
+          destinations: [
+            NavigationDestination(
               icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.dashboard_outlined),
+                  if (sharedTeamsCount > 0)
+                    Positioned(
+                      right: -2,
+                      top: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.tertiary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              selectedIcon: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   const Icon(Icons.dashboard_rounded),
@@ -90,8 +97,8 @@ class TechShell extends ConsumerWidget {
                       child: Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.amber,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.tertiary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -100,16 +107,37 @@ class TechShell extends ConsumerWidget {
               ),
               label: AppLocalizations.of(context)!.home,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: const Icon(Icons.add_circle_outline_rounded),
+              selectedIcon: const Icon(Icons.add_circle_rounded),
               label: AppLocalizations.of(context)!.submit,
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.swap_vert_rounded),
+            NavigationDestination(
+              icon: const Icon(Icons.swap_vert_outlined),
+              selectedIcon: const Icon(Icons.swap_vert_rounded),
               label: AppLocalizations.of(context)!.inOut,
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.history_outlined),
+                  if (pendingSettlementBatches > 0)
+                    Positioned(
+                      right: -2,
+                      top: -1,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              selectedIcon: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   const Icon(Icons.history_rounded),
@@ -120,8 +148,8 @@ class TechShell extends ConsumerWidget {
                       child: Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.error,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -130,8 +158,9 @@ class TechShell extends ConsumerWidget {
               ),
               label: AppLocalizations.of(context)!.history,
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_rounded),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings_rounded),
               label: AppLocalizations.of(context)!.settings,
             ),
           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -133,6 +134,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   Future<void> _bulkApprove() async {
     if (_selected.isEmpty) return;
+    HapticFeedback.mediumImpact();
     setState(() => _isBulkProcessing = true);
     try {
       final admin = ref.read(currentUserProvider).value;
@@ -162,6 +164,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   Future<void> _bulkReject() async {
     if (_selected.isEmpty) return;
+    HapticFeedback.mediumImpact();
     final controller = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
@@ -665,17 +668,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: ArcticCard(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${AppLocalizations.of(context)!.inOut} ${AppLocalizations.of(context)!.pending}: '
-                                '${(pendingEarnings.value?.length ?? 0) + (pendingExpenses.value?.length ?? 0)}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            FilledButton.icon(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final count =
+                                (pendingEarnings.value?.length ?? 0) +
+                                (pendingExpenses.value?.length ?? 0);
+                            final summaryText =
+                                '${AppLocalizations.of(context)!.inOut} ${AppLocalizations.of(context)!.pending}: $count';
+                            final approveButton = FilledButton.icon(
                               onPressed: _isApprovingInOut
                                   ? null
                                   : () => _approvePendingInOut(
@@ -698,8 +698,39 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                               label: Text(
                                 AppLocalizations.of(context)!.approve,
                               ),
-                            ),
-                          ],
+                            );
+
+                            if (constraints.maxWidth < 440) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    summaryText,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  approveButton,
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    summaryText,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                approveButton,
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),

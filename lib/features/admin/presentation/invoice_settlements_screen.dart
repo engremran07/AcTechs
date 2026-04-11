@@ -451,7 +451,7 @@ class _InvoiceSettlementsScreenState
                     ),
                   ),
                 Expanded(
-                  child: RefreshIndicator(
+                  child: ArcticRefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(adminSettlementCandidatesProvider);
                       ref.invalidate(adminSettlementHistoryProvider);

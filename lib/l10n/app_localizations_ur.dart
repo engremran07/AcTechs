@@ -183,6 +183,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get noJobsYet => 'ابھی تک کوئی کام جمع نہیں ہوا';
 
   @override
+  String get noDataYet => 'ابھی تک کوئی ڈیٹا نہیں';
+
+  @override
   String get noJobsToday => 'آج کوئی کام جمع نہیں ہوا';
 
   @override
@@ -296,10 +299,17 @@ class AppLocalizationsUr extends AppLocalizations {
   String get arabic => 'العربية';
 
   @override
+  String get pressBackAgainToExit => 'ایپ بند کرنے کے لیے دوبارہ بیک دبائیں۔';
+
+  @override
   String get settings => 'سیٹنگز';
 
   @override
   String get offline => 'آف لائن';
+
+  @override
+  String get offlineBannerMessage =>
+      'انٹرنیٹ کنکشن موجود نہیں ہے۔ کنکشن واپس آنے تک آپ cached ڈیٹا دیکھ رہے ہیں۔';
 
   @override
   String get syncing => 'سنک ہو رہا ہے...';
@@ -1145,6 +1155,51 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get flushFailed =>
       'فلش ناکام ہوا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔';
+
+  @override
+  String get flushRequiresInternetMessage =>
+      'ایڈمن پاس ورڈ ویریفائی کرنے اور ڈیٹا محفوظ طریقے سے فلش کرنے کے لیے لائیو انٹرنیٹ کنکشن ضروری ہے۔';
+
+  @override
+  String get flushPhaseVerifyingPassword =>
+      'ایڈمن پاس ورڈ ویریفائی ہو رہا ہے...';
+
+  @override
+  String get flushPhaseCheckingConnection => 'لائیو کنکشن چیک ہو رہا ہے...';
+
+  @override
+  String get flushPhaseScanningData => 'متاثرہ ریکارڈز اسکین ہو رہے ہیں...';
+
+  @override
+  String get flushPhaseDeletingOperationalData =>
+      'جابز اور آپریشنل ریکارڈز حذف ہو رہے ہیں...';
+
+  @override
+  String get flushPhaseDeletingDerivedData =>
+      'شیئرڈ ایگریگیٹس اور انوائس لیجرز حذف ہو رہے ہیں...';
+
+  @override
+  String get flushPhaseDeletingCompanies => 'کمپنیاں حذف ہو رہی ہیں...';
+
+  @override
+  String get flushPhaseArchivingUsers =>
+      'غیر ایڈمن یوزرز آرکائیو ہو رہے ہیں...';
+
+  @override
+  String get flushPhaseRebuildingDerivedData =>
+      'انوائس لیجرز اور شیئرڈ ٹوٹلز دوبارہ بن رہے ہیں...';
+
+  @override
+  String get flushPhaseClearingLocalCache =>
+      'لوکل cache reset شیڈول ہو رہا ہے...';
+
+  @override
+  String get flushPhaseRefreshingAppData => 'ایپ ڈیٹا ریفریش ہو رہا ہے...';
+
+  @override
+  String flushProgressStep(int current, int total) {
+    return 'مرحلہ $current از $total';
+  }
 
   @override
   String get flushWrongPassword => 'غلط پاس ورڈ۔ دوبارہ کوشش کریں۔';

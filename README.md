@@ -273,6 +273,24 @@ Technician-owned records are never hard-deleted. Instead:
 
 ## 🚀 Build & Release
 
+Release this repo as one surface. If dashboards, navigation, auth, localization, reports, or Firebase behavior changed, web, APK, and rules must come from the same source tree.
+
+### Required release order
+
+```powershell
+flutter analyze
+flutter test
+Set-Location scripts
+npm run lint:firestore-rules
+npm run test:firestore-rules
+Set-Location ..
+flutter build web --release
+firebase deploy --only hosting,firestore:rules,firestore:indexes --project actechs-d415e
+flutter build apk --release
+```
+
+Only install the APK after the gates above are green and only claim web/APK/backend are in sync when all three were built or deployed from that same revision.
+
 ### Recommended release command
 
 ```powershell
@@ -316,6 +334,7 @@ Recommended validation before shipping:
 flutter analyze
 flutter test
 Set-Location scripts
+npm run lint:firestore-rules
 npm run test:firestore-rules
 ```
 
@@ -332,8 +351,8 @@ Focused checks commonly used in this repo:
 
 - New job submissions store invoice numbers without forcing `INV-`.
 - Historical import now strips the selected company prefix from imported invoice numbers when present.
-- Existing already-imported prefixed invoices remain in Firestore until they are migrated or deleted.
-- Full database flush removes those stored historical invoice rows and their invoice claims.
+- Legacy invoice normalization is no longer exposed from the admin dashboard.
+- If older prefixed rows still exist, the supported cleanup path is flush plus re-import, not an in-app migration step.
 
 ### Approval behavior
 

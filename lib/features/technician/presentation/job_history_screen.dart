@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
+import 'package:ac_techs/core/utils/technician_day_in_out_summary.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
@@ -606,62 +606,17 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     return filtered;
   }
 
-  bool _inActiveRange(DateTime? date) {
-    if (date == null) return false;
-    final range = _activeRange();
-    if (range == null) return true;
-    final start = DateTime(
-      range.start.year,
-      range.start.month,
-      range.start.day,
-    );
-    final end = DateTime(
-      range.end.year,
-      range.end.month,
-      range.end.day,
-      23,
-      59,
-      59,
-    );
-    return !date.isBefore(start) && !date.isAfter(end);
-  }
-
-  List<_InOutDaySummary> _applyInOutFilters(
+  List<TechnicianDayInOutSummary> _applyInOutFilters(
     List<EarningModel> earnings,
     List<ExpenseModel> expenses,
   ) {
-    final byDay = <DateTime, _InOutAccumulator>{};
-
-    for (final earning in earnings) {
-      if (!_inActiveRange(earning.date)) continue;
-      final d = earning.date;
-      if (d == null) continue;
-      final day = DateTime(d.year, d.month, d.day);
-      final item = byDay.putIfAbsent(day, () => _InOutAccumulator(day));
-      item.earned += earning.amount;
-      item.earningDetails.add(
-        '${earning.category} (${AppFormatters.currency(earning.amount)})',
-      );
-    }
-
-    for (final expense in expenses) {
-      if (!_inActiveRange(expense.date)) continue;
-      final d = expense.date;
-      if (d == null) continue;
-      final day = DateTime(d.year, d.month, d.day);
-      final item = byDay.putIfAbsent(day, () => _InOutAccumulator(day));
-      final detail =
-          '${expense.category} (${AppFormatters.currency(expense.amount)})';
-      if (expense.expenseType == AppConstants.expenseTypeHome) {
-        item.homeExpenses += expense.amount;
-        item.homeDetails.add(detail);
-      } else {
-        item.workExpenses += expense.amount;
-        item.workDetails.add(detail);
-      }
-    }
-
-    var summary = byDay.values.map((item) => item.toSummary()).toList();
+    final activeRange = _activeRange();
+    var summary = TechnicianDayInOutSummary.summarize(
+      earnings: earnings,
+      expenses: expenses,
+      start: activeRange?.start,
+      end: activeRange?.end,
+    );
 
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
@@ -690,12 +645,13 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     VoidCallback refresh,
   ) {
     final approvalConfig = ref.watch(approvalConfigProvider).value;
+    final jobSummary = ref.watch(technicianJobSummaryProvider).value;
     return jobs.when(
       data: (jobList) {
-        final pendingCount = jobList.where((j) => j.isPending).length;
-        final approvedCount = jobList.where((j) => j.isApproved).length;
-        final rejectedCount = jobList.where((j) => j.isRejected).length;
-        final sharedCount = jobList.where((j) => j.isSharedInstall).length;
+        final pendingCount = jobSummary?.pendingJobs ?? 0;
+        final approvedCount = jobSummary?.approvedJobs ?? 0;
+        final rejectedCount = jobSummary?.rejectedJobs ?? 0;
+        final sharedCount = jobSummary?.sharedJobs ?? 0;
         final filtered = _applyFilters(jobList);
         final sharedNamesFuture = _sharedInstallerNamesByGroup(filtered);
 
@@ -1464,55 +1420,10 @@ class _HistoryMetricCard extends StatelessWidget {
   }
 }
 
-class _InOutAccumulator {
-  _InOutAccumulator(this.date);
-
-  final DateTime date;
-  double earned = 0;
-  double workExpenses = 0;
-  double homeExpenses = 0;
-  final List<String> earningDetails = <String>[];
-  final List<String> workDetails = <String>[];
-  final List<String> homeDetails = <String>[];
-
-  _InOutDaySummary toSummary() => _InOutDaySummary(
-    date: date,
-    earned: earned,
-    workExpenses: workExpenses,
-    homeExpenses: homeExpenses,
-    earningDetails: earningDetails,
-    workDetails: workDetails,
-    homeDetails: homeDetails,
-  );
-}
-
-class _InOutDaySummary {
-  const _InOutDaySummary({
-    required this.date,
-    required this.earned,
-    required this.workExpenses,
-    required this.homeExpenses,
-    required this.earningDetails,
-    required this.workDetails,
-    required this.homeDetails,
-  });
-
-  final DateTime date;
-  final double earned;
-  final double workExpenses;
-  final double homeExpenses;
-  final List<String> earningDetails;
-  final List<String> workDetails;
-  final List<String> homeDetails;
-
-  double get totalExpenses => workExpenses + homeExpenses;
-  double get net => earned - totalExpenses;
-}
-
 class _InOutHistoryCard extends StatelessWidget {
   const _InOutHistoryCard({required this.summary, this.onTap});
 
-  final _InOutDaySummary summary;
+  final TechnicianDayInOutSummary summary;
   final VoidCallback? onTap;
 
   @override

@@ -7,3 +7,5 @@ export 'list_controls.dart';
 export 'gesture_widgets.dart';
 export 'app_shortcuts.dart';
 export 'company_selector_field.dart';
+export 'shell_back_navigation_scope.dart';
+export 'network_status_banner.dart';

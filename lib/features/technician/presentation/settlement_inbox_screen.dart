@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
@@ -49,6 +50,7 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
   }
 
   Future<void> _confirmBatch(String batchId) async {
+    HapticFeedback.mediumImpact();
     final l = AppLocalizations.of(context)!;
     setState(() => _processingBatchIds.add(batchId));
     try {
@@ -78,6 +80,7 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
   }
 
   Future<void> _rejectBatch(String batchId) async {
+    HapticFeedback.mediumImpact();
     final l = AppLocalizations.of(context)!;
     final comment = await _promptComment(context);
     if (comment == null || comment.isEmpty) return;
@@ -119,113 +122,124 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.paymentInbox)),
       body: SafeArea(
-        child: inboxAsync.when(
-          data: (jobs) {
-            if (jobs.isEmpty) {
-              return Center(
-                child: Text(
-                  l.allCaughtUp,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              );
-            }
-
-            final byBatch = <String, List<JobModel>>{};
-            for (final job in jobs) {
-              byBatch
-                  .putIfAbsent(job.settlementBatchId, () => <JobModel>[])
-                  .add(job);
-            }
-            final entries = byBatch.entries.toList(growable: false);
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: entries.length,
-              itemBuilder: (context, index) {
-                final batchId = entries[index].key;
-                final items = entries[index].value;
-                final first = items.first;
-                final isProcessing = _processingBatchIds.contains(batchId);
-                return ArcticCard(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${l.settlementBatch}: ${batchId.substring(0, batchId.length > 12 ? 12 : batchId.length)}',
-                        style: Theme.of(context).textTheme.titleMedium,
+        child: ArcticRefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(technicianSettlementInboxProvider);
+          },
+          child: inboxAsync.when(
+            data: (jobs) {
+              if (jobs.isEmpty) {
+                return ListView(
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.35),
+                    Center(
+                      child: Text(
+                        l.allCaughtUp,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${items.length} ${l.jobs} • ${AppFormatters.date(first.settlementRequestedAt ?? first.date)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ),
-                      if (first.settlementAdminNote.trim().isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(first.settlementAdminNote),
-                      ],
-                      if (first.settlementAmount > 0) ...[
-                        const SizedBox(height: 8),
+                    ),
+                  ],
+                );
+              }
+
+              final byBatch = <String, List<JobModel>>{};
+              for (final job in jobs) {
+                byBatch
+                    .putIfAbsent(job.settlementBatchId, () => <JobModel>[])
+                    .add(job);
+              }
+              final entries = byBatch.entries.toList(growable: false);
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: entries.length,
+                itemBuilder: (context, index) {
+                  final batchId = entries[index].key;
+                  final items = entries[index].value;
+                  final first = items.first;
+                  final isProcessing = _processingBatchIds.contains(batchId);
+                  return ArcticCard(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          first.settlementPaymentMethod.trim().isEmpty
-                              ? '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)}'
-                              : '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)} • ${first.settlementPaymentMethod}',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          '${l.settlementBatch}: ${batchId.substring(0, batchId.length > 12 ? 12 : batchId.length)}',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                      ],
-                      const SizedBox(height: 10),
-                      ...items.map(
-                        (job) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            children: [
-                              Expanded(child: Text(job.invoiceNumber)),
-                              Text(AppFormatters.date(job.date)),
-                            ],
-                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${items.length} ${l.jobs} • ${AppFormatters.date(first.settlementRequestedAt ?? first.date)}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: ArcticTheme.arcticTextSecondary,
+                              ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: isProcessing
-                                  ? null
-                                  : () => _rejectBatch(batchId),
-                              icon: const Icon(Icons.close_rounded),
-                              label: Text(l.rejectPayment),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: isProcessing
-                                  ? null
-                                  : () => _confirmBatch(batchId),
-                              icon: const Icon(Icons.check_circle_outline),
-                              label: Text(l.confirmPaymentReceived),
-                            ),
+                        if (first.settlementAdminNote.trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(first.settlementAdminNote),
+                        ],
+                        if (first.settlementAmount > 0) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            first.settlementPaymentMethod.trim().isEmpty
+                                ? '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)}'
+                                : '${l.amountSar}: ${AppFormatters.currency(first.settlementAmount)} • ${first.settlementPaymentMethod}',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.all(16),
-            child: ArcticShimmer(count: 5),
-          ),
-          error: (error, _) => Center(
-            child: ErrorCard(
-              exception: error is AppException
-                  ? error
-                  : JobException.saveFailed(),
+                        const SizedBox(height: 10),
+                        ...items.map(
+                          (job) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              children: [
+                                Expanded(child: Text(job.invoiceNumber)),
+                                Text(AppFormatters.date(job.date)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: isProcessing
+                                    ? null
+                                    : () => _rejectBatch(batchId),
+                                icon: const Icon(Icons.close_rounded),
+                                label: Text(l.rejectPayment),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: isProcessing
+                                    ? null
+                                    : () => _confirmBatch(batchId),
+                                icon: const Icon(Icons.check_circle_outline),
+                                label: Text(l.confirmPaymentReceived),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(16),
+              child: ArcticShimmer(count: 5),
+            ),
+            error: (error, _) => Center(
+              child: ErrorCard(
+                exception: error is AppException
+                    ? error
+                    : JobException.saveFailed(),
+              ),
             ),
           ),
         ),
