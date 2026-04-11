@@ -126,7 +126,51 @@ jobs:
           path: build/web
           retention-days: 14
 
-      - name: Authenticate to Google Cloud
+      - name: Resolve Google Cloud auth mode
+        id: auth_mode
+        env:
+          GOOGLE_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          GOOGLE_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ACTECHS_D415E }}
+        run: |
+          AUTH_MODE=""
+
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            AUTH_MODE="credentials_json"
+          fi
+
+          if [ -n "$GOOGLE_WORKLOAD_IDENTITY_PROVIDER" ] || [ -n "$GOOGLE_SERVICE_ACCOUNT_EMAIL" ]; then
+            if [ -z "$GOOGLE_WORKLOAD_IDENTITY_PROVIDER" ] || [ -z "$GOOGLE_SERVICE_ACCOUNT_EMAIL" ]; then
+              echo "Both GOOGLE_WORKLOAD_IDENTITY_PROVIDER and GOOGLE_SERVICE_ACCOUNT_EMAIL secrets are required for Workload Identity Federation."
+              exit 1
+            fi
+
+            if [ -n "$AUTH_MODE" ]; then
+              echo "Configure exactly one Google auth mode: either FIREBASE_SERVICE_ACCOUNT_ACTECHS_D415E or GOOGLE_WORKLOAD_IDENTITY_PROVIDER plus GOOGLE_SERVICE_ACCOUNT_EMAIL."
+              exit 1
+            fi
+
+            AUTH_MODE="workload_identity"
+            echo "workload_identity_provider=$GOOGLE_WORKLOAD_IDENTITY_PROVIDER" >> "$GITHUB_OUTPUT"
+            echo "service_account=$GOOGLE_SERVICE_ACCOUNT_EMAIL" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -z "$AUTH_MODE" ]; then
+            echo "Missing Google Cloud deploy credentials. Configure FIREBASE_SERVICE_ACCOUNT_ACTECHS_D415E or GOOGLE_WORKLOAD_IDENTITY_PROVIDER plus GOOGLE_SERVICE_ACCOUNT_EMAIL."
+            exit 1
+          fi
+
+          echo "mode=$AUTH_MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud with Workload Identity
+        if: steps.auth_mode.outputs.mode == 'workload_identity'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ steps.auth_mode.outputs.workload_identity_provider }}
+          service_account: ${{ steps.auth_mode.outputs.service_account }}
+
+      - name: Authenticate to Google Cloud with Service Account JSON
+        if: steps.auth_mode.outputs.mode == 'credentials_json'
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ACTECHS_D415E }}

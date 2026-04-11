@@ -14,6 +14,19 @@ class EarningRepository {
 
   final FirebaseFirestore firestore;
 
+  List<EarningModel> _activeEarningsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    final earnings = <EarningModel>[];
+    for (final doc in snap.docs) {
+      if (doc.data()['isDeleted'] == true) {
+        continue;
+      }
+      earnings.add(EarningModel.fromFirestore(doc));
+    }
+    return earnings;
+  }
+
   CollectionReference<Map<String, dynamic>> get _ref =>
       firestore.collection(AppConstants.earningsCollection);
 
@@ -209,24 +222,14 @@ class EarningRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: false)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => EarningModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeEarningsFromSnapshot);
   }
 
   Stream<List<EarningModel>> allEarnings() {
     return _ref
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => EarningModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeEarningsFromSnapshot);
   }
 
   Future<List<EarningModel>> fetchEarnings({
@@ -252,10 +255,7 @@ class EarningRepository {
         );
       }
       final snap = await query.orderBy('date', descending: true).get();
-      return snap.docs
-          .where((d) => d.data()['isDeleted'] != true)
-          .map((d) => EarningModel.fromFirestore(d))
-          .toList();
+      return _activeEarningsFromSnapshot(snap);
     } on FirebaseException catch (e) {
       debugPrint('fetchEarnings error: ${e.code} — ${e.message}');
       throw EarningException.saveFailed();
@@ -271,12 +271,7 @@ class EarningRepository {
         .where('techId', isEqualTo: techId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => EarningModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeEarningsFromSnapshot);
   }
 
   /// Earnings for a specific month.
@@ -289,12 +284,7 @@ class EarningRepository {
         .where('date', isLessThan: Timestamp.fromDate(end))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => EarningModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeEarningsFromSnapshot);
   }
 
   /// Today's earnings for a tech.
@@ -308,11 +298,6 @@ class EarningRepository {
         .where('date', isLessThan: Timestamp.fromDate(endOfDay))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => EarningModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeEarningsFromSnapshot);
   }
 }

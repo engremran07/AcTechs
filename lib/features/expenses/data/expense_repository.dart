@@ -14,6 +14,19 @@ class ExpenseRepository {
 
   final FirebaseFirestore firestore;
 
+  List<ExpenseModel> _activeExpensesFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    final expenses = <ExpenseModel>[];
+    for (final doc in snap.docs) {
+      if (doc.data()['isDeleted'] == true) {
+        continue;
+      }
+      expenses.add(ExpenseModel.fromFirestore(doc));
+    }
+    return expenses;
+  }
+
   CollectionReference<Map<String, dynamic>> get _ref =>
       firestore.collection(AppConstants.expensesCollection);
 
@@ -209,24 +222,14 @@ class ExpenseRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: false)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => ExpenseModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeExpensesFromSnapshot);
   }
 
   Stream<List<ExpenseModel>> allExpenses() {
     return _ref
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => ExpenseModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeExpensesFromSnapshot);
   }
 
   Future<List<ExpenseModel>> fetchExpenses({
@@ -268,12 +271,7 @@ class ExpenseRepository {
         .where('techId', isEqualTo: techId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => ExpenseModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeExpensesFromSnapshot);
   }
 
   /// Expenses for a specific month.
@@ -286,12 +284,7 @@ class ExpenseRepository {
         .where('date', isLessThan: Timestamp.fromDate(end))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => ExpenseModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeExpensesFromSnapshot);
   }
 
   /// Today's expenses for a tech.
@@ -305,12 +298,7 @@ class ExpenseRepository {
         .where('date', isLessThan: Timestamp.fromDate(endOfDay))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map((d) => ExpenseModel.fromFirestore(d))
-              .toList(),
-        );
+        .map(_activeExpensesFromSnapshot);
   }
 
   Stream<List<ExpenseModel>> todaysWorkExpenses(String techId) {

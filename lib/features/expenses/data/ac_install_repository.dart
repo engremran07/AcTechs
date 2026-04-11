@@ -14,6 +14,19 @@ class AcInstallRepository {
 
   final FirebaseFirestore firestore;
 
+  List<AcInstallModel> _activeInstallsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    final installs = <AcInstallModel>[];
+    for (final doc in snap.docs) {
+      if (doc.data()['isDeleted'] == true) {
+        continue;
+      }
+      installs.add(AcInstallModel.fromFirestore(doc));
+    }
+    return installs;
+  }
+
   CollectionReference<Map<String, dynamic>> get _ref =>
       firestore.collection(AppConstants.acInstallsCollection);
 
@@ -71,12 +84,7 @@ class AcInstallRepository {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map(AcInstallModel.fromFirestore)
-              .toList(),
-        );
+        .map(_activeInstallsFromSnapshot);
   }
 
   /// Stream of all AC install records for a technician (for monthly summaries).
@@ -85,12 +93,7 @@ class AcInstallRepository {
         .where('techId', isEqualTo: techId)
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map(AcInstallModel.fromFirestore)
-              .toList(),
-        );
+        .map(_activeInstallsFromSnapshot);
   }
 
   /// Admin: stream of all pending AC install records.
@@ -99,12 +102,7 @@ class AcInstallRepository {
         .where('status', isEqualTo: 'pending')
         .orderBy('date', descending: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .where((d) => d.data()['isDeleted'] != true)
-              .map(AcInstallModel.fromFirestore)
-              .toList(),
-        );
+        .map(_activeInstallsFromSnapshot);
   }
 
   Future<List<ApprovalHistoryEntry>> fetchInstallHistory(
