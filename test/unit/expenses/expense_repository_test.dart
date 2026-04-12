@@ -60,65 +60,80 @@ void main() {
     expect(snap.docs, hasLength(1));
   });
 
-  test('updateExpense rejects approved records', () async {
-    final doc = await firestore
-        .collection(AppConstants.expensesCollection)
-        .add({
-          'techId': 'tech-1',
-          'techName': 'Ali',
-          'category': 'Petrol',
-          'amount': 100.0,
-          'note': '',
-          'expenseType': 'work',
-          'status': 'approved',
-          'approvedBy': 'admin-1',
-          'adminNote': '',
-          'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
-        });
+  test(
+    'updateExpense allows updating approved records (Firestore rules gate, not app layer)',
+    () async {
+      // Previous behavior: _ensureMutableRecord blocked this at app layer.
+      // New behavior: Firestore rules gate allows it when !inOutApprovalRequired;
+      // unit tests (fake_cloud_firestore) do not enforce rules, so the write succeeds.
+      final doc = await firestore
+          .collection(AppConstants.expensesCollection)
+          .add({
+            'techId': 'tech-1',
+            'techName': 'Ali',
+            'category': 'Petrol',
+            'amount': 100.0,
+            'note': '',
+            'expenseType': 'work',
+            'status': 'approved',
+            'approvedBy': 'admin-1',
+            'adminNote': '',
+            'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
+          });
 
-    final updated = ExpenseModel(
-      id: doc.id,
-      techId: 'tech-1',
-      techName: 'Ali',
-      category: 'Petrol',
-      amount: 140,
-      expenseType: 'work',
-      status: ExpenseApprovalStatus.approved,
-      approvedBy: 'admin-1',
-      date: DateTime(2026, 4, 1, 8),
-      createdAt: DateTime(2026, 4, 1, 8),
-      reviewedAt: DateTime(2026, 4, 1, 9),
-    );
+      final updated = ExpenseModel(
+        id: doc.id,
+        techId: 'tech-1',
+        techName: 'Ali',
+        category: 'Petrol',
+        amount: 140,
+        expenseType: 'work',
+        status: ExpenseApprovalStatus.approved,
+        approvedBy: 'admin-1',
+        date: DateTime(2026, 4, 1, 8),
+        createdAt: DateTime(2026, 4, 1, 8),
+        reviewedAt: DateTime(2026, 4, 1, 9),
+      );
 
-    await expectLater(
-      () => repository.updateExpense(updated),
-      throwsA(isA<ExpenseException>()),
-    );
-  });
+      await repository.updateExpense(updated);
 
-  test('archiveExpense rejects approved records', () async {
-    final doc = await firestore
-        .collection(AppConstants.expensesCollection)
-        .add({
-          'techId': 'tech-1',
-          'techName': 'Ali',
-          'category': 'Petrol',
-          'amount': 100.0,
-          'note': '',
-          'expenseType': 'work',
-          'status': 'approved',
-          'approvedBy': 'admin-1',
-          'adminNote': '',
-          'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
-        });
+      final snap = await firestore
+          .collection(AppConstants.expensesCollection)
+          .doc(doc.id)
+          .get();
+      expect(snap.data()?['amount'], equals(140.0));
+    },
+  );
 
-    await expectLater(
-      () => repository.archiveExpense(doc.id),
-      throwsA(isA<ExpenseException>()),
-    );
-  });
+  test(
+    'archiveExpense allows archiving approved records (Firestore rules gate, not app layer)',
+    () async {
+      final doc = await firestore
+          .collection(AppConstants.expensesCollection)
+          .add({
+            'techId': 'tech-1',
+            'techName': 'Ali',
+            'category': 'Petrol',
+            'amount': 100.0,
+            'note': '',
+            'expenseType': 'work',
+            'status': 'approved',
+            'approvedBy': 'admin-1',
+            'adminNote': '',
+            'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
+          });
+
+      await repository.archiveExpense(doc.id);
+
+      final snap = await firestore
+          .collection(AppConstants.expensesCollection)
+          .doc(doc.id)
+          .get();
+      expect(snap.data()?['isDeleted'], isTrue);
+    },
+  );
 }

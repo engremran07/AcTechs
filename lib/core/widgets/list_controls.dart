@@ -160,7 +160,7 @@ class BulkActionBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: ArcticTheme.arcticSurface,
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           top: BorderSide(
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
@@ -241,6 +241,7 @@ class StatusFilterChips extends StatelessWidget {
     this.pendingCount,
     this.approvedCount,
     this.rejectedCount,
+    this.sharedCount,
   });
 
   final String? selected;
@@ -249,19 +250,26 @@ class StatusFilterChips extends StatelessWidget {
   final int? approvedCount;
   final int? rejectedCount;
 
+  /// When non-null, a 5th "Shared" chip is rendered with this count.
+  final int? sharedCount;
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final counts = <String, int?>{
       'pending': pendingCount,
       'approved': approvedCount,
       'rejected': rejectedCount,
+      'shared': sharedCount,
     };
 
     final filters = [
-      ('all', 'All', null),
-      ('pending', 'Pending', ArcticTheme.arcticPending),
-      ('approved', 'Approved', ArcticTheme.arcticSuccess),
-      ('rejected', 'Rejected', ArcticTheme.arcticError),
+      ('all', l.all, null),
+      ('pending', l.pending, ArcticTheme.arcticPending),
+      ('approved', l.approved, ArcticTheme.arcticSuccess),
+      ('rejected', l.rejected, ArcticTheme.arcticError),
+      if (sharedCount != null)
+        ('shared', l.sharedInstall, ArcticTheme.arcticBlue),
     ];
 
     return SingleChildScrollView(

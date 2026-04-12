@@ -49,6 +49,12 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
         return job.acUnits.any(
           (unit) => unit.type == 'Freestanding AC' && unit.quantity > 0,
         );
+      case JobAcTypeFilter.bracket:
+        return job.effectiveBracketCount > 0;
+      case JobAcTypeFilter.uninstall:
+        return job.acUnits.any(
+          (unit) => unit.type.startsWith('Uninstall') && unit.quantity > 0,
+        );
     }
   }
 
@@ -152,6 +158,10 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
         return l.windowAc;
       case JobAcTypeFilter.freestanding:
         return l.standing;
+      case JobAcTypeFilter.bracket:
+        return l.acOutdoorBracket;
+      case JobAcTypeFilter.uninstall:
+        return l.uninstalls;
     }
   }
 
@@ -163,6 +173,10 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
         return l.windowAc;
       case JobAcTypeFilter.freestanding:
         return l.standing;
+      case JobAcTypeFilter.bracket:
+        return l.acOutdoorBracket;
+      case JobAcTypeFilter.uninstall:
+        return l.uninstalls;
     }
   }
 

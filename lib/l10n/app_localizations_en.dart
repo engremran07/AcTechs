@@ -1809,4 +1809,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get undo => 'Undo';
+
+  @override
+  String get requestEditJob => 'Request Edit';
+
+  @override
+  String get requestEditConfirmTitle => 'Request Edit?';
+
+  @override
+  String get requestEditConfirmBody =>
+      'This job will return to pending and need admin re-approval before settlement.';
+
+  @override
+  String get jobEditRequested =>
+      'Edit request submitted. Awaiting admin re-approval.';
+
+  @override
+  String get resubmittedBadge => 'Re-submitted';
+
+  @override
+  String get genericError => 'Something went wrong. Please try again.';
+
+  @override
+  String get permanentlyDeleteJob => 'Permanently Delete Job';
+
+  @override
+  String get permanentlyDeleteJobConfirm =>
+      'Delete this job permanently? This cannot be undone.';
+
+  @override
+  String get permanentlyDeleteJobSharedWarning =>
+      'This is a shared install. Aggregate counters will NOT be adjusted automatically. Notify admin if totals need correction.';
+
+  @override
+  String get jobDeletedSuccess => 'Job permanently deleted.';
+
+  @override
+  String get reconcileInvoices => 'Reconcile Invoices';
+
+  @override
+  String get uploadCompanyReport => 'Upload Company Report';
+
+  @override
+  String get matchedInvoices => 'Matched';
+
+  @override
+  String get unmatchedInvoices => 'Not Found';
+
+  @override
+  String get alreadyPaidInvoices => 'Already Paid';
+
+  @override
+  String get reconcileMarkedSuccess => 'Matched invoices marked as paid.';
 }

@@ -67,41 +67,50 @@ void main() {
     );
   });
 
-  test('updateEarning rejects approved records', () async {
-    final doc = await firestore
-        .collection(AppConstants.earningsCollection)
-        .add({
-          'techId': 'tech-1',
-          'techName': 'Ali',
-          'category': 'Scrap Sale',
-          'amount': 250.0,
-          'note': '',
-          'paymentType': 'regular',
-          'status': 'approved',
-          'approvedBy': 'admin-1',
-          'adminNote': '',
-          'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
-          'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
-        });
+  test(
+    'updateEarning allows updating approved records (Firestore rules gate, not app layer)',
+    () async {
+      // Previous behavior: _ensureMutableRecord blocked this at app layer.
+      // New behavior: Firestore rules gate allows it when !inOutApprovalRequired;
+      // unit tests (fake_cloud_firestore) do not enforce rules, so the write succeeds.
+      final doc = await firestore
+          .collection(AppConstants.earningsCollection)
+          .add({
+            'techId': 'tech-1',
+            'techName': 'Ali',
+            'category': 'Scrap Sale',
+            'amount': 250.0,
+            'note': '',
+            'paymentType': 'regular',
+            'status': 'approved',
+            'approvedBy': 'admin-1',
+            'adminNote': '',
+            'date': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'createdAt': Timestamp.fromDate(DateTime(2026, 4, 1, 8)),
+            'reviewedAt': Timestamp.fromDate(DateTime(2026, 4, 1, 9)),
+          });
 
-    final updated = EarningModel(
-      id: doc.id,
-      techId: 'tech-1',
-      techName: 'Ali',
-      category: 'Scrap Sale',
-      amount: 300,
-      paymentType: PaymentType.regular,
-      status: EarningApprovalStatus.approved,
-      approvedBy: 'admin-1',
-      date: DateTime(2026, 4, 1, 8),
-      createdAt: DateTime(2026, 4, 1, 8),
-      reviewedAt: DateTime(2026, 4, 1, 9),
-    );
+      final updated = EarningModel(
+        id: doc.id,
+        techId: 'tech-1',
+        techName: 'Ali',
+        category: 'Scrap Sale',
+        amount: 300,
+        paymentType: PaymentType.regular,
+        status: EarningApprovalStatus.approved,
+        approvedBy: 'admin-1',
+        date: DateTime(2026, 4, 1, 8),
+        createdAt: DateTime(2026, 4, 1, 8),
+        reviewedAt: DateTime(2026, 4, 1, 9),
+      );
 
-    await expectLater(
-      () => repository.updateEarning(updated),
-      throwsA(isA<EarningException>()),
-    );
-  });
+      await repository.updateEarning(updated);
+
+      final snap = await firestore
+          .collection(AppConstants.earningsCollection)
+          .doc(doc.id)
+          .get();
+      expect(snap.data()?['amount'], equals(300.0));
+    },
+  );
 }

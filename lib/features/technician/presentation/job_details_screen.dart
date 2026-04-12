@@ -9,6 +9,7 @@ import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
@@ -101,6 +102,65 @@ class JobDetailsScreen extends ConsumerWidget {
                                 context.push('/tech/submit', extra: job),
                             icon: const Icon(Icons.edit_outlined),
                             label: Text(l.save),
+                          ),
+                        ),
+                      ],
+                      if (job.isApproved &&
+                          job.isUnpaid &&
+                          !job.isSharedInstall &&
+                          job.editRequestedAt == null &&
+                          (approvalConfig?.jobApprovalRequired ?? true)) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (dlg) => AlertDialog(
+                                  title: Text(l.requestEditConfirmTitle),
+                                  content: Text(l.requestEditConfirmBody),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(dlg).pop(false),
+                                      child: Text(l.cancel),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.of(dlg).pop(true),
+                                      child: Text(l.confirm),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true) return;
+                              if (!context.mounted) return;
+                              try {
+                                await ref
+                                    .read(jobRepositoryProvider)
+                                    .resubmitForApproval(job.id);
+                                if (!context.mounted) return;
+                                AppFeedback.success(
+                                  context,
+                                  message: l.jobEditRequested,
+                                );
+                              } catch (e) {
+                                if (!context.mounted) return;
+                                AppFeedback.error(
+                                  context,
+                                  message: l.genericError,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.edit_off_outlined),
+                            label: Text(l.requestEditJob),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ArcticTheme.arcticPending,
+                              side: const BorderSide(
+                                color: ArcticTheme.arcticPending,
+                              ),
+                            ),
                           ),
                         ),
                       ],

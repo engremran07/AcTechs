@@ -1814,4 +1814,57 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get undo => 'واپس کریں';
+
+  @override
+  String get requestEditJob => 'ترمیم کی درخواست';
+
+  @override
+  String get requestEditConfirmTitle => 'ترمیم کی درخواست؟';
+
+  @override
+  String get requestEditConfirmBody =>
+      'یہ کام واپس زیر التزام ہو جائے گا اور تصفیہ سے پہلے منتظم کی دوبارہ منظوری کی ضرورت ہوگی۔';
+
+  @override
+  String get jobEditRequested =>
+      'ترمیم کی درخواست جمع ہو گئی۔ منتظم کی منظوری کا انتظار ہے۔';
+
+  @override
+  String get resubmittedBadge => 'دوبارہ جمع';
+
+  @override
+  String get genericError => 'کچھ غلط ہو گیا۔ براہے کرم دوبارہ کوشش کریں۔';
+
+  @override
+  String get permanentlyDeleteJob => 'کام مستقل حذف کریں';
+
+  @override
+  String get permanentlyDeleteJobConfirm =>
+      'کیا آپ واقعی یہ کام مستقل حذف کرنا چاہتے ہیں؟ یہ واپس نہیں ہو سکتا۔';
+
+  @override
+  String get permanentlyDeleteJobSharedWarning =>
+      'یہ مشترکہ انسٹال ہے۔ کل تعداد خودبخود درست نہیں ہوگی۔ اگر تصحیح درکار ہو تو منتظم کو بتائیں۔';
+
+  @override
+  String get jobDeletedSuccess => 'کام مستقل حذف ہو گیا۔';
+
+  @override
+  String get reconcileInvoices => 'انوائس کا مطابقت';
+
+  @override
+  String get uploadCompanyReport => 'کمپنی رپورٹ اپلوڈ کریں';
+
+  @override
+  String get matchedInvoices => 'ملا';
+
+  @override
+  String get unmatchedInvoices => 'نہیں ملا';
+
+  @override
+  String get alreadyPaidInvoices => 'پہلے سے ادا شدہ';
+
+  @override
+  String get reconcileMarkedSuccess =>
+      'ملی ہوئی انوائس ادا شدہ کے طور پر نشان زد ہو گئیں۔';
 }

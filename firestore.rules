@@ -325,7 +325,8 @@ service cloud.firestore {
           'status',
           'approvedBy',
           'reviewedAt',
-          'adminNote'
+          'adminNote',
+          'editRequestedAt'
         ]);
     }
 
@@ -352,6 +353,19 @@ service cloud.firestore {
           request.resource.data.reviewedAt == resource.data.reviewedAt &&
           request.resource.data.adminNote == resource.data.adminNote &&
           settlementFieldsUnchanged()
+        ) || (
+          // Re-approval: approved solo job (not shared) → pending, when approval is required and job is unpaid.
+          // Tech requests an edit on an approved-but-not-yet-settled job.
+          resource.data.status == 'approved' &&
+          settlementStatusOf(resource.data) == 'unpaid' &&
+          jobApprovalRequired() &&
+          !(resource.data.get('isSharedInstall', false) is bool && resource.data.get('isSharedInstall', false)) &&
+          request.resource.data.status == 'pending' &&
+          request.resource.data.get('approvedBy', null) == null &&
+          request.resource.data.get('reviewedAt', null) == null &&
+          request.resource.data.adminNote == '' &&
+          settlementFieldsUnchanged() &&
+          request.resource.data.editRequestedAt is timestamp
         )
       );
     }
@@ -366,12 +380,14 @@ service cloud.firestore {
     }
 
     function technicianSettlementUpdate() {
+      // NOTE: dateIsUnlocked() is intentionally OMITTED here.
+      // A tech responding to a payment notification is NOT a data edit.
+      // Locking a period must not block settlement responses for jobs in that period.
       return isActiveUser() &&
         isOwner(resource.data.techId) &&
         resource.data.status == 'approved' &&
         settlementStatusOf(resource.data) == 'awaiting_technician' &&
         settlementFieldsOnlyChanged() &&
-        dateIsUnlocked(resource.data.date) &&
         validTechSettlementTransition();
     }
 
@@ -1016,11 +1032,37 @@ service cloud.firestore {
           'reviewedAt'
         ])
       ) ||
-      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      // Tech may edit auto-approved entries when approval is disabled.
+      // Status, approvedBy, adminNote, reviewedAt must stay unchanged.
+      (
+        !inOutApprovalRequired() &&
+        isActiveUser() &&
+        resource.data.status == 'approved' &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        request.resource.data.status == 'approved' &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'expenseType',
+          'date'
+        ])
+      ) ||
+      // Tech soft-archive: approved entries blocked only when inOutApprovalRequired
+      // is true. When approval is disabled all entries are auto-approved, so the
+      // old approved-record block would prevent archiving everything.
       (isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         dateIsUnlocked(resource.data.date) &&
-        resource.data.status != 'approved' &&
+        (resource.data.status != 'approved' || !inOutApprovalRequired()) &&
         request.resource.data.isDeleted == true &&
         request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])
@@ -1113,11 +1155,37 @@ service cloud.firestore {
           'reviewedAt'
         ])
       ) ||
-      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      // Tech may edit auto-approved entries when approval is disabled.
+      // Status, approvedBy, adminNote, reviewedAt must stay unchanged.
+      (
+        !inOutApprovalRequired() &&
+        isActiveUser() &&
+        resource.data.status == 'approved' &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        request.resource.data.status == 'approved' &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'category',
+          'amount',
+          'note',
+          'paymentType',
+          'date'
+        ])
+      ) ||
+      // Tech soft-archive: approved entries blocked only when inOutApprovalRequired
+      // is true. When approval is disabled all entries are auto-approved, so the
+      // old approved-record block would prevent archiving everything.
       (isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         dateIsUnlocked(resource.data.date) &&
-        resource.data.status != 'approved' &&
+        (resource.data.status != 'approved' || !inOutApprovalRequired()) &&
         request.resource.data.isDeleted == true &&
         request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])

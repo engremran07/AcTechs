@@ -865,12 +865,11 @@ class JobRepository {
           ? JobStatus.pending
           : JobStatus.approved;
 
+      // canEditDirectApproved: job is approved, approval is off, and settlement
+      // has not started. Applies to both solo and shared install jobs — the
+      // shared install path is handled separately with aggregate-delta logic.
       final canEditDirectApproved =
-          existing.isApproved &&
-          !requiresApproval &&
-          existing.isUnpaid &&
-          !existing.isSharedInstall &&
-          !job.isSharedInstall;
+          existing.isApproved && !requiresApproval && existing.isUnpaid;
       final canEditPending = existing.isPending;
       final canResubmitRejected = existing.isRejected;
 
@@ -918,9 +917,44 @@ class JobRepository {
       data['status'] = nextStatus.name;
       data['sharedInstallGroupKey'] = resolvedGroupKey;
 
-      if (canEditDirectApproved ||
+      // Preserve the original submittedAt — Firestore rules enforce equality
+      // (request.resource.data.submittedAt == resource.data.submittedAt).
+      // The form initialises submittedAt to DateTime.now(), so the value in
+      // `updated` always differs from the stored Firestore Timestamp, causing
+      // a PERMISSION_DENIED on every technician edit. We restore the raw
+      // Timestamp directly from the fetched snapshot to guarantee equality.
+      data['submittedAt'] = existingSnap.data()!['submittedAt'];
+
+      // Remove keys that are outside the technician's allowed-update set.
+      // importMeta is not in technicianMutableJobUpdate hasOnly — removing it
+      // prevents spurious affectedKeys() failures on legacy or imported docs.
+      // Settlement fields are not in the allowed set either; on documents that
+      // predate the settlement feature these would appear as NEW keys in the
+      // diff, failing the hasOnly check. Since we never want a tech edit to
+      // touch settlement state, dropping them is both safe and correct.
+      data.remove('importMeta');
+      for (final k in const [
+        'settlementStatus',
+        'settlementBatchId',
+        'settlementRound',
+        'settlementAmount',
+        'settlementPaymentMethod',
+        'settlementAdminNote',
+        'settlementTechnicianComment',
+        'settlementRequestedBy',
+        'settlementRequestedAt',
+        'settlementRespondedAt',
+        'settlementPaidAt',
+        'settlementCorrectedAt',
+      ]) {
+        data.remove(k);
+      }
+
+      // Fast path: solo job (pending, rejected-resubmit, or approved-direct-edit).
+      // Approved shared installs fall through to the aggregate-delta path below.
+      if ((canEditDirectApproved && !existing.isSharedInstall) ||
           (canEditPending && !existing.isSharedInstall)) {
-        // Fast path: solo job pending/approved edit — no aggregate update needed.
+        // No aggregate update needed for solo jobs.
         await jobRef.update(data);
         await jobRef.collection(AppConstants.historySubCollection).add({
           'changedBy': updated.techId,
@@ -933,7 +967,9 @@ class JobRepository {
         return nextStatus;
       }
 
-      if (canEditPending && existing.isSharedInstall) {
+      // Shared install edit (pending or approved-direct): apply net-delta to
+      // aggregate consumed counters so the group totals stay accurate.
+      if ((canEditDirectApproved || canEditPending) && existing.isSharedInstall) {
         // Pending shared install edit: apply net-delta to aggregate consumed counters
         // so the aggregate stays in sync when a tech corrects their unit counts.
         _validateSupportedSharedInstallUnits(updated);
@@ -946,20 +982,41 @@ class JobRepository {
         final pw = _unitsForType(updated, AppConstants.unitTypeWindowAc);
         final pf = _unitsForType(updated, AppConstants.unitTypeFreestandingAc);
         final pus = _unitsForType(updated, AppConstants.unitTypeUninstallSplit);
-        final puw = _unitsForType(updated, AppConstants.unitTypeUninstallWindow);
-        final puf = _unitsForType(updated, AppConstants.unitTypeUninstallFreestanding);
+        final puw = _unitsForType(
+          updated,
+          AppConstants.unitTypeUninstallWindow,
+        );
+        final puf = _unitsForType(
+          updated,
+          AppConstants.unitTypeUninstallFreestanding,
+        );
         final pb = _bracketCount(updated);
         final pd = updated.charges?.deliveryAmount ?? 0.0;
         final er = _unitsForType(existing, AppConstants.unitTypeSplitAc);
         final ew = _unitsForType(existing, AppConstants.unitTypeWindowAc);
         final ef = _unitsForType(existing, AppConstants.unitTypeFreestandingAc);
-        final eus = _unitsForType(existing, AppConstants.unitTypeUninstallSplit);
-        final euw = _unitsForType(existing, AppConstants.unitTypeUninstallWindow);
-        final euf = _unitsForType(existing, AppConstants.unitTypeUninstallFreestanding);
+        final eus = _unitsForType(
+          existing,
+          AppConstants.unitTypeUninstallSplit,
+        );
+        final euw = _unitsForType(
+          existing,
+          AppConstants.unitTypeUninstallWindow,
+        );
+        final euf = _unitsForType(
+          existing,
+          AppConstants.unitTypeUninstallFreestanding,
+        );
         final eb = _bracketCount(existing);
         final ed = existing.charges?.deliveryAmount ?? 0.0;
-        if (pr < er || pw < ew || pf < ef || pus < eus ||
-            puw < euw || puf < euf || pb < eb || pd < ed - 0.01) {
+        if (pr < er ||
+            pw < ew ||
+            pf < ef ||
+            pus < eus ||
+            puw < euw ||
+            puf < euf ||
+            pb < eb ||
+            pd < ed - 0.01) {
           throw JobException.sharedUnitReductionForbidden();
         }
 
@@ -2382,10 +2439,7 @@ class JobRepository {
   /// counters — counter rollback requires a cross-collection transaction that
   /// exceeds the free-tier read budget. If discrepancy is detected, admin must
   /// flush + rebuild the aggregate.
-  Future<void> archiveJob(
-    String id, {
-    DateTime? lockedBeforeDate,
-  }) async {
+  Future<void> archiveJob(String id, {DateTime? lockedBeforeDate}) async {
     if (id.trim().isEmpty) throw JobException.saveFailed();
     try {
       final docRef = _jobsRef.doc(id);
@@ -2415,13 +2469,80 @@ class JobRepository {
   Future<void> restoreJob(String id) async {
     if (id.trim().isEmpty) throw JobException.saveFailed();
     try {
+      await _jobsRef.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } catch (e) {
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Returns a solo approved+unpaid job to pending so the tech can edit it.
+  /// Sets editRequestedAt to signal to admins that the tech requested a revision.
+  /// Firestore rules enforce the solo/unpaid/approvalRequired constraints.
+  Future<void> resubmitForApproval(String id) async {
+    if (id.trim().isEmpty) throw JobException.saveFailed();
+    try {
       await _jobsRef.doc(id).update({
-        'isDeleted': false,
-        'deletedAt': null,
+        'status': JobStatus.pending.name,
+        'approvedBy': null,
+        'reviewedAt': null,
+        'adminNote': '',
+        'editRequestedAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    } catch (e) {
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Permanently deletes a job document and decrements (or removes) its invoice claim.
+  /// NOTE: Does NOT roll back shared_install_aggregates consumed* counters — that
+  /// requires a cross-collection transaction exceeding the free-tier read budget.
+  /// Notify admin to adjust aggregate totals if needed. Admin-only; enforced by rules.
+  Future<void> hardDeleteJob(String id) async {
+    if (id.trim().isEmpty) throw JobException.saveFailed();
+    try {
+      await firestore.runTransaction((tx) async {
+        final docRef = _jobsRef.doc(id);
+        final snap = await tx.get(docRef);
+        if (!snap.exists) throw JobException.saveFailed();
+        final job = JobModel.fromFirestore(snap);
+        final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
+        final claimRef = _invoiceClaimsRef.doc(
+          _invoiceClaimDocId(normalizedInvoice),
+        );
+        final claimSnap = await tx.get(claimRef);
+        _releaseInvoiceClaimFromSnapshot(tx, claimRef, claimSnap);
+        tx.delete(docRef);
+
+        // When a shared install job is hard-deleted, also delete its aggregate
+        // document so techs no longer see a "tap to insert your share" card for
+        // an install that no longer exists. (Ghost aggregate fix.)
+        // NOTE: Aggregate consumed* counters are NOT rolled back \u2014 the aggregate
+        // is simply removed. If only one team member's job is deleted and others
+        // remain, admin must flush + rebuild to reconcile. This is an accepted
+        // free-tier constraint per the shared-install system rules.
+        if (job.isSharedInstall && job.sharedInstallGroupKey.trim().isNotEmpty) {
+          final aggregateRef = _sharedAggregatesRef.doc(
+            _sharedAggregateDocId(job.sharedInstallGroupKey),
+          );
+          final aggregateSnap = await tx.get(aggregateRef);
+          if (aggregateSnap.exists) {
+            tx.delete(aggregateRef);
+          }
+        }
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
     } catch (e) {
       throw JobException.saveFailed();
     }

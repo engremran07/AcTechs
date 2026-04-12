@@ -313,6 +313,38 @@ jobs:
           path: build/app/outputs/flutter-apk/ac-techs-debug-*.apk
           retention-days: 14
 
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create firebase_options stub (for web build)
+        run: echo "Ly8gaWdub3JlX2Zvcl9maWxlOiBsaW5lc19sb25nZXJfdGhhbl84MF9jaGFycywgYXZvaWRfY2xhc3Nlc193aXRoX29ubHlfc3RhdGljX21lbWJlcnMKLy8gQ0kgc3R1YiAtIG5vdCB1c2VkIGF0IHJ1bnRpbWUuCmltcG9ydCAncGFja2FnZTpmaXJlYmFzZV9jb3JlL2ZpcmViYXNlX2NvcmUuZGFydCcgc2hvdyBGaXJlYmFzZU9wdGlvbnM7CgpjbGFzcyBEZWZhdWx0RmlyZWJhc2VPcHRpb25zIHsKICBzdGF0aWMgRmlyZWJhc2VPcHRpb25zIGdldCBjdXJyZW50UGxhdGZvcm0gPT4KICAgICAgdGhyb3cgVW5zdXBwb3J0ZWRFcnJvcignQ0kgc3R1YiBvbmx5LicpOwp9Cg==" | base64 --decode > lib/firebase_options.dart
+
+      - name: Build web
+        run: flutter build web --release --no-wasm-dry-run
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ac-techs-web-${{ github.run_number }}
+          path: build/web
+          retention-days: 14
+
   # ── Code Hygiene Gates ──────────────────────────────────────────────────────
   hygiene:
     name: Code Hygiene Gates
@@ -322,6 +354,22 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      - name: Gate — Governance continuity files present
+        run: |
+          required_files=(
+            MASTER_BLUEPRINT.md
+            REGRESSION_REGISTRY.md
+            SESSION_LOG.md
+            CHANGELOG.md
+          )
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ FAIL: missing governance continuity file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ Governance continuity files present"
 
       - name: Gate — Collection name consistency
         run: |

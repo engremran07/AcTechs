@@ -13,14 +13,31 @@ Treat web and APK as one release surface.
 
 Required order when user asks for release or deploy:
 
+0. **Bump pubspec.yaml version** — increment `versionName` and `versionCode` (the `+N` integer) BEFORE any build. The versionCode must always increase. Never build a release with the same versionCode as a previously installed APK.
 1. Run `flutter analyze` and any task-specific tests first.
 2. Check `git status --short` so the release surface is explicit.
-3. Build web when the request affects Firebase Hosting.
-4. Deploy Hosting when web output is part of the request.
-5. Deploy Firestore rules and indexes when query behavior or permissions changed.
-6. Build release APK when Android delivery is part of the request.
-7. Install APK to a connected device only if the user asked for it.
-8. Commit or push only after validation and requested build or deploy steps succeed.
+3. **⛔ BLOCKING — Firestore rules deploy**: If `firestore.rules` was modified in this session, you MUST run `firebase deploy --only firestore:rules --project actechs-d415e` before building or installing the APK. An APK that depends on new Firestore rules but runs against old deployed rules WILL fail at runtime with `PERMISSION_DENIED`. This step is non-optional and cannot be skipped.
+4. **⛔ BLOCKING — Firestore indexes deploy**: If `firestore.indexes.json` was modified in this session, you MUST run `firebase deploy --only firestore:indexes --project actechs-d415e`. Missing indexes cause silent query failures: queries return empty results rather than errors.
+5. Build web when the request affects Firebase Hosting.
+6. Deploy Hosting when web output is part of the request.
+7. Build release APK when Android delivery is part of the request.
+8. **APK install sequence** — uninstall first, then install, to confirm the new versionCode is accepted:
+   ```
+   $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> uninstall com.actechs.pk
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-release.apk
+   ```
+   If uninstall fails (app not installed), proceed with install anyway. Never use `install -r` on a release — it silently accepts a downgrade.
+9. Commit or push only after validation and all build/deploy steps succeed.
+
+**Firestore alignment checklist — verify before every APK install:**
+| Changed file | Required deploy command |
+|---|---|
+| `firestore.rules` | `firebase deploy --only firestore:rules --project actechs-d415e` |
+| `firestore.indexes.json` | `firebase deploy --only firestore:indexes --project actechs-d415e` |
+| Both | `firebase deploy --only firestore --project actechs-d415e` |
+
+**The APK and Firestore must always be deployed from the same source tree.** If rules or indexes changed but were not deployed, the APK is not safe to install — it will silently misbehave.
 
 Strict quality gates (must pass with zero warnings):
 

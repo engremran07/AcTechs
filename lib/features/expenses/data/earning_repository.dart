@@ -36,14 +36,6 @@ class EarningRepository {
 
   PeriodLockGuard get _periodLockGuard => PeriodLockGuard(firestore: firestore);
 
-  Future<void> _ensureMutableRecord(String id) async {
-    final snap = await _ref.doc(id).get();
-    final status = snap.data()?['status'] as String?;
-    if (status == EarningApprovalStatus.approved.name) {
-      throw EarningException.approvedRecordLocked();
-    }
-  }
-
   Future<List<ApprovalHistoryEntry>> fetchHistory(
     String earningId, {
     int limit = 10,
@@ -88,7 +80,10 @@ class EarningRepository {
         _ref.doc(id),
         cachedLockedBefore: lockedBeforeDate,
       );
-      await _ensureMutableRecord(id);
+      // Note: no app-layer approved-record check here. When inOutApprovalRequired
+      // is false all new entries are auto-approved, so blocking archive on
+      // approved status would make items permanently unarchivable. Firestore
+      // rules are the authoritative gate.
       await _ref.doc(id).update({
         'isDeleted': true,
         'deletedAt': FieldValue.serverTimestamp(),
@@ -127,7 +122,10 @@ class EarningRepository {
         earning.date,
         cachedLockedBefore: lockedBeforeDate,
       );
-      await _ensureMutableRecord(earning.id);
+      // Note: no app-layer approved-record check here. When inOutApprovalRequired
+      // is false all new entries are auto-approved; blocking update on approved
+      // status would make all edits permanently forbidden. Firestore rules are
+      // the authoritative gate.
       await _ref.doc(earning.id).update(earning.toFirestore());
     } on EarningException {
       rethrow;

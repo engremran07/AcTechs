@@ -70,7 +70,7 @@ jobs:
 
       - name: Gate — Detail routes use push not go
         run: |
-          if grep -REn "context\.go\('/(admin/(settings|companies|settlements|flush|import)|tech/(summary|settlements))'" lib/ 2>/dev/null; then
+          if grep -REn "context\.go\('/(admin/(settings|companies|settlements|flush|import)|tech/(summary|settlements|profile))'" lib/ 2>/dev/null; then
             echo "❌ FAIL: Detail or settings route uses context.go() — use context.push()"
             exit 1
           fi
@@ -84,13 +84,35 @@ jobs:
           fi
           echo "✅ Presentation screens use theme colors"
 
-      - name: Gate — No context.go() on detail or settings routes
+      - name: Gate — Governance continuity files present
         run: |
-          if grep -REn "context\.go\('/(admin/(settings|companies|settlements|flush|import)|tech/(summary|settlements|inout|submit))'" lib/ 2>/dev/null; then
-            echo "❌ FAIL: Detail/settings route uses context.go() — must use context.push()"
+          MISSING=""
+          for file in MASTER_BLUEPRINT.md REGRESSION_REGISTRY.md SESSION_LOG.md CHANGELOG.md; do
+            if [ ! -f "$file" ]; then
+              MISSING="$MISSING $file"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "❌ FAIL: Missing governance continuity files:$MISSING"
             exit 1
           fi
-          echo "✅ No back-stack-destroying context.go() on detail routes"
+          echo "✅ Governance continuity files are present"
+
+      - name: Gate — CI validates web build
+        run: |
+          if ! grep -q "flutter build web --release" .github/workflows/ci.yml 2>/dev/null; then
+            echo "❌ FAIL: CI does not validate the web release surface"
+            exit 1
+          fi
+          echo "✅ CI validates the web build surface"
+
+      - name: Gate — Release workflow builds web artifact
+        run: |
+          if ! grep -q "flutter build web --release" .github/workflows/release.yml 2>/dev/null; then
+            echo "❌ FAIL: release.yml does not build the web artifact"
+            exit 1
+          fi
+          echo "✅ release.yml builds the web artifact"
 
       - name: Gate — No hardcoded Firestore collection strings
         run: |

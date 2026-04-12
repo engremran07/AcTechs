@@ -138,6 +138,8 @@ abstract class JobModel with _$JobModel {
     @JsonKey(defaultValue: false) @Default(false) bool isDeleted,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? deletedAt,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? editRequestedAt,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>
@@ -221,11 +223,13 @@ extension JobModelX on JobModel {
     final requiresApproval = isSharedInstall
         ? sharedApprovalRequired
         : approvalRequired;
-    // Approved + approval OFF → editable for solo jobs only.
-    // Approved shared installs are excluded: the repository's canEditDirectApproved
-    // does not support this path — the aggregate delta logic for approved shared
-    // installs is not yet implemented (BUG C fix: align UI with repo behaviour).
-    return !requiresApproval && isUnpaid && !isSharedInstall;
+    // Approved + approval OFF → editable for both solo and shared install jobs.
+    // For shared installs the repository applies aggregate delta logic;
+    // Firestore rules allow it via technicianCanEditApprovedJob() when
+    // !sharedJobApprovalRequired(). Team-size changes (sharedDeliveryTeamCount)
+    // remain immutable in the aggregate \u2014 only admin can fix a wrong team size
+    // by deleting the job and letting the tech re-submit.
+    return !requiresApproval && isUnpaid;
   }
 
   int get totalUnits => acUnits.fold(0, (s, unit) => s + unit.quantity);

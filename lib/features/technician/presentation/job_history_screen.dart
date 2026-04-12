@@ -52,7 +52,6 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   late final TabController _tabController;
   String _search = '';
   String _statusFilter = 'all';
-  String _sharedInstallFilter = 'all';
   bool _sortNewest = true;
   bool _isExportingExcel = false;
   String _periodFilter = 'all';
@@ -585,12 +584,10 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
           .toList();
     }
 
-    if (_statusFilter != 'all') {
-      filtered = filtered.where((j) => j.status.name == _statusFilter).toList();
-    }
-
-    if (_sharedInstallFilter == 'shared') {
+    if (_statusFilter == 'shared') {
       filtered = filtered.where((j) => j.isSharedInstall).toList();
+    } else if (_statusFilter != 'all') {
+      filtered = filtered.where((j) => j.status.name == _statusFilter).toList();
     }
 
     filtered.sort((a, b) {
@@ -680,28 +677,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                 pendingCount: pendingCount,
                 approvedCount: approvedCount,
                 rejectedCount: rejectedCount,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: Text(l.all),
-                    selected: _sharedInstallFilter == 'all',
-                    onSelected: (_) =>
-                        setState(() => _sharedInstallFilter = 'all'),
-                  ),
-                  ChoiceChip(
-                    avatar: const Icon(Icons.groups_rounded, size: 16),
-                    label: Text('${l.sharedInstall} ($sharedCount)'),
-                    selected: _sharedInstallFilter == 'shared',
-                    onSelected: (_) =>
-                        setState(() => _sharedInstallFilter = 'shared'),
-                  ),
-                ],
+                sharedCount: sharedCount,
               ),
             ),
             const SizedBox(height: 8),

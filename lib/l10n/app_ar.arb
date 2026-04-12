@@ -685,5 +685,21 @@
   "preFilledFromSharedInstall": "تم تعبئة بيانات الفاتورة مسبقاً من التنفيذ المشترك لفريقك. أدخل حصتك من الوحدات فقط.",
   "teamJobPending": "في انتظار مساهمتك",
   "teamJobSubmitted": "تم تقديم مساهمتك",
-  "undo": "تراجع"
+  "undo": "تراجع",
+  "requestEditJob": "طلب تعديل",
+  "requestEditConfirmTitle": "طلب تعديل؟",
+  "requestEditConfirmBody": "سيعود هذا العمل إلى قيد الانتظار ويحتاج إلى إعادة موافقة المسؤول قبل التسوية.",
+  "jobEditRequested": "تم تقديم طلب التعديل. في انتظار إعادة موافقة المسؤول.",
+  "resubmittedBadge": "أُعيد تقديمه",
+  "genericError": "حدث خطأ ما. حاول مرة أخرى.",
+  "permanentlyDeleteJob": "حذف العمل نهائياً",
+  "permanentlyDeleteJobConfirm": "هل تريد حذف هذا العمل نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+  "permanentlyDeleteJobSharedWarning": "هذا تنفيذ مشترك. لن يتم تعديل الإجماليات تلقائياً. أبلغ المسؤول إذا كانت التصحيحات ضرورية.",
+  "jobDeletedSuccess": "تم حذف العمل نهائياً.",
+  "reconcileInvoices": "مطابقة الفواتير",
+  "uploadCompanyReport": "رفع تقرير الشركة",
+  "matchedInvoices": "متطابق",
+  "unmatchedInvoices": "غير موجود",
+  "alreadyPaidInvoices": "مدفوع مسبقاً",
+  "reconcileMarkedSuccess": "تم تحديد الفواتير المتطابقة كمدفوعة."
 }

@@ -1807,4 +1807,56 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get undo => 'تراجع';
+
+  @override
+  String get requestEditJob => 'طلب تعديل';
+
+  @override
+  String get requestEditConfirmTitle => 'طلب تعديل؟';
+
+  @override
+  String get requestEditConfirmBody =>
+      'سيعود هذا العمل إلى قيد الانتظار ويحتاج إلى إعادة موافقة المسؤول قبل التسوية.';
+
+  @override
+  String get jobEditRequested =>
+      'تم تقديم طلب التعديل. في انتظار إعادة موافقة المسؤول.';
+
+  @override
+  String get resubmittedBadge => 'أُعيد تقديمه';
+
+  @override
+  String get genericError => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get permanentlyDeleteJob => 'حذف العمل نهائياً';
+
+  @override
+  String get permanentlyDeleteJobConfirm =>
+      'هل تريد حذف هذا العمل نهائياً؟ لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get permanentlyDeleteJobSharedWarning =>
+      'هذا تنفيذ مشترك. لن يتم تعديل الإجماليات تلقائياً. أبلغ المسؤول إذا كانت التصحيحات ضرورية.';
+
+  @override
+  String get jobDeletedSuccess => 'تم حذف العمل نهائياً.';
+
+  @override
+  String get reconcileInvoices => 'مطابقة الفواتير';
+
+  @override
+  String get uploadCompanyReport => 'رفع تقرير الشركة';
+
+  @override
+  String get matchedInvoices => 'متطابق';
+
+  @override
+  String get unmatchedInvoices => 'غير موجود';
+
+  @override
+  String get alreadyPaidInvoices => 'مدفوع مسبقاً';
+
+  @override
+  String get reconcileMarkedSuccess => 'تم تحديد الفواتير المتطابقة كمدفوعة.';
 }

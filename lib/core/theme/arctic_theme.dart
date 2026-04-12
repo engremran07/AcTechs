@@ -340,7 +340,6 @@ class ArcticTheme {
         backgroundColor: arcticBlue,
         foregroundColor: arcticDarkBg,
         elevation: 4,
-        shape: CircleBorder(),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: arcticBlue,
@@ -644,7 +643,6 @@ class ArcticTheme {
         backgroundColor: lightBlue,
         foregroundColor: Colors.white,
         elevation: 4,
-        shape: CircleBorder(),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: lightBlue,
@@ -943,7 +941,6 @@ class ArcticTheme {
         backgroundColor: hcBlue,
         foregroundColor: hcBg,
         elevation: 0,
-        shape: CircleBorder(),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: hcBlue,

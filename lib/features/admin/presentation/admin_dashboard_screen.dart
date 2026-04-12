@@ -318,6 +318,49 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
+                  ArcticCard(
+                    onTap: () => context.push('/admin/reconcile'),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: ArcticTheme.arcticBlue.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.compare_arrows_rounded,
+                            color: ArcticTheme.arcticBlue,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.reconcileInvoices,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              Text(
+                                l.uploadCompanyReport,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   settlementSummary.when(
                     data: (summary) => Column(
                       children: [

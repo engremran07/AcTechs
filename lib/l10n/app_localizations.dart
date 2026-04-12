@@ -3464,6 +3464,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get undo;
+
+  /// No description provided for @requestEditJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Edit'**
+  String get requestEditJob;
+
+  /// No description provided for @requestEditConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Edit?'**
+  String get requestEditConfirmTitle;
+
+  /// No description provided for @requestEditConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This job will return to pending and need admin re-approval before settlement.'**
+  String get requestEditConfirmBody;
+
+  /// No description provided for @jobEditRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit request submitted. Awaiting admin re-approval.'**
+  String get jobEditRequested;
+
+  /// No description provided for @resubmittedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-submitted'**
+  String get resubmittedBadge;
+
+  /// No description provided for @genericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get genericError;
+
+  /// No description provided for @permanentlyDeleteJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently Delete Job'**
+  String get permanentlyDeleteJob;
+
+  /// No description provided for @permanentlyDeleteJobConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this job permanently? This cannot be undone.'**
+  String get permanentlyDeleteJobConfirm;
+
+  /// No description provided for @permanentlyDeleteJobSharedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a shared install. Aggregate counters will NOT be adjusted automatically. Notify admin if totals need correction.'**
+  String get permanentlyDeleteJobSharedWarning;
+
+  /// No description provided for @jobDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Job permanently deleted.'**
+  String get jobDeletedSuccess;
+
+  /// No description provided for @reconcileInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconcile Invoices'**
+  String get reconcileInvoices;
+
+  /// No description provided for @uploadCompanyReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Company Report'**
+  String get uploadCompanyReport;
+
+  /// No description provided for @matchedInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched'**
+  String get matchedInvoices;
+
+  /// No description provided for @unmatchedInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Found'**
+  String get unmatchedInvoices;
+
+  /// No description provided for @alreadyPaidInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Already Paid'**
+  String get alreadyPaidInvoices;
+
+  /// No description provided for @reconcileMarkedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched invoices marked as paid.'**
+  String get reconcileMarkedSuccess;
 }
 
 class _AppLocalizationsDelegate

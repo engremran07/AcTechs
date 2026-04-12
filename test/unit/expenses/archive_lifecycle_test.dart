@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
-import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 
@@ -100,14 +99,22 @@ void main() {
     });
 
     test(
-      'archiveExpense throws ExpenseException for an approved record',
+      'archiveExpense allows archiving approved records (Firestore rules gate, not app layer)',
       () async {
+        // When inOutApprovalRequired is false, all new entries are auto-approved.
+        // The app layer no longer blocks archive on approved status — Firestore
+        // rules are the sole gate. Verify the archive succeeds in unit tests
+        // (fake_cloud_firestore does not enforce security rules).
         final id = await seedExpense(status: 'approved');
 
-        await expectLater(
-          () => expenseRepo.archiveExpense(id),
-          throwsA(isA<ExpenseException>()),
-        );
+        await expenseRepo.archiveExpense(id);
+
+        final snap = await firestore
+            .collection(AppConstants.expensesCollection)
+            .doc(id)
+            .get();
+        expect(snap.data()?['isDeleted'], isTrue);
+        expect(snap.data()?['deletedAt'], isNotNull);
       },
     );
 
@@ -168,14 +175,20 @@ void main() {
     });
 
     test(
-      'archiveEarning throws EarningException for an approved record',
+      'archiveEarning allows archiving approved records (Firestore rules gate, not app layer)',
       () async {
+        // Mirror of expense fix: approved earning archive no longer blocked
+        // by app layer.
         final id = await seedEarning(status: 'approved');
 
-        await expectLater(
-          () => earningRepo.archiveEarning(id),
-          throwsA(isA<EarningException>()),
-        );
+        await earningRepo.archiveEarning(id);
+
+        final snap = await firestore
+            .collection(AppConstants.earningsCollection)
+            .doc(id)
+            .get();
+        expect(snap.data()?['isDeleted'], isTrue);
+        expect(snap.data()?['deletedAt'], isNotNull);
       },
     );
 

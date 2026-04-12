@@ -685,5 +685,21 @@
   "preFilledFromSharedInstall": "انوائس کی معلومات آپ کی ٹیم کے مشترکہ انسٹال سے چھری گئی ہے۔ صرف اپنا یونٹ حصہ درج کریں۔",
   "teamJobPending": "آپ کی شراکت درکار ہے",
   "teamJobSubmitted": "آپ کی شراکت جمع ہو گئی",
-  "undo": "واپس کریں"
+  "undo": "واپس کریں",
+  "requestEditJob": "ترمیم کی درخواست",
+  "requestEditConfirmTitle": "ترمیم کی درخواست؟",
+  "requestEditConfirmBody": "یہ کام واپس زیر التزام ہو جائے گا اور تصفیہ سے پہلے منتظم کی دوبارہ منظوری کی ضرورت ہوگی۔",
+  "jobEditRequested": "ترمیم کی درخواست جمع ہو گئی۔ منتظم کی منظوری کا انتظار ہے۔",
+  "resubmittedBadge": "دوبارہ جمع",
+  "genericError": "کچھ غلط ہو گیا۔ براہے کرم دوبارہ کوشش کریں۔",
+  "permanentlyDeleteJob": "کام مستقل حذف کریں",
+  "permanentlyDeleteJobConfirm": "کیا آپ واقعی یہ کام مستقل حذف کرنا چاہتے ہیں؟ یہ واپس نہیں ہو سکتا۔",
+  "permanentlyDeleteJobSharedWarning": "یہ مشترکہ انسٹال ہے۔ کل تعداد خودبخود درست نہیں ہوگی۔ اگر تصحیح درکار ہو تو منتظم کو بتائیں۔",
+  "jobDeletedSuccess": "کام مستقل حذف ہو گیا۔",
+  "reconcileInvoices": "انوائس کا مطابقت",
+  "uploadCompanyReport": "کمپنی رپورٹ اپلوڈ کریں",
+  "matchedInvoices": "ملا",
+  "unmatchedInvoices": "نہیں ملا",
+  "alreadyPaidInvoices": "پہلے سے ادا شدہ",
+  "reconcileMarkedSuccess": "ملی ہوئی انوائس ادا شدہ کے طور پر نشان زد ہو گئیں۔"
 }

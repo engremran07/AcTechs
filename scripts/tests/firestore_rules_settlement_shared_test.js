@@ -97,6 +97,37 @@ async function main() {
         settlementCorrectedAt: null,
       });
 
+      // REG-011: job on a locked-period date — tech must still be able to respond
+      await seedDoc(context, 'jobs/job-settle-locked', {
+        techId: 'tech-1',
+        techName: 'Tech One',
+        companyId: 'company-1',
+        companyName: 'Company One',
+        invoiceNumber: 'INV-802',
+        clientName: 'Client',
+        acUnits: [{ type: 'Split AC', quantity: 1 }],
+        status: 'approved',
+        expenses: 0,
+        date: new Date('2025-12-01T08:00:00Z'), // December 2025 — will be locked below
+        submittedAt: new Date('2025-12-01T08:00:00Z'),
+        approvedBy: 'admin-1',
+        reviewedAt: new Date('2025-12-01T09:00:00Z'),
+        adminNote: '',
+        settlementStatus: 'awaiting_technician',
+        settlementBatchId: 'pay_batch_locked',
+        settlementRound: 1,
+        settlementAdminNote: 'locked period payment',
+        settlementTechnicianComment: '',
+        settlementRequestedBy: 'admin-1',
+        settlementRequestedAt: new Date('2025-12-02T10:00:00Z'),
+        settlementRespondedAt: null,
+        settlementCorrectedAt: null,
+      });
+      // Lock all dates before 2026-01-01 (covers the December job above)
+      await context.firestore().doc('app_settings/approval_config').update({
+        lockedBefore: new Date('2026-01-01T00:00:00Z'),
+      });
+
       await seedDoc(context, 'shared_install_aggregates/group-safe', {
         groupKey: 'group-safe',
         sharedInvoiceSplitUnits: 2,
@@ -209,6 +240,22 @@ async function main() {
         settlementRequestedAt: new Date('2026-04-01T12:00:00Z'),
         settlementRespondedAt: null,
         settlementCorrectedAt: new Date('2026-04-01T12:00:00Z'),
+      }),
+    );
+
+    // REG-011 regression: tech can confirm settlement on a date-locked period job
+    // dateIsUnlocked() must NOT block settlement responses (only data edits)
+    await assertSucceeds(
+      tech1.firestore().doc('jobs/job-settle-locked').update({
+        settlementStatus: 'confirmed',
+        settlementBatchId: 'pay_batch_locked',
+        settlementRound: 1,
+        settlementAdminNote: 'locked period payment',
+        settlementTechnicianComment: '',
+        settlementRequestedBy: 'admin-1',
+        settlementRequestedAt: new Date('2025-12-02T10:00:00Z'),
+        settlementRespondedAt: new Date('2026-01-05T11:00:00Z'),
+        settlementCorrectedAt: null,
       }),
     );
 

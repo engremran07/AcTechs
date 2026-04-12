@@ -1,4 +1,4 @@
-# AC Techs — AC Technician Management System
+﻿# AC Techs — AC Technician Management System
 
 ## Project Overview
 
@@ -46,7 +46,7 @@ Multi-role mobile + web app for AC installation company in Saudi Arabia. Technic
 AC Techs has **three completely separate data domains**. NEVER mix them:
 
 | Domain | Firestore | Model | Feature Folder |
-|--------|----------|-------|---------------|
+| --- | --- | --- | --- |
 | **Jobs** | `jobs/` | `JobModel` | `features/jobs/` + `features/technician/` |
 | **In/Out** | `expenses/` + `earnings/` | `ExpenseModel` + `EarningModel` | `features/expenses/` |
 | **AC Installs** | `ac_installs/` | `AcInstallModel` | `features/expenses/` |
@@ -56,6 +56,7 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 - These are independent — a Job doc contains NO expense/earning sub-documents
 
 ### In/Out Navigation Rules
+
 - Bottom nav In/Out → `/tech/inout` (no extra) → `DailyInOutScreen(selectedDate: null)` → today, form visible
 - History card tap → `/tech/inout` with `extra: DateTime` → `DailyInOutScreen(selectedDate: date)` → form hidden
 - Monthly overview → `/tech/summary` → `MonthlySummaryScreen` → read-only
@@ -75,12 +76,69 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 
 ## Workflow
 
-- Always run `flutter analyze` after making code changes
-- Run `dart run build_runner build --delete-conflicting-outputs` after editing freezed models
-- Run `flutter gen-l10n` after editing ARB files
-- Test on both Android and Chrome
+### ⛔ ZERO Problems Policy — Non-Negotiable
+
+The VS Code Problems panel AND `flutter analyze` output MUST show **zero issues at all times** — errors, warnings, infos, hints. This applies to every file type: `.dart`, `.md`, `.yaml`, `.json`, `.js`, `.rules`. A single problem in any file is a hard stop. Do not proceed to the next step until the workspace is clean.
+
+- Zero `flutter analyze` issues after any Dart change (`flutter analyze` exit code 0 + "No issues found!")
+- Zero Markdown lint issues in `.md` files (no broken links, no undefined references, no duplicate headings)
+- Zero YAML lint issues in `pubspec.yaml`, `firebase.json`, workflow files
+- Zero Firestore rules warnings (verify with `firebase deploy --dry-run` or `npm run lint:firestore-rules`)
+- Use `get_errors` on every modified file before running `flutter analyze` — the IDE Problems panel catches issues the CLI may miss
+
+### Session Continuity — MANDATORY At Every Session Start
+
+**Before writing a single line of code, an AI agent MUST:**
+
+1. Read `SESSION_LOG.md` — identify the last session's completed and in-progress items
+2. Read `MASTER_BLUEPRINT.md` — confirm current app version and focus area
+3. Read the active todo list or any sprint/phase plan mentioned in the session context
+4. Resume from the exact point of interruption — never restart from scratch, never skip phases
+
+**If a session was interrupted mid-task:**
+
+- Complete the unfinished step before adding new work
+- If new work is requested mid-task, ADD it to the existing todo list — never abandon the current task
+- After completing all outstanding work, add a new `SESSION_LOG.md` entry documenting what was done
+
+**Session end checklist:**
+
+1. All todos from the active plan are marked completed
+2. `SESSION_LOG.md` updated with a new entry listing scope, steps, and outcomes
+3. `MASTER_BLUEPRINT.md` version field updated if a new APK was shipped
+4. `CHANGELOG.md` "Unreleased" or latest version section updated with all changes made
+
+**Red flags that indicate session continuity was broken:**
+
+- APK built but Firestore rules not deployed
+- Version not bumped before build
+- `install -r` used instead of uninstall + install
+- Todo items from a prior session silently dropped
+
+1. **Bump `pubspec.yaml` version first** — increment `versionName` AND `versionCode` (`+N` integer). versionCode must always increase. Never build twice with the same versionCode.
+2. Run `flutter analyze` → must output "No issues found!" — zero warnings, infos, hints
+3. Run `flutter test` → must pass 100%
+4. Run `dart run build_runner build --delete-conflicting-outputs` if freezed models changed
+5. Run `flutter gen-l10n` if ARB files changed
+6. **Deploy Firestore rules if `firestore.rules` changed**: `firebase deploy --only firestore:rules --project actechs-d415e`
+7. **Deploy Firestore indexes if `firestore.indexes.json` changed**: `firebase deploy --only firestore:indexes --project actechs-d415e`
+8. Build APK: `flutter build apk --release`
+9. **Uninstall old APK first**, then install new one:
+
+   ```powershell
+   $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> uninstall com.actechs.pk
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-release.apk
+   ```
+
+10. Commit only after all above steps succeed
+
+### Firestore Alignment — Blocking Rule
+
+The APK and deployed Firestore rules/indexes MUST always be from the same source tree. An APK that runs against stale rules will fail with `PERMISSION_DENIED` silently or return empty results. Never skip rules deploy when `firestore.rules` was modified in the same session as an APK build.
+
 - Never commit google-services.json or firebase_options.dart to public repos
-- Deploy Firestore rules/indexes after security changes: `firebase deploy --only firestore --project actechs-d415e`
+- Firestore deploy command: `firebase deploy --only firestore --project actechs-d415e`
 
 ## Navigation Rules
 
@@ -134,14 +192,14 @@ AC Techs has **three completely separate data domains**. NEVER mix them:
 
 1. Never hardcode settlement status strings in Dart; use `JobSettlementStatus.*.firestoreValue`
 2. Any new field added to `JobModel` must be evaluated for:
-	- `technicianMutableJobUpdate()` affected keys in `firestore.rules`
-	- `settlementFieldsOnlyChanged()` and `settlementFieldsUnchanged()` in `firestore.rules`
-	- `validJobCreatePayload()` where relevant
+   - `technicianMutableJobUpdate()` affected keys in `firestore.rules`
+   - `settlementFieldsOnlyChanged()` and `settlementFieldsUnchanged()` in `firestore.rules`
+   - `validJobCreatePayload()` where relevant
 3. Maximum settlement batch size: 200 jobs
 4. `confirmSettlementBatch` and `rejectSettlementBatch` must remain transactional
 5. Settlement transition chain must remain:
-	- unpaid -> awaiting_technician -> confirmed
-	- unpaid -> awaiting_technician -> correction_required -> awaiting_technician -> disputed_final
+   - unpaid -> awaiting_technician -> confirmed
+   - unpaid -> awaiting_technician -> correction_required -> awaiting_technician -> disputed_final
 
 ## Error Philosophy
 
@@ -158,6 +216,7 @@ When changing any of these, ALL downstream items must be updated in the same com
   → NEVER use string literals in Dart — always use `.firestoreValue`
 
 **Chain 2 — New field added to `JobModel`**:
+
   1. Run `dart run build_runner build --delete-conflicting-outputs`
   2. Evaluate for `technicianMutableJobUpdate()` affected keys in `firestore.rules`
   3. Evaluate for `settlementFieldsOnlyChanged()` if settlement-only field
@@ -178,6 +237,7 @@ When changing any of these, ALL downstream items must be updated in the same com
 ## Documentation Sync Rule
 
 When you change `AppConstants` collection names, update ALL of these in the same commit:
+
 1. `.claude/CLAUDE.md` — Domain Model Boundaries table
 2. `.claude/rules/firebase.md` — Domain Collection Boundaries table
 3. `.claude/rules/in-out-model.md` — Three Completely Separate Domains table
@@ -187,10 +247,11 @@ When you change `AppConstants` collection names, update ALL of these in the same
 
 ## Bottom Navigation — Authoritative Reference
 
-```
+```text
 TechShell:  5 tabs — Home / Submit / In-Out / History / Settings
 AdminShell: 4 tabs — Dashboard / Approvals / Analytics / Team
 ```
+
 Settlement and shared-install screens are accessed from dashboard cards or history badges.
 They are NOT bottom-nav tabs. Never write "4 tabs" for tech in any documentation.
 
@@ -205,17 +266,19 @@ They are NOT bottom-nav tabs. Never write "4 tabs" for tech in any documentation
 
 This codebase runs on Firebase free tier (Spark plan). Every unused provider = one extra Firestore listener when active. Every unused dependency = APK bloat. Every hardcoded collection string = a rename liability.
 
-### Five Non-Negotiable Pre-Commit Checks
+### Six Non-Negotiable Pre-Commit Checks
 
 1. **Zero dead providers**: Any new provider must have at least one `ref.watch/read/listen` call site. `ref.invalidate()` in sign-out does NOT count as a consumer.
 2. **Zero hardcoded collection strings**: ALL `.collection()` and `.doc()` calls in `lib/` must use `AppConstants.*` names. Add the constant FIRST, then use it.
 3. **Zero unused dependencies**: Every package in `pubspec.yaml` must be imported somewhere in `lib/`. Verify with `grep -r "package:X" lib/` before adding.
 4. **Zero orphan widgets in core**: Any widget class in `lib/core/widgets/` must be instantiated in at least one screen in `lib/features/`.
 5. **`flutter analyze` must be clean**: "No issues found!" — zero warnings, zero infos, zero hints. Any lint issue is a hard stop.
+6. **Firestore rules and indexes deployed**: If `firestore.rules` or `firestore.indexes.json` changed, they MUST be deployed BEFORE the APK is installed on any device.
 
 ### Context Collapse Prevention
 
 Context collapse occurs when AI (or developer) forgets what already exists and duplicates it. Before writing anything new:
+
 - **Utility function** → check `lib/core/utils/` (formatters, validators, invoice utils)
 - **UI pattern** → check `lib/core/widgets/` (cards, dialogs, form fields, swipe actions)
 - **Repository method** → check existing repo class before adding a nearly-identical query
@@ -225,7 +288,7 @@ Context collapse occurs when AI (or developer) forgets what already exists and d
 ### Vibe-Coded Debt Signals — Red Flags
 
 | Signal | Action |
-|--------|--------|
+| --- | --- |
 | Provider only in `ref.invalidate()` | Remove provider + invalidation |
 | Widget class with 0 screen usages | Remove widget |
 | `.collection('literal')` in `lib/` | Replace with `AppConstants.*` |
@@ -234,4 +297,3 @@ Context collapse occurs when AI (or developer) forgets what already exists and d
 | Inline `Color(0xFFxxxxxx)` | Replace with `ArcticTheme.*` constant |
 | Inline `TextStyle(...)` | Use `Theme.of(context).textTheme.*` |
 | Two providers reading same Firestore path | Consolidate into one |
-

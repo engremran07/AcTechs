@@ -573,7 +573,7 @@ class UserRepository {
     try {
       await firestore
           .collection(AppConstants.appSettingsCollection)
-          .doc('approval_config')
+          .doc(AppConstants.approvalConfigDocId)
           .get(const GetOptions(source: Source.server));
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {

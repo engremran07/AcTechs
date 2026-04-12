@@ -4,7 +4,7 @@ import 'package:ac_techs/core/utils/technician_job_summary.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 
-enum JobAcTypeFilter { split, window, freestanding }
+enum JobAcTypeFilter { split, window, freestanding, bracket, uninstall }
 
 class AdminJobsQuery {
   const AdminJobsQuery({this.start, this.end, this.techId});
@@ -73,6 +73,10 @@ String jobAcTypeFilterToPath(JobAcTypeFilter filter) {
       return 'window';
     case JobAcTypeFilter.freestanding:
       return 'freestanding';
+    case JobAcTypeFilter.bracket:
+      return 'bracket';
+    case JobAcTypeFilter.uninstall:
+      return 'uninstall';
   }
 }
 
@@ -84,6 +88,10 @@ JobAcTypeFilter? jobAcTypeFilterFromPath(String raw) {
       return JobAcTypeFilter.window;
     case 'freestanding':
       return JobAcTypeFilter.freestanding;
+    case 'bracket':
+      return JobAcTypeFilter.bracket;
+    case 'uninstall':
+      return JobAcTypeFilter.uninstall;
     default:
       return null;
   }
@@ -97,18 +105,36 @@ String _unitTypeForFilter(JobAcTypeFilter filter) {
       return 'Window AC';
     case JobAcTypeFilter.freestanding:
       return 'Freestanding AC';
+    case JobAcTypeFilter.bracket:
+    case JobAcTypeFilter.uninstall:
+      return '';
   }
 }
 
 List<JobModel> _jobsByType(List<JobModel> jobs, JobAcTypeFilter filter) {
-  final unitType = _unitTypeForFilter(filter);
-  return jobs
-      .where(
-        (job) => job.acUnits.any(
-          (unit) => unit.type == unitType && unit.quantity > 0,
-        ),
-      )
-      .toList(growable: false);
+  switch (filter) {
+    case JobAcTypeFilter.bracket:
+      return jobs
+          .where((job) => job.effectiveBracketCount > 0)
+          .toList(growable: false);
+    case JobAcTypeFilter.uninstall:
+      return jobs
+          .where(
+            (job) => job.acUnits.any(
+              (unit) => unit.type.startsWith('Uninstall') && unit.quantity > 0,
+            ),
+          )
+          .toList(growable: false);
+    default:
+      final unitType = _unitTypeForFilter(filter);
+      return jobs
+          .where(
+            (job) => job.acUnits.any(
+              (unit) => unit.type == unitType && unit.quantity > 0,
+            ),
+          )
+          .toList(growable: false);
+  }
 }
 
 final technicianJobsProvider = StreamProvider.autoDispose<List<JobModel>>((

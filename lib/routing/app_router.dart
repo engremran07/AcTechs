@@ -20,6 +20,7 @@ import 'package:ac_techs/features/admin/presentation/admin_dashboard_screen.dart
 import 'package:ac_techs/features/admin/presentation/approvals_screen.dart';
 import 'package:ac_techs/features/admin/presentation/analytics_screen.dart';
 import 'package:ac_techs/features/admin/presentation/invoice_settlements_screen.dart';
+import 'package:ac_techs/features/admin/presentation/invoice_reconciliation_screen.dart';
 import 'package:ac_techs/features/admin/presentation/companies_screen.dart';
 import 'package:ac_techs/features/admin/presentation/team_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
@@ -306,6 +307,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const InvoiceSettlementsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/reconcile',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const InvoiceReconciliationScreen(),
             ),
           ),
           GoRoute(

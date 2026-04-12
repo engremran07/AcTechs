@@ -5,6 +5,28 @@ description: Firestore query patterns, security rules, and offline sync strategi
 
 # Firestore Patterns — AC Techs
 
+## ⛔ Firestore Alignment — BLOCKING Rule (Read Before Any Rules Change)
+
+After **any** change to `firestore.rules` or `firestore.indexes.json`:
+
+1. **Deploy rules BEFORE building the APK** — not after, not optionally:
+   ```
+   firebase deploy --only firestore:rules --project actechs-d415e    # rules changed
+   firebase deploy --only firestore:indexes --project actechs-d415e  # indexes changed
+   firebase deploy --only firestore --project actechs-d415e          # both changed
+   ```
+2. Run `npm run lint:firestore-rules` in `scripts/` **before** deployment — zero `[W]` warnings required
+3. Run Firestore emulator tests: `npm test` in `scripts/tests/` — no `PERMISSION_DENIED` regressions
+4. An APK installed against stale rules will silently fail: `PERMISSION_DENIED` errors OR empty query results
+
+**APK install sequence after a rules change:**
+```
+firebase deploy --only firestore --project actechs-d415e   ← FIRST
+flutter build apk --release                                ← SECOND
+adb -s <deviceId> uninstall com.actechs.pk                 ← THIRD (uninstall, not -r)
+adb -s <deviceId> install build/.../app-release.apk        ← FOURTH
+```
+
 ## Collections
 - `users/{userId}` — User profiles (uid, name, role, isActive, createdAt, language)
 - `jobs/{jobId}` — Job records (auto-id, all work units, expenses, status, timestamps)

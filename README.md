@@ -8,6 +8,8 @@
 
 Production Flutter operations app for AC installation teams in Saudi Arabia. The system supports technicians in the field and admins in the office with invoice-based job capture, shared installs, IN/OUT tracking, approvals, analytics, branded exports, historical imports, and controlled destructive maintenance flows.
 
+The data model is intentionally split into three separate business domains: Jobs, In/Out, and AC installs. They are adjacent in the product, but they do not share collections or provider ownership.
+
 > [!IMPORTANT]
 > This repository is intentionally Spark-only.
 > Supported backend surface: Firebase Auth, Cloud Firestore, Hosting, and client-side App Check.
@@ -20,6 +22,7 @@ Production Flutter operations app for AC installation teams in Saudi Arabia. The
 - [Platform Constraints](#-platform-constraints)
 - [Core Workflows](#-core-workflows)
 - [Architecture](#architecture)
+- [Domain Boundaries](#-domain-boundaries)
 - [Firestore Model](#firestore-model)
 - [Security and Rules](#-security-and-rules)
 - [Versioning Policy](#-versioning-policy)
@@ -28,6 +31,7 @@ Production Flutter operations app for AC installation teams in Saudi Arabia. The
 - [Build and Release](#-build--release)
 - [Developer Commands](#developer-commands)
 - [Testing](#-testing)
+- [Governance Files](#-governance-files)
 - [Operational Notes](#-operational-notes)
 
 ## ✨ Overview
@@ -121,6 +125,16 @@ scripts/
 - Widgets must not expose raw backend exceptions.
 - User-visible strings must come from localization or typed exceptions.
 - Rules, repositories, and UI behavior must stay aligned.
+
+## 🧱 Domain Boundaries
+
+| Domain | Collections | Primary models | Feature ownership |
+| --- | --- | --- | --- |
+| Jobs | `jobs`, `invoice_claims`, `shared_install_aggregates` | `JobModel`, `SharedInstallAggregate` | `lib/features/jobs/` plus technician/admin job screens |
+| In/Out | `expenses`, `earnings` | `ExpenseModel`, `EarningModel` | `lib/features/expenses/` |
+| AC installs | `ac_installs` | `AcInstallModel` | `lib/features/expenses/` |
+
+If a change crosses one of these boundaries, review repositories, providers, screens, and Firestore rules together.
 
 ### Feature highlights
 
@@ -339,6 +353,23 @@ Focused checks commonly used in this repo:
 - Shared-install repository tests
 - Firestore rule regression tests
 - PDF export sample validation
+
+Additional references:
+
+- `docs/testing-strategy.md`
+- `docs/firestore-rules-guide.md`
+
+## 🗂 Governance Files
+
+| File | Purpose |
+| --- | --- |
+| `MASTER_BLUEPRINT.md` | Current architecture and operating constraints |
+| `REGRESSION_REGISTRY.md` | Previously fixed regressions and their guard rails |
+| `SESSION_LOG.md` | Session-by-session implementation ledger |
+| `CHANGELOG.md` | Human-readable release history |
+| `docs/domain-architecture.md` | Human-readable domain and ownership guide |
+| `docs/audits/README.md` | Index of audit artifacts |
+| `.github/workflows/README.md` | Workflow summary and local equivalents |
 
 ## 🧭 Operational Notes
 

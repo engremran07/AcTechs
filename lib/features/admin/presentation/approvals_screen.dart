@@ -365,6 +365,79 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(l.cancel),
           ),
+          IconButton(
+            tooltip: l.permanentlyDeleteJob,
+            icon: const Icon(Icons.delete_forever_outlined),
+            color: Theme.of(ctx).colorScheme.error,
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final confirm1 = await showDialog<bool>(
+                context: context,
+                builder: (dlg) => AlertDialog(
+                  title: Text(l.permanentlyDeleteJob),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l.permanentlyDeleteJobConfirm),
+                      if (job.isSharedInstall) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          l.permanentlyDeleteJobSharedWarning,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: ArcticTheme.arcticPending),
+                        ),
+                      ],
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dlg).pop(false),
+                      child: Text(l.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(dlg).pop(true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      child: Text(l.delete),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm1 != true) return;
+              if (!mounted) return;
+              final confirm2 = await showDialog<bool>(
+                context: context,
+                builder: (dlg) => AlertDialog(
+                  title: Text(l.permanentlyDeleteJob),
+                  content: Text(l.deleteWarning),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dlg).pop(false),
+                      child: Text(l.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.of(dlg).pop(true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      child: Text(l.delete),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm2 != true || !mounted) return;
+              try {
+                await ref.read(jobRepositoryProvider).hardDeleteJob(job.id);
+                if (!mounted) return;
+                AppFeedback.success(context, message: l.jobDeletedSuccess);
+              } catch (e) {
+                if (!mounted) return;
+                AppFeedback.error(context, message: l.genericError);
+              }
+            },
+          ),
           if (allowActions)
             OutlinedButton(
               onPressed: () async {
@@ -1343,6 +1416,30 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                   ],
                 ],
               ),
+              if (job.editRequestedAt != null) ...[
+                const SizedBox(height: 8),
+                Chip(
+                  avatar: const Icon(
+                    Icons.edit_off_outlined,
+                    size: 14,
+                    color: ArcticTheme.arcticPending,
+                  ),
+                  label: Text(
+                    l.resubmittedBadge,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: ArcticTheme.arcticPending,
+                    ),
+                  ),
+                  backgroundColor: ArcticTheme.arcticPending.withValues(
+                    alpha: 0.12,
+                  ),
+                  side: BorderSide(
+                    color: ArcticTheme.arcticPending.withValues(alpha: 0.5),
+                  ),
+                  padding: EdgeInsets.zero,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ],
               if (job.isSharedInstall) ...[
                 const SizedBox(height: 8),
                 Wrap(

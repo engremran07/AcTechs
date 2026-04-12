@@ -4,6 +4,27 @@ applies_to: "lib/**/*.dart,pubspec.yaml"
 
 # Code Quality Rules — AC Techs
 
+## ⛔ ZERO Problems Policy — Workspace Must Stay Clean Always
+
+**This is the highest-priority rule. It overrides all other rules if they conflict.**
+
+The VS Code Problems panel AND `flutter analyze` MUST show **zero issues at all times**, across **all file types**:
+
+- **`.dart`** — `flutter analyze` exit code 0 + "No issues found!" — zero warnings, infos, hints
+- **`.md`** — zero Markdown lint issues (no broken links, undefined references, duplicate headings, trailing whitespace before blank lines)
+- **`.yaml`** — zero YAML structural issues (`pubspec.yaml`, `firebase.json`, workflow files)
+- **`.json`** — zero JSON parse errors (`firestore.indexes.json`, `google-services.json`)
+- **`.rules`** — zero `[W]` Firestore rules warnings (`npm run lint:firestore-rules` in `scripts/`)
+- **`.js`** — zero ESLint issues
+
+**Process:**
+1. After editing any file, use `get_errors` on that file immediately
+2. Fix all problems before touching the next file
+3. Run `flutter analyze` only once all individual file checks are clean
+4. A single unresolved issue is a **hard stop** — do not build, deploy, or commit
+
+---
+
 ## ⛔ Dead Code — STRICT PROHIBITION
 
 **Zero-consumer providers are FORBIDDEN.** Before adding a provider, verify at least one call site exists in an actual screen (`ref.watch`, `ref.read`, `ref.listen`). Invalidation-only calls in `auth_providers.dart` sign-out are NOT consumers.

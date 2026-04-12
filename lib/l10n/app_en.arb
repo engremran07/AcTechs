@@ -684,5 +684,21 @@
   "preFilledFromSharedInstall": "Invoice data pre-filled from your team\u2019s shared install. Enter only your unit share.",
   "teamJobPending": "Pending your contribution",
   "teamJobSubmitted": "Your contribution submitted",
-  "undo": "Undo"
+  "undo": "Undo",
+  "requestEditJob": "Request Edit",
+  "requestEditConfirmTitle": "Request Edit?",
+  "requestEditConfirmBody": "This job will return to pending and need admin re-approval before settlement.",
+  "jobEditRequested": "Edit request submitted. Awaiting admin re-approval.",
+  "resubmittedBadge": "Re-submitted",
+  "genericError": "Something went wrong. Please try again.",
+  "permanentlyDeleteJob": "Permanently Delete Job",
+  "permanentlyDeleteJobConfirm": "Delete this job permanently? This cannot be undone.",
+  "permanentlyDeleteJobSharedWarning": "This is a shared install. Aggregate counters will NOT be adjusted automatically. Notify admin if totals need correction.",
+  "jobDeletedSuccess": "Job permanently deleted.",
+  "reconcileInvoices": "Reconcile Invoices",
+  "uploadCompanyReport": "Upload Company Report",
+  "matchedInvoices": "Matched",
+  "unmatchedInvoices": "Not Found",
+  "alreadyPaidInvoices": "Already Paid",
+  "reconcileMarkedSuccess": "Matched invoices marked as paid."
 }

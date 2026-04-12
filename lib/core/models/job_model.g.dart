@@ -119,6 +119,7 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   settlementCorrectedAt: _timestampFromJson(json['settlementCorrectedAt']),
   isDeleted: json['isDeleted'] as bool? ?? false,
   deletedAt: _timestampFromJson(json['deletedAt']),
+  editRequestedAt: _timestampFromJson(json['editRequestedAt']),
 );
 
 Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
@@ -177,6 +178,7 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'settlementCorrectedAt': _timestampToJson(instance.settlementCorrectedAt),
   'isDeleted': instance.isDeleted,
   'deletedAt': _timestampToJson(instance.deletedAt),
+  'editRequestedAt': _timestampToJson(instance.editRequestedAt),
 };
 
 const _$JobStatusEnumMap = {

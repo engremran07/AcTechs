@@ -68,7 +68,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_outlined),
-              onPressed: () => context.go('/tech/settings'),
+              onPressed: () => context.push('/tech/settings'),
             ),
           ],
         ),
@@ -181,6 +181,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.bracketCount}',
                                   icon: Icons.hardware_outlined,
                                   color: ArcticTheme.arcticPurple,
+                                  onTap: () => context.push(
+                                    '/tech/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.bracket)}',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -190,6 +193,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.uninstallTotal}',
                                   icon: Icons.build_circle_outlined,
                                   color: ArcticTheme.arcticError,
+                                  onTap: () => context.push(
+                                    '/tech/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.uninstall)}',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -427,10 +433,14 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () =>
-                                        context.push('/tech/submit'),
+                                    onPressed: () => context.go('/tech/submit'),
                                     icon: const Icon(Icons.add_rounded),
-                                    label: Text(l.submitAJob),
+                                    label: Text(
+                                      l.submitAJob,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: false,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -491,11 +501,17 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.push('/tech/submit'),
+          onPressed: () => context.go('/tech/submit'),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          tooltip: l.newJob,
           icon: const Icon(Icons.add_rounded),
-          label: Text(l.newJob),
+          label: Text(
+            l.newJob,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+          ),
         ),
       ),
     );
@@ -519,23 +535,28 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ArcticCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(color: color),
-          ),
-          Text(title, style: Theme.of(context).textTheme.bodySmall),
-        ],
+    return Semantics(
+      button: onTap != null,
+      enabled: onTap != null,
+      label: title,
+      child: ArcticCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(14),
+        margin: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: color),
+            ),
+            Text(title, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
       ),
     );
   }
