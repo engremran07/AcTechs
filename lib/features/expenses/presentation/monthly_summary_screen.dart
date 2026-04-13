@@ -147,7 +147,7 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
                     child: Text(
                       AppLocalizations.of(context)!.monthlySummary,
                       style: Theme.of(context).textTheme.titleMedium,

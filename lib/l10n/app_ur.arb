@@ -110,6 +110,24 @@
   "discardChangesMessage": "آپ کی غیر محفوظ تبدیلیاں موجود ہیں۔ کیا آپ یہ صفحہ چھوڑ کر انہیں ضائع کرنا چاہتے ہیں؟",
   "leavePage": "چھوڑ دیں",
   "settings": "سیٹنگز",
+  "reports": "رپورٹس",
+  "reportsSubtitle": "PDF رپورٹس بنائیں اور شیئر کریں",
+  "dailyInOutReport": "روزانہ آمد/اخراجات رپورٹ",
+  "dailyInOutReportDesc": "آج کی آمدنی اور اخراجات کا خلاصہ",
+  "monthlyInOutReport": "ماہانہ آمد/اخراجات رپورٹ",
+  "monthlyInOutReportDesc": "ماہانہ آمدنی اور اخراجات کا جائزہ",
+  "acInstallsReport": "AC نصب رپورٹ",
+  "acInstallsReportDesc": "تاریخ کی حد کے مطابق نصب شدہ ایئر کنڈیشنرز",
+  "sharedInstallReport": "مشترکہ نصب رپورٹ",
+  "sharedInstallReportDesc": "ٹیم کی مشترکہ تنصیب کی تفصیلات",
+  "paymentSettlementReport": "ادائیگی تصفیہ رپورٹ",
+  "paymentSettlementReportDesc": "وصول شدہ کام کی ادائیگیوں کا خلاصہ",
+  "jobsReport": "کام کی رپورٹ",
+  "jobsReportDesc": "فلٹرز کے ساتھ تفصیلی کام کی تاریخ",
+  "selectDateRange": "تاریخ کی حد منتخب کریں",
+  "selectMonth": "مہینہ منتخب کریں",
+  "generateReport": "رپورٹ بنائیں",
+  "noDataForPeriod": "منتخب مدت کے لیے کوئی ڈیٹا نہیں ملا۔",
   "offline": "آف لائن",
   "offlineBannerMessage": "انٹرنیٹ کنکشن موجود نہیں ہے۔ کنکشن واپس آنے تک آپ cached ڈیٹا دیکھ رہے ہیں۔",
   "syncing": "سنک ہو رہا ہے...",
@@ -260,6 +278,7 @@
   "expensesSar": "اخراجات (ریال)",
   "status": "حالت",
   "sort": "ترتیب",
+  "yourShare": "آپ کا حصہ",
   "installations": "تنصیبات",
   "earningsIn": "آمدنی (ان)",
   "expensesOut": "اخراجات (آؤٹ)",
@@ -701,5 +720,28 @@
   "matchedInvoices": "ملا",
   "unmatchedInvoices": "نہیں ملا",
   "alreadyPaidInvoices": "پہلے سے ادا شدہ",
-  "reconcileMarkedSuccess": "ملی ہوئی انوائس ادا شدہ کے طور پر نشان زد ہو گئیں۔"
+  "reconcileMarkedSuccess": "ملی ہوئی انوائس ادا شدہ کے طور پر نشان زد ہو گئیں۔",
+  "settlements": "سیٹلمنٹس",
+  "importData": "ڈیٹا درآمد",
+  "reconciliation": "مفاہمت",
+  "staleSharedInstalls": "پرانی مشترکہ تنصیبات",
+  "staleSharedInstallsDescription": "{count} مشترکہ تنصیب(تنصیبات) 7 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔",
+  "@staleSharedInstallsDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanUpStale": "صاف کریں",
+  "cleanUpConfirmTitle": "پرانی تنصیبات آرکائیو کریں؟",
+  "cleanUpConfirmMessage": "یہ {count} پرانی مشترکہ تنصیب(تنصیبات) اور ان کی متعلقہ ملازمتوں کو آرکائیو کرے گا۔ ایڈمن اسے واپس کر سکتا ہے۔",
+  "@cleanUpConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staleCleanUpSuccess": "پرانی تنصیبات کامیابی سے آرکائیو ہو گئیں۔"
 }

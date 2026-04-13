@@ -96,7 +96,7 @@ class JobDetailsScreen extends ConsumerWidget {
                       )) ...[
                         const SizedBox(height: 12),
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: AlignmentDirectional.centerEnd,
                           child: OutlinedButton.icon(
                             onPressed: () =>
                                 context.push('/tech/submit', extra: job),
@@ -112,7 +112,7 @@ class JobDetailsScreen extends ConsumerWidget {
                           (approvalConfig?.jobApprovalRequired ?? true)) ...[
                         const SizedBox(height: 12),
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: AlignmentDirectional.centerEnd,
                           child: OutlinedButton.icon(
                             onPressed: () async {
                               final confirmed = await showDialog<bool>(
@@ -456,6 +456,7 @@ class _SharedTypeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -481,7 +482,7 @@ class _SharedTypeRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Invoice',
+                            l.invoice,
                             style: textTheme.labelSmall?.copyWith(
                               color: ArcticTheme.arcticTextSecondary,
                             ),
@@ -495,7 +496,7 @@ class _SharedTypeRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Your Share',
+                            l.yourShare,
                             style: textTheme.labelSmall?.copyWith(
                               color: ArcticTheme.arcticBlue,
                             ),

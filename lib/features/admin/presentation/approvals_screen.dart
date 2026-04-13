@@ -682,7 +682,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               return Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      12,
+                      16,
+                      8,
+                    ),
                     child: ArcticSearchBar(
                       hint: AppLocalizations.of(
                         context,
@@ -712,7 +717,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     ),
                   if (sharedGroups.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        0,
+                        16,
+                        8,
+                      ),
                       child: ArcticCard(
                         child: Wrap(
                           spacing: 12,
@@ -739,7 +749,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     ),
                   if (pendingEarnings.hasValue || pendingExpenses.hasValue)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        16,
+                        0,
+                        16,
+                        8,
+                      ),
                       child: ArcticCard(
                         child: LayoutBuilder(
                           builder: (context, constraints) {

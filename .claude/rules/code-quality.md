@@ -41,6 +41,10 @@ grep -r "MyNewWidget" lib/ | grep -v "class MyNewWidget"       # must have at le
 - `todaysAcInstallsProvider` — only invalidated, never watched
 - `techAcInstallsProvider` — only invalidated, never watched
 - `CursorWidget` — defined, never instantiated
+- `todaysJobs()` repo method (v1.4.0) — replaced by derived provider from monthly listener
+- `todaysExpenses()` / `todaysWorkExpenses()` / `todaysHomeExpenses()` repo methods (v1.4.0) — same pattern
+- `todaysEarnings()` repo method (v1.4.0) — same pattern
+- `watchTodaysInstalls()` repo method (v1.4.0) — same pattern
 
 ---
 

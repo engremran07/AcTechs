@@ -1,4 +1,3 @@
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,7 +46,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void refresh() {
     ref.invalidate(adminJobSummaryProvider);
     ref.invalidate(pendingApprovalsProvider);
-    ref.invalidate(settlementSummaryProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allCompaniesProvider);
   }
@@ -57,7 +55,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final l = AppLocalizations.of(context)!;
     final user = ref.watch(currentUserProvider).value;
     final adminSummary = ref.watch(adminJobSummaryProvider);
-    final settlementSummary = ref.watch(settlementSummaryProvider);
     final pending = ref.watch(pendingApprovalsProvider);
     final technicians = ref.watch(allTechniciansProvider);
     final companies = ref.watch(allCompaniesProvider);
@@ -66,18 +63,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
       onRefresh: refresh,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => ZoomDrawerScope.of(context).toggle(),
+          ),
           title: Text(l.adminPanel),
           actions: [
             IconButton(
               icon: const Icon(Icons.settings_rounded),
               onPressed: () => context.push('/admin/settings'),
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              onPressed: () async {
-                await ref.read(signInProvider.notifier).signOut();
-                if (context.mounted) context.go('/login');
-              },
             ),
           ],
         ),
@@ -112,6 +106,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   value: '${summary.totalJobs}',
                                   icon: Icons.work_outline,
                                   color: ArcticTheme.arcticBlue,
+                                  onTap: () => context.go('/admin/approvals'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -135,6 +130,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   value: '${summary.approvedJobs}',
                                   icon: Icons.check_circle_outline,
                                   color: ArcticTheme.arcticSuccess,
+                                  onTap: () => context.go('/admin/approvals'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -229,247 +225,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                     },
                     loading: () => const ArcticShimmer(height: 70, count: 1),
                     error: (e, _) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  ArcticCard(
-                    onTap: () => context.push('/admin/import'),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.upload_file_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.importHistoryData,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              Text(
-                                l.importHistoryDataSubtitle,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ArcticCard(
-                    onTap: () => context.push('/admin/settlements'),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ArcticTheme.arcticSuccess.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.payments_outlined,
-                            color: ArcticTheme.arcticSuccess,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.invoiceSettlements,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              Text(
-                                l.markAsPaid,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ArcticCard(
-                    onTap: () => context.push('/admin/reconcile'),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ArcticTheme.arcticBlue.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.compare_arrows_rounded,
-                            color: ArcticTheme.arcticBlue,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.reconcileInvoices,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              Text(
-                                l.uploadCompanyReport,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  settlementSummary.when(
-                    data: (summary) => Column(
-                      children: [
-                        if (summary.disputedCount > 0)
-                          Card(
-                            color: Theme.of(context).colorScheme.errorContainer,
-                            child: ListTile(
-                              leading: Icon(
-                                Icons.warning_rounded,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              title: Text(
-                                '${summary.disputedCount} ${l.paymentDisputed}',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              subtitle: Text(l.invoiceSettlements),
-                              onTap: () => context.push('/admin/settlements'),
-                            ),
-                          ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.04),
-                        ArcticCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.invoiceSettlements,
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 6,
-                                children: [
-                                  Text(
-                                    '${l.unpaid}: ${summary.unpaidCount}',
-                                  ).animate().fadeIn(delay: 50.ms),
-                                  Text(
-                                    '${l.awaitingTechnicianConfirmation}: ${summary.pendingConfirmCount}',
-                                  ).animate().fadeIn(delay: 100.ms),
-                                  Text(
-                                    '${l.paymentConfirmed}: ${summary.confirmedCount}',
-                                  ).animate().fadeIn(delay: 150.ms),
-                                  Text(
-                                    '${l.paymentDisputed}: ${summary.disputedCount}',
-                                  ).animate().fadeIn(delay: 200.ms),
-                                  Text(
-                                    '${l.amountSar}: ${AppFormatters.currency(summary.unpaidAmount)}',
-                                  ).animate().fadeIn(delay: 250.ms),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    loading: () => const ArcticShimmer(height: 56, count: 1),
-                    error: (_, _) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Danger Zone
-                  Text(
-                    l.dangerZone,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: ArcticTheme.arcticError,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ArcticCard(
-                    onTap: () => context.push('/admin/flush'),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: ArcticTheme.arcticError.withValues(
-                              alpha: 0.15,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.delete_forever_rounded,
-                            color: ArcticTheme.arcticError,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l.flushDatabase,
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(color: ArcticTheme.arcticError),
-                              ),
-                              Text(
-                                l.flushDatabaseSubtitle,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
-                      ],
-                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -589,7 +344,7 @@ class _DashCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     FittedBox(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       fit: BoxFit.scaleDown,
                       child: Text(
                         value,

@@ -316,6 +316,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get reports => 'Reports';
+
+  @override
+  String get reportsSubtitle => 'Generate and share PDF reports';
+
+  @override
+  String get dailyInOutReport => 'Daily In/Out Report';
+
+  @override
+  String get dailyInOutReportDesc => 'Today\'s earnings and expenses summary';
+
+  @override
+  String get monthlyInOutReport => 'Monthly In/Out Report';
+
+  @override
+  String get monthlyInOutReportDesc => 'Monthly earnings and expenses overview';
+
+  @override
+  String get acInstallsReport => 'AC Installations Report';
+
+  @override
+  String get acInstallsReportDesc => 'Installed air conditioners by date range';
+
+  @override
+  String get sharedInstallReport => 'Shared Install Report';
+
+  @override
+  String get sharedInstallReportDesc => 'Team shared installation details';
+
+  @override
+  String get paymentSettlementReport => 'Payment Settlement Report';
+
+  @override
+  String get paymentSettlementReportDesc => 'Summary of received job payments';
+
+  @override
+  String get jobsReport => 'Jobs Report';
+
+  @override
+  String get jobsReportDesc => 'Detailed job history with filters';
+
+  @override
+  String get selectDateRange => 'Select Date Range';
+
+  @override
+  String get selectMonth => 'Select Month';
+
+  @override
+  String get generateReport => 'Generate Report';
+
+  @override
+  String get noDataForPeriod => 'No data found for the selected period.';
+
+  @override
   String get offline => 'Offline';
 
   @override
@@ -753,6 +807,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sort => 'Sort';
+
+  @override
+  String get yourShare => 'Your Share';
 
   @override
   String get installations => 'Installations';
@@ -1861,4 +1918,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reconcileMarkedSuccess => 'Matched invoices marked as paid.';
+
+  @override
+  String get settlements => 'Settlements';
+
+  @override
+  String get importData => 'Import Data';
+
+  @override
+  String get reconciliation => 'Reconciliation';
+
+  @override
+  String get staleSharedInstalls => 'Stale Shared Installs';
+
+  @override
+  String staleSharedInstallsDescription(int count) {
+    return '$count shared install(s) older than 7 days with incomplete contributions.';
+  }
+
+  @override
+  String get cleanUpStale => 'Clean Up';
+
+  @override
+  String get cleanUpConfirmTitle => 'Archive Stale Installs?';
+
+  @override
+  String cleanUpConfirmMessage(int count) {
+    return 'This will archive $count stale shared install(s) and their associated jobs. This action can be reversed by an admin.';
+  }
+
+  @override
+  String get staleCleanUpSuccess => 'Stale installs archived successfully.';
 }

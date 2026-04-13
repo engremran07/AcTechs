@@ -106,22 +106,6 @@ void main() {
     return router;
   }
 
-  testWidgets('settings action pushes and returns to dashboard', (
-    tester,
-  ) async {
-    final router = await pumpDashboard(tester);
-
-    await tester.tap(find.byIcon(Icons.settings_outlined));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Settings Route'), findsOneWidget);
-
-    router.pop();
-    await tester.pumpAndSettle();
-
-    expect(find.text('Tech One'), findsOneWidget);
-  });
-
   testWidgets('bracket and uninstall summary cards open history', (
     tester,
   ) async {

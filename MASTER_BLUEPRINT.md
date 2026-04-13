@@ -3,8 +3,8 @@
 ## Snapshot
 
 - Project: AC Techs
-- Date: 2026-04-12
-- Current app version: 1.3.5+41
+- Date: 2026-07-11
+- Current app version: 1.4.0+44
 - Release surfaces: Android APK and Flutter web
 - Backend: Firebase Auth, Cloud Firestore, Hosting, App Check
 
@@ -57,7 +57,11 @@ These domains are intentionally separate. Expense and earning data never live in
 
 ## Current implementation focus
 
-- All phases 1–6 from the April 2026 audit remediation cycle complete; see SESSION_LOG.md
-- Firestore rules for settlement and edit re-approval deployed
-- Invoice reconciliation screen live for admin
-- Zero-problems policy and Firestore alignment blocking rules enforced in all governance docs
+- Custom zoom drawer navigation integrated into both TechShell and AdminShell
+- Stale shared install cleanup feature added to admin dashboard
+- Comprehensive backend + security audits completed; all critical findings remediated
+- AC installs Firestore rules hardened: auto-approved edit path, soft-archive exception
+- 6 dead repository methods removed to reduce unnecessary Firestore listener risk
+- 424 tests passing (25 new tests added)
+- Zero analyzer issues, zero Problems-panel errors
+- Firestore rules pending deploy before APK build

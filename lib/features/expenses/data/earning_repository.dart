@@ -284,18 +284,4 @@ class EarningRepository {
         .snapshots()
         .map(_activeEarningsFromSnapshot);
   }
-
-  /// Today's earnings for a tech.
-  Stream<List<EarningModel>> todaysEarnings(String techId) {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-    return _ref
-        .where('techId', isEqualTo: techId)
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('date', isLessThan: Timestamp.fromDate(endOfDay))
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map(_activeEarningsFromSnapshot);
-  }
 }

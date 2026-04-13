@@ -480,6 +480,62 @@ class JobRepository {
     });
   }
 
+  /// Re-reserve shared aggregate capacity when re-approving a previously
+  /// rejected shared install job. This is the inverse of
+  /// [_releaseSharedAggregateReservation] — it increments consumed counters
+  /// that were decremented during rejection. (Finding #7 fix)
+  Future<void> _reReserveSharedAggregateCapacity(
+    Transaction tx,
+    JobModel job,
+  ) async {
+    if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) return;
+
+    final aggregateRef = _sharedAggregatesRef.doc(
+      _sharedAggregateDocId(job.sharedInstallGroupKey),
+    );
+    final aggregateSnap = await tx.get(aggregateRef);
+    if (!aggregateSnap.exists) return;
+
+    final aggregate = aggregateSnap.data() ?? <String, dynamic>{};
+    final nextConsumedSplitUnits =
+        _readAggregateInt(aggregate, 'consumedSplitUnits') +
+        _unitsForType(job, AppConstants.unitTypeSplitAc);
+    final nextConsumedWindowUnits =
+        _readAggregateInt(aggregate, 'consumedWindowUnits') +
+        _unitsForType(job, AppConstants.unitTypeWindowAc);
+    final nextConsumedFreestandingUnits =
+        _readAggregateInt(aggregate, 'consumedFreestandingUnits') +
+        _unitsForType(job, AppConstants.unitTypeFreestandingAc);
+    final nextConsumedUninstallSplitUnits =
+        _readAggregateInt(aggregate, 'consumedUninstallSplitUnits') +
+        _unitsForType(job, AppConstants.unitTypeUninstallSplit);
+    final nextConsumedUninstallWindowUnits =
+        _readAggregateInt(aggregate, 'consumedUninstallWindowUnits') +
+        _unitsForType(job, AppConstants.unitTypeUninstallWindow);
+    final nextConsumedUninstallFreestandingUnits =
+        _readAggregateInt(aggregate, 'consumedUninstallFreestandingUnits') +
+        _unitsForType(job, AppConstants.unitTypeUninstallFreestanding);
+    final nextConsumedBracketCount =
+        _readAggregateInt(aggregate, 'consumedBracketCount') +
+        _bracketCount(job);
+    final nextConsumedDeliveryAmount =
+        _readAggregateDouble(aggregate, 'consumedDeliveryAmount') +
+        (job.charges?.deliveryAmount ?? 0);
+
+    tx.update(aggregateRef, {
+      'consumedSplitUnits': nextConsumedSplitUnits,
+      'consumedWindowUnits': nextConsumedWindowUnits,
+      'consumedFreestandingUnits': nextConsumedFreestandingUnits,
+      'consumedUninstallSplitUnits': nextConsumedUninstallSplitUnits,
+      'consumedUninstallWindowUnits': nextConsumedUninstallWindowUnits,
+      'consumedUninstallFreestandingUnits':
+          nextConsumedUninstallFreestandingUnits,
+      'consumedBracketCount': nextConsumedBracketCount,
+      'consumedDeliveryAmount': nextConsumedDeliveryAmount,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<JobStatus> submitJob(
     JobModel job, {
     DateTime? lockedBeforeDate,
@@ -969,7 +1025,8 @@ class JobRepository {
 
       // Shared install edit (pending or approved-direct): apply net-delta to
       // aggregate consumed counters so the group totals stay accurate.
-      if ((canEditDirectApproved || canEditPending) && existing.isSharedInstall) {
+      if ((canEditDirectApproved || canEditPending) &&
+          existing.isSharedInstall) {
         // Pending shared install edit: apply net-delta to aggregate consumed counters
         // so the aggregate stays in sync when a tech corrects their unit counts.
         _validateSupportedSharedInstallUnits(updated);
@@ -1531,6 +1588,16 @@ class JobRepository {
         final snap = await tx.get(_jobsRef.doc(jobId));
         final prevStatus = snap.data()?['status'] as String? ?? 'pending';
         _ensureMutableJobStatus(prevStatus);
+
+        // Finding #7 fix: When re-approving a previously rejected shared
+        // install, re-reserve the capacity that was released during rejection.
+        if (prevStatus == 'rejected') {
+          final job = JobModel.fromFirestore(snap);
+          if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty) {
+            await _reReserveSharedAggregateCapacity(tx, job);
+          }
+        }
+
         tx.update(_jobsRef.doc(jobId), {
           'status': 'approved',
           'approvedBy': adminUid,
@@ -2122,12 +2189,23 @@ class JobRepository {
           chunk.map((id) => _jobsRef.doc(id).get()),
         );
 
+        // Finding #7 fix: Collect rejected shared installs that need
+        // capacity re-reservation before batch-approving.
+        final sharedReReservations = <DocumentSnapshot<Map<String, dynamic>>>[];
+
         final batch = firestore.batch();
         for (final snap in snaps) {
           if (!snap.exists) continue;
 
           final prevStatus = snap.data()?['status'] as String? ?? 'pending';
           if (prevStatus == JobStatus.approved.name) continue;
+
+          if (prevStatus == 'rejected') {
+            final job = JobModel.fromFirestore(snap);
+            if (job.isSharedInstall && job.sharedInstallGroupKey.isNotEmpty) {
+              sharedReReservations.add(snap);
+            }
+          }
 
           batch.update(snap.reference, {
             'status': 'approved',
@@ -2143,6 +2221,15 @@ class JobRepository {
               'newStatus': 'approved',
             },
           );
+        }
+
+        // Handle shared aggregate re-reservations in individual transactions
+        // before committing the batch (transactions guarantee atomicity).
+        for (final snap in sharedReReservations) {
+          final job = JobModel.fromFirestore(snap);
+          await firestore.runTransaction((tx) async {
+            await _reReserveSharedAggregateCapacity(tx, job);
+          });
         }
 
         await batch.commit();
@@ -2162,22 +2249,6 @@ class JobRepository {
     return _jobsRef
         .where('techId', isEqualTo: techId)
         .orderBy('submittedAt', descending: true)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
-        );
-  }
-
-  Stream<List<JobModel>> todaysJobs(String techId) {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-
-    return _jobsRef
-        .where('techId', isEqualTo: techId)
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('date', isLessThan: Timestamp.fromDate(endOfDay))
         .snapshots()
         .map(
           (snap) =>
@@ -2528,7 +2599,8 @@ class JobRepository {
         // is simply removed. If only one team member's job is deleted and others
         // remain, admin must flush + rebuild to reconcile. This is an accepted
         // free-tier constraint per the shared-install system rules.
-        if (job.isSharedInstall && job.sharedInstallGroupKey.trim().isNotEmpty) {
+        if (job.isSharedInstall &&
+            job.sharedInstallGroupKey.trim().isNotEmpty) {
           final aggregateRef = _sharedAggregatesRef.doc(
             _sharedAggregateDocId(job.sharedInstallGroupKey),
           );
@@ -2544,6 +2616,62 @@ class JobRepository {
     } on JobException {
       rethrow;
     } catch (e) {
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Fetches shared install aggregates that are stale (older than [threshold])
+  /// and not yet fully consumed. These represent shared installs where not all
+  /// team members contributed within the expected time window.
+  Future<List<SharedInstallAggregate>> fetchStaleSharedAggregates({
+    Duration threshold = const Duration(days: 7),
+  }) async {
+    final cutoff = DateTime.now().subtract(threshold);
+    final snap = await _sharedAggregatesRef
+        .where('createdAt', isLessThan: Timestamp.fromDate(cutoff))
+        .orderBy('createdAt', descending: true)
+        .limit(100)
+        .get();
+
+    return snap.docs
+        .map(SharedInstallAggregate.fromFirestore)
+        .where((agg) => !agg.isFullyConsumed)
+        .toList();
+  }
+
+  /// Archives a stale shared install aggregate and all associated jobs.
+  /// Sets `isDeleted: true` on the aggregate (soft-delete). Associated jobs
+  /// are also soft-deleted. This does NOT roll back consumed counters —
+  /// if aggregate discrepancy is detected, admin must flush + rebuild.
+  Future<void> archiveStaleSharedInstall(String groupKey) async {
+    try {
+      final aggregateRef = _sharedAggregatesRef.doc(
+        _sharedAggregateDocId(groupKey),
+      );
+      final jobsSnap = await _jobsRef
+          .where('sharedInstallGroupKey', isEqualTo: groupKey)
+          .get();
+
+      final batch = firestore.batch();
+
+      // Soft-delete the aggregate
+      batch.update(aggregateRef, {
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Soft-delete all jobs in this shared group
+      for (final doc in jobsSnap.docs) {
+        batch.update(doc.reference, {
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+    } on FirebaseException catch (e) {
+      debugPrint('archiveStaleSharedInstall error: ${e.code}');
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();
     }
   }

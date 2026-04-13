@@ -9,3 +9,5 @@ export 'app_shortcuts.dart';
 export 'company_selector_field.dart';
 export 'shell_back_navigation_scope.dart';
 export 'network_status_banner.dart';
+export 'zoom_drawer.dart';
+export 'drawer_menu_content.dart';

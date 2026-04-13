@@ -64,13 +64,11 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
       onRefresh: _refresh,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => ZoomDrawerScope.of(context).toggle(),
+          ),
           title: Text(l.appName),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              onPressed: () => context.push('/tech/settings'),
-            ),
-          ],
         ),
         body: SafeArea(
           child: FadeTransition(
@@ -80,7 +78,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
               child: ListView(
                 // Extra bottom padding ensures the last card clears the FAB
                 // (FAB height 56 + 16 margin + 16 content gap = 88).
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 88),
                 children: [
                   // Welcome
                   Text(

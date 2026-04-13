@@ -168,7 +168,35 @@ The APK and deployed Firestore rules/indexes MUST always be from the same source
 
 - versionCode (number after `+` in pubspec version) must ALWAYS increase across releases
 - Never reset build number
-- Current minimum next versionCode: 16
+- Current minimum next versionCode: 45
+
+## Zoom Drawer Navigation System
+
+A custom zoom-drawer implementation (zero external dependencies) provides side navigation for both shells.
+
+- **Widgets**: `ZoomDrawerWrapper` (container), `ZoomDrawerController` (state), `ZoomDrawerScope` (InheritedWidget), `DrawerMenuContent` (menu UI)
+- **Location**: `lib/core/widgets/zoom_drawer.dart` + `drawer_menu_content.dart`
+- **Features**:
+  - Scales + translates main content (mainScreenScale: 0.85) when open
+  - RTL-aware: slide direction auto-inverts per locale
+  - Theme-integrated: colors from Material 3 colorScheme
+  - dragOffset capped at 65% of screen width
+  - Uses `ZoomDrawerScope` InheritedWidget for context-safe controller lookup
+  - File-level `// ignore_for_file: deprecated_member_use` for Matrix4 transforms
+- **Usage**: Both `TechShell` and `AdminShell` wrap their scaffold in `ZoomDrawerWrapper(mainScreen: ..., menuScreen: DrawerMenuContent(...))`
+- **Controller Access**: `ZoomDrawerScope.of(context).toggle()`, `.open()`, `.close()` from any child
+
+## Stale Shared Install Cleanup (Admin Feature)
+
+Admin dashboard includes a cleanup card for archiving permanently-unconsumed team aggregates.
+
+- **Definition**: Shared install aggregates where no new contributions submitted in >30 days
+- **Implementation**:
+  - `JobRepository.fetchStaleSharedAggregates({threshold: Duration(days: 30)})` — returns stale aggregates
+  - `JobRepository.archiveStaleSharedInstall(groupKey)` — batch soft-deletes aggregate + associated jobs
+  - `staleSharedAggregatesProvider` in `job_providers.dart` — FutureProvider refreshed on admin action
+- **Note**: Archiving does NOT roll back aggregate consumption counters (free-tier constraint). Admin verifies before cleanup.
+- **Guard**: Admin-only; protected by route guard and Firestore rules
 
 ## Shared Install Team System Rules
 
@@ -261,6 +289,10 @@ They are NOT bottom-nav tabs. Never write "4 tabs" for tech in any documentation
 - Historical import supports sheet-aware period naming and metadata notes
 - Shared AC-type filtered job list route is used by both technician and admin dashboards
 - Database flush has optional non-admin user deletion with explicit destructive warning UI
+- Zoom drawer navigation handles both technician (5-tab) and admin (4-tab) shells with RTL auto-inversion
+- Stale shared install cleanup available to admins for archiving permanently-unconsumed team aggregates (>30 days)
+- AC installs auto-approved edit path: techs can edit entries when approval is disabled
+- AC installs soft-archive exception: techs can archive auto-approved entries when approval is disabled
 
 ## Technical Debt Prevention — Clean-as-You-Go
 

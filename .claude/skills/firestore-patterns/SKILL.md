@@ -245,3 +245,48 @@ Archiving a shared install job does NOT decrement aggregate `consumed*` counters
 - Decrement would require a cross-collection transaction that exceeds free-tier read budget
 - Admin can flush + rebuild aggregates if discrepancy is detected
 - Document this in code comments at the archive call site
+
+## Stale Shared Install Cleanup Pattern
+
+### Fetching stale aggregates (admin-only, one-time get)
+Aggregates with no new contributions in >30 days are considered stale. This is a `FutureProvider` pattern (not a stream) to avoid persistent listeners.
+
+```dart
+Future<List<SharedInstallAggregate>> fetchStaleSharedAggregates({
+  Duration threshold = const Duration(days: 30),
+}) async {
+  final cutoff = DateTime.now().subtract(threshold);
+  final snap = await _firestore
+      .collection(AppConstants.sharedInstallAggregatesCollection)
+      .where('isDeleted', isEqualTo: false) // only active aggregates
+      .get();
+  return snap.docs
+      .map(SharedInstallAggregate.fromFirestore)
+      .where((agg) => !agg.isFullyConsumed && agg.createdAt.isBefore(cutoff))
+      .toList();
+}
+```
+
+### Archiving stale aggregates (batch soft-delete)
+```dart
+Future<void> archiveStaleSharedInstall(String groupKey) async {
+  final batch = _firestore.batch();
+  // Soft-delete the aggregate doc
+  batch.update(
+    _firestore.collection(AppConstants.sharedInstallAggregatesCollection).doc(groupKey),
+    {'isDeleted': true, 'deletedAt': FieldValue.serverTimestamp()},
+  );
+  // Soft-delete associated job docs referencing this groupKey
+  final jobSnap = await _firestore.collection(AppConstants.jobsCollection)
+      .where('sharedInstallGroupKey', isEqualTo: groupKey).get();
+  for (final doc in jobSnap.docs) {
+    batch.update(doc.reference, {'isDeleted': true, 'deletedAt': FieldValue.serverTimestamp()});
+  }
+  await batch.commit();
+}
+```
+
+### Key constraints
+- **Admin-only** — protected by route guard and Firestore rules
+- **No counter rollback** — archiving does NOT decrement `consumed*` counters
+- **Dart-layer date filtering** — stale cutoff is computed in Dart, not in Firestore query (avoids composite index)

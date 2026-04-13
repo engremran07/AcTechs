@@ -474,7 +474,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               return Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      12,
+                      16,
+                      8,
+                    ),
                     child: ArcticSearchBar(
                       hint: l.searchByNameOrEmail,
                       onChanged: (v) => setState(() => _search = v),

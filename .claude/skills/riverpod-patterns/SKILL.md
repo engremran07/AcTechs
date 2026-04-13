@@ -199,6 +199,36 @@ final dailyEarningsProvider = Provider.autoDispose
 ```
 Use this whenever `DailyInOutScreen(selectedDate: someDate)` is shown from history navigation.
 
+---
+
+## Stale Shared Install Aggregates Pattern (job_providers.dart)
+
+### staleSharedAggregatesProvider — Admin-Only FutureProvider
+Fetches shared install aggregates with no new contributions in >30 days. Used by the admin dashboard cleanup card.
+
+```dart
+final staleSharedAggregatesProvider =
+    FutureProvider.autoDispose<List<SharedInstallAggregate>>((ref) {
+  return ref.watch(jobRepositoryProvider).fetchStaleSharedAggregates();
+});
+```
+
+### Usage pattern — fetch, display, archive with invalidation
+```dart
+// In admin dashboard widget:
+final staleAsync = ref.watch(staleSharedAggregatesProvider);
+
+// After admin archives a stale aggregate:
+await repo.archiveStaleSharedInstall(agg.groupKey);
+ref.invalidate(staleSharedAggregatesProvider); // refresh the list
+```
+
+### Key constraints
+- **Admin-only**: Never expose stale cleanup to technicians
+- **FutureProvider, not StreamProvider**: One-time fetch on demand, avoids persistent listener
+- **No counter rollback**: Archiving does NOT decrement aggregate `consumed*` counters (free-tier constraint)
+- **Batch operation**: `archiveStaleSharedInstall` soft-deletes both the aggregate doc and associated job docs in a Firestore batch
+
 ### DailyInOutScreen provider selection
 ```dart
 // In DailyInOutScreen.build():

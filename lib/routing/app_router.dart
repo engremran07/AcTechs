@@ -14,6 +14,7 @@ import 'package:ac_techs/features/technician/presentation/job_history_screen.dar
 import 'package:ac_techs/features/technician/presentation/job_details_screen.dart';
 import 'package:ac_techs/features/jobs/presentation/job_type_filter_screen.dart';
 import 'package:ac_techs/features/technician/presentation/tech_profile_screen.dart';
+import 'package:ac_techs/features/technician/presentation/reports_hub_screen.dart';
 import 'package:ac_techs/features/technician/presentation/settlement_inbox_screen.dart';
 import 'package:ac_techs/features/admin/presentation/admin_shell.dart';
 import 'package:ac_techs/features/admin/presentation/admin_dashboard_screen.dart';
@@ -274,6 +275,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const TechProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/tech/reports',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const ReportsHubScreen(),
             ),
           ),
           GoRoute(

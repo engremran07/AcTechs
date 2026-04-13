@@ -405,8 +405,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ArcticTheme.arcticBlue.withValues(alpha: 0.18),
                         ArcticTheme.arcticBlueDark.withValues(alpha: 0.08),
                       ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      begin: AlignmentDirectional.topStart,
+                      end: AlignmentDirectional.bottomEnd,
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(

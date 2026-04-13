@@ -1050,7 +1050,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                 ],
                 const SizedBox(height: 12),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Text(

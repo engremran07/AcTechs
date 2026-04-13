@@ -688,6 +688,114 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reports;
+
+  /// No description provided for @reportsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate and share PDF reports'**
+  String get reportsSubtitle;
+
+  /// No description provided for @dailyInOutReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily In/Out Report'**
+  String get dailyInOutReport;
+
+  /// No description provided for @dailyInOutReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s earnings and expenses summary'**
+  String get dailyInOutReportDesc;
+
+  /// No description provided for @monthlyInOutReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly In/Out Report'**
+  String get monthlyInOutReport;
+
+  /// No description provided for @monthlyInOutReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly earnings and expenses overview'**
+  String get monthlyInOutReportDesc;
+
+  /// No description provided for @acInstallsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'AC Installations Report'**
+  String get acInstallsReport;
+
+  /// No description provided for @acInstallsReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed air conditioners by date range'**
+  String get acInstallsReportDesc;
+
+  /// No description provided for @sharedInstallReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared Install Report'**
+  String get sharedInstallReport;
+
+  /// No description provided for @sharedInstallReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Team shared installation details'**
+  String get sharedInstallReportDesc;
+
+  /// No description provided for @paymentSettlementReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Settlement Report'**
+  String get paymentSettlementReport;
+
+  /// No description provided for @paymentSettlementReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary of received job payments'**
+  String get paymentSettlementReportDesc;
+
+  /// No description provided for @jobsReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Jobs Report'**
+  String get jobsReport;
+
+  /// No description provided for @jobsReportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed job history with filters'**
+  String get jobsReportDesc;
+
+  /// No description provided for @selectDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Date Range'**
+  String get selectDateRange;
+
+  /// No description provided for @selectMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Month'**
+  String get selectMonth;
+
+  /// No description provided for @generateReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Report'**
+  String get generateReport;
+
+  /// No description provided for @noDataForPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No data found for the selected period.'**
+  String get noDataForPeriod;
+
   /// No description provided for @offline.
   ///
   /// In en, this message translates to:
@@ -1533,6 +1641,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sort'**
   String get sort;
+
+  /// No description provided for @yourShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Share'**
+  String get yourShare;
 
   /// No description provided for @installations.
   ///
@@ -3560,6 +3674,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Matched invoices marked as paid.'**
   String get reconcileMarkedSuccess;
+
+  /// No description provided for @settlements.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlements'**
+  String get settlements;
+
+  /// No description provided for @importData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Data'**
+  String get importData;
+
+  /// No description provided for @reconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconciliation'**
+  String get reconciliation;
+
+  /// No description provided for @staleSharedInstalls.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale Shared Installs'**
+  String get staleSharedInstalls;
+
+  /// No description provided for @staleSharedInstallsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shared install(s) older than 7 days with incomplete contributions.'**
+  String staleSharedInstallsDescription(int count);
+
+  /// No description provided for @cleanUpStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean Up'**
+  String get cleanUpStale;
+
+  /// No description provided for @cleanUpConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive Stale Installs?'**
+  String get cleanUpConfirmTitle;
+
+  /// No description provided for @cleanUpConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will archive {count} stale shared install(s) and their associated jobs. This action can be reversed by an admin.'**
+  String cleanUpConfirmMessage(int count);
+
+  /// No description provided for @staleCleanUpSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale installs archived successfully.'**
+  String get staleCleanUpSuccess;
 }
 
 class _AppLocalizationsDelegate

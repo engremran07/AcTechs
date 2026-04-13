@@ -279,7 +279,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             return ArcticRefreshIndicator(
               onRefresh: () async => ref.invalidate(allCompaniesProvider),
               child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 100),
                 itemCount: companies.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {

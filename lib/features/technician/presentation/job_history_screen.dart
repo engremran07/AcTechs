@@ -487,7 +487,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
 
     if (filtered.isEmpty) {
       if (!mounted) return;
-      ErrorSnackbar.show(context, message: l.noJobsForPeriod);
+      AppFeedback.error(context, message: l.noJobsForPeriod);
       return;
     }
 
@@ -543,7 +543,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
       );
     } catch (_) {
       if (!mounted) return;
-      ErrorSnackbar.show(context, message: l.couldNotExport);
+      AppFeedback.error(context, message: l.couldNotExport);
     }
   }
 
@@ -655,7 +655,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         return Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
               child: ArcticSearchBar(
                 hint: l.searchByClientOrInvoice,
                 onChanged: (v) => setState(() => _search = v),
@@ -684,7 +684,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: Text(
                   '${l.date}: ${_periodLabel(l)}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -750,7 +750,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                     Clipboard.setData(
                                       ClipboardData(text: job.invoiceNumber),
                                     );
-                                    SuccessSnackbar.show(
+                                    AppFeedback.success(
                                       context,
                                       message: l.invoiceCopied,
                                     );
@@ -795,7 +795,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                       );
                                     } catch (_) {
                                       if (context.mounted) {
-                                        ErrorSnackbar.show(
+                                        AppFeedback.error(
                                           context,
                                           message: l.couldNotExport,
                                         );
@@ -876,7 +876,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
                 child: ArcticSearchBar(
                   hint: l.search,
                   onChanged: (v) => setState(() => _search = v),
@@ -891,7 +891,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                 ),
               ).animate().fadeIn(duration: 220.ms).slideY(begin: 0.04),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 0),
                 child: Row(
                   children: [
                     Expanded(
@@ -929,7 +929,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                   vertical: 8,
                 ),
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     '${l.date}: ${_periodLabel(l)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(

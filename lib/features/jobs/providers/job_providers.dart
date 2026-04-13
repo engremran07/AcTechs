@@ -308,3 +308,10 @@ final monthlyTechnicianJobSummaryProvider = Provider.autoDispose
           .watch(monthlyJobsProvider(month))
           .whenData(TechnicianJobSummary.fromJobs);
     });
+
+/// Shared install aggregates older than 7 days that are not fully consumed.
+/// Admin-only; used on the dashboard for stale install notification.
+final staleSharedAggregatesProvider =
+    FutureProvider.autoDispose<List<SharedInstallAggregate>>((ref) {
+      return ref.watch(jobRepositoryProvider).fetchStaleSharedAggregates();
+    });

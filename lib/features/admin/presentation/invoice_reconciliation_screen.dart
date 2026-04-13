@@ -398,12 +398,14 @@ class _InvoiceReconciliationScreenState
                   child: FilledButton.icon(
                     onPressed: _isProcessing ? null : _pickAndReconcile,
                     icon: _isProcessing
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimary,
                             ),
                           )
                         : const Icon(Icons.upload_file_outlined),

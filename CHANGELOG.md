@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 1.4.0+44
+
+- Added custom zoom drawer navigation for both technician and admin shells
+- Added stale shared install cleanup feature with admin dashboard card and batch archive
+- Fixed AC installs Firestore rules: auto-approved edit path and soft-archive exception for auto-approved entries
+- Removed 6 dead repository methods (todaysJobs, todaysExpenses, todaysWorkExpenses, todaysHomeExpenses, todaysEarnings, watchTodaysInstalls)
+- Added FirebaseException error handling to ApprovalConfigRepository
+- Added firebase_options.dart to .gitignore for security
+- Fixed RTL compliance across 18+ files with AlignmentDirectional/EdgeInsetsDirectional
+- Fixed Matrix4 deprecated member warnings in zoom drawer
+- Fixed BuildContext async gap in admin dashboard stale install cleanup
+- Deleted temporary artifacts (debug scripts, PDF samples, analysis output, fix plan)
+- Added 25 new tests: stale aggregates, zoom drawer controller, approval config model + repository
+- Total test count: 424 (up from 399)
+
 ## 1.3.5+41
 
 - Fixed settlement PERMISSION_DENIED for locked-period jobs (REG-011)

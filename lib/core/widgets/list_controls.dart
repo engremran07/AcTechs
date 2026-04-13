@@ -7,13 +7,13 @@ class ArcticSearchBar extends StatefulWidget {
   const ArcticSearchBar({
     super.key,
     this.controller,
-    this.hint = 'Search...',
+    this.hint,
     this.onChanged,
     this.trailing,
   });
 
   final TextEditingController? controller;
-  final String hint;
+  final String? hint;
   final ValueChanged<String>? onChanged;
   final Widget? trailing;
 
@@ -52,7 +52,7 @@ class _ArcticSearchBarState extends State<ArcticSearchBar> {
             onChanged: widget.onChanged,
             style: Theme.of(context).textTheme.bodyMedium,
             decoration: InputDecoration(
-              hintText: widget.hint,
+              hintText: widget.hint ?? AppLocalizations.of(context)!.search,
               prefixIcon: const Icon(
                 Icons.search,
                 size: 20,
@@ -114,7 +114,7 @@ class SortButton<T> extends StatelessWidget {
         Icons.sort_rounded,
         color: Theme.of(context).colorScheme.primary,
       ),
-      tooltip: 'Sort',
+      tooltip: AppLocalizations.of(context)!.sort,
       itemBuilder: (_) => options
           .map(
             (o) => PopupMenuItem(
@@ -196,7 +196,7 @@ class BulkActionBar extends StatelessWidget {
                     children: actions
                         .map(
                           (a) => Padding(
-                            padding: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsetsDirectional.only(start: 8),
                             child: TextButton.icon(
                               onPressed: a.onPressed,
                               icon: Icon(a.icon, size: 18),
@@ -281,7 +281,7 @@ class StatusFilterChips extends StatelessWidget {
               key == selected || (key == 'all' && selected == 'all');
           final count = counts[key];
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsetsDirectional.only(end: 8),
             child: FilterChip(
               selected: isSelected,
               label: Text(count != null ? '${f.$2} ($count)' : f.$2),

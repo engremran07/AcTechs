@@ -10,7 +10,7 @@ applyTo: lib/features/expenses/**,lib/features/technician/presentation/job_histo
 |--------|-----------|-------|---------------|
 | Jobs | `jobs/` | `JobModel` | `job_providers.dart` |
 | **In/Out** | `expenses/` + `earnings/` | `ExpenseModel` + `EarningModel` | **`expense_providers.dart`** |
-| AC Installs | `ac_installations/` | `AcInstallModel` | own providers |
+| AC Installs | `ac_installs/` | `AcInstallModel` | own providers |
 
 A `JobModel` doc contains NO expense/earning sub-documents.
 Expense/earnings screens ONLY watch providers from `expense_providers.dart` — NEVER `job_providers.dart`.

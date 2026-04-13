@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ac_techs/core/theme/arctic_theme.dart';
 
 /// Centralized, locale-aware font resolver.
 /// Returns the correct font family based on locale:
@@ -79,7 +80,7 @@ class AppFonts {
   static TextTheme textTheme(
     String locale, {
     Color textPrimary = Colors.white,
-    Color textSecondary = const Color(0xFF94A3B8),
+    Color textSecondary = ArcticTheme.arcticTextSecondary,
   }) {
     return TextTheme(
       headlineLarge: heading(

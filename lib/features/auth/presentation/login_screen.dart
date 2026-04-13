@@ -306,8 +306,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ArcticTheme.arcticBlue,
                                 ArcticTheme.arcticBlueDark,
                               ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                              begin: AlignmentDirectional.topStart,
+                              end: AlignmentDirectional.bottomEnd,
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
@@ -441,7 +441,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ).animate().fadeIn(duration: 180.ms),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerEnd,
                       child: TextButton(
                         onPressed: (_isLoading || _sendingReset)
                             ? null

@@ -73,20 +73,6 @@ class AcInstallRepository {
     return data;
   }
 
-  /// Stream of today's AC install records for a specific technician.
-  Stream<List<AcInstallModel>> watchTodaysInstalls(String techId) {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    return _ref
-        .where('techId', isEqualTo: techId)
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map(_activeInstallsFromSnapshot);
-  }
-
   /// Stream of all AC install records for a technician (for monthly summaries).
   Stream<List<AcInstallModel>> watchTechInstalls(String techId) {
     return _ref

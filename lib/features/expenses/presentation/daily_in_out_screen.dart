@@ -744,7 +744,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
             child: ArcticCard(
               margin: EdgeInsets.zero,
               child: Column(
@@ -1273,7 +1273,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
             },
             child: ListView(
               // Bottom padding: FAB(56) + FAB margin(16) + gap(16) = 88
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 88),
               children: [
                 // ── Summary Card ──
                 _buildSummaryCard(theme, earningsAsync, expensesAsync),
@@ -1739,8 +1739,8 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
               color: ArcticTheme.arcticError,
               borderRadius: BorderRadius.circular(12),
             ),
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20),
+            alignment: AlignmentDirectional.centerEnd,
+            padding: const EdgeInsetsDirectional.only(end: 20),
             child: Icon(
               Icons.delete_rounded,
               color: Theme.of(context).colorScheme.onError,
@@ -1849,7 +1849,7 @@ class _DailyInOutScreenState extends ConsumerState<DailyInOutScreen> {
                     Flexible(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerRight,
+                        alignment: AlignmentDirectional.centerEnd,
                         child: Text(
                           '${item.isIn ? "+" : "-"} SAR ${item.amount.toStringAsFixed(0)}',
                           style: theme.textTheme.titleMedium?.copyWith(

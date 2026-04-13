@@ -25,11 +25,15 @@ class ApprovalConfigRepository {
     });
   }
 
-  Future<void> _mergeConfig(Map<String, dynamic> updates) {
-    return _doc.set({
-      ...updates,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+  Future<void> _mergeConfig(Map<String, dynamic> updates) async {
+    try {
+      await _doc.set({
+        ...updates,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (e) {
+      throw Exception('Failed to update config: ${e.message}');
+    }
   }
 
   Future<void> setJobApprovalRequired(bool required) async {

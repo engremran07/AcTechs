@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/widgets/snackbars.dart';
+import 'package:ac_techs/core/widgets/zoom_drawer.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class ShellBackNavigationScope extends StatefulWidget {
@@ -45,6 +46,13 @@ class _ShellBackNavigationScopeState extends State<ShellBackNavigationScope> {
           return;
         }
 
+        // Close the drawer first if it's open.
+        final drawer = ZoomDrawerScope.maybeOf(context);
+        if (drawer != null && drawer.isOpen) {
+          drawer.close();
+          return;
+        }
+
         if (!widget.isHome) {
           _lastBackAttemptAt = null;
           context.go(widget.homeRoute);
@@ -57,6 +65,7 @@ class _ShellBackNavigationScopeState extends State<ShellBackNavigationScope> {
             now.difference(_lastBackAttemptAt!) <= _kExitWindow;
 
         if (shouldExit) {
+          HapticFeedback.heavyImpact();
           _requestAppExit();
           return;
         }

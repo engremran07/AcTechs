@@ -85,14 +85,14 @@ class _SwipeActionCardState extends State<SwipeActionCard> {
       background:
           widget.rightBackground ??
           _SwipeBackground(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             icon: widget.rightIcon,
             color: widget.rightColor ?? ArcticTheme.arcticSuccess,
           ),
       secondaryBackground:
           widget.leftBackground ??
           _SwipeBackground(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             icon: widget.leftIcon,
             color: widget.leftColor ?? ArcticTheme.arcticError,
           ),

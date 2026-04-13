@@ -314,6 +314,61 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings => 'الإعدادات';
 
   @override
+  String get reports => 'التقارير';
+
+  @override
+  String get reportsSubtitle => 'إنشاء ومشاركة تقارير PDF';
+
+  @override
+  String get dailyInOutReport => 'تقرير الدخل/المصروفات اليومي';
+
+  @override
+  String get dailyInOutReportDesc => 'ملخص الأرباح والمصروفات اليوم';
+
+  @override
+  String get monthlyInOutReport => 'تقرير الدخل/المصروفات الشهري';
+
+  @override
+  String get monthlyInOutReportDesc =>
+      'نظرة عامة على الأرباح والمصروفات الشهرية';
+
+  @override
+  String get acInstallsReport => 'تقرير تركيبات المكيفات';
+
+  @override
+  String get acInstallsReportDesc => 'المكيفات المركبة حسب نطاق التاريخ';
+
+  @override
+  String get sharedInstallReport => 'تقرير التركيب المشترك';
+
+  @override
+  String get sharedInstallReportDesc => 'تفاصيل التركيب المشترك للفريق';
+
+  @override
+  String get paymentSettlementReport => 'تقرير تسوية المدفوعات';
+
+  @override
+  String get paymentSettlementReportDesc => 'ملخص مدفوعات الأعمال المستلمة';
+
+  @override
+  String get jobsReport => 'تقرير الأعمال';
+
+  @override
+  String get jobsReportDesc => 'سجل الأعمال المفصل مع الفلاتر';
+
+  @override
+  String get selectDateRange => 'اختر نطاق التاريخ';
+
+  @override
+  String get selectMonth => 'اختر الشهر';
+
+  @override
+  String get generateReport => 'إنشاء تقرير';
+
+  @override
+  String get noDataForPeriod => 'لم يتم العثور على بيانات للفترة المحددة.';
+
+  @override
   String get offline => 'غير متصل';
 
   @override
@@ -750,6 +805,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sort => 'ترتيب';
+
+  @override
+  String get yourShare => 'حصتك';
 
   @override
   String get installations => 'تركيبات';
@@ -1859,4 +1917,35 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reconcileMarkedSuccess => 'تم تحديد الفواتير المتطابقة كمدفوعة.';
+
+  @override
+  String get settlements => 'التسويات';
+
+  @override
+  String get importData => 'استيراد البيانات';
+
+  @override
+  String get reconciliation => 'المطابقة';
+
+  @override
+  String get staleSharedInstalls => 'تركيبات مشتركة قديمة';
+
+  @override
+  String staleSharedInstallsDescription(int count) {
+    return '$count تركيب(تركيبات) مشتركة أقدم من 7 أيام مع مساهمات غير مكتملة.';
+  }
+
+  @override
+  String get cleanUpStale => 'تنظيف';
+
+  @override
+  String get cleanUpConfirmTitle => 'أرشفة التركيبات القديمة؟';
+
+  @override
+  String cleanUpConfirmMessage(int count) {
+    return 'سيتم أرشفة $count تركيب(تركيبات) مشتركة قديمة والوظائف المرتبطة بها. يمكن للمسؤول التراجع عن هذا.';
+  }
+
+  @override
+  String get staleCleanUpSuccess => 'تمت أرشفة التركيبات القديمة بنجاح.';
 }

@@ -110,6 +110,24 @@
   "discardChangesMessage": "لديك تغييرات غير محفوظة. هل تريد مغادرة هذه الصفحة وفقدانها؟",
   "leavePage": "مغادرة",
   "settings": "الإعدادات",
+  "reports": "التقارير",
+  "reportsSubtitle": "إنشاء ومشاركة تقارير PDF",
+  "dailyInOutReport": "تقرير الدخل/المصروفات اليومي",
+  "dailyInOutReportDesc": "ملخص الأرباح والمصروفات اليوم",
+  "monthlyInOutReport": "تقرير الدخل/المصروفات الشهري",
+  "monthlyInOutReportDesc": "نظرة عامة على الأرباح والمصروفات الشهرية",
+  "acInstallsReport": "تقرير تركيبات المكيفات",
+  "acInstallsReportDesc": "المكيفات المركبة حسب نطاق التاريخ",
+  "sharedInstallReport": "تقرير التركيب المشترك",
+  "sharedInstallReportDesc": "تفاصيل التركيب المشترك للفريق",
+  "paymentSettlementReport": "تقرير تسوية المدفوعات",
+  "paymentSettlementReportDesc": "ملخص مدفوعات الأعمال المستلمة",
+  "jobsReport": "تقرير الأعمال",
+  "jobsReportDesc": "سجل الأعمال المفصل مع الفلاتر",
+  "selectDateRange": "اختر نطاق التاريخ",
+  "selectMonth": "اختر الشهر",
+  "generateReport": "إنشاء تقرير",
+  "noDataForPeriod": "لم يتم العثور على بيانات للفترة المحددة.",
   "offline": "غير متصل",
   "offlineBannerMessage": "لا يوجد اتصال بالإنترنت. أنت تشاهد بيانات مخزنة مؤقتاً حتى يعود الاتصال.",
   "syncing": "جارٍ المزامنة...",
@@ -260,6 +278,7 @@
   "expensesSar": "مصروفات (ريال)",
   "status": "الحالة",
   "sort": "ترتيب",
+  "yourShare": "حصتك",
   "installations": "تركيبات",
   "earningsIn": "الإيرادات (دخول)",
   "expensesOut": "المصروفات (خروج)",
@@ -701,5 +720,28 @@
   "matchedInvoices": "متطابق",
   "unmatchedInvoices": "غير موجود",
   "alreadyPaidInvoices": "مدفوع مسبقاً",
-  "reconcileMarkedSuccess": "تم تحديد الفواتير المتطابقة كمدفوعة."
+  "reconcileMarkedSuccess": "تم تحديد الفواتير المتطابقة كمدفوعة.",
+  "settlements": "التسويات",
+  "importData": "استيراد البيانات",
+  "reconciliation": "المطابقة",
+  "staleSharedInstalls": "تركيبات مشتركة قديمة",
+  "staleSharedInstallsDescription": "{count} تركيب(تركيبات) مشتركة أقدم من 7 أيام مع مساهمات غير مكتملة.",
+  "@staleSharedInstallsDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanUpStale": "تنظيف",
+  "cleanUpConfirmTitle": "أرشفة التركيبات القديمة؟",
+  "cleanUpConfirmMessage": "سيتم أرشفة {count} تركيب(تركيبات) مشتركة قديمة والوظائف المرتبطة بها. يمكن للمسؤول التراجع عن هذا.",
+  "@cleanUpConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staleCleanUpSuccess": "تمت أرشفة التركيبات القديمة بنجاح."
 }

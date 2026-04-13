@@ -285,36 +285,6 @@ class ExpenseRepository {
         .map(_activeExpensesFromSnapshot);
   }
 
-  /// Today's expenses for a tech.
-  Stream<List<ExpenseModel>> todaysExpenses(String techId) {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-    return _ref
-        .where('techId', isEqualTo: techId)
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('date', isLessThan: Timestamp.fromDate(endOfDay))
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map(_activeExpensesFromSnapshot);
-  }
-
-  Stream<List<ExpenseModel>> todaysWorkExpenses(String techId) {
-    return todaysExpenses(techId).map(
-      (items) => items
-          .where((item) => item.expenseType != AppConstants.expenseTypeHome)
-          .toList(),
-    );
-  }
-
-  Stream<List<ExpenseModel>> todaysHomeExpenses(String techId) {
-    return todaysExpenses(techId).map(
-      (items) => items
-          .where((item) => item.expenseType == AppConstants.expenseTypeHome)
-          .toList(),
-    );
-  }
-
   Stream<List<ExpenseModel>> monthlyWorkExpenses(
     String techId,
     DateTime month,

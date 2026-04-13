@@ -315,6 +315,62 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settings => 'سیٹنگز';
 
   @override
+  String get reports => 'رپورٹس';
+
+  @override
+  String get reportsSubtitle => 'PDF رپورٹس بنائیں اور شیئر کریں';
+
+  @override
+  String get dailyInOutReport => 'روزانہ آمد/اخراجات رپورٹ';
+
+  @override
+  String get dailyInOutReportDesc => 'آج کی آمدنی اور اخراجات کا خلاصہ';
+
+  @override
+  String get monthlyInOutReport => 'ماہانہ آمد/اخراجات رپورٹ';
+
+  @override
+  String get monthlyInOutReportDesc => 'ماہانہ آمدنی اور اخراجات کا جائزہ';
+
+  @override
+  String get acInstallsReport => 'AC نصب رپورٹ';
+
+  @override
+  String get acInstallsReportDesc =>
+      'تاریخ کی حد کے مطابق نصب شدہ ایئر کنڈیشنرز';
+
+  @override
+  String get sharedInstallReport => 'مشترکہ نصب رپورٹ';
+
+  @override
+  String get sharedInstallReportDesc => 'ٹیم کی مشترکہ تنصیب کی تفصیلات';
+
+  @override
+  String get paymentSettlementReport => 'ادائیگی تصفیہ رپورٹ';
+
+  @override
+  String get paymentSettlementReportDesc =>
+      'وصول شدہ کام کی ادائیگیوں کا خلاصہ';
+
+  @override
+  String get jobsReport => 'کام کی رپورٹ';
+
+  @override
+  String get jobsReportDesc => 'فلٹرز کے ساتھ تفصیلی کام کی تاریخ';
+
+  @override
+  String get selectDateRange => 'تاریخ کی حد منتخب کریں';
+
+  @override
+  String get selectMonth => 'مہینہ منتخب کریں';
+
+  @override
+  String get generateReport => 'رپورٹ بنائیں';
+
+  @override
+  String get noDataForPeriod => 'منتخب مدت کے لیے کوئی ڈیٹا نہیں ملا۔';
+
+  @override
   String get offline => 'آف لائن';
 
   @override
@@ -752,6 +808,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get sort => 'ترتیب';
+
+  @override
+  String get yourShare => 'آپ کا حصہ';
 
   @override
   String get installations => 'تنصیبات';
@@ -1867,4 +1926,35 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get reconcileMarkedSuccess =>
       'ملی ہوئی انوائس ادا شدہ کے طور پر نشان زد ہو گئیں۔';
+
+  @override
+  String get settlements => 'سیٹلمنٹس';
+
+  @override
+  String get importData => 'ڈیٹا درآمد';
+
+  @override
+  String get reconciliation => 'مفاہمت';
+
+  @override
+  String get staleSharedInstalls => 'پرانی مشترکہ تنصیبات';
+
+  @override
+  String staleSharedInstallsDescription(int count) {
+    return '$count مشترکہ تنصیب(تنصیبات) 7 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔';
+  }
+
+  @override
+  String get cleanUpStale => 'صاف کریں';
+
+  @override
+  String get cleanUpConfirmTitle => 'پرانی تنصیبات آرکائیو کریں؟';
+
+  @override
+  String cleanUpConfirmMessage(int count) {
+    return 'یہ $count پرانی مشترکہ تنصیب(تنصیبات) اور ان کی متعلقہ ملازمتوں کو آرکائیو کرے گا۔ ایڈمن اسے واپس کر سکتا ہے۔';
+  }
+
+  @override
+  String get staleCleanUpSuccess => 'پرانی تنصیبات کامیابی سے آرکائیو ہو گئیں۔';
 }

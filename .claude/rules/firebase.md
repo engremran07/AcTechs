@@ -36,6 +36,26 @@ Three completely separate Firestore collection groups — NEVER query across dom
 - When adding a new field to `ExpenseModel`/`EarningModel`, update `validExpenseCreatePayload()` / `validEarningCreatePayload()` in `firestore.rules` — NOT `validJobCreatePayload()`
 - For single-day expense/earning queries, ALWAYS derive from the existing monthly stream in Dart — do NOT open a day-scoped Firestore listener (would count as an extra free-tier listener)
 
+## AC Installs — Auto-Approved Edit & Soft-Archive Exception
+
+When `inOutApprovalRequired == false` in `ApprovalConfigModel`, AC install entries are auto-approved on creation (`EarningApprovalStatus.approved`). Two special tech-side paths exist only in this mode:
+
+- **Auto-Approved Edit Path**: Techs can edit their own auto-approved AC install entries when approval is disabled. If approval is later re-enabled, previously auto-approved entries become locked (same as any approved record).
+- **Soft-Archive Exception**: Techs can archive their own auto-approved AC install entries when approval is disabled. Archiving sets `isDeleted: true` + `deletedAt: timestamp` — never calls `doc.delete()`.
+
+```dart
+// ❌ FORBIDDEN — editing or archiving approved entries when approval is enabled
+if (entry.status == EarningApprovalStatus.approved && approvalConfig.inOutApprovalRequired) {
+  // blocked — cannot edit approved entries under approval mode
+}
+
+// ✓ CORRECT — auto-approved entries are editable/archivable when approval is disabled
+final isAutoApproved = !approvalConfig.inOutApprovalRequired &&
+    entry.status == EarningApprovalStatus.approved;
+```
+
+These paths are NOT available for job records (`JobModel`) — job approval is a separate system.
+
 ## Free-Tier Budget Rules (50K reads / 20K writes / 20K deletes per day)
 
 ### Query Quotas — mandatory on all collection queries
@@ -48,6 +68,7 @@ Three completely separate Firestore collection groups — NEVER query across dom
 - Each `StreamProvider` on a 200-doc collection = ~200 reads per document change
 - 10 changes/day × 200 docs = 2 000 reads from one stream alone
 - Normal usage ≈ 300–500 reads/day — well within limits
+- v1.4.0 removed 6 dead single-day repository methods (`todaysJobs()`, `todaysExpenses()`, `todaysWorkExpenses()`, `todaysHomeExpenses()`, `todaysEarnings()`, `watchTodaysInstalls()`); derived providers now reuse monthly listeners, saving up to 6 concurrent listeners per tech session
 - Alert threshold: investigate any new stream that could push daily reads above 10 000
 
 ### Prohibited Patterns

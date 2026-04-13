@@ -29,7 +29,7 @@ class NetworkStatusBanner extends ConsumerWidget {
               duration: const Duration(milliseconds: 180),
               opacity: isOffline ? 1 : 0,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 0),
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
@@ -42,21 +42,23 @@ class NetworkStatusBanner extends ConsumerWidget {
                       color: ArcticTheme.arcticWarning.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withValues(alpha: 0.18),
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Color(0x33000000),
+                          color: Theme.of(context).colorScheme.shadow
+                              .withValues(alpha: 0.2),
                           blurRadius: 16,
-                          offset: Offset(0, 8),
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.cloud_off_rounded,
-                          color: Colors.black,
+                          color: Theme.of(context).colorScheme.onTertiary,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -64,7 +66,9 @@ class NetworkStatusBanner extends ConsumerWidget {
                             AppLocalizations.of(context)!.offlineBannerMessage,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: Colors.black,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onTertiary,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),

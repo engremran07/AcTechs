@@ -47,6 +47,7 @@ scripts/firestore-debug.log
 hs_err_pid*.log
 replay_pid*.log
 android/app/google-services.json
+lib/firebase_options.dart
 auth-users.json
 auth_users.json
 scripts/.env

@@ -110,6 +110,24 @@
   "discardChangesMessage": "You have unsaved changes. Leave this page and lose them?",
   "leavePage": "Leave",
   "settings": "Settings",
+  "reports": "Reports",
+  "reportsSubtitle": "Generate and share PDF reports",
+  "dailyInOutReport": "Daily In/Out Report",
+  "dailyInOutReportDesc": "Today's earnings and expenses summary",
+  "monthlyInOutReport": "Monthly In/Out Report",
+  "monthlyInOutReportDesc": "Monthly earnings and expenses overview",
+  "acInstallsReport": "AC Installations Report",
+  "acInstallsReportDesc": "Installed air conditioners by date range",
+  "sharedInstallReport": "Shared Install Report",
+  "sharedInstallReportDesc": "Team shared installation details",
+  "paymentSettlementReport": "Payment Settlement Report",
+  "paymentSettlementReportDesc": "Summary of received job payments",
+  "jobsReport": "Jobs Report",
+  "jobsReportDesc": "Detailed job history with filters",
+  "selectDateRange": "Select Date Range",
+  "selectMonth": "Select Month",
+  "generateReport": "Generate Report",
+  "noDataForPeriod": "No data found for the selected period.",
   "offline": "Offline",
   "offlineBannerMessage": "No internet connection. You are viewing cached data until the connection returns.",
   "syncing": "Syncing...",
@@ -260,6 +278,7 @@
   "expensesSar": "Expenses (SAR)",
   "status": "Status",
   "sort": "Sort",
+  "yourShare": "Your Share",
   "installations": "Installations",
   "earningsIn": "Earnings (IN)",
   "expensesOut": "Expenses (OUT)",
@@ -700,5 +719,28 @@
   "matchedInvoices": "Matched",
   "unmatchedInvoices": "Not Found",
   "alreadyPaidInvoices": "Already Paid",
-  "reconcileMarkedSuccess": "Matched invoices marked as paid."
+  "reconcileMarkedSuccess": "Matched invoices marked as paid.",
+  "settlements": "Settlements",
+  "importData": "Import Data",
+  "reconciliation": "Reconciliation",
+  "staleSharedInstalls": "Stale Shared Installs",
+  "staleSharedInstallsDescription": "{count} shared install(s) older than 7 days with incomplete contributions.",
+  "@staleSharedInstallsDescription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cleanUpStale": "Clean Up",
+  "cleanUpConfirmTitle": "Archive Stale Installs?",
+  "cleanUpConfirmMessage": "This will archive {count} stale shared install(s) and their associated jobs. This action can be reversed by an admin.",
+  "@cleanUpConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staleCleanUpSuccess": "Stale installs archived successfully."
 }

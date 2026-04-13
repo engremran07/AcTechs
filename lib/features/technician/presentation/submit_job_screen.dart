@@ -1047,10 +1047,10 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                                   l.loadingFailed,
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.error,
-                                  ),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
+                                      ),
                                 ),
                               ],
                             ),
@@ -1134,7 +1134,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                         child: Column(
                           children: [
                             Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: Text(
                                 l.deliverySubtitle,
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -1173,7 +1173,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
                             if (_isSharedInstall) ...[
                               const SizedBox(height: 8),
                               Align(
-                                alignment: Alignment.centerLeft,
+                                alignment: AlignmentDirectional.centerStart,
                                 child: Text(
                                   l.sharedDeliverySplitHint,
                                   style: theme.textTheme.bodySmall?.copyWith(

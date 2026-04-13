@@ -1317,11 +1317,58 @@ service cloud.firestore {
           'reviewedAt'
         ])
       ) ||
-      // Tech soft-archive: set isDeleted=true only, must not be approved, date unlocked
+      // Tech may edit auto-approved entries when approval is disabled.
+      // Status, approvedBy, adminNote, reviewedAt must stay unchanged.
+      (
+        !inOutApprovalRequired() &&
+        isActiveUser() &&
+        resource.data.status == 'approved' &&
+        resource.data.techId == request.auth.uid &&
+        request.resource.data.techId == resource.data.techId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        request.resource.data.status == 'approved' &&
+        request.resource.data.approvedBy == resource.data.approvedBy &&
+        request.resource.data.adminNote == resource.data.adminNote &&
+        request.resource.data.reviewedAt == resource.data.reviewedAt &&
+        request.resource.data.splitTotal is int &&
+        request.resource.data.splitTotal >= 0 &&
+        request.resource.data.splitShare is int &&
+        request.resource.data.splitShare >= 0 &&
+        request.resource.data.splitShare <= request.resource.data.splitTotal &&
+        request.resource.data.windowTotal is int &&
+        request.resource.data.windowTotal >= 0 &&
+        request.resource.data.windowShare is int &&
+        request.resource.data.windowShare >= 0 &&
+        request.resource.data.windowShare <= request.resource.data.windowTotal &&
+        request.resource.data.freestandingTotal is int &&
+        request.resource.data.freestandingTotal >= 0 &&
+        request.resource.data.freestandingShare is int &&
+        request.resource.data.freestandingShare >= 0 &&
+        request.resource.data.freestandingShare <= request.resource.data.freestandingTotal &&
+        (request.resource.data.splitTotal + request.resource.data.windowTotal + request.resource.data.freestandingTotal) > 0 &&
+        request.resource.data.techName is string &&
+        request.resource.data.note is string &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName',
+          'splitTotal',
+          'splitShare',
+          'windowTotal',
+          'windowShare',
+          'freestandingTotal',
+          'freestandingShare',
+          'note',
+          'date'
+        ])
+      ) ||
+      // Tech soft-archive: approved entries blocked only when inOutApprovalRequired
+      // is true. When approval is disabled all entries are auto-approved, so the
+      // old approved-record block would prevent archiving everything.
       (isActiveUser() &&
         resource.data.techId == request.auth.uid &&
         dateIsUnlocked(resource.data.date) &&
-        resource.data.status != 'approved' &&
+        (resource.data.status != 'approved' || !inOutApprovalRequired()) &&
         request.resource.data.isDeleted == true &&
         request.resource.data.deletedAt is timestamp &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'deletedAt'])

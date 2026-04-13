@@ -22,3 +22,5 @@ paths:
 - Card spacing: 10-12px gap between cards
 - Destructive actions must include explicit warning affordances (color, icon, confirmation)
 - Use ArcticRefreshIndicator instead of raw RefreshIndicator.
+- **Zoom Drawer**: Both `TechShell` and `AdminShell` use `ZoomDrawerWrapper` for side navigation. Access the controller via `ZoomDrawerScope.of(context).toggle()`. RTL auto-inverts slide direction. Defined in `lib/core/widgets/zoom_drawer.dart` + `drawer_menu_content.dart`.
+- **Stale Shared Install Cleanup Card**: Admin dashboard only. Shows shared aggregates >30 days old with no new contributions. Archive action with confirmation dialog.

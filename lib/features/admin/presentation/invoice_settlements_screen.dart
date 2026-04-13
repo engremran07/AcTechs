@@ -372,7 +372,7 @@ class _InvoiceSettlementsScreenState
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
                   child: Row(
                     children: [
                       ChoiceChip(
@@ -400,7 +400,7 @@ class _InvoiceSettlementsScreenState
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 8),
                   child: ArcticSearchBar(
                     hint: l.searchByTechClientInvoice,
                     onChanged: (value) => setState(() => _search = value),
@@ -415,7 +415,7 @@ class _InvoiceSettlementsScreenState
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: TextButton.icon(
                         onPressed: () => setState(() => _dateRange = null),
                         icon: const Icon(Icons.close_rounded),
@@ -427,7 +427,7 @@ class _InvoiceSettlementsScreenState
                   ),
                 if (_selected.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
                     child: BulkActionBar(
                       selectedCount: _selected.length,
                       isProcessing: _isProcessing,
