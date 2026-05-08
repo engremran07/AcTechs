@@ -5,6 +5,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
@@ -64,6 +65,8 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(technicianJobsProvider);
     ref.invalidate(todaysJobsProvider);
     ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(pendingSharedInstallAggregatesProvider);
+    ref.invalidate(staleSharedAggregatesProvider);
     ref.invalidate(adminSettlementCandidatesProvider);
     ref.invalidate(adminSettlementHistoryProvider);
     ref.invalidate(settlementSummaryProvider);

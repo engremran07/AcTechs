@@ -14,6 +14,7 @@ _UserModel _$UserModelFromJson(Map<String, dynamic> json) => _UserModel(
   isActive: json['isActive'] as bool? ?? true,
   language: json['language'] as String? ?? 'en',
   themeMode: json['themeMode'] as String? ?? 'dark',
+  phone: json['phone'] as String? ?? '',
   createdAt: _timestampFromJson(json['createdAt']),
 );
 
@@ -26,5 +27,6 @@ Map<String, dynamic> _$UserModelToJson(_UserModel instance) =>
       'isActive': instance.isActive,
       'language': instance.language,
       'themeMode': instance.themeMode,
+      'phone': instance.phone,
       'createdAt': _timestampToJson(instance.createdAt),
     };

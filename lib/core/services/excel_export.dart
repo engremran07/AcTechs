@@ -471,6 +471,249 @@ class ExcelExport {
     await _shareExcelFile(excelFile, 'expenses_report');
   }
 
+  /// Build a workbook combining earnings and expenses — used for In/Out reports.
+  static excel_pkg.Excel buildInOutWorkbook({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+    required DateTime reportDate,
+    bool dailyMode = false,
+    ReportBrandingContext? reportBranding,
+    DateTime? generatedAt,
+  }) {
+    final excelFile = excel_pkg.Excel.createExcel();
+    excelFile.delete('Sheet1');
+    final reportTime = generatedAt ?? DateTime.now();
+    final title = dailyMode ? 'Daily In/Out Report' : 'Monthly In/Out Report';
+
+    // ── Earnings sheet ──────────────────────────────────────────────────
+    final earningsSheet = excelFile['Earnings'];
+    _appendReportBrandingHeader(
+      sheet: earningsSheet,
+      reportTitle: title,
+      generatedAt: reportTime,
+      reportBranding: reportBranding,
+    );
+    earningsSheet.appendRow([
+      excel_pkg.TextCellValue('Category'),
+      excel_pkg.TextCellValue('Amount (SAR)'),
+      excel_pkg.TextCellValue('Status'),
+      excel_pkg.TextCellValue('Date'),
+      excel_pkg.TextCellValue('Note'),
+    ]);
+    for (final e in earnings) {
+      earningsSheet.appendRow([
+        excel_pkg.TextCellValue(e.category),
+        excel_pkg.DoubleCellValue(e.amount),
+        excel_pkg.TextCellValue(e.status.name),
+        excel_pkg.TextCellValue(_formatDate(e.date)),
+        excel_pkg.TextCellValue(e.note),
+      ]);
+    }
+    final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
+    earningsSheet.appendRow([
+      excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.DoubleCellValue(totalEarnings),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+    ]);
+
+    // ── Work Expenses sheet ─────────────────────────────────────────────
+    final workSheet = excelFile['Work Expenses'];
+    _appendReportBrandingHeader(
+      sheet: workSheet,
+      reportTitle: title,
+      generatedAt: reportTime,
+      reportBranding: reportBranding,
+    );
+    workSheet.appendRow([
+      excel_pkg.TextCellValue('Category'),
+      excel_pkg.TextCellValue('Amount (SAR)'),
+      excel_pkg.TextCellValue('Date'),
+      excel_pkg.TextCellValue('Note'),
+    ]);
+    final workExpenses = expenses
+        .where((e) => e.expenseType == 'work')
+        .toList();
+    for (final e in workExpenses) {
+      workSheet.appendRow([
+        excel_pkg.TextCellValue(e.category),
+        excel_pkg.DoubleCellValue(e.amount),
+        excel_pkg.TextCellValue(_formatDate(e.date)),
+        excel_pkg.TextCellValue(e.note),
+      ]);
+    }
+    final totalWork = workExpenses.fold<double>(0, (s, e) => s + e.amount);
+    workSheet.appendRow([
+      excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.DoubleCellValue(totalWork),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+    ]);
+
+    // ── Home Expenses sheet ─────────────────────────────────────────────
+    final homeSheet = excelFile['Home Expenses'];
+    _appendReportBrandingHeader(
+      sheet: homeSheet,
+      reportTitle: title,
+      generatedAt: reportTime,
+      reportBranding: reportBranding,
+    );
+    homeSheet.appendRow([
+      excel_pkg.TextCellValue('Item'),
+      excel_pkg.TextCellValue('Amount (SAR)'),
+      excel_pkg.TextCellValue('Date'),
+      excel_pkg.TextCellValue('Note'),
+    ]);
+    final homeExpenses = expenses
+        .where((e) => e.expenseType != 'work')
+        .toList();
+    for (final e in homeExpenses) {
+      homeSheet.appendRow([
+        excel_pkg.TextCellValue(e.category),
+        excel_pkg.DoubleCellValue(e.amount),
+        excel_pkg.TextCellValue(_formatDate(e.date)),
+        excel_pkg.TextCellValue(e.note),
+      ]);
+    }
+    final totalHome = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
+    homeSheet.appendRow([
+      excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.DoubleCellValue(totalHome),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+    ]);
+
+    // ── Summary sheet ───────────────────────────────────────────────────
+    final summarySheet = excelFile['Summary'];
+    _appendReportBrandingHeader(
+      sheet: summarySheet,
+      reportTitle: title,
+      generatedAt: reportTime,
+      reportBranding: reportBranding,
+    );
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Category'),
+      excel_pkg.TextCellValue('Amount (SAR)'),
+    ]);
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Total Income'),
+      excel_pkg.DoubleCellValue(totalEarnings),
+    ]);
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Work Expenses'),
+      excel_pkg.DoubleCellValue(totalWork),
+    ]);
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Home Expenses'),
+      excel_pkg.DoubleCellValue(totalHome),
+    ]);
+    final totalExpenses = totalWork + totalHome;
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Total Expenses'),
+      excel_pkg.DoubleCellValue(totalExpenses),
+    ]);
+    summarySheet.appendRow([
+      excel_pkg.TextCellValue('Net Balance'),
+      excel_pkg.DoubleCellValue(totalEarnings - totalExpenses),
+    ]);
+
+    return excelFile;
+  }
+
+  /// Export earnings + expenses In/Out report to Excel.
+  static Future<void> exportInOutToExcel({
+    required List<EarningModel> earnings,
+    required List<ExpenseModel> expenses,
+    required DateTime reportDate,
+    bool dailyMode = false,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    final excelFile = buildInOutWorkbook(
+      earnings: earnings,
+      expenses: expenses,
+      reportDate: reportDate,
+      dailyMode: dailyMode,
+      reportBranding: reportBranding,
+    );
+    final prefix = dailyMode ? 'daily_inout' : 'monthly_inout';
+    await _shareExcelFile(excelFile, prefix);
+  }
+
+  /// Build a workbook for payment settlement report.
+  static excel_pkg.Excel buildSettlementWorkbook({
+    required List<JobModel> jobs,
+    ReportBrandingContext? reportBranding,
+    DateTime? generatedAt,
+  }) {
+    final excelFile = excel_pkg.Excel.createExcel();
+    excelFile.delete('Sheet1');
+    final sheet = excelFile['Settlements'];
+    final reportTime = generatedAt ?? DateTime.now();
+
+    _appendReportBrandingHeader(
+      sheet: sheet,
+      reportTitle: 'Payment Settlement Report',
+      generatedAt: reportTime,
+      reportBranding: reportBranding,
+    );
+
+    sheet.appendRow([
+      excel_pkg.TextCellValue('Date'),
+      excel_pkg.TextCellValue('Invoice Number'),
+      excel_pkg.TextCellValue('Technician'),
+      excel_pkg.TextCellValue('Total Units'),
+      excel_pkg.TextCellValue('Settlement Status'),
+      excel_pkg.TextCellValue('Amount (SAR)'),
+      excel_pkg.TextCellValue('Payment Method'),
+    ]);
+
+    var totalSettled = 0.0;
+    for (final job in jobs) {
+      final totalUnits = job.acUnits.fold<int>(0, (s, u) => s + u.quantity);
+      final statusLabel = job.settlementStatus.name
+          .replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(0)}')
+          .trim();
+      totalSettled += job.settlementAmount;
+      sheet.appendRow([
+        excel_pkg.TextCellValue(_formatDate(job.date)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.techName)),
+        excel_pkg.IntCellValue(totalUnits),
+        excel_pkg.TextCellValue(statusLabel),
+        excel_pkg.DoubleCellValue(job.settlementAmount),
+        excel_pkg.TextCellValue(
+          AppFormatters.safeText(job.settlementPaymentMethod),
+        ),
+      ]);
+    }
+
+    sheet.appendRow([excel_pkg.TextCellValue('')]);
+    sheet.appendRow([
+      excel_pkg.TextCellValue('TOTAL SETTLED'),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.TextCellValue(''),
+      excel_pkg.DoubleCellValue(totalSettled),
+      excel_pkg.TextCellValue(''),
+    ]);
+
+    return excelFile;
+  }
+
+  /// Export payment settlement report to Excel.
+  static Future<void> exportSettlementToExcel({
+    required List<JobModel> jobs,
+    ReportBrandingContext? reportBranding,
+  }) async {
+    final excelFile = buildSettlementWorkbook(
+      jobs: jobs,
+      reportBranding: reportBranding,
+    );
+    await _shareExcelFile(excelFile, 'settlement_report');
+  }
+
   static Future<void> _shareExcelFile(
     excel_pkg.Excel excelFile,
     String baseFileName,

@@ -22,4 +22,20 @@ class WhatsAppLauncher {
     final uri = Uri.parse('https://wa.me/$normalized');
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
+
+  /// Opens a WhatsApp chat with [rawPhone] pre-populated with [message].
+  ///
+  /// Returns true if the URL was successfully launched, false if WhatsApp is
+  /// not available on this device or the phone number is empty.
+  static Future<bool> openChatWithMessage(
+    String rawPhone,
+    String message,
+  ) async {
+    final normalized = normalizeNumber(rawPhone);
+    if (normalized.isEmpty) return false;
+
+    final encoded = Uri.encodeComponent(message);
+    final uri = Uri.parse('https://wa.me/$normalized?text=$encoded');
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
 }

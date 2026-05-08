@@ -1,5 +1,20 @@
 # SESSION_LOG
 
+## 2026-07-11 — Bug fixes: tech data loading, WhatsApp icon, duplicate email detection — APK v1.4.5+49
+
+- Scope: Four regressions diagnosed and fixed; APK built and installed on device R5GL22RGT9V
+- Changes implemented:
+  - **Tech dashboard + history data loading fix**: `technicianJobs()` and `pendingApprovals()` in `job_repository.dart` had `.where('isDeleted', isNotEqualTo: true)` combined with `.orderBy('submittedAt', ...)`, requiring a missing composite Firestore index. Fix: removed `isDeleted` from Firestore query; moved filter to Dart `.map()` stage (`.where((job) => !job.isDeleted)`). No index deploy needed.
+  - **WhatsApp icon fix** (`team_screen.dart`): Changed generic `Icon(Icons.chat_rounded)` → `const FaIcon(FontAwesomeIcons.whatsapp, size: 20)` with `font_awesome_flutter` import.
+  - **Duplicate email foolproofing**: Added `hardDeleteUser(uid)` to `UserRepository` (guards active users), `duplicateEmailUsersProvider` (derived from `allUsersProvider`, zero extra listeners) to `admin_providers.dart`, and `_DuplicateEmailBanner` + `_handlePurgeEmailDuplicate()` to `TeamScreen` — shows warning card with Remove button when inactive duplicate email users exist.
+  - **ARB localization**: Added 4 new keys (`duplicateEmailWarningTitle`, `duplicateEmailWarningBody`, `removeDuplicateUser`, `userPermanentlyDeleted`) to all 3 locale files; fixed missing ICU `}` in Arabic plural expression.
+- Verification:
+  - `flutter gen-l10n` — success
+  - `flutter analyze --no-pub` — "No issues found!"
+  - `flutter build apk --release` — Built (74.8MB, 234s)
+  - APK `1.4.5+49` uninstalled old + installed new on R5GL22RGT9V
+- No Firestore rules/indexes changed → no deploy needed
+
 ## 2026-07-11 — Zoom drawer, stale install cleanup, comprehensive audit, security hardening
 
 - Scope: custom zoom drawer for both shells, stale shared install cleanup (backend + UI), comprehensive backend + security audits, audit finding remediation, dead code removal, additional tests, governance docs update

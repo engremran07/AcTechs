@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/services/pdf_export_service.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
@@ -59,7 +60,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.dailyInOutReport,
               subtitle: l.dailyInOutReportDesc,
               isLoading: _activeReport == 'dailyInOut',
+              isExcelLoading: _activeReport == 'dailyInOut_excel',
               onTap: _isGenerating ? null : () => _generateDailyInOut(l),
+              onExcelTap: _isGenerating
+                  ? null
+                  : () => _exportDailyInOutToExcel(l),
             ),
 
             // ── Monthly In/Out ──
@@ -69,7 +74,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.monthlyInOutReport,
               subtitle: l.monthlyInOutReportDesc,
               isLoading: _activeReport == 'monthlyInOut',
+              isExcelLoading: _activeReport == 'monthlyInOut_excel',
               onTap: _isGenerating ? null : () => _generateMonthlyInOut(l),
+              onExcelTap: _isGenerating
+                  ? null
+                  : () => _exportMonthlyInOutToExcel(l),
             ),
 
             // ── AC Installs ──
@@ -79,7 +88,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.acInstallsReport,
               subtitle: l.acInstallsReportDesc,
               isLoading: _activeReport == 'acInstalls',
+              isExcelLoading: _activeReport == 'acInstalls_excel',
               onTap: _isGenerating ? null : () => _generateAcInstalls(l),
+              onExcelTap: _isGenerating
+                  ? null
+                  : () => _exportAcInstallsToExcel(l),
             ),
 
             // ── Jobs Report ──
@@ -89,7 +102,9 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.jobsReport,
               subtitle: l.jobsReportDesc,
               isLoading: _activeReport == 'jobs',
+              isExcelLoading: _activeReport == 'jobs_excel',
               onTap: _isGenerating ? null : () => _generateJobsReport(l),
+              onExcelTap: _isGenerating ? null : () => _exportJobsToExcel(l),
             ),
 
             // ── Shared Install ──
@@ -99,7 +114,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.sharedInstallReport,
               subtitle: l.sharedInstallReportDesc,
               isLoading: _activeReport == 'sharedInstall',
+              isExcelLoading: _activeReport == 'sharedInstall_excel',
               onTap: _isGenerating ? null : () => _generateSharedInstalls(l),
+              onExcelTap: _isGenerating
+                  ? null
+                  : () => _exportSharedInstallsToExcel(l),
             ),
 
             // ── Payment Settlement ──
@@ -109,7 +128,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
               title: l.paymentSettlementReport,
               subtitle: l.paymentSettlementReportDesc,
               isLoading: _activeReport == 'settlement',
+              isExcelLoading: _activeReport == 'settlement_excel',
               onTap: _isGenerating ? null : () => _generateSettlementReport(l),
+              onExcelTap: _isGenerating
+                  ? null
+                  : () => _exportSettlementToExcel(l),
             ),
 
             const SizedBox(height: 24),
@@ -345,6 +368,181 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     }
   }
 
+  // ── Excel export handlers ──────────────────────────────────────────────
+
+  Future<void> _exportDailyInOutToExcel(AppLocalizations l) async {
+    _setActive('dailyInOut_excel');
+    try {
+      final today = DateTime.now();
+      final month = DateTime(today.year, today.month);
+      final earnings =
+          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
+      final expenses =
+          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+      final todayEarnings = earnings
+          .where((e) => _isSameDay(e.date, today))
+          .toList();
+      final todayExpenses = expenses
+          .where((e) => _isSameDay(e.date, today))
+          .toList();
+
+      if (todayEarnings.isEmpty && todayExpenses.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportInOutToExcel(
+        earnings: todayEarnings,
+        expenses: todayExpenses,
+        reportDate: today,
+        dailyMode: true,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
+  Future<void> _exportMonthlyInOutToExcel(AppLocalizations l) async {
+    final picked = await _pickMonth();
+    if (picked == null) return;
+
+    _setActive('monthlyInOut_excel');
+    try {
+      final month = DateTime(picked.year, picked.month);
+      final earnings =
+          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
+      final expenses =
+          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+
+      if (earnings.isEmpty && expenses.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportInOutToExcel(
+        earnings: earnings,
+        expenses: expenses,
+        reportDate: month,
+        dailyMode: false,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
+  Future<void> _exportAcInstallsToExcel(AppLocalizations l) async {
+    final range = await _pickDateRange();
+    if (range == null) return;
+
+    _setActive('acInstalls_excel');
+    try {
+      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final filtered = allJobs
+          .where(
+            (j) =>
+                j.date != null &&
+                !j.date!.isBefore(range.start) &&
+                !j.date!.isAfter(range.end),
+          )
+          .toList();
+
+      if (filtered.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportJobsToExcel(
+        jobs: filtered,
+        technicianName: _techName,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
+  Future<void> _exportJobsToExcel(AppLocalizations l) async {
+    final range = await _pickDateRange();
+    if (range == null) return;
+
+    _setActive('jobs_excel');
+    try {
+      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final filtered = allJobs
+          .where(
+            (j) =>
+                j.date != null &&
+                !j.date!.isBefore(range.start) &&
+                !j.date!.isAfter(range.end),
+          )
+          .toList();
+
+      if (filtered.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportJobsToExcel(
+        jobs: filtered,
+        technicianName: _techName,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
+  Future<void> _exportSharedInstallsToExcel(AppLocalizations l) async {
+    _setActive('sharedInstall_excel');
+    try {
+      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final shared = allJobs.where((j) => j.isSharedInstall).toList();
+
+      if (shared.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportJobsToExcel(
+        jobs: shared,
+        technicianName: _techName,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
+  Future<void> _exportSettlementToExcel(AppLocalizations l) async {
+    _setActive('settlement_excel');
+    try {
+      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final settled = allJobs
+          .where((j) => j.settlementStatus != JobSettlementStatus.unpaid)
+          .toList();
+
+      if (settled.isEmpty) {
+        _showEmpty(l);
+        return;
+      }
+      await ExcelExport.exportSettlementToExcel(
+        jobs: settled,
+        reportBranding: _buildBranding(),
+      );
+    } catch (e) {
+      if (mounted) AppFeedback.error(context, message: e.toString());
+    } finally {
+      _clearActive();
+    }
+  }
+
   // ── Pickers ────────────────────────────────────────────────────────────
 
   Future<DateTime?> _pickMonth() async {
@@ -413,7 +611,9 @@ class _ReportCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.onExcelTap,
     this.isLoading = false,
+    this.isExcelLoading = false,
   });
 
   final IconData icon;
@@ -421,12 +621,15 @@ class _ReportCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final VoidCallback? onExcelTap;
   final bool isLoading;
+  final bool isExcelLoading;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final hasExcel = onExcelTap != null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -434,59 +637,141 @@ class _ReportCard extends StatelessWidget {
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Header row (non-tappable when Excel buttons are shown) ──
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, hasExcel ? 8 : 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
                   ),
-                  child: isLoading
-                      ? Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: color,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
-                        )
-                      : Icon(icon, color: color, size: 24),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!hasExcel)
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.3),
+                    ),
+                ],
+              ),
+            ),
+
+            // ── Export action buttons (shown when Excel is available) ──
+            if (hasExcel) ...[
+              Divider(
+                height: 1,
+                thickness: 1,
+                indent: 16,
+                endIndent: 16,
+                color: cs.outlineVariant.withValues(alpha: 0.4),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _ExportActionButton(
+                        icon: Icons.picture_as_pdf_rounded,
+                        label: 'PDF',
+                        color: color,
+                        isLoading: isLoading,
+                        onTap: onTap,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ExportActionButton(
+                        icon: Icons.table_chart_rounded,
+                        label: 'Excel',
+                        color: Colors.green.shade700,
+                        isLoading: isExcelLoading,
+                        onTap: onExcelTap,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
+              ),
+            ] else
+              // Full-card tap area when no Excel button is shown
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: cs.onSurface.withValues(alpha: 0.3),
-                ),
-              ],
-            ),
-          ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Compact export action button ─────────────────────────────────────────
+
+class _ExportActionButton extends StatelessWidget {
+  const _ExportActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: isLoading
+          ? SizedBox(
+              width: 15,
+              height: 15,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            )
+          : Icon(icon, size: 15, color: color),
+      label: Text(label, style: TextStyle(color: color, fontSize: 13)),
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: color.withValues(alpha: 0.45)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size(0, 36),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

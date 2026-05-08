@@ -9,6 +9,8 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
@@ -48,6 +50,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     ref.invalidate(pendingApprovalsProvider);
     ref.invalidate(allTechniciansProvider);
     ref.invalidate(allCompaniesProvider);
+    ref.invalidate(staleSharedAggregatesProvider);
   }
 
   @override
@@ -58,6 +61,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final pending = ref.watch(pendingApprovalsProvider);
     final technicians = ref.watch(allTechniciansProvider);
     final companies = ref.watch(allCompaniesProvider);
+    final pendingCollabs = ref.watch(pendingCollaborationAggregatesProvider);
+    final staleAggregates = ref.watch(staleSharedAggregatesProvider);
 
     return AppShortcuts(
       onRefresh: refresh,
@@ -286,6 +291,192 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(count: 3),
+                    error: (e, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Pending Collaborations — shared installs awaiting team contributions
+                  Text(
+                    l.pendingCollaborations,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  pendingCollabs.when(
+                    data: (aggList) {
+                      if (aggList.isEmpty) {
+                        return ArcticCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Center(
+                              child: Text(
+                                l.noPendingCollaborations,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.pendingCollaborationsDescription(aggList.length),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 8),
+                          ...aggList
+                              .take(5)
+                              .map(
+                                (agg) => ArcticCard(
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.group_work_outlined,
+                                        color: ArcticTheme.arcticBlue,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              agg.invoiceNumber,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.titleSmall,
+                                            ),
+                                            Text(
+                                              agg.companyName.isNotEmpty
+                                                  ? agg.companyName
+                                                  : agg.groupKey,
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '${agg.teamMemberIds.length}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: ArcticTheme.arcticBlue,
+                                            ),
+                                      ),
+                                      const Icon(
+                                        Icons.person_outline,
+                                        size: 16,
+                                        color: ArcticTheme.arcticTextSecondary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                        ],
+                      );
+                    },
+                    loading: () => const ArcticShimmer(count: 2),
+                    error: (e, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Stale Shared Installs — admin cleanup card
+                  staleAggregates.when(
+                    data: (staleList) {
+                      if (staleList.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l.staleSharedInstalls,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          ArcticCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: ArcticTheme.arcticWarning,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        l.staleSharedInstallsDescription(
+                                          staleList.length,
+                                        ),
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: FilledButton.tonal(
+                                    onPressed: () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: Text(l.cleanUpConfirmTitle),
+                                          content: Text(
+                                            l.cleanUpConfirmMessage(
+                                              staleList.length,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
+                                              child: Text(l.cancel),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
+                                              child: Text(l.cleanUpStale),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirmed != true) return;
+                                      final repo = ref.read(
+                                        jobRepositoryProvider,
+                                      );
+                                      for (final agg in staleList) {
+                                        await repo.archiveStaleSharedInstall(
+                                          agg.groupKey,
+                                        );
+                                      }
+                                      ref.invalidate(
+                                        staleSharedAggregatesProvider,
+                                      );
+                                      if (!context.mounted) return;
+                                      AppFeedback.success(
+                                        context,
+                                        message: l.staleCleanUpSuccess,
+                                      );
+                                    },
+                                    child: Text(l.cleanUpStale),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
                     error: (e, _) => const SizedBox.shrink(),
                   ),
                 ],

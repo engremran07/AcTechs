@@ -288,6 +288,7 @@ class UserRepository {
     required String uid,
     required String name,
     String? role,
+    String? phone,
   }) async {
     try {
       final updates = <String, dynamic>{'name': name};
@@ -295,6 +296,9 @@ class UserRepository {
         updates['role'] = role.trim().toLowerCase() == AppConstants.roleAdmin
             ? AppConstants.roleAdmin
             : AppConstants.roleTechnician;
+      }
+      if (phone != null) {
+        updates['phone'] = phone.trim();
       }
       await _usersRef.doc(uid).update(updates);
     } on FirebaseException catch (e) {
@@ -326,16 +330,22 @@ class UserRepository {
   /// Bulk toggle active status for a list of user IDs.
   Future<void> bulkToggleActive(List<String> uids, bool isActive) async {
     try {
-      final batch = firestore.batch();
-      for (final uid in uids) {
-        batch.update(_usersRef.doc(uid), {
-          'isActive': isActive,
-          'archivedAt': isActive
-              ? FieldValue.delete()
-              : FieldValue.serverTimestamp(),
-        });
+      // Firestore WriteBatch is limited to 500 operations per commit.
+      // Chunk by 499 to stay safely under the limit.
+      const chunkSize = 499;
+      for (var i = 0; i < uids.length; i += chunkSize) {
+        final chunk = uids.skip(i).take(chunkSize);
+        final batch = firestore.batch();
+        for (final uid in chunk) {
+          batch.update(_usersRef.doc(uid), {
+            'isActive': isActive,
+            'archivedAt': isActive
+                ? FieldValue.delete()
+                : FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
       }
-      await batch.commit();
     } on FirebaseException catch (e) {
       debugPrint('bulkToggleActive error code: ${e.code}');
       if (e.code == 'permission-denied') {
@@ -393,6 +403,39 @@ class UserRepository {
           'اجازت نہیں ہے۔ کیا آپ ابھی ایڈمن کے طور پر لاگ ان ہیں؟',
           'لا يوجد إذن. هل أنت لا تزال مسجل دخولاً كمسؤول؟',
         );
+      }
+      throw AdminException.userSaveFailed();
+    }
+  }
+
+  /// Permanently remove a Firestore user document for an **inactive** duplicate.
+  ///
+  /// This is the only path that physically deletes a user doc. It is guarded
+  /// by an active-status check so an active account can never be hard-deleted
+  /// through this method. The corresponding Firebase Auth account (if any) is
+  /// NOT deleted here — there is no Admin SDK on free tier. If the inactive
+  /// user also has an Auth account with a different email, it will remain
+  /// dormant and harmless.
+  Future<void> hardDeleteUser(String uid) async {
+    try {
+      final doc = await _usersRef.doc(uid).get();
+      if (!doc.exists) return;
+      final data = doc.data()!;
+      if (data['isActive'] == true) {
+        throw const AdminException(
+          'hard_delete_active',
+          'Cannot permanently delete an active user. Deactivate them first.',
+          'فعال صارف کو مستقل طور پر حذف نہیں کیا جا سکتا۔ پہلے غیر فعال کریں۔',
+          'لا يمكن حذف مستخدم نشط بشكل دائم. أوقف تشغيله أولاً.',
+        );
+      }
+      await _usersRef.doc(uid).delete();
+    } on AdminException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('hardDeleteUser error code: ${e.code}');
+      if (e.code == 'permission-denied') {
+        throw AdminException.noPermission();
       }
       throw AdminException.userSaveFailed();
     }
@@ -1108,8 +1151,30 @@ class UserRepository {
         consumedDeliveryAmount += _deliveryAmount(job.data);
       }
 
+      // Build teamMemberIds / teamMemberNames in submission order.
+      // Sort jobs by submittedAt so the creator (first submitter) is index 0,
+      // matching the teamMemberIds[0] == createdBy contract.
+      final sortedJobs = List<_InvoiceMigrationJobState>.from(jobs)
+        ..sort(
+          (a, b) => (a.submittedAt ?? DateTime(0)).compareTo(
+            b.submittedAt ?? DateTime(0),
+          ),
+        );
+      final teamMemberIds = <String>[];
+      final teamMemberNames = <String>[];
+      for (final j in sortedJobs) {
+        if (!teamMemberIds.contains(j.techId)) {
+          teamMemberIds.add(j.techId);
+          teamMemberNames.add((j.data['techName'] as String?) ?? j.techId);
+        }
+      }
+
       docs[_sharedAggregateDocId(entry.key)] = {
         'groupKey': entry.key,
+        'companyId': first.companyId,
+        'companyName': first.companyName,
+        'teamMemberIds': teamMemberIds,
+        'teamMemberNames': teamMemberNames,
         'sharedInvoiceSplitUnits': _readInt(
           first.data,
           'sharedInvoiceSplitUnits',

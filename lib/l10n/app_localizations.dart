@@ -271,7 +271,7 @@ abstract class AppLocalizations {
   /// No description provided for @clearPeriodLock.
   ///
   /// In en, this message translates to:
-  /// **'Clear Period Lock'**
+  /// **'Clear Lock'**
   String get clearPeriodLock;
 
   /// No description provided for @lockedPeriodDescription.
@@ -697,7 +697,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Generate and share PDF reports'**
+  /// **'Generate and share PDF and Excel reports'**
   String get reportsSubtitle;
 
   /// No description provided for @dailyInOutReport.
@@ -1227,6 +1227,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'User archived successfully!'**
   String get userDeleted;
+
+  /// No description provided for @duplicateEmailWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate Email Detected'**
+  String get duplicateEmailWarningTitle;
+
+  /// No description provided for @duplicateEmailWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one {1 inactive account shares} other {{count} inactive accounts share}} an email with an active user. Remove the duplicate(s) to keep data clean.'**
+  String duplicateEmailWarningBody(int count);
+
+  /// No description provided for @removeDuplicateUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeDuplicateUser;
+
+  /// No description provided for @userPermanentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate user permanently removed.'**
+  String get userPermanentlyDeleted;
 
   /// No description provided for @usersActivated.
   ///
@@ -3702,7 +3726,7 @@ abstract class AppLocalizations {
   /// No description provided for @staleSharedInstallsDescription.
   ///
   /// In en, this message translates to:
-  /// **'{count} shared install(s) older than 7 days with incomplete contributions.'**
+  /// **'{count} shared install(s) older than 30 days with incomplete contributions.'**
   String staleSharedInstallsDescription(int count);
 
   /// No description provided for @cleanUpStale.
@@ -3728,6 +3752,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stale installs archived successfully.'**
   String get staleCleanUpSuccess;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phone;
+
+  /// No description provided for @whatsappNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp is not available on this device'**
+  String get whatsappNotAvailable;
+
+  /// No description provided for @cassetteAcNotSupportedInSharedInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Cassette AC units cannot be used in shared installs'**
+  String get cassetteAcNotSupportedInSharedInstall;
+
+  /// No description provided for @notifyTeamViaWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify Team via WhatsApp'**
+  String get notifyTeamViaWhatsapp;
+
+  /// No description provided for @sharedInstallContributionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, shared install for invoice {invoiceNumber} needs your contribution in AC Techs.'**
+  String sharedInstallContributionMessage(String invoiceNumber);
+
+  /// No description provided for @pendingCollaborations.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Collaborations'**
+  String get pendingCollaborations;
+
+  /// No description provided for @pendingCollaborationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shared install(s) awaiting contributions from team members.'**
+  String pendingCollaborationsDescription(int count);
+
+  /// No description provided for @noPendingCollaborations.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending shared install collaborations.'**
+  String get noPendingCollaborations;
 }
 
 class _AppLocalizationsDelegate

@@ -11,6 +11,7 @@ import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/expenses/data/ac_install_repository.dart';
@@ -1349,6 +1350,56 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                       ],
                     ),
                   ),
+                  // WhatsApp button to contact the tech about this job
+                  Builder(
+                    builder: (context) {
+                      final techPhone =
+                          ref
+                              .watch(allTechniciansProvider)
+                              .value
+                              ?.firstWhere(
+                                (u) => u.uid == job.techId,
+                                orElse: () => const UserModel(
+                                  uid: '',
+                                  email: '',
+                                  name: '',
+                                  role: 'technician',
+                                ),
+                              )
+                              .phone ??
+                          '';
+                      if (techPhone.trim().isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return IconButton(
+                        onPressed: () async {
+                          final opened = await WhatsAppLauncher.openChat(
+                            techPhone,
+                          );
+                          if (!opened && context.mounted) {
+                            AppFeedback.error(
+                              context,
+                              message: AppLocalizations.of(
+                                context,
+                              )!.whatsappNotAvailable,
+                            );
+                          }
+                        },
+                        icon: const FaIcon(
+                          FontAwesomeIcons.whatsapp,
+                          color: ArcticTheme.arcticSuccess,
+                          size: 18,
+                        ),
+                        tooltip: job.techName,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minHeight: 32,
+                          minWidth: 32,
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
               Divider(height: 24, color: dividerColor),
@@ -1380,7 +1431,17 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                     ),
                     IconButton(
                       onPressed: () async {
-                        await WhatsAppLauncher.openChat(job.clientContact);
+                        final opened = await WhatsAppLauncher.openChat(
+                          job.clientContact,
+                        );
+                        if (!opened && context.mounted) {
+                          AppFeedback.error(
+                            context,
+                            message: AppLocalizations.of(
+                              context,
+                            )!.whatsappNotAvailable,
+                          );
+                        }
                       },
                       icon: const FaIcon(
                         FontAwesomeIcons.whatsapp,

@@ -111,7 +111,7 @@
   "leavePage": "Leave",
   "settings": "Settings",
   "reports": "Reports",
-  "reportsSubtitle": "Generate and share PDF reports",
+  "reportsSubtitle": "Generate and share PDF and Excel reports",
   "dailyInOutReport": "Daily In/Out Report",
   "dailyInOutReportDesc": "Today's earnings and expenses summary",
   "monthlyInOutReport": "Monthly In/Out Report",
@@ -203,6 +203,13 @@
   "userCreated": "User created successfully!",
   "userUpdated": "User updated successfully!",
   "userDeleted": "User archived successfully!",
+  "duplicateEmailWarningTitle": "Duplicate Email Detected",
+  "duplicateEmailWarningBody": "{count, plural, one {1 inactive account shares} other {{count} inactive accounts share}} an email with an active user. Remove the duplicate(s) to keep data clean.",
+  "@duplicateEmailWarningBody": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "removeDuplicateUser": "Remove",
+  "userPermanentlyDeleted": "Duplicate user permanently removed.",
   "usersActivated": "Users activated",
   "usersDeactivated": "Users deactivated",
   "bulkActivate": "Activate Selected",
@@ -724,7 +731,7 @@
   "importData": "Import Data",
   "reconciliation": "Reconciliation",
   "staleSharedInstalls": "Stale Shared Installs",
-  "staleSharedInstallsDescription": "{count} shared install(s) older than 7 days with incomplete contributions.",
+  "staleSharedInstallsDescription": "{count} shared install(s) older than 30 days with incomplete contributions.",
   "@staleSharedInstallsDescription": {
     "placeholders": {
       "count": {
@@ -742,5 +749,20 @@
       }
     }
   },
-  "staleCleanUpSuccess": "Stale installs archived successfully."
+  "staleCleanUpSuccess": "Stale installs archived successfully.",
+  "phone": "Phone Number",
+  "whatsappNotAvailable": "WhatsApp is not available on this device",
+  "cassetteAcNotSupportedInSharedInstall": "Cassette AC units cannot be used in shared installs",
+  "clearPeriodLock": "Clear Lock",
+  "notifyTeamViaWhatsapp": "Notify Team via WhatsApp",
+  "sharedInstallContributionMessage": "Hi, shared install for invoice {invoiceNumber} needs your contribution in AC Techs.",
+  "@sharedInstallContributionMessage": {
+    "placeholders": { "invoiceNumber": { "type": "String" } }
+  },
+  "pendingCollaborations": "Pending Collaborations",
+  "pendingCollaborationsDescription": "{count} shared install(s) awaiting contributions from team members.",
+  "@pendingCollaborationsDescription": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noPendingCollaborations": "No pending shared install collaborations."
 }

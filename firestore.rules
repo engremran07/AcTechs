@@ -831,7 +831,8 @@ service cloud.firestore {
           'name',
           'email',
           'emailLower',
-          'themeMode'
+          'themeMode',
+          'phone'
         ]) &&
         request.resource.data.get('name', '') is string &&
         request.resource.data.get('name', '').size() > 0 &&

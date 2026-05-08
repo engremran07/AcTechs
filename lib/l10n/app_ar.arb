@@ -111,7 +111,7 @@
   "leavePage": "مغادرة",
   "settings": "الإعدادات",
   "reports": "التقارير",
-  "reportsSubtitle": "إنشاء ومشاركة تقارير PDF",
+  "reportsSubtitle": "إنشاء ومشاركة تقارير PDF وExcel",
   "dailyInOutReport": "تقرير الدخل/المصروفات اليومي",
   "dailyInOutReportDesc": "ملخص الأرباح والمصروفات اليوم",
   "monthlyInOutReport": "تقرير الدخل/المصروفات الشهري",
@@ -203,6 +203,13 @@
   "userCreated": "تم إنشاء المستخدم بنجاح!",
   "userUpdated": "تم تحديث المستخدم بنجاح!",
   "userDeleted": "تمت أرشفة المستخدم بنجاح!",
+  "duplicateEmailWarningTitle": "تم اكتشاف بريد إلكتروني مكرر",
+  "duplicateEmailWarningBody": "{count, plural, one {حساب غير نشط يشارك} other {{count} حسابات غير نشطة تشارك}} البريد الإلكتروني مع مستخدم نشط. احذف التكرار للحفاظ على نظافة البيانات.",
+  "@duplicateEmailWarningBody": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "removeDuplicateUser": "إزالة",
+  "userPermanentlyDeleted": "تمت إزالة المستخدم المكرر نهائياً.",
   "usersActivated": "تم تفعيل المستخدمين",
   "usersDeactivated": "تم تعطيل المستخدمين",
   "bulkActivate": "تفعيل المحددين",
@@ -725,7 +732,7 @@
   "importData": "استيراد البيانات",
   "reconciliation": "المطابقة",
   "staleSharedInstalls": "تركيبات مشتركة قديمة",
-  "staleSharedInstallsDescription": "{count} تركيب(تركيبات) مشتركة أقدم من 7 أيام مع مساهمات غير مكتملة.",
+  "staleSharedInstallsDescription": "{count} تركيب(تركيبات) مشتركة أقدم من 30 يومًا مع مساهمات غير مكتملة.",
   "@staleSharedInstallsDescription": {
     "placeholders": {
       "count": {
@@ -743,5 +750,20 @@
       }
     }
   },
-  "staleCleanUpSuccess": "تمت أرشفة التركيبات القديمة بنجاح."
+  "staleCleanUpSuccess": "تمت أرشفة التركيبات القديمة بنجاح.",
+  "phone": "رقم الهاتف",
+  "whatsappNotAvailable": "WhatsApp غير متوفر على هذا الجهاز",
+  "cassetteAcNotSupportedInSharedInstall": "لا يمكن استخدام مكيف الكاسيت في التركيبات المشتركة",
+  "clearPeriodLock": "إزالة القفل",
+  "notifyTeamViaWhatsapp": "إشعار الفريق عبر WhatsApp",
+  "sharedInstallContributionMessage": "مرحباً، التركيب المشترك للفاتورة {invoiceNumber} يحتاج إلى مساهمتك في AC Techs.",
+  "@sharedInstallContributionMessage": {
+    "placeholders": { "invoiceNumber": { "type": "String" } }
+  },
+  "pendingCollaborations": "التعاونات المعلقة",
+  "pendingCollaborationsDescription": "{count} تركيب(تركيبات) مشتركة تنتظر مساهمات الفريق.",
+  "@pendingCollaborationsDescription": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noPendingCollaborations": "لا توجد تعاونات تركيبات مشتركة معلقة."
 }

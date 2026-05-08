@@ -1,7 +1,7 @@
 {
     "name": "AC Techs",
     "short_name": "AC Techs",
-    "id": "/",
+    "id": "/actechs",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0A0E1A",
@@ -31,6 +31,22 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "icons/ac-techs-icon-512-v2.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "AC Techs — Technician Dashboard"
+        },
+        {
+            "src": "icons/ac-techs-icon-512-v2.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "AC Techs — Admin Dashboard"
         }
     ]
 }

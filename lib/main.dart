@@ -29,12 +29,26 @@ void main() async {
     // auth will fail gracefully when user tries to sign in.
   }
 
+  // App Check: Android (Play Integrity in release, debug token in debug mode)
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     await FirebaseAppCheck.instance.activate(
       providerAndroid: kDebugMode
           ? const AndroidDebugProvider()
           : const AndroidPlayIntegrityProvider(),
     );
+  } else if (kIsWeb) {
+    // Web App Check — reCAPTCHA v3.
+    // Replace the placeholder with your actual site key from:
+    // Firebase Console → App Check → Apps → web
+    const webAppCheckSiteKey = String.fromEnvironment(
+      'FIREBASE_APP_CHECK_WEB_KEY',
+      defaultValue: 'YOUR_RECAPTCHA_V3_SITE_KEY',
+    );
+    if (webAppCheckSiteKey != 'YOUR_RECAPTCHA_V3_SITE_KEY') {
+      await FirebaseAppCheck.instance.activate(
+        providerWeb: ReCaptchaV3Provider(webAppCheckSiteKey),
+      );
+    }
   }
 
   final prefs = await SharedPreferences.getInstance();

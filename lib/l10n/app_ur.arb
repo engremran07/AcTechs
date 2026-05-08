@@ -111,7 +111,7 @@
   "leavePage": "چھوڑ دیں",
   "settings": "سیٹنگز",
   "reports": "رپورٹس",
-  "reportsSubtitle": "PDF رپورٹس بنائیں اور شیئر کریں",
+  "reportsSubtitle": "PDF اور Excel رپورٹس بنائیں اور شیئر کریں",
   "dailyInOutReport": "روزانہ آمد/اخراجات رپورٹ",
   "dailyInOutReportDesc": "آج کی آمدنی اور اخراجات کا خلاصہ",
   "monthlyInOutReport": "ماہانہ آمد/اخراجات رپورٹ",
@@ -203,6 +203,13 @@
   "userCreated": "صارف کامیابی سے بنایا گیا!",
   "userUpdated": "صارف کامیابی سے اپ ڈیٹ ہو گیا!",
   "userDeleted": "صارف کامیابی سے محفوظ کر کے غیر فعال کر دیا گیا!",
+  "duplicateEmailWarningTitle": "ڈپلیکیٹ ای میل پائی گئی",
+  "duplicateEmailWarningBody": "{count, plural, one {ایک غیر فعال اکاؤنٹ} other {{count} غیر فعال اکاؤنٹس}} ایک فعال صارف کے ساتھ ای میل شیئر کرتا ہے۔ ڈیٹا صاف رکھنے کے لیے ڈپلیکیٹ ہٹائیں۔",
+  "@duplicateEmailWarningBody": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "removeDuplicateUser": "ہٹائیں",
+  "userPermanentlyDeleted": "ڈپلیکیٹ صارف مستقل طور پر حذف کر دیا گیا۔",
   "usersActivated": "صارفین فعال ہو گئے",
   "usersDeactivated": "صارفین غیر فعال ہو گئے",
   "bulkActivate": "منتخب کو فعال کریں",
@@ -725,7 +732,7 @@
   "importData": "ڈیٹا درآمد",
   "reconciliation": "مفاہمت",
   "staleSharedInstalls": "پرانی مشترکہ تنصیبات",
-  "staleSharedInstallsDescription": "{count} مشترکہ تنصیب(تنصیبات) 7 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔",
+  "staleSharedInstallsDescription": "{count} مشترکہ تنصیب(تنصیبات) 30 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔",
   "@staleSharedInstallsDescription": {
     "placeholders": {
       "count": {
@@ -743,5 +750,20 @@
       }
     }
   },
-  "staleCleanUpSuccess": "پرانی تنصیبات کامیابی سے آرکائیو ہو گئیں۔"
+  "staleCleanUpSuccess": "پرانی تنصیبات کامیابی سے آرکائیو ہو گئیں۔",
+  "phone": "فون نمبر",
+  "whatsappNotAvailable": "اس ڈیوائس پر واٹس ایپ دستیاب نہیں",
+  "cassetteAcNotSupportedInSharedInstall": "کیسٹ اے سی شیئرڈ انسٹال میں استعمال نہیں ہو سکتا",
+  "clearPeriodLock": "لاک ہٹائیں",
+  "notifyTeamViaWhatsapp": "واٹس ایپ سے ٹیم کو اطلاع دیں",
+  "sharedInstallContributionMessage": "السلام علیکم، انوائس {invoiceNumber} کے لیے شیئرڈ انسٹال میں آپ کا حصہ درکار ہے۔",
+  "@sharedInstallContributionMessage": {
+    "placeholders": { "invoiceNumber": { "type": "String" } }
+  },
+  "pendingCollaborations": "زیر التزام شراکتیں",
+  "pendingCollaborationsDescription": "{count} مشترکہ انسٹال(تنصیبات) ٹیم کی شراکت کے منتظر ہیں۔",
+  "@pendingCollaborationsDescription": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "noPendingCollaborations": "کوئی زیر التزام مشترکہ انسٹال شراکتیں نہیں۔"
 }

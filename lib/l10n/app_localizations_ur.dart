@@ -95,7 +95,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get noPeriodLock => 'ابھی کوئی پیریڈ لاک فعال نہیں ہے۔';
 
   @override
-  String get clearPeriodLock => 'پیریڈ لاک ختم کریں';
+  String get clearPeriodLock => 'لاک ہٹائیں';
 
   @override
   String get lockedPeriodDescription =>
@@ -318,7 +318,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get reports => 'رپورٹس';
 
   @override
-  String get reportsSubtitle => 'PDF رپورٹس بنائیں اور شیئر کریں';
+  String get reportsSubtitle => 'PDF اور Excel رپورٹس بنائیں اور شیئر کریں';
 
   @override
   String get dailyInOutReport => 'روزانہ آمد/اخراجات رپورٹ';
@@ -589,6 +589,27 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get userDeleted => 'صارف کامیابی سے محفوظ کر کے غیر فعال کر دیا گیا!';
+
+  @override
+  String get duplicateEmailWarningTitle => 'ڈپلیکیٹ ای میل پائی گئی';
+
+  @override
+  String duplicateEmailWarningBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count غیر فعال اکاؤنٹس',
+      one: 'ایک غیر فعال اکاؤنٹ',
+    );
+    return '$_temp0 ایک فعال صارف کے ساتھ ای میل شیئر کرتا ہے۔ ڈیٹا صاف رکھنے کے لیے ڈپلیکیٹ ہٹائیں۔';
+  }
+
+  @override
+  String get removeDuplicateUser => 'ہٹائیں';
+
+  @override
+  String get userPermanentlyDeleted =>
+      'ڈپلیکیٹ صارف مستقل طور پر حذف کر دیا گیا۔';
 
   @override
   String get usersActivated => 'صارفین فعال ہو گئے';
@@ -1941,7 +1962,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String staleSharedInstallsDescription(int count) {
-    return '$count مشترکہ تنصیب(تنصیبات) 7 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔';
+    return '$count مشترکہ تنصیب(تنصیبات) 30 دن سے زیادہ پرانی نامکمل شراکتوں کے ساتھ۔';
   }
 
   @override
@@ -1957,4 +1978,34 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get staleCleanUpSuccess => 'پرانی تنصیبات کامیابی سے آرکائیو ہو گئیں۔';
+
+  @override
+  String get phone => 'فون نمبر';
+
+  @override
+  String get whatsappNotAvailable => 'اس ڈیوائس پر واٹس ایپ دستیاب نہیں';
+
+  @override
+  String get cassetteAcNotSupportedInSharedInstall =>
+      'کیسٹ اے سی شیئرڈ انسٹال میں استعمال نہیں ہو سکتا';
+
+  @override
+  String get notifyTeamViaWhatsapp => 'واٹس ایپ سے ٹیم کو اطلاع دیں';
+
+  @override
+  String sharedInstallContributionMessage(String invoiceNumber) {
+    return 'السلام علیکم، انوائس $invoiceNumber کے لیے شیئرڈ انسٹال میں آپ کا حصہ درکار ہے۔';
+  }
+
+  @override
+  String get pendingCollaborations => 'زیر التزام شراکتیں';
+
+  @override
+  String pendingCollaborationsDescription(int count) {
+    return '$count مشترکہ انسٹال(تنصیبات) ٹیم کی شراکت کے منتظر ہیں۔';
+  }
+
+  @override
+  String get noPendingCollaborations =>
+      'کوئی زیر التزام مشترکہ انسٹال شراکتیں نہیں۔';
 }

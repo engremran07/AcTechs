@@ -1,10 +1,13 @@
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -349,6 +352,7 @@ class _InvoiceSettlementsScreenState
     final settlementsAsync = _scope == _scopeHistory
         ? ref.watch(adminSettlementHistoryProvider)
         : ref.watch(adminSettlementCandidatesProvider);
+    final technicians = ref.watch(allTechniciansProvider).value ?? [];
 
     return Scaffold(
       appBar: AppBar(title: Text(l.invoiceSettlements)),
@@ -530,6 +534,48 @@ class _InvoiceSettlementsScreenState
                                                   ),
                                             ),
                                         ],
+                                      ),
+                                      secondary: Builder(
+                                        builder: (ctx) {
+                                          final techPhone = technicians
+                                              .firstWhere(
+                                                (u) => u.uid == job.techId,
+                                                orElse: () => const UserModel(
+                                                  uid: '',
+                                                  email: '',
+                                                  name: '',
+                                                  role: 'technician',
+                                                ),
+                                              )
+                                              .phone;
+                                          if (techPhone.trim().isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return IconButton(
+                                            onPressed: () async {
+                                              final opened =
+                                                  await WhatsAppLauncher.openChat(
+                                                    techPhone,
+                                                  );
+                                              if (!opened && ctx.mounted) {
+                                                AppFeedback.error(
+                                                  ctx,
+                                                  message: AppLocalizations.of(
+                                                    ctx,
+                                                  )!.whatsappNotAvailable,
+                                                );
+                                              }
+                                            },
+                                            icon: const FaIcon(
+                                              FontAwesomeIcons.whatsapp,
+                                              color: ArcticTheme.arcticSuccess,
+                                              size: 18,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            tooltip: job.techName,
+                                          );
+                                        },
                                       ),
                                     ),
                                   )

@@ -57,6 +57,34 @@ final allUsersProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
   return ref.watch(userRepositoryProvider).allUsers();
 });
 
+/// Inactive user documents whose email is shared with at
+/// least one active user. Derived from [allUsersProvider] — zero extra
+/// Firestore listeners.
+///
+/// These are the candidates the admin must hard-delete to resolve the
+/// duplicate-email data-integrity problem.
+final duplicateEmailUsersProvider =
+    Provider.autoDispose<AsyncValue<List<UserModel>>>((ref) {
+      return ref.watch(allUsersProvider).whenData((all) {
+        // Group by normalised email.
+        final byEmail = <String, List<UserModel>>{};
+        for (final u in all) {
+          final key = u.email.toLowerCase();
+          byEmail.putIfAbsent(key, () => []).add(u);
+        }
+        // Return only inactive users whose email bucket also contains an
+        // active user — those are the stale duplicates to purge.
+        final duplicates = <UserModel>[];
+        for (final group in byEmail.values) {
+          if (group.length < 2) continue;
+          final hasActive = group.any((u) => u.isActive);
+          if (!hasActive) continue;
+          duplicates.addAll(group.where((u) => !u.isActive));
+        }
+        return duplicates;
+      });
+    });
+
 final flushDatabaseProvider =
     AsyncNotifierProvider<FlushDatabaseNotifier, FlushProgressState>(
       FlushDatabaseNotifier.new,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -210,6 +212,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final l = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(text: user.name);
     final emailCtrl = TextEditingController(text: user.email);
+    final phoneCtrl = TextEditingController(text: user.phone);
     final formKey = GlobalKey<FormState>();
     String selectedRole = user.isAdmin
         ? AppConstants.roleAdmin
@@ -244,6 +247,16 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   decoration: InputDecoration(
                     hintText: l.email,
                     prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: phoneCtrl,
+                  textInputAction: TextInputAction.next,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    hintText: l.phone,
+                    prefixIcon: const Icon(Icons.phone_outlined),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -300,6 +313,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             uid: user.uid,
             name: nameCtrl.text.trim(),
             role: selectedRole,
+            phone: phoneCtrl.text.trim(),
           );
       if (!mounted) return;
       // Invalidate provider to refresh the list if needed
@@ -398,6 +412,41 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     }
   }
 
+  Future<void> _handlePurgeEmailDuplicate(UserModel user) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.duplicateEmailWarningTitle),
+        content: Text(l.confirmDeleteUser(user.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ArcticTheme.arcticError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(userRepositoryProvider).hardDeleteUser(user.uid);
+      if (!mounted) return;
+      ref.invalidate(allUsersProvider);
+      AppFeedback.success(context, message: l.userPermanentlyDeleted);
+    } on AppException catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: e.message(locale));
+    }
+  }
+
   Future<void> _toggleUserStatus(UserModel user) async {
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
@@ -473,6 +522,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
 
               return Column(
                 children: [
+                  _DuplicateEmailBanner(onRemove: _handlePurgeEmailDuplicate),
                   Padding(
                     padding: const EdgeInsetsDirectional.fromSTEB(
                       16,
@@ -640,6 +690,18 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           onResetPassword: () => _handlePasswordReset(tech),
           onToggleActive: () => _toggleUserStatus(tech),
           onDelete: () => _handleDeleteUser(tech),
+          onWhatsApp: tech.phone.isNotEmpty
+              ? () async {
+                  final opened = await WhatsAppLauncher.openChat(tech.phone);
+                  if (!opened) {
+                    if (!mounted) return;
+                    final msg = AppLocalizations.of(
+                      context,
+                    )!.whatsappNotAvailable;
+                    AppFeedback.error(context, message: msg);
+                  }
+                }
+              : null,
         ),
       ),
     );
@@ -654,6 +716,7 @@ class _TechCard extends ConsumerWidget {
     this.onResetPassword,
     this.onToggleActive,
     this.onDelete,
+    this.onWhatsApp,
   });
 
   final UserModel user;
@@ -662,6 +725,7 @@ class _TechCard extends ConsumerWidget {
   final VoidCallback? onResetPassword;
   final VoidCallback? onToggleActive;
   final VoidCallback? onDelete;
+  final VoidCallback? onWhatsApp;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -747,6 +811,13 @@ class _TechCard extends ConsumerWidget {
                 ],
               ),
             ),
+            if (user.phone.isNotEmpty)
+              IconButton(
+                icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 20),
+                color: ArcticTheme.arcticSuccess,
+                tooltip: 'WhatsApp',
+                onPressed: onWhatsApp,
+              ),
             PopupMenuButton<String>(
               tooltip: l.editTechnician,
               onSelected: (action) {
@@ -801,6 +872,89 @@ class _CountBadge extends StatelessWidget {
         ),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
+    );
+  }
+}
+
+/// Shows a warning banner when inactive users share an email with an active
+/// user. Derived from [duplicateEmailUsersProvider] — zero extra Firestore
+/// listeners.
+class _DuplicateEmailBanner extends ConsumerWidget {
+  const _DuplicateEmailBanner({required this.onRemove});
+
+  final void Function(UserModel user) onRemove;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final duplicates = ref.watch(duplicateEmailUsersProvider);
+    return duplicates.when(
+      data: (users) {
+        if (users.isEmpty) return const SizedBox.shrink();
+        final l = AppLocalizations.of(context)!;
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ArcticTheme.arcticWarning.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: ArcticTheme.arcticWarning.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: ArcticTheme.arcticWarning,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.duplicateEmailWarningTitle,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: ArcticTheme.arcticWarning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l.duplicateEmailWarningBody(users.length),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              ...users.map(
+                (u) => Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${u.name} (${u.email})',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => onRemove(u),
+                      style: TextButton.styleFrom(
+                        foregroundColor: ArcticTheme.arcticError,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      child: Text(l.removeDuplicateUser),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(duration: 280.ms);
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

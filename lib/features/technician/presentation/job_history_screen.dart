@@ -1281,7 +1281,17 @@ class _HistoryJobCard extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () async {
-                    await WhatsAppLauncher.openChat(job.clientContact);
+                    final opened = await WhatsAppLauncher.openChat(
+                      job.clientContact,
+                    );
+                    if (!opened && context.mounted) {
+                      AppFeedback.error(
+                        context,
+                        message: AppLocalizations.of(
+                          context,
+                        )!.whatsappNotAvailable,
+                      );
+                    }
                   },
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,

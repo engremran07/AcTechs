@@ -95,7 +95,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPeriodLock => 'No period lock is active.';
 
   @override
-  String get clearPeriodLock => 'Clear Period Lock';
+  String get clearPeriodLock => 'Clear Lock';
 
   @override
   String get lockedPeriodDescription =>
@@ -319,7 +319,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reports => 'Reports';
 
   @override
-  String get reportsSubtitle => 'Generate and share PDF reports';
+  String get reportsSubtitle => 'Generate and share PDF and Excel reports';
 
   @override
   String get dailyInOutReport => 'Daily In/Out Report';
@@ -588,6 +588,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userDeleted => 'User archived successfully!';
+
+  @override
+  String get duplicateEmailWarningTitle => 'Duplicate Email Detected';
+
+  @override
+  String duplicateEmailWarningBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count inactive accounts share',
+      one: '1 inactive account shares',
+    );
+    return '$_temp0 an email with an active user. Remove the duplicate(s) to keep data clean.';
+  }
+
+  @override
+  String get removeDuplicateUser => 'Remove';
+
+  @override
+  String get userPermanentlyDeleted => 'Duplicate user permanently removed.';
 
   @override
   String get usersActivated => 'Users activated';
@@ -1933,7 +1953,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String staleSharedInstallsDescription(int count) {
-    return '$count shared install(s) older than 7 days with incomplete contributions.';
+    return '$count shared install(s) older than 30 days with incomplete contributions.';
   }
 
   @override
@@ -1949,4 +1969,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get staleCleanUpSuccess => 'Stale installs archived successfully.';
+
+  @override
+  String get phone => 'Phone Number';
+
+  @override
+  String get whatsappNotAvailable => 'WhatsApp is not available on this device';
+
+  @override
+  String get cassetteAcNotSupportedInSharedInstall =>
+      'Cassette AC units cannot be used in shared installs';
+
+  @override
+  String get notifyTeamViaWhatsapp => 'Notify Team via WhatsApp';
+
+  @override
+  String sharedInstallContributionMessage(String invoiceNumber) {
+    return 'Hi, shared install for invoice $invoiceNumber needs your contribution in AC Techs.';
+  }
+
+  @override
+  String get pendingCollaborations => 'Pending Collaborations';
+
+  @override
+  String pendingCollaborationsDescription(int count) {
+    return '$count shared install(s) awaiting contributions from team members.';
+  }
+
+  @override
+  String get noPendingCollaborations =>
+      'No pending shared install collaborations.';
 }

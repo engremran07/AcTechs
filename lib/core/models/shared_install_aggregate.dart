@@ -37,6 +37,7 @@ class SharedInstallAggregate {
     required this.consumedDeliveryAmount,
     this.clientName = '',
     this.clientContact = '',
+    this.isDeleted = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -84,6 +85,9 @@ class SharedInstallAggregate {
   /// allows teammates to pre-fill the form without reading each other's jobs.
   final String clientName;
   final String clientContact;
+
+  /// Whether this aggregate has been soft-deleted by admin (stale cleanup).
+  final bool isDeleted;
 
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -136,6 +140,7 @@ class SharedInstallAggregate {
       consumedDeliveryAmount: _double(data, 'consumedDeliveryAmount'),
       clientName: (data['clientName'] as String?) ?? '',
       clientContact: (data['clientContact'] as String?) ?? '',
+      isDeleted: (data['isDeleted'] as bool?) ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -190,9 +195,21 @@ class SharedInstallAggregate {
   }
 
   /// Invoice number extracted from [groupKey].
-  /// GroupKey format: "{companyId}-{invoiceNumber}". Firestore auto-IDs are
-  /// base62 (no hyphens), so splitting at the first '-' is safe.
+  ///
+  /// GroupKey format: "{companyId}-{invoiceNumber}". Uses [companyId] to
+  /// locate the separator safely — avoids breaking if companyId itself
+  /// contains hyphens (e.g. "my-company-id-INV001").
+  ///
+  /// Falls back to splitting at the first '-' for legacy docs without
+  /// a stored companyId.
   String get invoiceNumber {
+    if (companyId.isNotEmpty) {
+      final prefix = '$companyId-';
+      if (groupKey.startsWith(prefix)) {
+        return groupKey.substring(prefix.length);
+      }
+    }
+    // Legacy fallback: split at first '-'
     final idx = groupKey.indexOf('-');
     return idx == -1 ? groupKey : groupKey.substring(idx + 1);
   }

@@ -15,6 +15,7 @@ abstract class UserModel with _$UserModel {
     @Default(true) bool isActive,
     @Default('en') String language,
     @Default('dark') String themeMode,
+    @Default('') String phone,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? createdAt,
   }) = _UserModel;

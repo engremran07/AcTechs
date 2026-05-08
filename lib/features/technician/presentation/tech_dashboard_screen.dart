@@ -334,62 +334,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                           ...aggregates.map(
                             (agg) => Padding(
                               padding: const EdgeInsets.only(bottom: 8),
-                              child: ArcticCard(
-                                onTap: () =>
-                                    context.go('/tech/submit', extra: agg),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: ArcticTheme.arcticWarning
-                                            .withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Icon(
-                                        Icons.group_work_outlined,
-                                        color: ArcticTheme.arcticWarning,
-                                        size: 22,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            agg.invoiceNumber.isNotEmpty
-                                                ? agg.invoiceNumber
-                                                : agg.groupKey,
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.titleSmall,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            l.teamJobPending,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color:
-                                                      ArcticTheme.arcticWarning,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      color: ArcticTheme.arcticWarning,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              child: _SharedInstallCard(agg: agg),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -668,7 +613,17 @@ class _JobCard extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: () async {
-                    await WhatsAppLauncher.openChat(job.clientContact);
+                    final opened = await WhatsAppLauncher.openChat(
+                      job.clientContact,
+                    );
+                    if (!opened && context.mounted) {
+                      AppFeedback.error(
+                        context,
+                        message: AppLocalizations.of(
+                          context,
+                        )!.whatsappNotAvailable,
+                      );
+                    }
                   },
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,
@@ -734,6 +689,69 @@ class _JobCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Shared install card that shows different status labels for the creator
+/// (who already submitted their share) vs other team members who still need
+/// to contribute.
+class _SharedInstallCard extends ConsumerWidget {
+  const _SharedInstallCard({required this.agg});
+
+  final SharedInstallAggregate agg;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
+    final statusAsync = ref.watch(
+      userSharedInstallStatusProvider(agg.groupKey),
+    );
+    final hasSubmitted = statusAsync.value ?? false;
+    final statusLabel = hasSubmitted ? l.teamJobSubmitted : l.teamJobPending;
+    final labelColor = hasSubmitted
+        ? ArcticTheme.arcticSuccess
+        : ArcticTheme.arcticWarning;
+
+    return ArcticCard(
+      onTap: hasSubmitted ? null : () => context.go('/tech/submit', extra: agg),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: labelColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.group_work_outlined, color: labelColor, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  agg.invoiceNumber.isNotEmpty
+                      ? agg.invoiceNumber
+                      : agg.groupKey,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  statusLabel,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: labelColor),
+                ),
+              ],
+            ),
+          ),
+          if (!hasSubmitted)
+            Icon(Icons.arrow_forward_ios_rounded, color: labelColor, size: 16),
         ],
       ),
     );

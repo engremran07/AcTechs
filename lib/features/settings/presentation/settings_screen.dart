@@ -33,9 +33,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sendingReset = false;
 
-  static const String _supportPhoneSaudi = '00966530421571';
-  static const String _supportPhonePakistan = '00923067863310';
-
   String _displayAppBrandingName(
     AppLocalizations l,
     AppBrandingConfig branding,
@@ -499,20 +496,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 16),
                 _DevelopedBySignature(label: l.developedByMuhammadImran),
                 const SizedBox(height: 16),
-                _SupportContactRow(
-                  countryLabel: l.saudiArabia,
-                  phoneNumber: _supportPhoneSaudi,
-                  onCallTap: () => _launchCall(_supportPhoneSaudi),
-                  onWhatsAppTap: () =>
-                      WhatsAppLauncher.openChat(_supportPhoneSaudi),
-                ),
-                const SizedBox(height: 10),
-                _SupportContactRow(
-                  countryLabel: l.pakistan,
-                  phoneNumber: _supportPhonePakistan,
-                  onCallTap: () => _launchCall(_supportPhonePakistan),
-                  onWhatsAppTap: () =>
-                      WhatsAppLauncher.openChat(_supportPhonePakistan),
+                ...appBrandingAsync.maybeWhen(
+                  data: (branding) {
+                    final phone = branding.phoneNumber.trim();
+                    if (phone.isEmpty) return const <Widget>[];
+                    return [
+                      _SupportContactRow(
+                        countryLabel: branding.companyName.trim().isNotEmpty
+                            ? branding.companyName.trim()
+                            : l.contactLabel,
+                        phoneNumber: phone,
+                        onCallTap: () => _launchCall(phone),
+                        onWhatsAppTap: () async {
+                          final opened = await WhatsAppLauncher.openChat(phone);
+                          if (!opened && context.mounted) {
+                            AppFeedback.error(
+                              context,
+                              message: AppLocalizations.of(
+                                context,
+                              )!.whatsappNotAvailable,
+                            );
+                          }
+                        },
+                      ),
+                    ];
+                  },
+                  orElse: () => const <Widget>[],
                 ),
               ],
             ),

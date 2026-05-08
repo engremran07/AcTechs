@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.4.5+49
+
+- Fixed tech dashboard and history data loading: removed `isDeleted` filter from Firestore query and moved to Dart layer to avoid composite index requirement
+- Fixed WhatsApp icon in team screen (generic icon → FontAwesome `whatsapp`)
+- Added duplicate email detection: admin banner with hard-delete tool removes inactive duplicate-email users
+- Added `hardDeleteUser()` to `UserRepository` (guards against deleting active users)
+- Added `duplicateEmailUsersProvider` derived from `allUsersProvider` (zero extra Firestore listeners)
+- Added 4 new localization keys (`duplicateEmailWarningTitle`, `duplicateEmailWarningBody`, `removeDuplicateUser`, `userPermanentlyDeleted`) across all 3 locale files
+
 ## 1.4.0+44
 
 - Added custom zoom drawer navigation for both technician and admin shells

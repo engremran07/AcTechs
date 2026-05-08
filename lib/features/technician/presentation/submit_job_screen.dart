@@ -7,6 +7,7 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/invoice_utils.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -412,6 +413,24 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
     final quickUnits = _unitsFromQuickTemplate();
 
+    // Cassette AC units are not supported in shared installs because the
+    // shared-install aggregate model tracks only split/window/freestanding
+    // variants. Warn and block submission if cassette units are present.
+    if (_isSharedInstall) {
+      final hasCassette = quickUnits.any(
+        (u) => u.type == AppConstants.unitTypeCassetteAc && u.quantity > 0,
+      );
+      if (hasCassette) {
+        if (mounted) {
+          AppFeedback.error(
+            context,
+            message: l.cassetteAcNotSupportedInSharedInstall,
+          );
+        }
+        return;
+      }
+    }
+
     if (quickUnits.isEmpty) {
       AppFeedback.error(context, message: l.addServiceFirst);
       return;
@@ -578,6 +597,58 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               ? l.jobSubmitted
               : l.jobSaved,
         );
+        // Offer WhatsApp team notification after a new shared install creation.
+        if (!_isEditing &&
+            _isSharedInstall &&
+            _selectedTeamMembers.isNotEmpty) {
+          final teamPhones = _selectedTeamMembers
+              .map((t) => t.phone.trim())
+              .where((p) => p.isNotEmpty)
+              .toList();
+          if (teamPhones.isNotEmpty && mounted) {
+            final shouldNotify = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: Text(l.notifyTeamViaWhatsapp),
+                content: Text(
+                  l.sharedInstallContributionMessage(
+                    _invoiceController.text.trim(),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: Text(l.cancel),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(l.notifyTeamViaWhatsapp),
+                  ),
+                ],
+              ),
+            );
+            if ((shouldNotify ?? false) && mounted) {
+              final message = l.sharedInstallContributionMessage(
+                _invoiceController.text.trim(),
+              );
+              for (final phone in teamPhones) {
+                if (!mounted) break;
+                final opened = await WhatsAppLauncher.openChatWithMessage(
+                  phone,
+                  message,
+                );
+                if (!opened && mounted) {
+                  AppFeedback.error(
+                    context, // ignore: use_build_context_synchronously
+                    message: l.whatsappNotAvailable,
+                  );
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (!mounted) return;
         if (_isEditing) {
           context.pop();
         } else {

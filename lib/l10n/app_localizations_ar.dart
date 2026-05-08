@@ -95,7 +95,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noPeriodLock => 'لا يوجد قفل فترة مفعل حالياً.';
 
   @override
-  String get clearPeriodLock => 'إزالة قفل الفترة';
+  String get clearPeriodLock => 'إزالة القفل';
 
   @override
   String get lockedPeriodDescription =>
@@ -317,7 +317,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reports => 'التقارير';
 
   @override
-  String get reportsSubtitle => 'إنشاء ومشاركة تقارير PDF';
+  String get reportsSubtitle => 'إنشاء ومشاركة تقارير PDF وExcel';
 
   @override
   String get dailyInOutReport => 'تقرير الدخل/المصروفات اليومي';
@@ -586,6 +586,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get userDeleted => 'تمت أرشفة المستخدم بنجاح!';
+
+  @override
+  String get duplicateEmailWarningTitle => 'تم اكتشاف بريد إلكتروني مكرر';
+
+  @override
+  String duplicateEmailWarningBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حسابات غير نشطة تشارك',
+      one: 'حساب غير نشط يشارك',
+    );
+    return '$_temp0 البريد الإلكتروني مع مستخدم نشط. احذف التكرار للحفاظ على نظافة البيانات.';
+  }
+
+  @override
+  String get removeDuplicateUser => 'إزالة';
+
+  @override
+  String get userPermanentlyDeleted => 'تمت إزالة المستخدم المكرر نهائياً.';
 
   @override
   String get usersActivated => 'تم تفعيل المستخدمين';
@@ -1932,7 +1952,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String staleSharedInstallsDescription(int count) {
-    return '$count تركيب(تركيبات) مشتركة أقدم من 7 أيام مع مساهمات غير مكتملة.';
+    return '$count تركيب(تركيبات) مشتركة أقدم من 30 يومًا مع مساهمات غير مكتملة.';
   }
 
   @override
@@ -1948,4 +1968,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get staleCleanUpSuccess => 'تمت أرشفة التركيبات القديمة بنجاح.';
+
+  @override
+  String get phone => 'رقم الهاتف';
+
+  @override
+  String get whatsappNotAvailable => 'WhatsApp غير متوفر على هذا الجهاز';
+
+  @override
+  String get cassetteAcNotSupportedInSharedInstall =>
+      'لا يمكن استخدام مكيف الكاسيت في التركيبات المشتركة';
+
+  @override
+  String get notifyTeamViaWhatsapp => 'إشعار الفريق عبر WhatsApp';
+
+  @override
+  String sharedInstallContributionMessage(String invoiceNumber) {
+    return 'مرحباً، التركيب المشترك للفاتورة $invoiceNumber يحتاج إلى مساهمتك في AC Techs.';
+  }
+
+  @override
+  String get pendingCollaborations => 'التعاونات المعلقة';
+
+  @override
+  String pendingCollaborationsDescription(int count) {
+    return '$count تركيب(تركيبات) مشتركة تنتظر مساهمات الفريق.';
+  }
+
+  @override
+  String get noPendingCollaborations => 'لا توجد تعاونات تركيبات مشتركة معلقة.';
 }

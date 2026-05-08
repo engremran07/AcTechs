@@ -107,6 +107,21 @@ class JobRepository {
         .toList(growable: false);
   }
 
+  /// Returns true if [techId] has already submitted a job for [groupKey].
+  ///
+  /// Used by the dashboard to differentiate the creator (who already submitted)
+  /// from non-creators who still need to add their share.
+  Future<bool> hasUserSubmittedForGroup(String techId, String groupKey) async {
+    final key = groupKey.trim();
+    if (key.isEmpty || techId.isEmpty) return false;
+    final snap = await _jobsRef
+        .where('techId', isEqualTo: techId)
+        .where('sharedInstallGroupKey', isEqualTo: key)
+        .limit(1)
+        .get();
+    return snap.docs.isNotEmpty;
+  }
+
   /// Returns the first job belonging to [groupKey] — used to pre-fill client
   /// name and contact when a tech joins an existing shared install from the
   /// dashboard. Returns null if no job exists yet for that group.
@@ -2246,24 +2261,37 @@ class JobRepository {
   }
 
   Stream<List<JobModel>> technicianJobs(String techId) {
+    // isDeleted is filtered in Dart rather than Firestore so the existing
+    // (techId, submittedAt) composite index continues to be used.
+    // Adding isNotEqualTo to the Firestore query would require a new
+    // (techId, isDeleted, submittedAt) index that is not deployed.
     return _jobsRef
         .where('techId', isEqualTo: techId)
         .orderBy('submittedAt', descending: true)
+        .limit(500)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+          (snap) => snap.docs
+              .map((doc) => JobModel.fromFirestore(doc))
+              .where((job) => !job.isDeleted)
+              .toList(),
         );
   }
 
   Stream<List<JobModel>> pendingApprovals() {
+    // isDeleted is filtered in Dart to reuse the existing (status, submittedAt)
+    // index. A Firestore-level isNotEqualTo filter would require a new
+    // (status, isDeleted, submittedAt) composite index.
     return _jobsRef
         .where('status', isEqualTo: 'pending')
         .orderBy('submittedAt', descending: false)
+        .limit(200)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+          (snap) => snap.docs
+              .map((doc) => JobModel.fromFirestore(doc))
+              .where((job) => !job.isDeleted)
+              .toList(),
         );
   }
 
@@ -2592,13 +2620,15 @@ class JobRepository {
         _releaseInvoiceClaimFromSnapshot(tx, claimRef, claimSnap);
         tx.delete(docRef);
 
-        // When a shared install job is hard-deleted, also delete its aggregate
-        // document so techs no longer see a "tap to insert your share" card for
-        // an install that no longer exists. (Ghost aggregate fix.)
-        // NOTE: Aggregate consumed* counters are NOT rolled back \u2014 the aggregate
-        // is simply removed. If only one team member's job is deleted and others
-        // remain, admin must flush + rebuild to reconcile. This is an accepted
-        // free-tier constraint per the shared-install system rules.
+        // When a shared install job is hard-deleted, also remove the aggregate
+        // ONLY if this is the sole team member (no other contributors). If other
+        // team members remain in teamMemberIds, preserve the aggregate so they
+        // can still see and submit their share.
+        //
+        // NOTE: Aggregate consumed* counters are NOT rolled back — free-tier
+        // constraint per shared-install system rules (no cross-collection
+        // transaction rollback). Admin must flush + rebuild to reconcile if
+        // a partial aggregate is left behind after multi-member deletion.
         if (job.isSharedInstall &&
             job.sharedInstallGroupKey.trim().isNotEmpty) {
           final aggregateRef = _sharedAggregatesRef.doc(
@@ -2606,7 +2636,15 @@ class JobRepository {
           );
           final aggregateSnap = await tx.get(aggregateRef);
           if (aggregateSnap.exists) {
-            tx.delete(aggregateRef);
+            final aggData = aggregateSnap.data() ?? {};
+            final teamIds = List<String>.from(
+              aggData['teamMemberIds'] as List? ?? [],
+            );
+            // Only delete the aggregate when this is the only/sole team member.
+            // For multi-member teams, preserve the aggregate for other techs.
+            if (teamIds.length <= 1) {
+              tx.delete(aggregateRef);
+            }
           }
         }
       });
@@ -2624,7 +2662,7 @@ class JobRepository {
   /// and not yet fully consumed. These represent shared installs where not all
   /// team members contributed within the expected time window.
   Future<List<SharedInstallAggregate>> fetchStaleSharedAggregates({
-    Duration threshold = const Duration(days: 7),
+    Duration threshold = const Duration(days: 30),
   }) async {
     final cutoff = DateTime.now().subtract(threshold);
     final snap = await _sharedAggregatesRef
@@ -2648,27 +2686,50 @@ class JobRepository {
       final aggregateRef = _sharedAggregatesRef.doc(
         _sharedAggregateDocId(groupKey),
       );
+
+      // Step 1: Query associated jobs BEFORE the transaction so we have their
+      // references ready. The batch is executed after the transaction, so the
+      // worst-case race is that a very-late new job is missed from the
+      // soft-delete sweep — but the aggregate itself is atomically guarded.
       final jobsSnap = await _jobsRef
           .where('sharedInstallGroupKey', isEqualTo: groupKey)
           .get();
 
-      final batch = firestore.batch();
-
-      // Soft-delete the aggregate
-      batch.update(aggregateRef, {
-        'isDeleted': true,
-        'deletedAt': FieldValue.serverTimestamp(),
-      });
-
-      // Soft-delete all jobs in this shared group
-      for (final doc in jobsSnap.docs) {
-        batch.update(doc.reference, {
+      // Step 2: Use a transaction to guard the aggregate write — read the doc
+      // first so Firestore rejects the commit if it was concurrently modified
+      // (e.g., double-archive by another admin session).
+      bool aggregateExisted = false;
+      await firestore.runTransaction((tx) async {
+        final aggregateSnap = await tx.get(aggregateRef);
+        if (!aggregateSnap.exists) return; // already deleted or never existed
+        final data = aggregateSnap.data();
+        if (data != null && data['isDeleted'] == true) return; // already gone
+        aggregateExisted = true;
+        tx.update(aggregateRef, {
           'isDeleted': true,
           'deletedAt': FieldValue.serverTimestamp(),
         });
-      }
+      });
 
-      await batch.commit();
+      if (!aggregateExisted) return;
+
+      // Step 3: Soft-delete all associated job docs in a WriteBatch.
+      // Free-tier note: archiving a shared install does NOT roll back
+      // aggregate consumed* counters — cross-collection counter rollback
+      // exceeds free-tier read budget. Admin verifies before cleanup.
+      const batchSize = 499;
+      final allJobRefs = jobsSnap.docs.map((d) => d.reference).toList();
+      for (var i = 0; i < allJobRefs.length; i += batchSize) {
+        final chunk = allJobRefs.skip(i).take(batchSize);
+        final batch = firestore.batch();
+        for (final ref in chunk) {
+          batch.update(ref, {
+            'isDeleted': true,
+            'deletedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
+      }
     } on FirebaseException catch (e) {
       debugPrint('archiveStaleSharedInstall error: ${e.code}');
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
