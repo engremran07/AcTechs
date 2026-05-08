@@ -34,6 +34,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
   DocumentSnapshot<Map<String, dynamic>>? _adminCursor;
   bool _hasMoreAdminJobs = true;
   bool _isLoadingAdminJobs = false;
+  bool _adminLoadError = false;
 
   bool _jobMatchesFilter(JobModel job) {
     switch (widget.filter) {
@@ -101,6 +102,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
 
     setState(() {
       _isLoadingAdminJobs = true;
+      _adminLoadError = false;
       if (reset) {
         _adminJobs.clear();
         _adminCursor = null;
@@ -146,6 +148,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
       setState(() {
         _hasMoreAdminJobs = false;
         _isLoadingAdminJobs = false;
+        _adminLoadError = true;
       });
     }
   }
@@ -197,6 +200,24 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
       body: SafeArea(
         child: widget.isAdminScope && _adminJobs.isEmpty && _isLoadingAdminJobs
             ? const Center(child: CircularProgressIndicator())
+            : widget.isAdminScope && _adminJobs.isEmpty && _adminLoadError
+                ? ArcticRefreshIndicator(
+                    onRefresh: () async =>
+                        _loadMoreAdminJobs(reset: true),
+                    child: ListView(
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.35,
+                        ),
+                        Center(
+                          child: ErrorCard(
+                            exception: NetworkException.syncFailed(),
+                            onRetry: () => _loadMoreAdminJobs(reset: true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
             : ArcticRefreshIndicator(
                 onRefresh: () async {
                   if (widget.isAdminScope) {

@@ -194,6 +194,34 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             ],
                           ),
                           const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.acOutdoorBracket,
+                                  value: '${summary.bracketCount}',
+                                  icon: Icons.hardware_outlined,
+                                  color: ArcticTheme.arcticPurple,
+                                  onTap: () => context.push(
+                                    '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.bracket)}',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DashCard(
+                                  title: l.uninstalls,
+                                  value: '${summary.uninstallTotal}',
+                                  icon: Icons.build_circle_outlined,
+                                  color: ArcticTheme.arcticError,
+                                  onTap: () => context.push(
+                                    '/admin/jobs/filter/${jobAcTypeFilterToPath(JobAcTypeFilter.uninstall)}',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           approvedShared.when(
                             data: (sharedJobs) => _DashCard(
                               title: l.approvedSharedInstalls,

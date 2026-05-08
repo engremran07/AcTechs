@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.5.3+61
+
+- Fixed: admin dashboard missing Brackets stat card — added `bracketCount` to `AdminJobSummary.fromJobs()` with new dashboard `_DashCard` (Bug 5)
+- Fixed: admin dashboard missing Uninstalls stat card — new `_DashCard` showing `uninstallTotal` (Bug 6)
+- Fixed: total/approved job counts included soft-deleted jobs — added `isDeleted` guard in `AdminJobSummary.fromJobs()` (Bug 2)
+- Fixed: AC type filter screens showing blank screen on error instead of error card — added `_adminLoadError` flag + `ErrorCard` with retry in `job_type_filter_screen.dart` (Bugs 3 & 4)
+- Fixed: solo install jobs not editable by admin — `adminUpdateJob()` now uses `_restoreNullableSnapshotField()` to omit `submittedAt`/`approvedBy`/`reviewedAt` from the update payload when they are absent in the existing doc, preventing Firestore PERMISSION_DENIED from the `hasOnly()` rule check (Bug 1)
+
 ## 1.5.1+59
 
 - Fixed: proportional per-sibling share recalculation in `adminUpdateJob()` — when admin changes shared invoice totals (`sharedInvoiceSplitUnits`, etc.), each sibling job doc's `techSplitShare` / `techWindowShare` / `techFreestandingShare` / `techUninstallSplitShare` / `techUninstallWindowShare` / `techUninstallFreestandingShare` / `techBracketShare` / `charges.deliveryAmount` is recalculated proportionally inside the transaction

@@ -27,6 +27,7 @@ class AdminJobSummary {
     required this.splitUnits,
     required this.windowUnits,
     required this.freestandingUnits,
+    required this.bracketCount,
     required this.invoiceAwareUnitTotal,
     required this.sharedJobsCount,
     required this.sharedInvoiceCount,
@@ -47,6 +48,7 @@ class AdminJobSummary {
   final int splitUnits;
   final int windowUnits;
   final int freestandingUnits;
+  final int bracketCount;
   final int invoiceAwareUnitTotal;
   final int sharedJobsCount;
   final int sharedInvoiceCount;
@@ -82,6 +84,7 @@ class AdminJobSummary {
       splitUnits: 0,
       windowUnits: 0,
       freestandingUnits: 0,
+      bracketCount: 0,
       invoiceAwareUnitTotal: 0,
       sharedJobsCount: 0,
       sharedInvoiceCount: 0,
@@ -104,6 +107,7 @@ class AdminJobSummary {
     var splitUnits = 0;
     var windowUnits = 0;
     var freestandingUnits = 0;
+    var bracketCount = 0;
     var invoiceAwareUnitTotal = 0;
     var sharedJobsCount = 0;
     var sharedInvoiceCount = 0;
@@ -118,6 +122,7 @@ class AdminJobSummary {
     final technicianJobs = <String, ({String techName, int jobCount})>{};
 
     for (final job in jobs) {
+      if (job.isDeleted) continue;
       totalJobs += 1;
       totalExpenses += job.expenses;
 
@@ -145,6 +150,7 @@ class AdminJobSummary {
       freestandingUnits += job.unitsForType(
         AppConstants.unitTypeFreestandingAc,
       );
+      bracketCount += job.effectiveBracketCount;
       uninstallOldUnits += job.unitsForType(AppConstants.unitTypeUninstallOld);
       uninstallSplitUnits += job.unitsForType(
         AppConstants.unitTypeUninstallSplit,
@@ -196,6 +202,7 @@ class AdminJobSummary {
       splitUnits: splitUnits,
       windowUnits: windowUnits,
       freestandingUnits: freestandingUnits,
+      bracketCount: bracketCount,
       invoiceAwareUnitTotal: invoiceAwareUnitTotal,
       sharedJobsCount: sharedJobsCount,
       sharedInvoiceCount: sharedInvoiceCount,

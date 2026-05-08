@@ -1,5 +1,20 @@
 # SESSION_LOG
 
+## 2026-05-09 — Admin panel bug fixes: brackets/uninstalls stats, soft-delete filter, solo edit — APK v1.5.3+61
+
+- Scope: 6 admin panel bugs reported after v1.5.1+59 deployment; all 6 root-caused and fixed
+- Changes implemented:
+  - **Bug 5 — Brackets stat card missing** (`admin_job_summary.dart`, `admin_dashboard_screen.dart`): Added `bracketCount` field to `AdminJobSummary`; `fromJobs()` accumulates `effectiveBracketCount` for each non-rejected, non-deleted job. New `_DashCard` (hardware_outlined, arcticPurple) added to dashboard, navigates to `/admin/jobs/filter/bracket`.
+  - **Bug 6 — Uninstalls stat card missing** (`admin_dashboard_screen.dart`): New `_DashCard` (build_circle_outlined, arcticError) added to dashboard, shows `summary.uninstallTotal`, navigates to `/admin/jobs/filter/uninstall`.
+  - **Bug 2 — Inaccurate total/approved counts** (`admin_job_summary.dart`): Added `if (job.isDeleted) continue;` at top of `fromJobs()` loop so soft-deleted jobs are excluded from all counts.
+  - **Bugs 3 & 4 — Blank screen for splits/freestanding** (`job_type_filter_screen.dart`): Added `_adminLoadError` flag; catch block in `_loadMoreAdminJobs()` sets the flag; `build()` renders `ErrorCard` (with retry) when `_adminJobs.isEmpty && _adminLoadError`, distinguishing genuine errors from "no results".
+  - **Bug 1 — Solo install jobs not editable by admin** (`job_repository.dart`): Root cause — `adminUpdateJob()` was setting `submittedAt`, `approvedBy`, `reviewedAt` to `null` for older/imported jobs that didn't have those fields in Firestore. Firestore's `update()` would then add them as `null`, making them appear in `affectedKeys()` and failing the `hasOnly()` check in `adminApprovedJobUpdate()` rule. Fixed via `_restoreNullableSnapshotField()` helper which removes the key from the update payload when the existing value is null, preventing the "missing → null" delta.
+- Verification:
+  - `get_errors` — 0 issues on all 4 modified files
+  - `flutter analyze --no-pub` — "No issues found!"
+  - APK v1.5.3+61 built (74.8 MB) and installed on R5GL22RGT9V; version confirmed `1.5.3`
+- Git: commit pending (pre-commit hook will bump pubspec to 1.5.4+62)
+
 ## 2026-07-12 — Share recalculation, Firestore rules security, indexes, governance — APK v1.5.1+59
 
 - Scope: Remaining audit findings from Master Audit Report v12 implemented in one session
@@ -17,6 +32,7 @@
   - Firestore rules linted and deployed
   - Firestore indexes deployed
   - APK v1.5.1+59 built and installed on R5GL22RGT9V
+- Git: commit `9ddca91` pushed to main (pre-commit hook auto-bumped pubspec to 1.5.2+60 for next build)
 
 ## 2026-05-08 — Bug fixes: shared install editability, history tab colors; feature: admin shared installs list — APK v1.4.9+54
 

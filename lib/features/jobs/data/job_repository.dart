@@ -234,6 +234,24 @@ class JobRepository {
     return (data[key] as num?)?.toInt() ?? 0;
   }
 
+  /// Restores [key] from [existingData] into [data]. If the existing value is
+  /// null (or the field is absent), the key is removed from [data] instead of
+  /// setting it to null. This prevents Firestore from recording a "missing →
+  /// null" change that would appear in affectedKeys() and fail the hasOnly
+  /// check in adminApprovedJobUpdate().
+  void _restoreNullableSnapshotField(
+    Map<String, dynamic> data,
+    Map<String, dynamic> existingData,
+    String key,
+  ) {
+    final value = existingData[key];
+    if (value != null) {
+      data[key] = value;
+    } else {
+      data.remove(key);
+    }
+  }
+
   String _invoiceClaimDocId(String normalizedInvoice) {
     return InvoiceUtils.invoiceClaimDocumentId(normalizedInvoice);
   }
@@ -1685,9 +1703,17 @@ class JobRepository {
       data['status'] = 'approved';
       data['techId'] = existing.techId;
       data['techName'] = existingSnap.data()!['techName'] ?? existing.techName;
-      data['submittedAt'] = existingSnap.data()!['submittedAt'];
-      data['approvedBy'] = existingSnap.data()!['approvedBy'];
-      data['reviewedAt'] = existingSnap.data()!['reviewedAt'];
+      // For fields that may be absent in older / imported jobs, remove the key
+      // entirely when the existing value is null so that Firestore's update()
+      // does not move the field from "missing" to "null", which would add it
+      // to affectedKeys() and fail the adminApprovedJobUpdate() hasOnly check.
+      _restoreNullableSnapshotField(
+        data,
+        existingSnap.data()!,
+        'submittedAt',
+      );
+      _restoreNullableSnapshotField(data, existingSnap.data()!, 'approvedBy');
+      _restoreNullableSnapshotField(data, existingSnap.data()!, 'reviewedAt');
       data['adminNote'] = existingSnap.data()!['adminNote'] ?? '';
       data['settlementStatus'] =
           existingSnap.data()!['settlementStatus'] ?? 'unpaid';
