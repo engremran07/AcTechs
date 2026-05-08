@@ -10,8 +10,9 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
-import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
-import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/expenses/data/earning_repository.dart';
+import 'package:ac_techs/features/expenses/data/expense_repository.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -158,15 +159,18 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   String get _techName =>
       ref.read(currentUserProvider).value?.name ?? 'Technician';
 
+  String get _techUid => ref.read(currentUserProvider).value!.uid;
+
   Future<void> _generateDailyInOut(AppLocalizations l) async {
     _setActive('dailyInOut');
     try {
       final today = DateTime.now();
       final month = DateTime(today.year, today.month);
-      final earnings =
-          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
-      final expenses =
-          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+      final uid = _techUid;
+      final earningRepo = ref.read(earningRepositoryProvider);
+      final expenseRepo = ref.read(expenseRepositoryProvider);
+      final earnings = await earningRepo.fetchMonthlyEarnings(uid, month);
+      final expenses = await expenseRepo.fetchMonthlyExpenses(uid, month);
 
       final todayEarnings = earnings
           .where((e) => _isSameDay(e.date, today))
@@ -205,10 +209,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('monthlyInOut');
     try {
       final month = DateTime(picked.year, picked.month);
-      final earnings =
-          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
-      final expenses =
-          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+      final uid = _techUid;
+      final earningRepo = ref.read(earningRepositoryProvider);
+      final expenseRepo = ref.read(expenseRepositoryProvider);
+      final earnings = await earningRepo.fetchMonthlyEarnings(uid, month);
+      final expenses = await expenseRepo.fetchMonthlyExpenses(uid, month);
 
       if (earnings.isEmpty && expenses.isEmpty) {
         _showEmpty(l);
@@ -240,15 +245,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
 
     _setActive('acInstalls');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
-      final filtered = allJobs
-          .where(
-            (j) =>
-                j.date != null &&
-                !j.date!.isBefore(range.start) &&
-                !j.date!.isAfter(range.end),
-          )
-          .toList();
+      final start = range.start;
+      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
 
       if (filtered.isEmpty) {
         _showEmpty(l);
@@ -278,15 +279,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
 
     _setActive('jobs');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
-      final filtered = allJobs
-          .where(
-            (j) =>
-                j.date != null &&
-                !j.date!.isBefore(range.start) &&
-                !j.date!.isAfter(range.end),
-          )
-          .toList();
+      final start = range.start;
+      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
 
       if (filtered.isEmpty) {
         _showEmpty(l);
@@ -313,7 +310,9 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   Future<void> _generateSharedInstalls(AppLocalizations l) async {
     _setActive('sharedInstall');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final allJobs = await jobRepo.fetchAllTechJobs(uid);
       final shared = allJobs.where((j) => j.isSharedInstall).toList();
 
       if (shared.isEmpty) {
@@ -341,7 +340,9 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   Future<void> _generateSettlementReport(AppLocalizations l) async {
     _setActive('settlement');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final allJobs = await jobRepo.fetchAllTechJobs(uid);
       final settled = allJobs
           .where((j) => j.settlementStatus != JobSettlementStatus.unpaid)
           .toList();
@@ -375,10 +376,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     try {
       final today = DateTime.now();
       final month = DateTime(today.year, today.month);
-      final earnings =
-          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
-      final expenses =
-          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+      final uid = _techUid;
+      final earningRepo = ref.read(earningRepositoryProvider);
+      final expenseRepo = ref.read(expenseRepositoryProvider);
+      final earnings = await earningRepo.fetchMonthlyEarnings(uid, month);
+      final expenses = await expenseRepo.fetchMonthlyExpenses(uid, month);
       final todayEarnings = earnings
           .where((e) => _isSameDay(e.date, today))
           .toList();
@@ -411,10 +413,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('monthlyInOut_excel');
     try {
       final month = DateTime(picked.year, picked.month);
-      final earnings =
-          ref.read(monthlyEarningsProvider(month)).value ?? <EarningModel>[];
-      final expenses =
-          ref.read(monthlyExpensesProvider(month)).value ?? <ExpenseModel>[];
+      final uid = _techUid;
+      final earningRepo = ref.read(earningRepositoryProvider);
+      final expenseRepo = ref.read(expenseRepositoryProvider);
+      final earnings = await earningRepo.fetchMonthlyEarnings(uid, month);
+      final expenses = await expenseRepo.fetchMonthlyExpenses(uid, month);
 
       if (earnings.isEmpty && expenses.isEmpty) {
         _showEmpty(l);
@@ -440,15 +443,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
 
     _setActive('acInstalls_excel');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
-      final filtered = allJobs
-          .where(
-            (j) =>
-                j.date != null &&
-                !j.date!.isBefore(range.start) &&
-                !j.date!.isAfter(range.end),
-          )
-          .toList();
+      final start = range.start;
+      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
 
       if (filtered.isEmpty) {
         _showEmpty(l);
@@ -472,15 +471,11 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
 
     _setActive('jobs_excel');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
-      final filtered = allJobs
-          .where(
-            (j) =>
-                j.date != null &&
-                !j.date!.isBefore(range.start) &&
-                !j.date!.isAfter(range.end),
-          )
-          .toList();
+      final start = range.start;
+      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
 
       if (filtered.isEmpty) {
         _showEmpty(l);
@@ -501,7 +496,9 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   Future<void> _exportSharedInstallsToExcel(AppLocalizations l) async {
     _setActive('sharedInstall_excel');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final allJobs = await jobRepo.fetchAllTechJobs(uid);
       final shared = allJobs.where((j) => j.isSharedInstall).toList();
 
       if (shared.isEmpty) {
@@ -523,7 +520,9 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   Future<void> _exportSettlementToExcel(AppLocalizations l) async {
     _setActive('settlement_excel');
     try {
-      final allJobs = ref.read(technicianJobsProvider).value ?? <JobModel>[];
+      final uid = _techUid;
+      final jobRepo = ref.read(jobRepositoryProvider);
+      final allJobs = await jobRepo.fetchAllTechJobs(uid);
       final settled = allJobs
           .where((j) => j.settlementStatus != JobSettlementStatus.unpaid)
           .toList();

@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 1.4.6+50
+
+- Fixed reports system: replaced `ref.read(autoDispose StreamProvider).value` (returns null when unsubscribed) with one-shot `Future` Firestore fetches across all 12 report handlers
+- Fixed date-range reports excluding jobs on the end date: normalize `range.end` to `23:59:59` before passing to Firestore `isLessThanOrEqualTo`
+- Added `fetchMonthlyEarnings` to `EarningRepository` (one-shot get, respects `isDeleted` filter)
+- Added `fetchMonthlyExpenses` to `ExpenseRepository` (one-shot get, respects `isDeleted` filter)
+- Added `fetchTechJobsForPeriod` and `fetchAllTechJobs` to `JobRepository` (one-shot gets, filter `isDeleted` in Dart)
+- Fixed PDF double-shaping: removed pre-`_shapeRtlForPdf` calls from data arrays that were then re-shaped inside `_shapeTableForPdf`; affects `generateJobsReport`, `generateExpensesReport` (×2), `generateEarningsReport`
+- Fixed PDF empty cells showing literal `-` in In/Out report day rows and monthly totals; now renders blank
+- Fixed PDF `e.note` null/empty crash: wrapped all 6 note references with `_safeTableCellText()`
+- Added center alignment to all data, header, and total rows in Excel exports (`buildJobsWorkbook`, `buildEarningsWorkbook`, `buildExpensesWorkbook`, `buildInOutWorkbook`, `buildSettlementWorkbook`) via new `_centerRow` helper
+
 ## 1.4.5+49
 
 - Fixed tech dashboard and history data loading: removed `isDeleted` filter from Firestore query and moved to Dart layer to avoid composite index requirement

@@ -306,4 +306,28 @@ class ExpenseRepository {
           .toList(),
     );
   }
+
+  /// One-shot fetch of a tech's expenses for a specific month.
+  Future<List<ExpenseModel>> fetchMonthlyExpenses(
+    String techId,
+    DateTime month,
+  ) async {
+    final start = DateTime(month.year, month.month, 1);
+    final end = DateTime(month.year, month.month + 1, 1);
+    try {
+      final snap = await _ref
+          .where('techId', isEqualTo: techId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('date', isLessThan: Timestamp.fromDate(end))
+          .orderBy('date', descending: true)
+          .get();
+      return _activeExpensesFromSnapshot(snap);
+    } on FirebaseException catch (e) {
+      debugPrint('fetchMonthlyExpenses error: ${e.code} — ${e.message}');
+      throw ExpenseException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchMonthlyExpenses unknown: $e');
+      throw ExpenseException.saveFailed();
+    }
+  }
 }

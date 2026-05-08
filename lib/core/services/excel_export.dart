@@ -16,6 +16,17 @@ class ExcelExport {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  static void _centerRow(excel_pkg.Sheet sheet, int rowIndex) {
+    if (rowIndex >= sheet.maxRows) return;
+    for (final cell in sheet.rows[rowIndex]) {
+      if (cell != null) {
+        cell.cellStyle = excel_pkg.CellStyle(
+          horizontalAlign: excel_pkg.HorizontalAlign.Center,
+        );
+      }
+    }
+  }
+
   static void _appendReportBrandingHeader({
     required excel_pkg.Sheet sheet,
     required String reportTitle,
@@ -95,6 +106,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Uninstall Standing'),
       excel_pkg.TextCellValue('Uninstall Old'),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     var totalSplit = 0;
     var totalWindow = 0;
@@ -227,6 +239,7 @@ class ExcelExport {
         excel_pkg.IntCellValue(uninstallStandingQty),
         excel_pkg.IntCellValue(uninstallQty),
       ]);
+      _centerRow(sheet, sheet.maxRows - 1);
     }
 
     sheet.appendRow([excel_pkg.TextCellValue('')]);
@@ -247,10 +260,12 @@ class ExcelExport {
       excel_pkg.IntCellValue(totalUninstallStanding),
       excel_pkg.IntCellValue(totalUninstallOld),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
     sheet.appendRow([
       excel_pkg.TextCellValue('Bracket Zero Price Count'),
       excel_pkg.IntCellValue(totalBracketZeroPriceJobs),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     return excelFile;
   }
@@ -278,6 +293,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     for (final earning in earnings) {
       sheet.appendRow([
@@ -286,6 +302,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(earning.date)),
         excel_pkg.TextCellValue(earning.note),
       ]);
+      _centerRow(sheet, sheet.maxRows - 1);
     }
 
     final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
@@ -295,6 +312,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     return excelFile;
   }
@@ -321,6 +339,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(workSheet, workSheet.maxRows - 1);
 
     final workExpenses = expenses
         .where((e) => e.expenseType == 'work')
@@ -332,6 +351,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(expense.date)),
         excel_pkg.TextCellValue(expense.note),
       ]);
+      _centerRow(workSheet, workSheet.maxRows - 1);
     }
 
     final workTotal = workExpenses.fold<double>(0, (s, e) => s + e.amount);
@@ -341,6 +361,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(workSheet, workSheet.maxRows - 1);
 
     final homeSheet = excelFile['Home Expenses'];
     _appendReportBrandingHeader(
@@ -355,6 +376,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(homeSheet, homeSheet.maxRows - 1);
 
     final homeExpenses = expenses
         .where((e) => e.expenseType != 'work')
@@ -366,6 +388,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(expense.date)),
         excel_pkg.TextCellValue(expense.note),
       ]);
+      _centerRow(homeSheet, homeSheet.maxRows - 1);
     }
 
     final homeTotal = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
@@ -375,6 +398,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(homeSheet, homeSheet.maxRows - 1);
 
     final summarySheet = excelFile['Summary'];
     _appendReportBrandingHeader(
@@ -407,21 +431,25 @@ class ExcelExport {
       excel_pkg.TextCellValue('Today (SAR)'),
       excel_pkg.TextCellValue('Month (SAR)'),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Work Expenses'),
       excel_pkg.DoubleCellValue(todaysWork),
       excel_pkg.DoubleCellValue(workTotal),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Home Expenses'),
       excel_pkg.DoubleCellValue(todaysHome),
       excel_pkg.DoubleCellValue(homeTotal),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('TOTAL'),
       excel_pkg.DoubleCellValue(todaysWork + todaysHome),
       excel_pkg.DoubleCellValue(workTotal + homeTotal),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
 
     return excelFile;
   }
@@ -500,6 +528,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(earningsSheet, earningsSheet.maxRows - 1);
     for (final e in earnings) {
       earningsSheet.appendRow([
         excel_pkg.TextCellValue(e.category),
@@ -508,6 +537,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(e.date)),
         excel_pkg.TextCellValue(e.note),
       ]);
+      _centerRow(earningsSheet, earningsSheet.maxRows - 1);
     }
     final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
     earningsSheet.appendRow([
@@ -517,6 +547,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(earningsSheet, earningsSheet.maxRows - 1);
 
     // ── Work Expenses sheet ─────────────────────────────────────────────
     final workSheet = excelFile['Work Expenses'];
@@ -532,6 +563,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(workSheet, workSheet.maxRows - 1);
     final workExpenses = expenses
         .where((e) => e.expenseType == 'work')
         .toList();
@@ -542,6 +574,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(e.date)),
         excel_pkg.TextCellValue(e.note),
       ]);
+      _centerRow(workSheet, workSheet.maxRows - 1);
     }
     final totalWork = workExpenses.fold<double>(0, (s, e) => s + e.amount);
     workSheet.appendRow([
@@ -550,6 +583,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(workSheet, workSheet.maxRows - 1);
 
     // ── Home Expenses sheet ─────────────────────────────────────────────
     final homeSheet = excelFile['Home Expenses'];
@@ -565,6 +599,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
     ]);
+    _centerRow(homeSheet, homeSheet.maxRows - 1);
     final homeExpenses = expenses
         .where((e) => e.expenseType != 'work')
         .toList();
@@ -575,6 +610,7 @@ class ExcelExport {
         excel_pkg.TextCellValue(_formatDate(e.date)),
         excel_pkg.TextCellValue(e.note),
       ]);
+      _centerRow(homeSheet, homeSheet.maxRows - 1);
     }
     final totalHome = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
     homeSheet.appendRow([
@@ -583,6 +619,7 @@ class ExcelExport {
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(homeSheet, homeSheet.maxRows - 1);
 
     // ── Summary sheet ───────────────────────────────────────────────────
     final summarySheet = excelFile['Summary'];
@@ -596,27 +633,33 @@ class ExcelExport {
       excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Total Income'),
       excel_pkg.DoubleCellValue(totalEarnings),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Work Expenses'),
       excel_pkg.DoubleCellValue(totalWork),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Home Expenses'),
       excel_pkg.DoubleCellValue(totalHome),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     final totalExpenses = totalWork + totalHome;
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Total Expenses'),
       excel_pkg.DoubleCellValue(totalExpenses),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
     summarySheet.appendRow([
       excel_pkg.TextCellValue('Net Balance'),
       excel_pkg.DoubleCellValue(totalEarnings - totalExpenses),
     ]);
+    _centerRow(summarySheet, summarySheet.maxRows - 1);
 
     return excelFile;
   }
@@ -667,6 +710,7 @@ class ExcelExport {
       excel_pkg.TextCellValue('Amount (SAR)'),
       excel_pkg.TextCellValue('Payment Method'),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     var totalSettled = 0.0;
     for (final job in jobs) {
@@ -686,6 +730,7 @@ class ExcelExport {
           AppFormatters.safeText(job.settlementPaymentMethod),
         ),
       ]);
+      _centerRow(sheet, sheet.maxRows - 1);
     }
 
     sheet.appendRow([excel_pkg.TextCellValue('')]);
@@ -698,6 +743,7 @@ class ExcelExport {
       excel_pkg.DoubleCellValue(totalSettled),
       excel_pkg.TextCellValue(''),
     ]);
+    _centerRow(sheet, sheet.maxRows - 1);
 
     return excelFile;
   }

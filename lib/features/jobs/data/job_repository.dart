@@ -2736,4 +2736,53 @@ class JobRepository {
       throw JobException.saveFailed();
     }
   }
+
+  /// One-shot fetch of a tech's jobs within a date range (inclusive).
+  Future<List<JobModel>> fetchTechJobsForPeriod(
+    String techId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    try {
+      final snap = await _jobsRef
+          .where('techId', isEqualTo: techId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(end))
+          .orderBy('date', descending: true)
+          .get();
+      return snap.docs
+          .map((doc) => JobModel.fromFirestore(doc))
+          .where((job) => !job.isDeleted)
+          .toList();
+    } on FirebaseException catch (e) {
+      debugPrint('fetchTechJobsForPeriod error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchTechJobsForPeriod unknown: $e');
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// One-shot fetch of all jobs for a tech (newest first, limit 500).
+  Future<List<JobModel>> fetchAllTechJobs(String techId) async {
+    try {
+      final snap = await _jobsRef
+          .where('techId', isEqualTo: techId)
+          .orderBy('submittedAt', descending: true)
+          .limit(500)
+          .get();
+      return snap.docs
+          .map((doc) => JobModel.fromFirestore(doc))
+          .where((job) => !job.isDeleted)
+          .toList();
+    } on FirebaseException catch (e) {
+      debugPrint('fetchAllTechJobs error: ${e.code} — ${e.message}');
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchAllTechJobs unknown: $e');
+      throw JobException.saveFailed();
+    }
+  }
 }

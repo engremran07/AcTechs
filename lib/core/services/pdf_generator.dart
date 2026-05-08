@@ -941,7 +941,7 @@ class PdfGenerator {
                   AppFormatters.date(j.date),
                   '${j.totalUnits}',
                   AppFormatters.currency(j.expenses),
-                  _shapeRtlForPdf(locale, statusText),
+                  statusText,
                 ];
               }).toList(),
             ),
@@ -1138,13 +1138,10 @@ class PdfGenerator {
                 earnings
                     .map(
                       (e) => [
-                        _shapeRtlForPdf(
-                          locale,
-                          _translateCategoryForPdf(locale, e.category),
-                        ),
+                        _translateCategoryForPdf(locale, e.category),
                         AppFormatters.currency(e.amount),
                         AppFormatters.date(e.date),
-                        e.note,
+                        _safeTableCellText(e.note),
                       ],
                     )
                     .toList(),
@@ -1190,14 +1187,11 @@ class PdfGenerator {
                 expenses
                     .map(
                       (e) => [
-                        _shapeRtlForPdf(locale, e.expenseType),
-                        _shapeRtlForPdf(
-                          locale,
-                          _translateCategoryForPdf(locale, e.category),
-                        ),
+                        e.expenseType,
+                        _translateCategoryForPdf(locale, e.category),
                         AppFormatters.currency(e.amount),
                         AppFormatters.date(e.date),
-                        e.note,
+                        _safeTableCellText(e.note),
                       ],
                     )
                     .toList(),
@@ -2462,7 +2456,7 @@ class PdfGenerator {
                         e.category,
                         AppFormatters.currency(e.amount),
                         AppFormatters.date(e.date),
-                        e.note,
+                        _safeTableCellText(e.note),
                       ],
                     )
                     .toList(),
@@ -2727,7 +2721,7 @@ class PdfGenerator {
                         e.category,
                         AppFormatters.currency(e.amount),
                         AppFormatters.date(e.date),
-                        e.note,
+                        _safeTableCellText(e.note),
                       ],
                     )
                     .toList(),
@@ -2781,7 +2775,7 @@ class PdfGenerator {
                         e.category,
                         AppFormatters.currency(e.amount),
                         AppFormatters.date(e.date),
-                        e.note,
+                        _safeTableCellText(e.note),
                       ],
                     )
                     .toList(),
@@ -3208,13 +3202,13 @@ class PdfGenerator {
       final homeParts = bucket['homeParts'] as List<String>;
 
       final earningText = earningParts.isEmpty
-          ? '-'
+          ? ''
           : _safeTableCellText(earningParts.join(' | '), maxLength: 180);
       final workText = workParts.isEmpty
-          ? '-'
+          ? ''
           : _safeTableCellText(workParts.join(' | '), maxLength: 140);
       final homeText = homeParts.isEmpty
-          ? '-'
+          ? ''
           : _safeTableCellText(homeParts.join(' | '), maxLength: 180);
 
       return [
@@ -3254,10 +3248,10 @@ class PdfGenerator {
           : 'Total';
       tableRows.add([
         totalLabel,
-        '-',
+        '',
         amountWithSar(earnedToday),
-        '-',
-        '-',
+        '',
+        '',
         amountWithSar(homeTotal),
         amountWithSar(totalExpenses),
         '${net >= 0 ? '+' : '-'} ${amountWithSar(net.abs())}',

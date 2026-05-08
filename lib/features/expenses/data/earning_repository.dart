@@ -284,4 +284,28 @@ class EarningRepository {
         .snapshots()
         .map(_activeEarningsFromSnapshot);
   }
+
+  /// One-shot fetch of a tech's earnings for a specific month.
+  Future<List<EarningModel>> fetchMonthlyEarnings(
+    String techId,
+    DateTime month,
+  ) async {
+    final start = DateTime(month.year, month.month, 1);
+    final end = DateTime(month.year, month.month + 1, 1);
+    try {
+      final snap = await _ref
+          .where('techId', isEqualTo: techId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('date', isLessThan: Timestamp.fromDate(end))
+          .orderBy('date', descending: true)
+          .get();
+      return _activeEarningsFromSnapshot(snap);
+    } on FirebaseException catch (e) {
+      debugPrint('fetchMonthlyEarnings error: ${e.code} — ${e.message}');
+      throw EarningException.saveFailed();
+    } catch (e) {
+      debugPrint('fetchMonthlyEarnings unknown: $e');
+      throw EarningException.saveFailed();
+    }
+  }
 }
