@@ -534,7 +534,11 @@ class _HistoricalImportScreenState
                         padding: EdgeInsets.symmetric(vertical: 8),
                         child: Center(child: CircularProgressIndicator()),
                       ),
-                      error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                      error: (e, _) => ErrorCard(
+                        exception: e is AppException
+                            ? e
+                            : NetworkException.syncFailed(),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(

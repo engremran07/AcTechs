@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -674,7 +675,6 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               final sharedInvoiceUnits = _sharedInvoiceUnits(sharedGroups);
               final approvedShared =
                   approvedSharedAsync.value ?? const <JobModel>[];
-              final approvedSharedGroups = _sharedJobGroups(approvedShared);
               final filteredApprovedShared = _filter(approvedShared);
               final pendingAcInstallItems =
                   pendingAcInstalls.value ?? const <AcInstallModel>[];
@@ -988,77 +988,104 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                   style: Theme.of(context).textTheme.titleSmall,
                                 ),
                               ),
-                              ...filteredApprovedShared.map((job) {
-                                final approvedGroupSize =
-                                    approvedSharedGroups[job
-                                            .sharedInstallGroupKey]
-                                        ?.length ??
-                                    1;
-                                return ArcticCard(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  onTap: () => _showJobVerificationDialog(
-                                    job,
-                                    groupSize: approvedGroupSize,
-                                    sharedTechnicianNames:
-                                        _sharedTechnicianNames(
-                                          job,
-                                          approvedSharedGroups,
+                              ...() {
+                                // Group filtered approved shared installs by
+                                // invoice — one card per shared job number.
+                                final filteredGroups =
+                                    <String, List<JobModel>>{};
+                                for (final job in filteredApprovedShared) {
+                                  final key =
+                                      job.sharedInstallGroupKey.isNotEmpty
+                                          ? job.sharedInstallGroupKey
+                                          : job.id;
+                                  (filteredGroups[key] ??= []).add(job);
+                                }
+                                return filteredGroups.values.map((groupJobs) {
+                                  final rep = groupJobs.first;
+                                  final techNames = groupJobs
+                                      .map((j) => j.techName)
+                                      .toSet()
+                                      .join(', ');
+                                  return ArcticCard(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    onTap: () {
+                                      if (groupJobs.length == 1) {
+                                        context.push(
+                                          '/admin/job/${rep.id}',
+                                          extra: rep,
+                                        );
+                                      } else {
+                                        showModalBottomSheet<void>(
+                                          context: context,
+                                          builder: (_) => SafeArea(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(16),
+                                                  child: Text(
+                                                    rep.invoiceNumber,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium,
+                                                  ),
+                                                ),
+                                                ...groupJobs.map(
+                                                  (j) => ListTile(
+                                                    title: Text(j.techName),
+                                                    subtitle: Text(
+                                                      AppFormatters.units(
+                                                        _jobContributionUnits(
+                                                          j,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    trailing: const Icon(
+                                                      Icons.chevron_right,
+                                                    ),
+                                                    onTap: () {
+                                                      Navigator.pop(context);
+                                                      context.push(
+                                                        '/admin/job/${j.id}',
+                                                        extra: j,
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          rep.invoiceNumber,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleSmall,
                                         ),
-                                    allowActions: false,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        job.techName,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${job.invoiceNumber} • ${AppFormatters.date(job.date)}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 6,
-                                        children: [
-                                          Chip(
-                                            label: Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.sharedInstall,
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelSmall,
-                                            ),
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
-                                          Chip(
-                                            label: Text(
-                                              '${AppLocalizations.of(context)!.myShare}: ${AppFormatters.units(_jobContributionUnits(job))}',
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelSmall,
-                                            ),
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
-                                          if (_sharedTechnicianNames(
-                                            job,
-                                            approvedSharedGroups,
-                                          ).isNotEmpty)
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${rep.clientName} • ${AppFormatters.date(rep.date)}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 6,
+                                          children: [
                                             Chip(
                                               label: Text(
-                                                '${AppLocalizations.of(context)!.technicians}: ${_sharedTechnicianNames(job, approvedSharedGroups)}',
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.sharedInstall,
                                                 style: Theme.of(
                                                   context,
                                                 ).textTheme.labelSmall,
@@ -1067,12 +1094,24 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                                   MaterialTapTargetSize
                                                       .shrinkWrap,
                                             ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
+                                            Chip(
+                                              label: Text(
+                                                techNames,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.labelSmall,
+                                              ),
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList();
+                              }(),
                             ],
                           ],
                         ),

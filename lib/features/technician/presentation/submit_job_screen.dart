@@ -573,9 +573,7 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
 
       // Admin correction of an approved, unpaid job — preserves status.
       if (_isEditing && user.isAdmin) {
-        await ref
-            .read(jobRepositoryProvider)
-            .adminUpdateJob(job, user.uid);
+        await ref.read(jobRepositoryProvider).adminUpdateJob(job, user.uid);
         if (mounted) {
           AppFeedback.success(context, message: l.jobSaved);
           context.pop();

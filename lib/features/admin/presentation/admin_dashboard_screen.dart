@@ -64,6 +64,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
     final companies = ref.watch(allCompaniesProvider);
     final pendingCollabs = ref.watch(pendingCollaborationAggregatesProvider);
     final staleAggregates = ref.watch(staleSharedAggregatesProvider);
+    final approvedShared = ref.watch(approvedSharedInstallsProvider);
 
     return AppShortcuts(
       onRefresh: refresh,
@@ -192,11 +193,30 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                               ),
                             ],
                           ),
+                          const SizedBox(height: 12),
+                          approvedShared.when(
+                            data: (sharedJobs) => _DashCard(
+                              title: l.approvedSharedInstalls,
+                              value: '${sharedJobs.length}',
+                              icon: Icons.groups_rounded,
+                              color: ArcticTheme.arcticBlue,
+                              onTap: sharedJobs.isEmpty
+                                  ? null
+                                  : () => context.push('/admin/jobs/shared'),
+                            ),
+                            loading: () =>
+                                const ArcticShimmer(height: 70, count: 1),
+                            error: (_, _) => const SizedBox.shrink(),
+                          ),
                         ],
                       );
                     },
                     loading: () => const ArcticShimmer(height: 90, count: 2),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -224,13 +244,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             ),
                             loading: () =>
                                 const ArcticShimmer(height: 70, count: 1),
-                            error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                            error: (e, _) => ErrorCard(
+                              exception: e is AppException
+                                  ? e
+                                  : NetworkException.syncFailed(),
+                            ),
                           ),
                         ],
                       );
                     },
                     loading: () => const ArcticShimmer(height: 70, count: 1),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -292,7 +320,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(count: 3),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -381,7 +413,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(count: 2),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -478,7 +514,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const SizedBox.shrink(),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                 ],
               ),

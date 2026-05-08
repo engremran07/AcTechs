@@ -1030,6 +1030,8 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
           title: Text(l.history),
           bottom: TabBar(
             controller: _tabController,
+            labelColor: ArcticTheme.arcticBlue,
+            unselectedLabelColor: ArcticTheme.arcticTextPrimary,
             tabs: [
               Tab(text: l.jobs),
               Tab(text: l.inOut),

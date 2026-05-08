@@ -1,5 +1,45 @@
 # SESSION_LOG
 
+## 2026-05-08 — Bug fixes: shared install editability, history tab colors; feature: admin shared installs list — APK v1.4.9+54
+
+- Scope: Two bug fixes + one new feature; split-per-abi APK built and installed on R5GL22RGT9V
+- Changes implemented:
+  - **Shared install editability fix** (`approvals_screen.dart`): Approved shared install tiles now navigate via `context.push('/admin/job/${job.id}', extra: job)` instead of opening a read-only `_showJobVerificationDialog`. The admin edit button on `JobDetailsScreen` (visible when approved + unpaid + admin) is now reachable. Removed unused `approvedGroupSize` local variable.
+  - **History tab color fix** (`job_history_screen.dart`): Added explicit `labelColor: ArcticTheme.arcticBlue` and `unselectedLabelColor: ArcticTheme.arcticTextPrimary` to the `TabBar` so Jobs and In/Out labels are clearly visible against the dark AppBar background.
+  - **Admin shared installs stats card** (`admin_dashboard_screen.dart`): Added `approvedShared = ref.watch(approvedSharedInstallsProvider)` and a `_DashCard` showing approved shared install count after the AC-type row. Card is non-tappable when count is 0; navigates to `/admin/jobs/shared` when count > 0.
+  - **AdminSharedInstallsScreen** (new file `admin_shared_installs_screen.dart`): `ConsumerWidget` watching `approvedSharedInstallsProvider`; shows list of approved shared install jobs with client name, tech/invoice, date, status badge, and shared-install chip. Tap → `context.push('/admin/job/:jobId')`.
+  - **Route** (`app_router.dart`): Added `/admin/jobs/shared` GoRoute before the existing `/admin/job/:jobId` route.
+- Verification:
+  - `flutter analyze --no-pub` — "No issues found!"
+  - `flutter build apk --split-per-abi --release` — arm64-v8a installed on R5GL22RGT9V
+  - APK v1.4.9+54 uninstalled old + installed new; APK copied to /sdcard/Download/
+- No Firestore rules/indexes changed → no deploy needed
+
+## 2026-07-11 — Admin edit approved jobs, silent error fixes, audit remediations — APK v1.4.8+52
+
+- Scope: Completed pending infrastructure items from prior session; implemented admin edit of approved jobs feature; fixed all 12 silent error handlers; Firestore index + rules deploy; full sign-off
+- Changes implemented:
+  - **Admin edit approved jobs** (full feature):
+    - `firestore.rules`: `adminApprovedJobUpdate()` helper; `jobUpdateAllowed()` updated to permit admin edits of approved/unpaid jobs
+    - `JobModel`: `adminEditedBy: String?` + `adminEditedAt: DateTime?` fields; freezed + json codegen run
+    - `JobRepository.adminUpdateJob(JobModel job, String adminUid)`: updates approved job with admin metadata
+    - `SubmitJobScreen`: admin early-return branch calls `adminUpdateJob()` + `context.pop()` when `_isEditing && user.isAdmin`
+    - `JobDetailsScreen`: admin edit button (visible when approved + unpaid + admin); admin-edited badge (when `adminEditedAt != null`)
+    - ARB: 4 new l10n keys — `tryAgain`, `adminEditJob`, `adminEditedBadge`, `adminEditedAt`; `flutter gen-l10n` run
+  - **U-01..U-12 silent errors fixed**: All 12 `SizedBox.shrink()` error handlers replaced with `ErrorCard(exception: ...)` across `AdminDashboardScreen`, `TechDashboardScreen`, `HistoricalImportScreen`, `TeamScreen`, `InvoiceReconciliationScreen`
+  - **L-01 l10n fix**: `ErrorCard` "Try Again" hardcoded string replaced with `context.l10n.tryAgain`
+  - **N-01 nav fix**: `context.go('/admin/team')` → `context.push('/admin/team')` in `AdminDashboardScreen`
+  - **S-01 isAdmin guard**: `pendingCollaborationAggregatesProvider` now returns empty list for non-admin users
+  - **D-01/D-02 Firestore indexes**: Composite indexes for `expenses` (techId + status + date) and `earnings` (techId + status + date) added to `firestore.indexes.json` and deployed
+  - **Test fix**: `stale_shared_aggregates_test.dart` — seed dates changed from 10 days to 31 days so they exceed the 30-day default threshold
+- Verification:
+  - `flutter analyze --no-pub` — "No issues found!"
+  - `flutter test` — 423/423 passed
+  - `flutter build apk --split-per-abi --release` — arm64 30.3MB, armeabi 28.8MB, x86_64 31.8MB
+  - APK v1.4.8+52 uninstalled old + installed new on R5GL22RGT9V
+  - Firestore rules + indexes deployed to actechs-d415e
+- Git: commit `9664949` pushed to main (pre-commit hook auto-bumped to 1.4.9+53 for next build)
+
 ## 2026-07-11 — Bug fixes: tech data loading, WhatsApp icon, duplicate email detection — APK v1.4.5+49
 
 - Scope: Four regressions diagnosed and fixed; APK built and installed on device R5GL22RGT9V

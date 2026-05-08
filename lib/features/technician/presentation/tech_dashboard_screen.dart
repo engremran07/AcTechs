@@ -212,7 +212,11 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(height: 90, count: 1),
-                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+                    error: (e, _) => ErrorCard(
+                      exception: e is AppException
+                          ? e
+                          : NetworkException.syncFailed(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -272,7 +276,8 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                       );
                     },
                     loading: () => const SizedBox.shrink(),
-                    error: (_, _) => ErrorCard(exception: NetworkException.syncFailed()),
+                    error: (_, _) =>
+                        ErrorCard(exception: NetworkException.syncFailed()),
                   ),
                   const SizedBox(height: 24),
 
@@ -342,7 +347,8 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                       );
                     },
                     loading: () => const SizedBox.shrink(),
-                    error: (_, _) => ErrorCard(exception: NetworkException.syncFailed()),
+                    error: (_, _) =>
+                        ErrorCard(exception: NetworkException.syncFailed()),
                   ),
 
                   // Today's Jobs

@@ -387,7 +387,11 @@ class _InvoiceReconciliationScreenState
                 );
               },
               loading: () => const ArcticShimmer(height: 56, count: 1),
-              error: (e, st) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
+              error: (e, st) => ErrorCard(
+                exception: e is AppException
+                    ? e
+                    : NetworkException.syncFailed(),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -403,9 +407,7 @@ class _InvoiceReconciliationScreenState
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimary,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           )
                         : const Icon(Icons.upload_file_outlined),

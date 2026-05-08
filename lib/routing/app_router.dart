@@ -24,6 +24,7 @@ import 'package:ac_techs/features/admin/presentation/invoice_settlements_screen.
 import 'package:ac_techs/features/admin/presentation/invoice_reconciliation_screen.dart';
 import 'package:ac_techs/features/admin/presentation/companies_screen.dart';
 import 'package:ac_techs/features/admin/presentation/team_screen.dart';
+import 'package:ac_techs/features/admin/presentation/admin_shared_installs_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
 import 'package:ac_techs/features/admin/presentation/historical_import_screen.dart';
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
@@ -379,6 +380,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: '/admin/jobs/shared',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const AdminSharedInstallsScreen(),
+            ),
+          ),
+          GoRoute(
             path: '/admin/job/:jobId',
             pageBuilder: (context, state) {
               final initialJob = state.extra is JobModel
@@ -388,6 +396,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               return _slideFadePage(
                 pageKey: state.pageKey,
                 child: JobDetailsScreen(jobId: jobId, initialJob: initialJob),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/admin/submit',
+            pageBuilder: (context, state) {
+              final initialJob = state.extra is JobModel
+                  ? state.extra as JobModel
+                  : null;
+              return _slideFadePage(
+                pageKey: state.pageKey,
+                child: SubmitJobScreen(initialJob: initialJob),
               );
             },
           ),

@@ -175,7 +175,7 @@ class JobDetailsScreen extends ConsumerWidget {
                           alignment: AlignmentDirectional.centerEnd,
                           child: OutlinedButton.icon(
                             onPressed: () =>
-                                context.push('/tech/submit', extra: job),
+                                context.push('/admin/submit', extra: job),
                             icon: const Icon(
                               Icons.admin_panel_settings_outlined,
                             ),
@@ -196,9 +196,7 @@ class JobDetailsScreen extends ConsumerWidget {
                             const SizedBox(width: 4),
                             Text(
                               l.adminEditedBadge,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: ArcticTheme.arcticTextSecondary,
                                   ),

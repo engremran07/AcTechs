@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 1.4.9+54
+
+- Fixed: approved shared install tiles in Approvals screen now navigate to `JobDetailsScreen` (admin edit button accessible for approved+unpaid jobs)
+- Fixed: history screen tab bar — Jobs/In-Out labels now have explicit color overrides for clear visibility on dark AppBar
+- Added: "Approved Shared Installs" tappable stats card on admin dashboard (navigates to shared installs list screen when count > 0)
+- Added: `AdminSharedInstallsScreen` — list of all approved shared install jobs; each tile taps into job details
+- Added: `/admin/jobs/shared` route in GoRouter
+
+## 1.4.8+52
+
+- Added admin edit of approved jobs: `adminUpdateJob()` in `JobRepository`, admin edit button + admin-edited badge in `JobDetailsScreen`, admin code-path in `SubmitJobScreen`
+- Added `adminEditedBy`/`adminEditedAt` fields to `JobModel`; Firestore rules `adminApprovedJobUpdate()` helper
+- Fixed 12 silent error handlers (U-01..U-12): replaced `SizedBox.shrink()` with `ErrorCard` across dashboard, analytics, and team screens
+- Fixed `ErrorCard` hardcoded "Try Again" string → `context.l10n.tryAgain`
+- Fixed `context.go('/admin/team')` → `context.push('/admin/team')` in admin dashboard
+- Added `isAdmin` guard to `pendingCollaborationAggregatesProvider`
+- Added composite Firestore indexes for expenses and earnings (techId + status + date); deployed
+- Added 4 new l10n keys: `tryAgain`, `adminEditJob`, `adminEditedBadge`, `adminEditedAt`
+
 ## 1.4.6+50
 
 - Fixed reports system: replaced `ref.read(autoDispose StreamProvider).value` (returns null when unsubscribed) with one-shot `Future` Firestore fetches across all 12 report handlers
