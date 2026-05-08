@@ -1310,6 +1310,26 @@ class _HistoryJobCard extends StatelessWidget {
               ],
             ),
           ],
+          if (job.adminEditedAt != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.edit_note_outlined,
+                  size: 14,
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l.adminEditedBadge,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: ArcticTheme.arcticTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (job.isRejected && job.adminNote.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(

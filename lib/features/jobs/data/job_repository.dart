@@ -1684,6 +1684,7 @@ class JobRepository {
       // Restore immutable fields from the existing snapshot.
       data['status'] = 'approved';
       data['techId'] = existing.techId;
+      data['techName'] = existingSnap.data()!['techName'] ?? existing.techName;
       data['submittedAt'] = existingSnap.data()!['submittedAt'];
       data['approvedBy'] = existingSnap.data()!['approvedBy'];
       data['reviewedAt'] = existingSnap.data()!['reviewedAt'];
@@ -1724,13 +1725,66 @@ class JobRepository {
         return;
       }
 
-      // Shared install: net-delta aggregate update (no reduction guard).
+      // Shared install: fan-out shared-field corrections to all team member
+      // docs and apply a net-delta to aggregate consumed counters.
+      // If the groupKey changed (invoice number / company edited), the
+      // aggregate doc is atomically renamed (copy-to-new-id + delete-old)
+      // inside the same transaction.
       _validateSupportedSharedInstallUnits(job);
+      final oldGroupKey = existing.sharedInstallGroupKey;
+      final groupKeyChanged =
+          oldGroupKey.isNotEmpty && oldGroupKey != resolvedGroupKey;
+
+      // Query sibling docs BEFORE the transaction.
+      // Firestore transactions cannot execute queries — doc IDs must be
+      // known in advance so they can be read transactionally.
+      final siblingSnaps = <DocumentSnapshot<Map<String, dynamic>>>[];
+      if (oldGroupKey.isNotEmpty) {
+        final sibQuery = await _jobsRef
+            .where('sharedInstallGroupKey', isEqualTo: oldGroupKey)
+            .get();
+        for (final d in sibQuery.docs) {
+          if (d.id != job.id) siblingSnaps.add(d);
+        }
+      }
+
+      // Shared fields that must be propagated to every team member doc.
+      // Per-tech fields (techId, techName, acUnits, contribution counts,
+      // charges, settlement state) are deliberately excluded.
+      final sharedFieldsUpdate = <String, dynamic>{
+        'clientName': data['clientName'],
+        'clientContact': data['clientContact'],
+        'invoiceNumber': normalizedInvoice,
+        'companyId': data['companyId'],
+        'companyName': data['companyName'],
+        'date': data['date'],
+        'sharedInstallGroupKey': resolvedGroupKey,
+        'sharedInvoiceTotalUnits': data['sharedInvoiceTotalUnits'],
+        'sharedInvoiceSplitUnits': data['sharedInvoiceSplitUnits'],
+        'sharedInvoiceWindowUnits': data['sharedInvoiceWindowUnits'],
+        'sharedInvoiceFreestandingUnits':
+            data['sharedInvoiceFreestandingUnits'],
+        'sharedInvoiceUninstallSplitUnits':
+            data['sharedInvoiceUninstallSplitUnits'],
+        'sharedInvoiceUninstallWindowUnits':
+            data['sharedInvoiceUninstallWindowUnits'],
+        'sharedInvoiceUninstallFreestandingUnits':
+            data['sharedInvoiceUninstallFreestandingUnits'],
+        'sharedInvoiceBracketCount': data['sharedInvoiceBracketCount'],
+        'sharedDeliveryTeamCount': data['sharedDeliveryTeamCount'],
+        'sharedInvoiceDeliveryAmount': data['sharedInvoiceDeliveryAmount'],
+        'adminEditedBy': adminUid,
+        'adminEditedAt': FieldValue.serverTimestamp(),
+      };
+
       await firestore.runTransaction((tx) async {
-        final aggregateRef = _sharedAggregatesRef.doc(
-          _sharedAggregateDocId(resolvedGroupKey),
+        // Read aggregate from wherever it currently lives.
+        // If the groupKey changed the aggregate is still at the old key.
+        final liveAggKey = groupKeyChanged ? oldGroupKey : resolvedGroupKey;
+        final liveAggRef = _sharedAggregatesRef.doc(
+          _sharedAggregateDocId(liveAggKey),
         );
-        final aggregateSnap = await tx.get(aggregateRef);
+        final aggregateSnap = await tx.get(liveAggRef);
         if (aggregateSnap.exists) {
           final agg = aggregateSnap.data() ?? <String, dynamic>{};
 
@@ -1916,7 +1970,8 @@ class JobRepository {
             }
           }
 
-          tx.update(aggregateRef, {
+          // Compute updated consumed counters (net-delta, no reduction guard).
+          final updatedConsumed = <String, dynamic>{
             'consumedSplitUnits': (curSplit - oldSplit + newSplit).clamp(
               0,
               1 << 31,
@@ -1946,9 +2001,51 @@ class JobRepository {
             'consumedDeliveryAmount': (curDelivery - oldDelivery + newDelivery)
                 .clamp(0.0, double.infinity),
             'updatedAt': FieldValue.serverTimestamp(),
-          });
+          };
+
+          if (groupKeyChanged) {
+            // Rename aggregate: copy to new doc ID, delete old.
+            // Consumed counters are preserved so future team submissions
+            // can still reference the correct totals.
+            final newAggRef = _sharedAggregatesRef.doc(
+              _sharedAggregateDocId(resolvedGroupKey),
+            );
+            final renamedAgg = Map<String, dynamic>.from(agg)
+              ..addAll(updatedConsumed)
+              ..addAll({
+                'groupKey': resolvedGroupKey,
+                'clientName': data['clientName'],
+                'clientContact': data['clientContact'],
+                'companyId': data['companyId'],
+                'companyName': data['companyName'],
+                'sharedInvoiceSplitUnits': data['sharedInvoiceSplitUnits'],
+                'sharedInvoiceWindowUnits': data['sharedInvoiceWindowUnits'],
+                'sharedInvoiceFreestandingUnits':
+                    data['sharedInvoiceFreestandingUnits'],
+                'sharedInvoiceUninstallSplitUnits':
+                    data['sharedInvoiceUninstallSplitUnits'],
+                'sharedInvoiceUninstallWindowUnits':
+                    data['sharedInvoiceUninstallWindowUnits'],
+                'sharedInvoiceUninstallFreestandingUnits':
+                    data['sharedInvoiceUninstallFreestandingUnits'],
+                'sharedInvoiceBracketCount': data['sharedInvoiceBracketCount'],
+                'sharedDeliveryTeamCount': data['sharedDeliveryTeamCount'],
+                'sharedInvoiceDeliveryAmount':
+                    data['sharedInvoiceDeliveryAmount'],
+              });
+            tx.set(newAggRef, renamedAgg);
+            tx.delete(liveAggRef);
+          } else {
+            tx.update(liveAggRef, updatedConsumed);
+          }
         }
         tx.update(jobRef, data);
+        // Fan-out shared-field corrections to all sibling team-member docs.
+        // Per-tech fields (techId, techName, acUnits, contribution counts,
+        // charges, settlement state) are preserved on each sibling doc.
+        for (final sib in siblingSnaps) {
+          tx.update(_jobsRef.doc(sib.id), sharedFieldsUpdate);
+        }
         tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
           'changedBy': adminUid,
           'changedAt': FieldValue.serverTimestamp(),
