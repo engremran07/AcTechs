@@ -1,5 +1,23 @@
 # SESSION_LOG
 
+## 2026-07-12 — Share recalculation, Firestore rules security, indexes, governance — APK v1.5.1+59
+
+- Scope: Remaining audit findings from Master Audit Report v12 implemented in one session
+- Changes implemented:
+  - **Share auto-recalculation** (`job_repository.dart`): `adminUpdateJob()` now proportionally recalculates `techSplitShare`, `techWindowShare`, `techFreestandingShare`, `techUninstallSplitShare`, `techUninstallWindowShare`, `techUninstallFreestandingShare`, `techBracketShare`, and `charges.deliveryAmount` on every sibling doc when admin changes shared invoice totals. Uses integer `~/` division for unit counts and floating-point ratio for delivery. Computes adjustments inside the `if (aggregateSnap.exists)` block where old totals are available; applies them in the fan-out loop via `siblingShareAdjustments` map.
+  - **Firestore rules security fixes**:
+    - F-C002: `adminGeneralJobUpdateAllowed()` now enforces `request.resource.data.diff(resource.data).affectedKeys().hasOnly([...])` — 35-field allow-list prevents admin from touching immutable fields (techId, submittedAt, isDeleted, settlement*) on non-approved jobs
+    - F-C014: `validJobCreatePayload()` — added `invoiceNumber.size() <= 50`
+    - F-C008: `validJobCreatePayload()` — added `clientName.size() <= 200` and `get('clientContact', '').size() <= 50`
+  - **Firestore indexes** (`firestore.indexes.json`): Added `jobs [techId + isDeleted + date DESC]`, `jobs [status + isDeleted + date DESC]`, `ac_installs [techId + status + date DESC]`, `earnings [techId + status + date DESC]`
+  - **Governance**: bumped pubspec to `1.5.1+59`; updated `MASTER_BLUEPRINT.md` version; added `analyze_out.txt` to `.gitignore`; added CHANGELOG entries for 1.5.0+58 and 1.5.1+59
+- Verification:
+  - `flutter analyze --no-pub` — "No issues found!"
+  - `flutter test` — all tests passed
+  - Firestore rules linted and deployed
+  - Firestore indexes deployed
+  - APK v1.5.1+59 built and installed on R5GL22RGT9V
+
 ## 2026-05-08 — Bug fixes: shared install editability, history tab colors; feature: admin shared installs list — APK v1.4.9+54
 
 - Scope: Two bug fixes + one new feature; split-per-abi APK built and installed on R5GL22RGT9V

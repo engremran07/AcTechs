@@ -39,6 +39,7 @@ lib/**/*.g.dart
 .claude/
 .firebase/
 analyze_output.txt
+analyze_out.txt
 debug.log
 docs/debug.log
 firestore-debug.log

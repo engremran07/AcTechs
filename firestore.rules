@@ -222,7 +222,12 @@ service cloud.firestore {
       request.resource.data.companyName is string &&
       request.resource.data.invoiceNumber is string &&
       request.resource.data.invoiceNumber.size() > 0 &&
+      // F-C014: cap invoice number length to prevent oversized payloads
+      request.resource.data.invoiceNumber.size() <= 50 &&
       request.resource.data.clientName is string &&
+      // F-C008: prevent arbitrarily long client strings
+      request.resource.data.clientName.size() <= 200 &&
+      request.resource.data.get('clientContact', '').size() <= 50 &&
       request.resource.data.acUnits is list &&
       request.resource.data.acUnits.size() > 0 &&
       request.resource.data.expenses is number &&
@@ -416,7 +421,27 @@ service cloud.firestore {
     function adminGeneralJobUpdateAllowed() {
       return dateIsUnlocked(resource.data.date) &&
         dateIsUnlocked(request.resource.data.date) &&
-        resource.data.status != 'approved';
+        resource.data.status != 'approved' &&
+        // F-C002: restrict which fields admin can touch on non-approved jobs.
+        // Immutable fields (techId, submittedAt, isDeleted, settlement*) are excluded.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName', 'companyId', 'companyName', 'invoiceNumber',
+          'clientName', 'clientContact', 'acUnits', 'charges', 'date',
+          'expenses', 'expenseNote', 'adminNote', 'status',
+          'approvedBy', 'reviewedAt',
+          'isSharedInstall', 'sharedInstallGroupKey',
+          'sharedInvoiceTotalUnits', 'sharedContributionUnits',
+          'sharedInvoiceSplitUnits', 'sharedInvoiceWindowUnits',
+          'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits', 'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
+          'sharedInvoiceBracketCount', 'sharedDeliveryTeamCount',
+          'sharedInvoiceDeliveryAmount',
+          'techSplitShare', 'techWindowShare', 'techFreestandingShare',
+          'techUninstallSplitShare', 'techUninstallWindowShare',
+          'techUninstallFreestandingShare', 'techBracketShare',
+          'adminEditedBy', 'adminEditedAt', 'editRequestedAt'
+        ]);
     }
 
     // Admin can correct data on already-approved jobs that are not yet in a

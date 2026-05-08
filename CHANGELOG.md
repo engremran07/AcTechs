@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.5.1+59
+
+- Fixed: proportional per-sibling share recalculation in `adminUpdateJob()` — when admin changes shared invoice totals (`sharedInvoiceSplitUnits`, etc.), each sibling job doc's `techSplitShare` / `techWindowShare` / `techFreestandingShare` / `techUninstallSplitShare` / `techUninstallWindowShare` / `techUninstallFreestandingShare` / `techBracketShare` / `charges.deliveryAmount` is recalculated proportionally inside the transaction
+- Security: `adminGeneralJobUpdateAllowed()` Firestore rule now restricts which fields admin can touch on non-approved jobs via `affectedKeys().hasOnly([...])` (F-C002)
+- Security: `validJobCreatePayload()` Firestore rule adds length limits — `invoiceNumber.size() <= 50` (F-C014), `clientName.size() <= 200`, `clientContact.size() <= 50` (F-C008)
+- Indexes: added composite Firestore indexes for `jobs [techId + isDeleted + date]`, `jobs [status + isDeleted + date]`, `ac_installs [techId + status + date]`, `earnings [techId + status + date DESC]` (F-D001..F-D004)
+- Docs: added `analyze_out.txt` to `.gitignore`
+
+## 1.5.0+58
+
+- Fixed: `techName` preserved on sibling docs when admin edits a shared install job — `adminUpdateJob()` reads `existing.techName` from Firestore and restores it in the update payload to prevent name corruption
+- Added: fan-out of shared fields (`clientName`, `invoiceNumber`, `sharedInvoice*`, `sharedDeliveryTeamCount`, `adminEditedBy/At`) to all sibling team-member job docs when admin edits a shared install
+- Added: "Admin Edited" badge in `_HistoryJobCard` when `adminEditedAt != null`
+
 ## 1.4.9+54
 
 - Fixed: approved shared install tiles in Approvals screen now navigate to `JobDetailsScreen` (admin edit button accessible for approved+unpaid jobs)

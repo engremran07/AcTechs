@@ -996,8 +996,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                 for (final job in filteredApprovedShared) {
                                   final key =
                                       job.sharedInstallGroupKey.isNotEmpty
-                                          ? job.sharedInstallGroupKey
-                                          : job.id;
+                                      ? job.sharedInstallGroupKey
+                                      : job.id;
                                   (filteredGroups[key] ??= []).add(job);
                                 }
                                 return filteredGroups.values.map((groupJobs) {
@@ -1022,13 +1022,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(16),
+                                                  padding: const EdgeInsets.all(
+                                                    16,
+                                                  ),
                                                   child: Text(
                                                     rep.invoiceNumber,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .titleMedium,
+                                                    style: Theme.of(
+                                                      context,
+                                                    ).textTheme.titleMedium,
                                                   ),
                                                 ),
                                                 ...groupJobs.map(

@@ -47,17 +47,16 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final groupJobs = groups[index];
                   final rep = groupJobs.first;
-                  final techNames =
-                      groupJobs.map((j) => j.techName).toSet().join(', ');
+                  final techNames = groupJobs
+                      .map((j) => j.techName)
+                      .toSet()
+                      .join(', ');
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: ArcticCard(
                       onTap: () {
                         if (groupJobs.length == 1) {
-                          context.push(
-                            '/admin/job/${rep.id}',
-                            extra: rep,
-                          );
+                          context.push('/admin/job/${rep.id}', extra: rep);
                         } else {
                           showModalBottomSheet<void>(
                             context: context,
@@ -69,17 +68,16 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                                     padding: const EdgeInsets.all(16),
                                     child: Text(
                                       rep.invoiceNumber,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
                                   ),
                                   ...groupJobs.map(
                                     (j) => ListTile(
                                       title: Text(j.techName),
                                       subtitle: Text(j.invoiceNumber),
-                                      trailing:
-                                          const Icon(Icons.chevron_right),
+                                      trailing: const Icon(Icons.chevron_right),
                                       onTap: () {
                                         Navigator.pop(context);
                                         context.push(
@@ -104,8 +102,7 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   rep.clientName,
-                                  style:
-                                      Theme.of(context).textTheme.titleSmall,
+                                  style: Theme.of(context).textTheme.titleSmall,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
@@ -117,9 +114,7 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   AppFormatters.date(rep.date),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: ArcticTheme.arcticTextSecondary,
                                       ),

@@ -1785,6 +1785,9 @@ class JobRepository {
           _sharedAggregateDocId(liveAggKey),
         );
         final aggregateSnap = await tx.get(liveAggRef);
+        // Per-sibling proportional share adjustments; populated inside the
+        // aggregateSnap.exists block where old invoice totals are available.
+        final siblingShareAdjustments = <String, Map<String, dynamic>>{};
         if (aggregateSnap.exists) {
           final agg = aggregateSnap.data() ?? <String, dynamic>{};
 
@@ -2003,6 +2006,49 @@ class JobRepository {
             'updatedAt': FieldValue.serverTimestamp(),
           };
 
+          // Proportionally recalculate each sibling's per-tech unit shares
+          // when the admin changes the shared invoice totals. Without this,
+          // a sibling's techSplitShare could exceed the new invoice total.
+          for (final sib in siblingSnaps) {
+            final sibData = sib.data() ?? <String, dynamic>{};
+            final adj = <String, dynamic>{};
+            void adjInt(String key, int oldTotal, int newTotal) {
+              if (oldTotal <= 0 || newTotal == oldTotal) return;
+              final oldShare = (sibData[key] as int?) ?? 0;
+              adj[key] = (oldShare * newTotal ~/ oldTotal).clamp(0, newTotal);
+            }
+            adjInt('techSplitShare', totalSplit, newSplit);
+            adjInt('techWindowShare', totalWindow, newWindow);
+            adjInt('techFreestandingShare', totalFreestanding, newFreestanding);
+            adjInt('techUninstallSplitShare', totalUninstallSplit, newUninstallSplit);
+            adjInt(
+              'techUninstallWindowShare',
+              totalUninstallWindow,
+              newUninstallWindow,
+            );
+            adjInt(
+              'techUninstallFreestandingShare',
+              totalUninstallFreestanding,
+              newUninstallFreestanding,
+            );
+            adjInt('techBracketShare', totalBracket, newBracket);
+            // Delivery: proportionally adjust charges.deliveryAmount
+            if (totalDelivery > 0.001 &&
+                (newDelivery - totalDelivery).abs() > 0.001) {
+              final sibCharges =
+                  (sibData['charges'] as Map<String, dynamic>?) ??
+                  const <String, dynamic>{};
+              final sibOldDelivery =
+                  (sibCharges['deliveryAmount'] as num?)?.toDouble() ?? 0.0;
+              final newSibDelivery =
+                  (sibOldDelivery * newDelivery / totalDelivery)
+                      .clamp(0.0, newDelivery);
+              adj['charges'] = Map<String, dynamic>.from(sibCharges)
+                ..['deliveryAmount'] = newSibDelivery;
+            }
+            if (adj.isNotEmpty) siblingShareAdjustments[sib.id] = adj;
+          }
+
           if (groupKeyChanged) {
             // Rename aggregate: copy to new doc ID, delete old.
             // Consumed counters are preserved so future team submissions
@@ -2043,8 +2089,12 @@ class JobRepository {
         // Fan-out shared-field corrections to all sibling team-member docs.
         // Per-tech fields (techId, techName, acUnits, contribution counts,
         // charges, settlement state) are preserved on each sibling doc.
+        // Share adjustments are merged per-sibling when invoice totals changed.
         for (final sib in siblingSnaps) {
-          tx.update(_jobsRef.doc(sib.id), sharedFieldsUpdate);
+          final sibUpdate = Map<String, dynamic>.from(sharedFieldsUpdate);
+          final shareAdj = siblingShareAdjustments[sib.id];
+          if (shareAdj != null) sibUpdate.addAll(shareAdj);
+          tx.update(_jobsRef.doc(sib.id), sibUpdate);
         }
         tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
           'changedBy': adminUid,
