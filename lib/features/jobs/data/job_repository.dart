@@ -1644,6 +1644,201 @@ class JobRepository {
     }
   }
 
+  /// Admin correction of an approved, unpaid job.
+  /// Preserves status, settlement state, approvedBy, and reviewedAt.
+  /// Sets adminEditedBy/adminEditedAt. For shared installs, applies a
+  /// net-delta to aggregate consumed counters (no reduction guard — admin
+  /// can decrease units). Capacity check still applies.
+  Future<void> adminUpdateJob(JobModel job, String adminUid) async {
+    if (job.id.trim().isEmpty) throw JobException.saveFailed();
+
+    try {
+      final jobRef = _jobsRef.doc(job.id);
+      final existingSnap = await jobRef.get();
+      if (!existingSnap.exists) throw JobException.saveFailed();
+
+      final existing = JobModel.fromFirestore(existingSnap);
+
+      if (!existing.isApproved || !existing.isUnpaid) {
+        throw JobException.jobNotEditable();
+      }
+
+      final normalizedInvoice = InvoiceUtils.normalize(job.invoiceNumber);
+      final resolvedGroupKey = job.isSharedInstall
+          ? (job.sharedInstallGroupKey.trim().isEmpty
+                ? InvoiceUtils.sharedInstallGroupKey(
+                    companyId: job.companyId,
+                    invoiceNumber: normalizedInvoice,
+                  )
+                : InvoiceUtils.normalize(
+                    job.sharedInstallGroupKey,
+                  ).toLowerCase())
+          : '';
+
+      final data = job.toFirestore();
+      data['invoiceNumber'] = normalizedInvoice;
+      data['sharedInstallGroupKey'] = resolvedGroupKey;
+      data['adminEditedBy'] = adminUid;
+      data['adminEditedAt'] = FieldValue.serverTimestamp();
+
+      // Restore immutable fields from the existing snapshot.
+      data['status'] = 'approved';
+      data['techId'] = existing.techId;
+      data['submittedAt'] = existingSnap.data()!['submittedAt'];
+      data['approvedBy'] = existingSnap.data()!['approvedBy'];
+      data['reviewedAt'] = existingSnap.data()!['reviewedAt'];
+      data['adminNote'] = existingSnap.data()!['adminNote'] ?? '';
+      data['settlementStatus'] =
+          existingSnap.data()!['settlementStatus'] ?? 'unpaid';
+
+      data.remove('importMeta');
+      for (final k in const [
+        'settlementBatchId',
+        'settlementRound',
+        'settlementAmount',
+        'settlementPaymentMethod',
+        'settlementAdminNote',
+        'settlementTechnicianComment',
+        'settlementRequestedBy',
+        'settlementRequestedAt',
+        'settlementRespondedAt',
+        'settlementPaidAt',
+        'settlementCorrectedAt',
+        'isDeleted',
+        'deletedAt',
+        'editRequestedAt',
+      ]) {
+        data.remove(k);
+      }
+
+      if (!job.isSharedInstall) {
+        await jobRef.update(data);
+        await jobRef.collection(AppConstants.historySubCollection).add({
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': 'approved',
+          'newStatus': 'approved',
+          'flow': 'admin',
+          'action': 'admin_edit',
+        });
+        return;
+      }
+
+      // Shared install: net-delta aggregate update (no reduction guard).
+      _validateSupportedSharedInstallUnits(job);
+      await firestore.runTransaction((tx) async {
+        final aggregateRef = _sharedAggregatesRef.doc(
+          _sharedAggregateDocId(resolvedGroupKey),
+        );
+        final aggregateSnap = await tx.get(aggregateRef);
+        if (aggregateSnap.exists) {
+          final agg = aggregateSnap.data() ?? <String, dynamic>{};
+
+          final oldSplit = _unitsForType(existing, AppConstants.unitTypeSplitAc);
+          final oldWindow = _unitsForType(existing, AppConstants.unitTypeWindowAc);
+          final oldFreestanding = _unitsForType(existing, AppConstants.unitTypeFreestandingAc);
+          final oldUninstallSplit = _unitsForType(existing, AppConstants.unitTypeUninstallSplit);
+          final oldUninstallWindow = _unitsForType(existing, AppConstants.unitTypeUninstallWindow);
+          final oldUninstallFreestanding = _unitsForType(existing, AppConstants.unitTypeUninstallFreestanding);
+          final oldBracket = _bracketCount(existing);
+          final oldDelivery = existing.charges?.deliveryAmount ?? 0.0;
+
+          final newSplit = _unitsForType(job, AppConstants.unitTypeSplitAc);
+          final newWindow = _unitsForType(job, AppConstants.unitTypeWindowAc);
+          final newFreestanding = _unitsForType(job, AppConstants.unitTypeFreestandingAc);
+          final newUninstallSplit = _unitsForType(job, AppConstants.unitTypeUninstallSplit);
+          final newUninstallWindow = _unitsForType(job, AppConstants.unitTypeUninstallWindow);
+          final newUninstallFreestanding = _unitsForType(job, AppConstants.unitTypeUninstallFreestanding);
+          final newBracket = _bracketCount(job);
+          final newDelivery = job.charges?.deliveryAmount ?? 0.0;
+
+          final curSplit = _readAggregateInt(agg, 'consumedSplitUnits');
+          final curWindow = _readAggregateInt(agg, 'consumedWindowUnits');
+          final curFreestanding = _readAggregateInt(agg, 'consumedFreestandingUnits');
+          final curUninstallSplit = _readAggregateInt(agg, 'consumedUninstallSplitUnits');
+          final curUninstallWindow = _readAggregateInt(agg, 'consumedUninstallWindowUnits');
+          final curUninstallFreestanding = _readAggregateInt(agg, 'consumedUninstallFreestandingUnits');
+          final curBracket = _readAggregateInt(agg, 'consumedBracketCount');
+          final curDelivery = _readAggregateDouble(agg, 'consumedDeliveryAmount');
+
+          final totalSplit = _readAggregateInt(agg, 'sharedInvoiceSplitUnits');
+          final totalWindow = _readAggregateInt(agg, 'sharedInvoiceWindowUnits');
+          final totalFreestanding = _readAggregateInt(agg, 'sharedInvoiceFreestandingUnits');
+          final totalUninstallSplit = _readAggregateInt(agg, 'sharedInvoiceUninstallSplitUnits');
+          final totalUninstallWindow = _readAggregateInt(agg, 'sharedInvoiceUninstallWindowUnits');
+          final totalUninstallFreestanding = _readAggregateInt(agg, 'sharedInvoiceUninstallFreestandingUnits');
+          final totalBracket = _readAggregateInt(agg, 'sharedInvoiceBracketCount');
+
+          void checkCapacity(
+            String unitType,
+            int curConsumed,
+            int oldContrib,
+            int newContrib,
+            int total,
+          ) {
+            if (total <= 0 || newContrib <= 0) return;
+            final othersConsumed = curConsumed - oldContrib;
+            final remaining = (total - othersConsumed).clamp(0, total);
+            if (newContrib > remaining) {
+              throw JobException.sharedTypeUnitsExceeded(
+                unitType: unitType,
+                remaining: remaining,
+              );
+            }
+          }
+
+          checkCapacity(AppConstants.unitTypeSplitAc, curSplit, oldSplit, newSplit, totalSplit);
+          checkCapacity(AppConstants.unitTypeWindowAc, curWindow, oldWindow, newWindow, totalWindow);
+          checkCapacity(AppConstants.unitTypeFreestandingAc, curFreestanding, oldFreestanding, newFreestanding, totalFreestanding);
+          checkCapacity(AppConstants.unitTypeUninstallSplit, curUninstallSplit, oldUninstallSplit, newUninstallSplit, totalUninstallSplit);
+          checkCapacity(AppConstants.unitTypeUninstallWindow, curUninstallWindow, oldUninstallWindow, newUninstallWindow, totalUninstallWindow);
+          checkCapacity(AppConstants.unitTypeUninstallFreestanding, curUninstallFreestanding, oldUninstallFreestanding, newUninstallFreestanding, totalUninstallFreestanding);
+          checkCapacity(_sharedBracketType, curBracket, oldBracket, newBracket, totalBracket);
+
+          final totalDelivery = _readAggregateDouble(agg, 'sharedInvoiceDeliveryAmount');
+          if (totalDelivery > 0 && newDelivery > 0) {
+            final othersDelivery = curDelivery - oldDelivery;
+            final remainingDelivery = totalDelivery - othersDelivery;
+            if (newDelivery - remainingDelivery > 0.01) {
+              throw JobException.sharedUnitsExceeded(
+                remaining: remainingDelivery <= 0 ? 0 : remainingDelivery.floor(),
+              );
+            }
+          }
+
+          tx.update(aggregateRef, {
+            'consumedSplitUnits': (curSplit - oldSplit + newSplit).clamp(0, 1 << 31),
+            'consumedWindowUnits': (curWindow - oldWindow + newWindow).clamp(0, 1 << 31),
+            'consumedFreestandingUnits': (curFreestanding - oldFreestanding + newFreestanding).clamp(0, 1 << 31),
+            'consumedUninstallSplitUnits': (curUninstallSplit - oldUninstallSplit + newUninstallSplit).clamp(0, 1 << 31),
+            'consumedUninstallWindowUnits': (curUninstallWindow - oldUninstallWindow + newUninstallWindow).clamp(0, 1 << 31),
+            'consumedUninstallFreestandingUnits': (curUninstallFreestanding - oldUninstallFreestanding + newUninstallFreestanding).clamp(0, 1 << 31),
+            'consumedBracketCount': (curBracket - oldBracket + newBracket).clamp(0, 1 << 31),
+            'consumedDeliveryAmount': (curDelivery - oldDelivery + newDelivery).clamp(0.0, double.infinity),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+        tx.update(jobRef, data);
+        tx.set(jobRef.collection(AppConstants.historySubCollection).doc(), {
+          'changedBy': adminUid,
+          'changedAt': FieldValue.serverTimestamp(),
+          'previousStatus': 'approved',
+          'newStatus': 'approved',
+          'flow': 'admin',
+          'action': 'admin_edit',
+        });
+      });
+    } on JobException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('adminUpdateJob error: ${e.code} — ${e.message}');
+      throw JobException.saveFailed();
+    } catch (e) {
+      debugPrint('adminUpdateJob unknown error: $e');
+      throw JobException.saveFailed();
+    }
+  }
+
   Future<void> rejectJob(String jobId, String adminUid, String reason) async {
     try {
       await _periodLockGuard.ensureUnlockedDocument(_jobsRef.doc(jobId));

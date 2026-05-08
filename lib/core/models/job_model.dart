@@ -140,6 +140,9 @@ abstract class JobModel with _$JobModel {
     DateTime? deletedAt,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? editRequestedAt,
+    String? adminEditedBy,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? adminEditedAt,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/models/app_exception.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -195,7 +196,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(height: 90, count: 2),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                   ),
                   const SizedBox(height: 24),
 
@@ -210,7 +211,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             value: l.activeOfTotal(active, techs.length),
                             icon: Icons.people_outline,
                             color: ArcticTheme.arcticBlue,
-                            onTap: () => context.go('/admin/team'),
+                            onTap: () => context.push('/admin/team'),
                           ),
                           const SizedBox(height: 12),
                           companies.when(
@@ -223,13 +224,13 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             ),
                             loading: () =>
                                 const ArcticShimmer(height: 70, count: 1),
-                            error: (e, _) => const SizedBox.shrink(),
+                            error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                           ),
                         ],
                       );
                     },
                     loading: () => const ArcticShimmer(height: 70, count: 1),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                   ),
                   const SizedBox(height: 24),
 
@@ -291,7 +292,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(count: 3),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                   ),
                   const SizedBox(height: 24),
 
@@ -380,7 +381,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const ArcticShimmer(count: 2),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                   ),
                   const SizedBox(height: 24),
 
@@ -477,7 +478,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                       );
                     },
                     loading: () => const SizedBox.shrink(),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
                   ),
                 ],
               ),

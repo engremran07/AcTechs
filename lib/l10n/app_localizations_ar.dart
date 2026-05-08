@@ -1997,4 +1997,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noPendingCollaborations => 'لا توجد تعاونات تركيبات مشتركة معلقة.';
+
+  @override
+  String get tryAgain => 'حاول مجدداً';
+
+  @override
+  String get adminEditJob => 'تعديل الوظيفة (المسؤول)';
+
+  @override
+  String get adminEditedBadge => 'تم التعديل من قبل المسؤول';
+
+  @override
+  String adminEditedAt(String date) {
+    return 'تم التعديل بواسطة المسؤول في $date';
+  }
 }

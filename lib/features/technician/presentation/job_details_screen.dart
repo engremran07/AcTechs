@@ -10,6 +10,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
@@ -45,6 +46,7 @@ class JobDetailsScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final jobsAsync = ref.watch(technicianJobsProvider);
     final approvalConfig = ref.watch(approvalConfigProvider).value;
+    final currentUser = ref.watch(currentUserProvider).value;
     final resolvedJob = jobsAsync.maybeWhen(
       data: (jobs) => initialJob ?? _findJob(jobs, jobId),
       orElse: () => initialJob,
@@ -162,6 +164,46 @@ class JobDetailsScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
+                        ),
+                      ],
+                      // Admin edit button: admin can correct approved+unpaid jobs
+                      if ((currentUser?.isAdmin ?? false) &&
+                          job.isApproved &&
+                          job.isUnpaid) ...[
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                context.push('/tech/submit', extra: job),
+                            icon: const Icon(
+                              Icons.admin_panel_settings_outlined,
+                            ),
+                            label: Text(l.adminEditJob),
+                          ),
+                        ),
+                      ],
+                      // Admin-edited badge
+                      if (job.adminEditedAt != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.edit_note_outlined,
+                              size: 14,
+                              color: ArcticTheme.arcticTextSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              l.adminEditedBadge,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                            ),
+                          ],
                         ),
                       ],
                       const SizedBox(height: 12),

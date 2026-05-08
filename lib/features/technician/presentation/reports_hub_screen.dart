@@ -246,7 +246,14 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('acInstalls');
     try {
       final start = range.start;
-      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
       final uid = _techUid;
       final jobRepo = ref.read(jobRepositoryProvider);
       final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
@@ -280,7 +287,14 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('jobs');
     try {
       final start = range.start;
-      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
       final uid = _techUid;
       final jobRepo = ref.read(jobRepositoryProvider);
       final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
@@ -444,7 +458,14 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('acInstalls_excel');
     try {
       final start = range.start;
-      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
       final uid = _techUid;
       final jobRepo = ref.read(jobRepositoryProvider);
       final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);
@@ -472,7 +493,14 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
     _setActive('jobs_excel');
     try {
       final start = range.start;
-      final end = DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59);
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
       final uid = _techUid;
       final jobRepo = ref.read(jobRepositoryProvider);
       final filtered = await jobRepo.fetchTechJobsForPeriod(uid, start, end);

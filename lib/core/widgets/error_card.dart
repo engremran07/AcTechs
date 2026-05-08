@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/app_exception.dart';
+import 'package:ac_techs/l10n/app_localizations.dart';
 
 class ErrorCard extends StatelessWidget {
   const ErrorCard({
@@ -47,11 +48,7 @@ class ErrorCard extends StatelessWidget {
             TextButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: Text(switch (locale) {
-                'ur' => 'دوبارہ کوشش کریں',
-                'ar' => 'إعادة المحاولة',
-                _ => 'Try Again',
-              }),
+              label: Text(AppLocalizations.of(context)!.tryAgain),
               style: TextButton.styleFrom(
                 foregroundColor: ArcticTheme.arcticBlue,
               ),

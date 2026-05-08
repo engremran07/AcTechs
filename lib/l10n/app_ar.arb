@@ -760,6 +760,13 @@
   "@sharedInstallContributionMessage": {
     "placeholders": { "invoiceNumber": { "type": "String" } }
   },
+  "tryAgain": "حاول مجدداً",
+  "adminEditJob": "تعديل الوظيفة (المسؤول)",
+  "adminEditedBadge": "تم التعديل من قبل المسؤول",
+  "adminEditedAt": "تم التعديل بواسطة المسؤول في {date}",
+  "@adminEditedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "pendingCollaborations": "التعاونات المعلقة",
   "pendingCollaborationsDescription": "{count} تركيب(تركيبات) مشتركة تنتظر مساهمات الفريق.",
   "@pendingCollaborationsDescription": {

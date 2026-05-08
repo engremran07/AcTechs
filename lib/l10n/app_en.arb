@@ -764,5 +764,12 @@
   "@pendingCollaborationsDescription": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "noPendingCollaborations": "No pending shared install collaborations."
+  "noPendingCollaborations": "No pending shared install collaborations.",
+  "tryAgain": "Try Again",
+  "adminEditJob": "Edit Job (Admin)",
+  "adminEditedBadge": "Admin Edited",
+  "adminEditedAt": "Edited by admin on {date}",
+  "@adminEditedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  }
 }

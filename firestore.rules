@@ -419,9 +419,38 @@ service cloud.firestore {
         resource.data.status != 'approved';
     }
 
+    // Admin can correct data on already-approved jobs that are not yet in a
+    // settlement flow. Status stays 'approved'; settlement fields are untouched.
+    function adminApprovedJobUpdate() {
+      return isAdmin() &&
+        resource.data.status == 'approved' &&
+        request.resource.data.status == resource.data.status &&
+        settlementStatusOf(resource.data) == 'unpaid' &&
+        dateIsUnlocked(resource.data.date) &&
+        dateIsUnlocked(request.resource.data.date) &&
+        settlementFieldsUnchanged() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techName', 'companyId', 'companyName', 'invoiceNumber',
+          'clientName', 'clientContact', 'acUnits', 'charges', 'date',
+          'expenses', 'expenseNote', 'adminNote',
+          'isSharedInstall', 'sharedInstallGroupKey',
+          'sharedInvoiceTotalUnits', 'sharedContributionUnits',
+          'sharedInvoiceSplitUnits', 'sharedInvoiceWindowUnits',
+          'sharedInvoiceFreestandingUnits',
+          'sharedInvoiceUninstallSplitUnits', 'sharedInvoiceUninstallWindowUnits',
+          'sharedInvoiceUninstallFreestandingUnits',
+          'sharedInvoiceBracketCount', 'sharedDeliveryTeamCount',
+          'sharedInvoiceDeliveryAmount',
+          'techSplitShare', 'techWindowShare', 'techFreestandingShare',
+          'techUninstallSplitShare', 'techUninstallWindowShare',
+          'techUninstallFreestandingShare', 'techBracketShare',
+          'adminEditedBy', 'adminEditedAt'
+        ]);
+    }
+
     function jobUpdateAllowed() {
       return isAdmin()
-        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed())
+        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate())
         : (technicianSettlementUpdate() || technicianApprovalFlowUpdate());
     }
 

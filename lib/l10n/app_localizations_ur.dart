@@ -2008,4 +2008,18 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get noPendingCollaborations =>
       'کوئی زیر التزام مشترکہ انسٹال شراکتیں نہیں۔';
+
+  @override
+  String get tryAgain => 'دوبارہ کوشش کریں';
+
+  @override
+  String get adminEditJob => 'کام میں ترمیم (منتظم)';
+
+  @override
+  String get adminEditedBadge => 'منتظم نے ترمیم کی';
+
+  @override
+  String adminEditedAt(String date) {
+    return 'منتظم نے $date کو ترمیم کی';
+  }
 }

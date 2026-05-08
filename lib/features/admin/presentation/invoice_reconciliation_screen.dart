@@ -387,7 +387,7 @@ class _InvoiceReconciliationScreenState
                 );
               },
               loading: () => const ArcticShimmer(height: 56, count: 1),
-              error: (e, st) => const SizedBox.shrink(),
+              error: (e, st) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
             ),
             const SizedBox(height: 16),
 

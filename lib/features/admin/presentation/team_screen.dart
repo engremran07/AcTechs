@@ -954,7 +954,7 @@ class _DuplicateEmailBanner extends ConsumerWidget {
         ).animate().fadeIn(duration: 280.ms);
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (e, _) => ErrorCard(exception: e is AppException ? e : NetworkException.syncFailed()),
     );
   }
 }

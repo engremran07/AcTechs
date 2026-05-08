@@ -3800,6 +3800,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No pending shared install collaborations.'**
   String get noPendingCollaborations;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
+  /// No description provided for @adminEditJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Job (Admin)'**
+  String get adminEditJob;
+
+  /// No description provided for @adminEditedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Edited'**
+  String get adminEditedBadge;
+
+  /// No description provided for @adminEditedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited by admin on {date}'**
+  String adminEditedAt(String date);
 }
 
 class _AppLocalizationsDelegate

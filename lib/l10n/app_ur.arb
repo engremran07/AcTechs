@@ -760,6 +760,13 @@
   "@sharedInstallContributionMessage": {
     "placeholders": { "invoiceNumber": { "type": "String" } }
   },
+  "tryAgain": "دوبارہ کوشش کریں",
+  "adminEditJob": "کام میں ترمیم (منتظم)",
+  "adminEditedBadge": "منتظم نے ترمیم کی",
+  "adminEditedAt": "منتظم نے {date} کو ترمیم کی",
+  "@adminEditedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
   "pendingCollaborations": "زیر التزام شراکتیں",
   "pendingCollaborationsDescription": "{count} مشترکہ انسٹال(تنصیبات) ٹیم کی شراکت کے منتظر ہیں۔",
   "@pendingCollaborationsDescription": {

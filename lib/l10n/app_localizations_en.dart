@@ -1999,4 +1999,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noPendingCollaborations =>
       'No pending shared install collaborations.';
+
+  @override
+  String get tryAgain => 'Try Again';
+
+  @override
+  String get adminEditJob => 'Edit Job (Admin)';
+
+  @override
+  String get adminEditedBadge => 'Admin Edited';
+
+  @override
+  String adminEditedAt(String date) {
+    return 'Edited by admin on $date';
+  }
 }

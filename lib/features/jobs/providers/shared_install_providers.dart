@@ -37,8 +37,11 @@ final pendingSharedInstallAggregatesProvider =
 /// pending from one or more team members.
 ///
 /// Does NOT filter by teamMemberIds — admin sees all teams' pending installs.
+/// Only accessible to admins — non-admin watchers receive an empty list.
 final pendingCollaborationAggregatesProvider =
     StreamProvider.autoDispose<List<SharedInstallAggregate>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return Stream.value([]);
       return FirebaseFirestore.instance
           .collection(AppConstants.sharedInstallAggregatesCollection)
           .orderBy('createdAt', descending: true)

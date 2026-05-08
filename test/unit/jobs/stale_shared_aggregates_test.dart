@@ -68,7 +68,7 @@ void main() {
 
   group('fetchStaleSharedAggregates', () {
     test('returns incomplete aggregates older than threshold', () async {
-      final staleDate = DateTime.now().subtract(const Duration(days: 10));
+      final staleDate = DateTime.now().subtract(const Duration(days: 31));
       await seedAggregate(
         groupKey: 'c1-inv001',
         createdAt: staleDate,
@@ -81,7 +81,7 @@ void main() {
     });
 
     test('excludes fully consumed aggregates', () async {
-      final staleDate = DateTime.now().subtract(const Duration(days: 10));
+      final staleDate = DateTime.now().subtract(const Duration(days: 31));
       await seedAggregate(
         groupKey: 'c1-inv002',
         createdAt: staleDate,
