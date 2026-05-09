@@ -13,6 +13,7 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/data/expense_repository.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -334,10 +335,17 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         return;
       }
 
+      final sharedNames = await ref.read(
+        sharedInstallerNamesProvider(
+          SharedInstallerNamesQuery.fromJobs(shared),
+        ).future,
+      );
+
       final bytes = await PdfGenerator.generateJobsDetailsReport(
         jobs: shared,
         title: l.sharedInstallReport,
         locale: _locale,
+        sharedInstallerNamesByGroup: sharedNames,
         reportBranding: _buildBranding(),
       );
       await PdfGenerator.sharePdfBytes(

@@ -80,7 +80,7 @@ if ($buildApk -or $buildWeb) {
     try {
         if ($buildApk) {
             Invoke-Step -Description 'Building release APK...' -Action {
-                flutter build apk --release
+                flutter build apk --release --split-per-abi
             } -FailureMessage 'flutter build apk failed'
 
             Write-Host 'APK built successfully.' -ForegroundColor Green
@@ -96,7 +96,11 @@ if ($buildApk -or $buildWeb) {
 
         if ($Install) {
             Invoke-Step -Description 'Installing release build to connected device...' -Action {
-                flutter install --use-application-binary build\app\outputs\flutter-apk\app-release.apk
+                $apkPath = Join-Path $repoRoot 'build\app\outputs\flutter-apk\app-arm64-v8a-release.apk'
+                if (-not (Test-Path $apkPath)) {
+                    throw 'Expected split APK not found: app-arm64-v8a-release.apk'
+                }
+                flutter install --use-application-binary $apkPath
             } -FailureMessage 'flutter install failed'
 
             Write-Host 'Installed.' -ForegroundColor Green

@@ -24,4 +24,4 @@
 3. `npm run lint:firestore-rules` from `scripts/`
 4. `npm test` from `scripts/`
 5. `flutter build web --release --no-wasm-dry-run`
-6. `flutter build apk --release --no-tree-shake-icons`
+6. `flutter build apk --release --split-per-abi --no-tree-shake-icons`

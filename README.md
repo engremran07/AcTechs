@@ -295,7 +295,7 @@ npm run test:firestore-rules
 Set-Location ..
 flutter build web --release
 firebase deploy --only hosting,firestore:rules,firestore:indexes --project actechs-d415e
-flutter build apk --release
+flutter build apk --release --split-per-abi
 ```
 
 Only install the APK after the gates above are green and only claim web/APK/backend are in sync when all three were built or deployed from that same revision.
@@ -330,7 +330,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bump_version.ps1 -Build -Web 
 | `flutter test` | Flutter tests |
 | `dart run build_runner build --delete-conflicting-outputs` | Code generation |
 | `flutter gen-l10n` | Localization generation |
-| `flutter build apk --release` | Release APK |
+| `flutter build apk --release --split-per-abi` | Release split APKs (arm64-v8a, armeabi-v7a, x86_64) |
 | `flutter build web --release` | Release web bundle |
 | `powershell -ExecutionPolicy Bypass -File .\scripts\install-hooks.ps1` | Install git hooks |
 | `cd scripts; npm run test:firestore-rules` | Emulator-backed rules tests |
@@ -518,7 +518,7 @@ flutter test
 For backend and platform-sensitive changes also run:
 
 ```bash
-flutter build apk --release
+flutter build apk --release --split-per-abi
 ```
 
 ## Build and install
@@ -526,7 +526,7 @@ flutter build apk --release
 ### Release APK
 
 ```bash
-flutter build apk --release
+flutter build apk --release --split-per-abi
 ```
 
 ### Release web
@@ -544,7 +544,7 @@ flutter install -d <deviceId> --release
 Or manually:
 
 ```bash
-adb install -r build/app/outputs/flutter-apk/app-release.apk
+adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 ```
 
 ## Firebase deployment

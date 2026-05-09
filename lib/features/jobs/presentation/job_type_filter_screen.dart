@@ -64,6 +64,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     if (widget.isAdminScope) {
+      _isLoadingAdminJobs = true; // show spinner on first frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadMoreAdminJobs(reset: true);
       });
@@ -97,7 +98,7 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
   }
 
   Future<void> _loadMoreAdminJobs({bool reset = false}) async {
-    if (_isLoadingAdminJobs) return;
+    if (!reset && _isLoadingAdminJobs) return;
     if (!reset && !_hasMoreAdminJobs) return;
 
     setState(() {
@@ -190,10 +191,14 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
         ? _adminJobs
         : ref.watch(techJobsByAcTypeProvider(widget.filter));
 
-    if (_visibleCount > jobs.length) {
-      _visibleCount = jobs.length;
-    }
-    final visibleJobs = jobs.take(_visibleCount).toList(growable: false);
+    final effectiveVisibleCount = jobs.isEmpty
+        ? 0
+        : (_visibleCount <= 0
+              ? (_pageSize < jobs.length ? _pageSize : jobs.length)
+              : _visibleCount.clamp(0, jobs.length));
+    final visibleJobs = jobs
+        .take(effectiveVisibleCount)
+        .toList(growable: false);
 
     return Scaffold(
       appBar: AppBar(title: Text(_title(l))),
@@ -201,27 +206,24 @@ class _JobTypeFilterScreenState extends ConsumerState<JobTypeFilterScreen> {
         child: widget.isAdminScope && _adminJobs.isEmpty && _isLoadingAdminJobs
             ? const Center(child: CircularProgressIndicator())
             : widget.isAdminScope && _adminJobs.isEmpty && _adminLoadError
-                ? ArcticRefreshIndicator(
-                    onRefresh: () async =>
-                        _loadMoreAdminJobs(reset: true),
-                    child: ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.35,
-                        ),
-                        Center(
-                          child: ErrorCard(
-                            exception: NetworkException.syncFailed(),
-                            onRetry: () => _loadMoreAdminJobs(reset: true),
-                          ),
-                        ),
-                      ],
+            ? ArcticRefreshIndicator(
+                onRefresh: () async => _loadMoreAdminJobs(reset: true),
+                child: ListView(
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.35),
+                    Center(
+                      child: ErrorCard(
+                        exception: NetworkException.syncFailed(),
+                        onRetry: () => _loadMoreAdminJobs(reset: true),
+                      ),
                     ),
-                  )
+                  ],
+                ),
+              )
             : ArcticRefreshIndicator(
                 onRefresh: () async {
                   if (widget.isAdminScope) {
-                    _loadMoreAdminJobs(reset: true);
+                    await _loadMoreAdminJobs(reset: true);
                   } else {
                     ref.invalidate(techJobsByAcTypeProvider(widget.filter));
                   }

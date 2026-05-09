@@ -62,9 +62,21 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   String _sharedTechnicianNames(
     JobModel job,
     Map<String, List<JobModel>> groups,
+    Map<String, List<String>> namesByGroup,
   ) {
     if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) {
       return job.techName;
+    }
+
+    final resolvedNames =
+        (namesByGroup[job.sharedInstallGroupKey] ?? const <String>[])
+            .map((name) => name.trim())
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+    if (resolvedNames.isNotEmpty) {
+      return resolvedNames.join(', ');
     }
 
     final names =
@@ -74,7 +86,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             .toSet()
             .toList(growable: false)
           ..sort();
-    return names.join(', ');
+    if (names.isNotEmpty) {
+      return names.join(', ');
+    }
+    return job.techName;
   }
 
   Widget _buildInvoiceConflictWarning(JobModel job, AppLocalizations l) {
@@ -119,6 +134,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         ],
       ),
     );
+  }
+
+  String _resolveTechnicianName(JobModel job, Map<String, String> namesById) {
+    final byId = namesById[job.techId]?.trim() ?? '';
+    if (byId.isNotEmpty) return byId;
+    return job.techName;
   }
 
   List<JobModel> _filter(List<JobModel> jobs) {
@@ -628,6 +649,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     final pendingEarnings = ref.watch(pendingEarningsProvider);
     final pendingExpenses = ref.watch(pendingExpensesProvider);
     final pendingAcInstalls = ref.watch(pendingAcInstallsProvider);
+    final usersAsync = ref.watch(allUsersProvider);
     final pendingInOut =
         <_PendingInOutEntry>[
           ...(pendingEarnings.value ?? const <EarningModel>[]).map(
@@ -676,6 +698,25 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               final approvedShared =
                   approvedSharedAsync.value ?? const <JobModel>[];
               final filteredApprovedShared = _filter(approvedShared);
+              final sharedNameKeys = [
+                ...sharedGroups.keys,
+                ...filteredApprovedShared
+                    .map((job) => job.sharedInstallGroupKey)
+                    .where((key) => key.trim().isNotEmpty),
+              ];
+              final sharedNamesByGroup =
+                  ref
+                      .watch(
+                        sharedInstallerNamesProvider(
+                          SharedInstallerNamesQuery.fromKeys(sharedNameKeys),
+                        ),
+                      )
+                      .value ??
+                  const <String, List<String>>{};
+              final userNamesById = {
+                for (final user in (usersAsync.value ?? const <UserModel>[]))
+                  user.uid: user.name,
+              };
               final pendingAcInstallItems =
                   pendingAcInstalls.value ?? const <AcInstallModel>[];
               _selected.removeWhere((id) => !filtered.any((j) => j.id == id));
@@ -960,6 +1001,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                             _sharedTechnicianNames(
                                               job,
                                               sharedGroups,
+                                              sharedNamesByGroup,
                                             ),
                                       ),
                                       onSelect: (v) {
@@ -1002,9 +1044,30 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                 }
                                 return filteredGroups.values.map((groupJobs) {
                                   final rep = groupJobs.first;
-                                  final techNames = groupJobs
-                                      .map((j) => j.techName)
+                                  final resolved =
+                                      (sharedNamesByGroup[rep
+                                                  .sharedInstallGroupKey] ??
+                                              const <String>[])
+                                          .map((name) => name.trim())
+                                          .where((name) => name.isNotEmpty)
+                                          .toSet()
+                                          .toList(growable: false)
+                                        ..sort();
+                                  final fallback = groupJobs
+                                      .map(
+                                        (j) => _resolveTechnicianName(
+                                          j,
+                                          userNamesById,
+                                        ),
+                                      )
+                                      .map((name) => name.trim())
+                                      .where((name) => name.isNotEmpty)
                                       .toSet()
+                                      .toList(growable: false)
+                                    ..sort();
+                                  final techNames = (resolved.isNotEmpty
+                                          ? resolved
+                                          : fallback)
                                       .join(', ');
                                   return ArcticCard(
                                     margin: const EdgeInsets.only(bottom: 10),
@@ -1034,7 +1097,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                                 ),
                                                 ...groupJobs.map(
                                                   (j) => ListTile(
-                                                    title: Text(j.techName),
+                                                    title: Text(
+                                                      _resolveTechnicianName(
+                                                        j,
+                                                        userNamesById,
+                                                      ),
+                                                    ),
                                                     subtitle: Text(
                                                       AppFormatters.units(
                                                         _jobContributionUnits(

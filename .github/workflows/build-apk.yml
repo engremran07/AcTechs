@@ -292,22 +292,28 @@ jobs:
       # ── Build APK ─────────────────────────────────────────────────────────
       - name: Build debug APK
         if: inputs.build_type == 'debug'
-        run: flutter build apk --debug
+        run: flutter build apk --debug --split-per-abi
 
       - name: Build release APK
         if: inputs.build_type == 'release'
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       # ── Stage artifact with a descriptive filename ────────────────────────
       - name: Prepare artifact
         run: |
           mkdir -p /tmp/apk-output
           if [ "${{ inputs.build_type }}" = "debug" ]; then
-            cp build/app/outputs/flutter-apk/app-debug.apk \
-               /tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-debug-run${{ github.run_number }}.apk
+            for apk in build/app/outputs/flutter-apk/app-*-debug.apk; do
+              [ -e "$apk" ] || continue
+              abi=$(basename "$apk" | sed -E 's/^app-(.*)-debug\.apk$/\1/')
+              cp "$apk" "/tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-${abi}-debug-run${{ github.run_number }}.apk"
+            done
           else
-            cp build/app/outputs/flutter-apk/app-release.apk \
-               /tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-release-run${{ github.run_number }}.apk
+            for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
+              [ -e "$apk" ] || continue
+              abi=$(basename "$apk" | sed -E 's/^app-(.*)-release\.apk$/\1/')
+              cp "$apk" "/tmp/apk-output/ac-techs-${{ steps.app_version.outputs.full }}-${abi}-release-run${{ github.run_number }}.apk"
+            done
           fi
           ls -lh /tmp/apk-output/
 
@@ -331,7 +337,10 @@ jobs:
           echo "║  3. Transfer the APK to the device (USB / AirDrop / etc) ║"
           echo "║  4. Tap the APK file to install                          ║"
           echo "║                                                          ║"
+          echo "║  Note: builds are ABI-split. Pick the APK matching your  ║"
+          echo "║  device CPU (arm64-v8a / armeabi-v7a / x86_64).          ║"
+          echo "║                                                          ║"
           echo "║  OR via ADB (USB debugging enabled):                     ║"
-          echo "║  adb install ac-techs-${{ inputs.build_type }}-run${{ github.run_number }}.apk  ║"
+          echo "║  adb install ac-techs-<version>-<abi>-${{ inputs.build_type }}-run${{ github.run_number }}.apk  ║"
           echo "╚══════════════════════════════════════════════════════════╝"
           echo ""

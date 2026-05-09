@@ -46,7 +46,7 @@ These domains are intentionally separate. Expense and earning data never live in
 3. `npm run lint:firestore-rules` in `scripts/`
 4. `npm test` in `scripts/`
 5. `flutter build web --release --no-wasm-dry-run`
-6. `flutter build apk --release --no-tree-shake-icons`
+6. `flutter build apk --release --split-per-abi --no-tree-shake-icons`
 
 ## Governance files
 

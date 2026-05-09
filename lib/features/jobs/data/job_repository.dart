@@ -157,17 +157,41 @@ class JobRepository {
             ? start + 10
             : normalizedKeys.length;
         final chunk = normalizedKeys.sublist(start, end);
-        final snap = await _jobsRef
-            .where('sharedInstallGroupKey', whereIn: chunk)
+        final aggregateSnap = await _sharedAggregatesRef
+            .where('groupKey', whereIn: chunk)
             .get();
 
-        for (final doc in snap.docs) {
+        for (final doc in aggregateSnap.docs) {
+          final aggregate = SharedInstallAggregate.fromFirestore(doc);
+          final groupKey = aggregate.groupKey.trim();
+          if (groupKey.isEmpty) continue;
+          final bucket =
+              namesByGroup[groupKey] ??= LinkedHashSet<String>();
+          for (final name in aggregate.teamMemberNames) {
+            final trimmed = name.trim();
+            if (trimmed.isNotEmpty) {
+              bucket.add(trimmed);
+            }
+          }
+        }
+
+        final missingKeys =
+            chunk
+                .where(
+                  (key) => !(namesByGroup[key]?.isNotEmpty ?? false),
+                )
+                .toList(growable: false);
+        if (missingKeys.isEmpty) continue;
+
+        final jobsSnap = await _jobsRef
+            .where('sharedInstallGroupKey', whereIn: missingKeys)
+            .get();
+
+        for (final doc in jobsSnap.docs) {
           final job = JobModel.fromFirestore(doc);
           final groupKey = job.sharedInstallGroupKey.trim();
           final techName = job.techName.trim();
-          if (groupKey.isEmpty || techName.isEmpty) {
-            continue;
-          }
+          if (groupKey.isEmpty || techName.isEmpty) continue;
           (namesByGroup[groupKey] ??= LinkedHashSet<String>()).add(techName);
         }
       }
@@ -1707,11 +1731,7 @@ class JobRepository {
       // entirely when the existing value is null so that Firestore's update()
       // does not move the field from "missing" to "null", which would add it
       // to affectedKeys() and fail the adminApprovedJobUpdate() hasOnly check.
-      _restoreNullableSnapshotField(
-        data,
-        existingSnap.data()!,
-        'submittedAt',
-      );
+      _restoreNullableSnapshotField(data, existingSnap.data()!, 'submittedAt');
       _restoreNullableSnapshotField(data, existingSnap.data()!, 'approvedBy');
       _restoreNullableSnapshotField(data, existingSnap.data()!, 'reviewedAt');
       data['adminNote'] = existingSnap.data()!['adminNote'] ?? '';
@@ -2043,10 +2063,15 @@ class JobRepository {
               final oldShare = (sibData[key] as int?) ?? 0;
               adj[key] = (oldShare * newTotal ~/ oldTotal).clamp(0, newTotal);
             }
+
             adjInt('techSplitShare', totalSplit, newSplit);
             adjInt('techWindowShare', totalWindow, newWindow);
             adjInt('techFreestandingShare', totalFreestanding, newFreestanding);
-            adjInt('techUninstallSplitShare', totalUninstallSplit, newUninstallSplit);
+            adjInt(
+              'techUninstallSplitShare',
+              totalUninstallSplit,
+              newUninstallSplit,
+            );
             adjInt(
               'techUninstallWindowShare',
               totalUninstallWindow,
@@ -2067,8 +2092,10 @@ class JobRepository {
               final sibOldDelivery =
                   (sibCharges['deliveryAmount'] as num?)?.toDouble() ?? 0.0;
               final newSibDelivery =
-                  (sibOldDelivery * newDelivery / totalDelivery)
-                      .clamp(0.0, newDelivery);
+                  (sibOldDelivery * newDelivery / totalDelivery).clamp(
+                    0.0,
+                    newDelivery,
+                  );
               adj['charges'] = Map<String, dynamic>.from(sibCharges)
                 ..['deliveryAmount'] = newSibDelivery;
             }

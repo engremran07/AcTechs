@@ -286,20 +286,26 @@ jobs:
 
       # ── Build APKs ─────────────────────────────────────────────────────────
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --split-per-abi
 
       - name: Rename debug APK
         run: |
-          mv build/app/outputs/flutter-apk/app-debug.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-debug.apk
+          for apk in build/app/outputs/flutter-apk/app-*-debug.apk; do
+            [ -e "$apk" ] || continue
+            abi=$(basename "$apk" | sed -E 's/^app-(.*)-debug\.apk$/\1/')
+            mv "$apk" "build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-${abi}-debug.apk"
+          done
 
       - name: Build release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       - name: Rename release APK
         run: |
-          mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-release.apk
+          for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
+            [ -e "$apk" ] || continue
+            abi=$(basename "$apk" | sed -E 's/^app-(.*)-release\.apk$/\1/')
+            mv "$apk" "build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-${abi}-release.apk"
+          done
 
       # ── Upload APKs as artifacts (available even without a GitHub Release) ──
       - name: Upload APK artifacts
@@ -350,8 +356,12 @@ jobs:
             ### 📥 Downloads
             | File | Description |
             |------|-------------|
-            | `ac-techs-${{ steps.app_version.outputs.full }}-release.apk` | Production build (minified + R8) |
-            | `ac-techs-${{ steps.app_version.outputs.full }}-debug.apk`   | Debug build (for testing) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-arm64-v8a-release.apk` | Production build (arm64, minified + R8) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-armeabi-v7a-release.apk` | Production build (armeabi-v7a, minified + R8) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-x86_64-release.apk` | Production build (x86_64, minified + R8) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-arm64-v8a-debug.apk` | Debug build (arm64) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-armeabi-v7a-debug.apk` | Debug build (armeabi-v7a) |
+            | `ac-techs-${{ steps.app_version.outputs.full }}-x86_64-debug.apk` | Debug build (x86_64) |
 
             ### 📝 Changes
             ${{ steps.changelog.outputs.log }}
@@ -359,5 +369,5 @@ jobs:
             ---
             Built with Flutter stable · Firebase · Riverpod
           files: |
-            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-release.apk
-            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-debug.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-*-release.apk
+            build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-*-debug.apk

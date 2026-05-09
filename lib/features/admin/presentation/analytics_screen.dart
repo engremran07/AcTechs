@@ -474,7 +474,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         monthlyMode: true,
         reportBranding: _appOnlyReportBranding(l),
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('AdminInOutPdf export error: $e\n$st');
       if (mounted) {
         ErrorSnackbar.show(context, message: l.couldNotExport);
       }
@@ -747,7 +748,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         locale: locale,
         reportBranding: _appOnlyReportBranding(AppLocalizations.of(context)!),
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('ExportToPdf error: $e\n$st');
       if (mounted) {
         ErrorSnackbar.show(
           context,
@@ -852,7 +854,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           companyName: companyName,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('CompanyInvoicesPdf export error: $e\n$st');
       if (mounted) {
         ErrorSnackbar.show(
           context,

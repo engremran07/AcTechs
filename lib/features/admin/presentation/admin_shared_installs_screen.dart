@@ -6,15 +6,23 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 
 class AdminSharedInstallsScreen extends ConsumerWidget {
   const AdminSharedInstallsScreen({super.key});
 
+  String _resolveTechnicianName(JobModel job, Map<String, String> namesById) {
+    final byId = namesById[job.techId]?.trim() ?? '';
+    if (byId.isNotEmpty) return byId;
+    return job.techName;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
     final jobsAsync = ref.watch(approvedSharedInstallsProvider);
+    final usersAsync = ref.watch(allUsersProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l.approvedSharedInstalls)),
@@ -37,6 +45,19 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                   : job.id;
               (grouped[key] ??= []).add(job);
             }
+            final sharedNamesByGroup =
+                ref
+                    .watch(
+                      sharedInstallerNamesProvider(
+                        SharedInstallerNamesQuery.fromKeys(grouped.keys),
+                      ),
+                    )
+                    .value ??
+                const <String, List<String>>{};
+            final userNamesById = <String, String>{
+              for (final user in (usersAsync.value ?? const <UserModel>[]))
+                user.uid: user.name,
+            };
             final groups = grouped.values.toList();
             return ArcticRefreshIndicator(
               onRefresh: () async =>
@@ -47,9 +68,22 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final groupJobs = groups[index];
                   final rep = groupJobs.first;
-                  final techNames = groupJobs
-                      .map((j) => j.techName)
+                  final resolved =
+                      (sharedNamesByGroup[rep.sharedInstallGroupKey] ??
+                              const <String>[])
+                          .map((name) => name.trim())
+                          .where((name) => name.isNotEmpty)
+                          .toSet()
+                          .toList(growable: false)
+                        ..sort();
+                  final fallback = groupJobs
+                      .map((j) => _resolveTechnicianName(j, userNamesById))
+                      .map((name) => name.trim())
+                      .where((name) => name.isNotEmpty)
                       .toSet()
+                      .toList(growable: false)
+                    ..sort();
+                  final techNames = (resolved.isNotEmpty ? resolved : fallback)
                       .join(', ');
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -75,7 +109,12 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                                   ),
                                   ...groupJobs.map(
                                     (j) => ListTile(
-                                      title: Text(j.techName),
+                                      title: Text(
+                                        _resolveTechnicianName(
+                                          j,
+                                          userNamesById,
+                                        ),
+                                      ),
                                       subtitle: Text(j.invoiceNumber),
                                       trailing: const Icon(Icons.chevron_right),
                                       onTap: () {

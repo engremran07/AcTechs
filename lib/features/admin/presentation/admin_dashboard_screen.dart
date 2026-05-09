@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ac_techs/core/models/app_exception.dart';
+import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
@@ -44,6 +44,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   void dispose() {
     _fadeController.dispose();
     super.dispose();
+  }
+
+  String _sharedTechnicianNames(JobModel job, List<JobModel> pendingJobs) {
+    if (!job.isSharedInstall || job.sharedInstallGroupKey.isEmpty) {
+      return job.techName;
+    }
+    final names =
+        pendingJobs
+            .where((j) => j.sharedInstallGroupKey == job.sharedInstallGroupKey)
+            .map((j) => j.techName.trim())
+            .where((n) => n.isNotEmpty)
+            .toSet()
+            .toList(growable: false)
+          ..sort();
+    return names.isEmpty ? job.techName : names.join(', ');
   }
 
   void refresh() {
@@ -113,7 +128,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   value: '${summary.totalJobs}',
                                   icon: Icons.work_outline,
                                   color: ArcticTheme.arcticBlue,
-                                  onTap: () => context.go('/admin/approvals'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -137,7 +151,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   value: '${summary.approvedJobs}',
                                   icon: Icons.check_circle_outline,
                                   color: ArcticTheme.arcticSuccess,
-                                  onTap: () => context.go('/admin/approvals'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -331,7 +344,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                             ).textTheme.titleSmall,
                                           ),
                                           Text(
-                                            '${job.techName} • ${job.invoiceNumber}',
+                                            '${_sharedTechnicianNames(job, jobs)} • ${job.invoiceNumber}',
                                             style: Theme.of(
                                               context,
                                             ).textTheme.bodySmall,
