@@ -82,188 +82,209 @@ class ExcelExport {
       reportBranding: reportBranding,
     );
 
+    // 25 columns: A=Date B=Company C=Invoice D=Status E=Shared F=Team
+    // G=Inv.Split H=Tech.Split I=Inv.Window J=Tech.Window K=Inv.Stand L=Tech.Stand
+    // M=Inv.Bracket N=Tech.Bracket O=Inv.U.Split P=Tech.U.Split Q=Inv.U.Window R=Tech.U.Window
+    // S=Inv.U.Stand T=Tech.U.Stand U=U.Old V=Delivery W=Client X=Tech Y=Note
     sheet.appendRow([
       excel_pkg.TextCellValue('Date'),
-      excel_pkg.TextCellValue('Invoice Number'),
-      excel_pkg.TextCellValue('Shared Install'),
-      excel_pkg.TextCellValue('Shared Technicians'),
-      excel_pkg.TextCellValue('Invoice Total Units'),
-      excel_pkg.TextCellValue('My Share Units'),
-      excel_pkg.TextCellValue('Contact'),
-      excel_pkg.TextCellValue('Split'),
-      excel_pkg.TextCellValue('Window'),
-      excel_pkg.TextCellValue('Free Standing'),
-      excel_pkg.TextCellValue('Bracket'),
-      excel_pkg.TextCellValue('Invoice Brackets'),
-      excel_pkg.TextCellValue('My Brackets'),
-      excel_pkg.TextCellValue('Shared Team Size'),
+      excel_pkg.TextCellValue('Company'),
+      excel_pkg.TextCellValue('Invoice'),
+      excel_pkg.TextCellValue('Status'),
+      excel_pkg.TextCellValue('Shared'),
+      excel_pkg.TextCellValue('Team'),
+      excel_pkg.TextCellValue('Inv.Split'),
+      excel_pkg.TextCellValue('Tech.Split'),
+      excel_pkg.TextCellValue('Inv.Window'),
+      excel_pkg.TextCellValue('Tech.Window'),
+      excel_pkg.TextCellValue('Inv.Stand'),
+      excel_pkg.TextCellValue('Tech.Stand'),
+      excel_pkg.TextCellValue('Inv.Bracket'),
+      excel_pkg.TextCellValue('Tech.Bracket'),
+      excel_pkg.TextCellValue('Inv.U.Split'),
+      excel_pkg.TextCellValue('Tech.U.Split'),
+      excel_pkg.TextCellValue('Inv.U.Window'),
+      excel_pkg.TextCellValue('Tech.U.Window'),
+      excel_pkg.TextCellValue('Inv.U.Stand'),
+      excel_pkg.TextCellValue('Tech.U.Stand'),
+      excel_pkg.TextCellValue('U.Old'),
       excel_pkg.TextCellValue('Delivery'),
-      excel_pkg.TextCellValue('Tech Name'),
-      excel_pkg.TextCellValue('Description'),
-      excel_pkg.TextCellValue('Uninstallation Total'),
-      excel_pkg.TextCellValue('Uninstall Split'),
-      excel_pkg.TextCellValue('Uninstall Window'),
-      excel_pkg.TextCellValue('Uninstall Standing'),
-      excel_pkg.TextCellValue('Uninstall Old'),
+      excel_pkg.TextCellValue('Client'),
+      excel_pkg.TextCellValue('Tech'),
+      excel_pkg.TextCellValue('Note'),
     ]);
     _centerRow(sheet, sheet.maxRows - 1);
 
-    var totalSplit = 0;
-    var totalWindow = 0;
-    var totalStanding = 0;
-    var totalBracketJobs = 0;
-    var totalBracketZeroPriceJobs = 0;
-    var totalUninstall = 0;
-    var totalUninstallSplit = 0;
-    var totalUninstallWindow = 0;
-    var totalUninstallStanding = 0;
+    var totalTechSplit = 0;
+    var totalTechWindow = 0;
+    var totalTechStand = 0;
+    var totalTechBracket = 0;
+    var totalTechUninstallSplit = 0;
+    var totalTechUninstallWindow = 0;
+    var totalTechUninstallStand = 0;
     var totalUninstallOld = 0;
 
     for (final job in jobs) {
-      final splitQty = job.acUnits
+      final isShared = job.isSharedInstall;
+      final teamNames = AppFormatters.safeText(
+        (sharedInstallerNamesByGroup[job.sharedInstallGroupKey] ??
+                const <String>[])
+            .join(', '),
+      );
+      final statusLabel = switch (job.status) {
+        JobStatus.approved => 'Approved',
+        JobStatus.rejected => 'Rejected',
+        JobStatus.pending => 'Pending',
+      };
+
+      // Solo AC counts derived from acUnits (used only when isShared == false)
+      final soloSplitQty = job.acUnits
           .where((u) => u.type == 'Split AC')
           .fold<int>(0, (s, u) => s + u.quantity);
-      final windowQty = job.acUnits
+      final soloWindowQty = job.acUnits
           .where((u) => u.type == 'Window AC')
           .fold<int>(0, (s, u) => s + u.quantity);
-      final uninstallQty = job.acUnits
-          .where((u) => u.type == AppConstants.unitTypeUninstallOld)
-          .fold<int>(0, (s, u) => s + u.quantity);
-      final uninstallSplitQty = job.acUnits
-          .where((u) => u.type == AppConstants.unitTypeUninstallSplit)
-          .fold<int>(0, (s, u) => s + u.quantity);
-      final uninstallWindowQty = job.acUnits
-          .where((u) => u.type == AppConstants.unitTypeUninstallWindow)
-          .fold<int>(0, (s, u) => s + u.quantity);
-      final uninstallStandingQty = job.acUnits
-          .where((u) => u.type == AppConstants.unitTypeUninstallFreestanding)
-          .fold<int>(0, (s, u) => s + u.quantity);
-      final dolabQty = job.acUnits
+      final soloStandQty = job.acUnits
           .where((u) => u.type == 'Freestanding AC')
           .fold<int>(0, (s, u) => s + u.quantity);
-      final uninstallDetail = () {
-        final splitPart = uninstallSplitQty > 0 ? 'S:$uninstallSplitQty' : '';
-        final windowPart = uninstallWindowQty > 0
-            ? 'W:$uninstallWindowQty'
-            : '';
-        final standingPart = uninstallStandingQty > 0
-            ? 'F:$uninstallStandingQty'
-            : '';
-        final parts = [
-          splitPart,
-          windowPart,
-          standingPart,
-        ].where((p) => p.isNotEmpty).toList();
-        if (parts.isNotEmpty) return parts.join(' | ');
-        return '';
-      }();
-      final uninstallTotal =
-          uninstallQty +
-          uninstallSplitQty +
-          uninstallWindowQty +
-          uninstallStandingQty;
-      final contributionUnits = job.isSharedInstall
-          ? (job.sharedContributionUnits > 0
-                ? job.sharedContributionUnits
-                : job.totalUnits)
-          : job.totalUnits;
-      totalSplit += splitQty;
-      totalWindow += windowQty;
-      totalStanding += dolabQty;
-      totalUninstall += uninstallTotal;
-      totalUninstallSplit += uninstallSplitQty;
-      totalUninstallWindow += uninstallWindowQty;
-      totalUninstallStanding += uninstallStandingQty;
-      totalUninstallOld += uninstallQty;
-      final bracketAmount = job.charges != null && job.charges!.acBracket
-          ? job.charges!.bracketAmount
-          : 0;
-      if (job.charges?.acBracket ?? false) {
-        totalBracketJobs++;
-        if (bracketAmount <= 0) {
-          totalBracketZeroPriceJobs++;
-        }
-      }
+      final soloUninstallSplitQty = job.acUnits
+          .where((u) => u.type == AppConstants.unitTypeUninstallSplit)
+          .fold<int>(0, (s, u) => s + u.quantity);
+      final soloUninstallWindowQty = job.acUnits
+          .where((u) => u.type == AppConstants.unitTypeUninstallWindow)
+          .fold<int>(0, (s, u) => s + u.quantity);
+      final soloUninstallStandQty = job.acUnits
+          .where((u) => u.type == AppConstants.unitTypeUninstallFreestanding)
+          .fold<int>(0, (s, u) => s + u.quantity);
+      final uninstallOldQty = job.acUnits
+          .where((u) => u.type == AppConstants.unitTypeUninstallOld)
+          .fold<int>(0, (s, u) => s + u.quantity);
+
+      // Tech quantities — shared jobs use tech*Share fields; solo jobs use acUnits counts
+      final techSplit = isShared ? job.techSplitShare : soloSplitQty;
+      final techWindow = isShared ? job.techWindowShare : soloWindowQty;
+      final techStand = isShared ? job.techFreestandingShare : soloStandQty;
+      final techBracket =
+          isShared ? job.techBracketShare : (job.charges?.bracketCount ?? 0);
+      final techUninstallSplit =
+          isShared ? job.techUninstallSplitShare : soloUninstallSplitQty;
+      final techUninstallWindow =
+          isShared ? job.techUninstallWindowShare : soloUninstallWindowQty;
+      final techUninstallStand = isShared
+          ? job.techUninstallFreestandingShare
+          : soloUninstallStandQty;
+
+      totalTechSplit += techSplit;
+      totalTechWindow += techWindow;
+      totalTechStand += techStand;
+      totalTechBracket += techBracket;
+      totalTechUninstallSplit += techUninstallSplit;
+      totalTechUninstallWindow += techUninstallWindow;
+      totalTechUninstallStand += techUninstallStand;
+      totalUninstallOld += uninstallOldQty;
+
       final deliveryAmount =
           job.charges != null &&
               job.charges!.deliveryCharge &&
               !AppFormatters.isCustomerCashPaid(job.charges!.deliveryNote)
           ? job.charges!.deliveryAmount
-          : 0;
-      final baseDescription = job.expenseNote.isNotEmpty
+          : 0.0;
+
+      final note = job.expenseNote.isNotEmpty
           ? AppFormatters.safeText(job.expenseNote)
           : (job.charges != null
                 ? AppFormatters.safeText(job.charges!.deliveryNote)
                 : '');
-      final description = [baseDescription, uninstallDetail]
-          .where((p) => p.isNotEmpty)
-          .join(
-            baseDescription.isNotEmpty && uninstallDetail.isNotEmpty
-                ? ' | '
-                : '',
-          );
 
       sheet.appendRow([
         excel_pkg.TextCellValue(_formatDate(job.date)),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.companyName)),
         excel_pkg.TextCellValue(AppFormatters.safeText(job.invoiceNumber)),
-        excel_pkg.TextCellValue(job.isSharedInstall ? 'Yes' : 'No'),
-        excel_pkg.TextCellValue(
-          AppFormatters.safeText(
-            (sharedInstallerNamesByGroup[job.sharedInstallGroupKey] ??
-                    const <String>[])
-                .join(', '),
-          ),
-        ),
-        excel_pkg.IntCellValue(job.sharedInvoiceTotalUnits),
-        excel_pkg.IntCellValue(contributionUnits),
-        excel_pkg.TextCellValue(AppFormatters.safeText(job.clientContact)),
-        excel_pkg.IntCellValue(splitQty),
-        excel_pkg.IntCellValue(windowQty),
-        excel_pkg.IntCellValue(dolabQty),
-        if (bracketAmount > 0)
-          excel_pkg.DoubleCellValue(bracketAmount.toDouble())
+        excel_pkg.TextCellValue(statusLabel),
+        excel_pkg.TextCellValue(isShared ? 'Yes' : 'No'),
+        excel_pkg.TextCellValue(teamNames),
+        // Inv.Split — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceSplitUnits)
         else
           excel_pkg.TextCellValue(''),
-        excel_pkg.IntCellValue(job.sharedInvoiceBracketCount),
-        excel_pkg.IntCellValue(job.techBracketShare),
-        excel_pkg.IntCellValue(job.sharedDeliveryTeamCount),
+        excel_pkg.IntCellValue(techSplit),
+        // Inv.Window — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceWindowUnits)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techWindow),
+        // Inv.Stand — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceFreestandingUnits)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techStand),
+        // Inv.Bracket — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceBracketCount)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techBracket),
+        // Inv.U.Split — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceUninstallSplitUnits)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techUninstallSplit),
+        // Inv.U.Window — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceUninstallWindowUnits)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techUninstallWindow),
+        // Inv.U.Stand — blank for solo
+        if (isShared)
+          excel_pkg.IntCellValue(job.sharedInvoiceUninstallFreestandingUnits)
+        else
+          excel_pkg.TextCellValue(''),
+        excel_pkg.IntCellValue(techUninstallStand),
+        excel_pkg.IntCellValue(uninstallOldQty),
         if (deliveryAmount > 0)
-          excel_pkg.DoubleCellValue(deliveryAmount.toDouble())
+          excel_pkg.DoubleCellValue(deliveryAmount)
         else
           excel_pkg.TextCellValue(''),
+        excel_pkg.TextCellValue(AppFormatters.safeText(job.clientContact)),
         excel_pkg.TextCellValue(AppFormatters.safeText(job.techName)),
-        excel_pkg.TextCellValue(description),
-        excel_pkg.IntCellValue(uninstallTotal),
-        excel_pkg.IntCellValue(uninstallSplitQty),
-        excel_pkg.IntCellValue(uninstallWindowQty),
-        excel_pkg.IntCellValue(uninstallStandingQty),
-        excel_pkg.IntCellValue(uninstallQty),
+        excel_pkg.TextCellValue(note),
       ]);
       _centerRow(sheet, sheet.maxRows - 1);
     }
 
+    // Summary row — totals aligned to Tech columns (H J L N P R T) and U.Old (U)
     sheet.appendRow([excel_pkg.TextCellValue('')]);
     sheet.appendRow([
-      excel_pkg.TextCellValue('SUMMARY'),
-      excel_pkg.TextCellValue(''),
-      excel_pkg.TextCellValue(''),
-      excel_pkg.IntCellValue(totalSplit),
-      excel_pkg.IntCellValue(totalWindow),
-      excel_pkg.IntCellValue(totalStanding),
-      excel_pkg.IntCellValue(totalBracketJobs),
-      excel_pkg.TextCellValue(''),
-      excel_pkg.TextCellValue(''),
-      excel_pkg.TextCellValue(''),
-      excel_pkg.IntCellValue(totalUninstall),
-      excel_pkg.IntCellValue(totalUninstallSplit),
-      excel_pkg.IntCellValue(totalUninstallWindow),
-      excel_pkg.IntCellValue(totalUninstallStanding),
-      excel_pkg.IntCellValue(totalUninstallOld),
-    ]);
-    _centerRow(sheet, sheet.maxRows - 1);
-    sheet.appendRow([
-      excel_pkg.TextCellValue('Bracket Zero Price Count'),
-      excel_pkg.IntCellValue(totalBracketZeroPriceJobs),
+      excel_pkg.TextCellValue('SUMMARY'),               // A
+      excel_pkg.TextCellValue(''),                      // B Company
+      excel_pkg.TextCellValue(''),                      // C Invoice
+      excel_pkg.TextCellValue(''),                      // D Status
+      excel_pkg.TextCellValue(''),                      // E Shared
+      excel_pkg.TextCellValue(''),                      // F Team
+      excel_pkg.TextCellValue(''),                      // G Inv.Split
+      excel_pkg.IntCellValue(totalTechSplit),           // H Tech.Split
+      excel_pkg.TextCellValue(''),                      // I Inv.Window
+      excel_pkg.IntCellValue(totalTechWindow),          // J Tech.Window
+      excel_pkg.TextCellValue(''),                      // K Inv.Stand
+      excel_pkg.IntCellValue(totalTechStand),           // L Tech.Stand
+      excel_pkg.TextCellValue(''),                      // M Inv.Bracket
+      excel_pkg.IntCellValue(totalTechBracket),         // N Tech.Bracket
+      excel_pkg.TextCellValue(''),                      // O Inv.U.Split
+      excel_pkg.IntCellValue(totalTechUninstallSplit),  // P Tech.U.Split
+      excel_pkg.TextCellValue(''),                      // Q Inv.U.Window
+      excel_pkg.IntCellValue(totalTechUninstallWindow), // R Tech.U.Window
+      excel_pkg.TextCellValue(''),                      // S Inv.U.Stand
+      excel_pkg.IntCellValue(totalTechUninstallStand),  // T Tech.U.Stand
+      excel_pkg.IntCellValue(totalUninstallOld),        // U U.Old
+      excel_pkg.TextCellValue(''),                      // V Delivery
+      excel_pkg.TextCellValue(''),                      // W Client
+      excel_pkg.TextCellValue(''),                      // X Tech
+      excel_pkg.TextCellValue(''),                      // Y Note
     ]);
     _centerRow(sheet, sheet.maxRows - 1);
 
@@ -287,7 +308,9 @@ class ExcelExport {
       reportBranding: reportBranding,
     );
 
+    // 5 columns: A=Tech B=Category C=Amount(SAR) D=Date E=Note
     sheet.appendRow([
+      excel_pkg.TextCellValue('Tech'),
       excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
       excel_pkg.TextCellValue('Date'),
@@ -297,6 +320,7 @@ class ExcelExport {
 
     for (final earning in earnings) {
       sheet.appendRow([
+        excel_pkg.TextCellValue(earning.techName),
         excel_pkg.TextCellValue(earning.category),
         excel_pkg.DoubleCellValue(earning.amount),
         excel_pkg.TextCellValue(_formatDate(earning.date)),
@@ -308,6 +332,7 @@ class ExcelExport {
     final totalEarnings = earnings.fold<double>(0, (s, e) => s + e.amount);
     sheet.appendRow([
       excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.TextCellValue(''),
       excel_pkg.DoubleCellValue(totalEarnings),
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
@@ -333,7 +358,9 @@ class ExcelExport {
       generatedAt: reportTime,
       reportBranding: reportBranding,
     );
+    // 5 columns: A=Tech B=Category C=Amount(SAR) D=Date E=Note
     workSheet.appendRow([
+      excel_pkg.TextCellValue('Tech'),
       excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
       excel_pkg.TextCellValue('Date'),
@@ -346,6 +373,7 @@ class ExcelExport {
         .toList();
     for (final expense in workExpenses) {
       workSheet.appendRow([
+        excel_pkg.TextCellValue(expense.techName),
         excel_pkg.TextCellValue(expense.category),
         excel_pkg.DoubleCellValue(expense.amount),
         excel_pkg.TextCellValue(_formatDate(expense.date)),
@@ -357,6 +385,7 @@ class ExcelExport {
     final workTotal = workExpenses.fold<double>(0, (s, e) => s + e.amount);
     workSheet.appendRow([
       excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.TextCellValue(''),
       excel_pkg.DoubleCellValue(workTotal),
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),
@@ -370,8 +399,10 @@ class ExcelExport {
       generatedAt: reportTime,
       reportBranding: reportBranding,
     );
+    // 5 columns: A=Tech B=Category C=Amount(SAR) D=Date E=Note
     homeSheet.appendRow([
-      excel_pkg.TextCellValue('Item'),
+      excel_pkg.TextCellValue('Tech'),
+      excel_pkg.TextCellValue('Category'),
       excel_pkg.TextCellValue('Amount (SAR)'),
       excel_pkg.TextCellValue('Date'),
       excel_pkg.TextCellValue('Note'),
@@ -383,6 +414,7 @@ class ExcelExport {
         .toList();
     for (final expense in homeExpenses) {
       homeSheet.appendRow([
+        excel_pkg.TextCellValue(expense.techName),
         excel_pkg.TextCellValue(expense.category),
         excel_pkg.DoubleCellValue(expense.amount),
         excel_pkg.TextCellValue(_formatDate(expense.date)),
@@ -394,6 +426,7 @@ class ExcelExport {
     final homeTotal = homeExpenses.fold<double>(0, (s, e) => s + e.amount);
     homeSheet.appendRow([
       excel_pkg.TextCellValue('TOTAL'),
+      excel_pkg.TextCellValue(''),
       excel_pkg.DoubleCellValue(homeTotal),
       excel_pkg.TextCellValue(''),
       excel_pkg.TextCellValue(''),

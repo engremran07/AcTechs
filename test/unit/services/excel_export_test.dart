@@ -14,7 +14,7 @@ void main() {
 
   group('ExcelExport workbook builders', () {
     test(
-      'buildJobsWorkbook includes shared install columns and summary totals',
+      'buildJobsWorkbook uses per-type columns and aligns summary row',
       () {
         final workbook = ExcelExport.buildJobsWorkbook(
           jobs: [
@@ -33,6 +33,7 @@ void main() {
               sharedInvoiceSplitUnits: 4,
               sharedInvoiceBracketCount: 2,
               sharedDeliveryTeamCount: 2,
+              techSplitShare: 2,
               techBracketShare: 1,
               charges: const InvoiceCharges(
                 acBracket: true,
@@ -50,13 +51,28 @@ void main() {
         );
 
         final sheet = workbook['Jobs'];
+        // Branding header rows 1-4, column headers at row 5, data at row 6
+        // 25 cols: A=Date B=Company C=Invoice D=Status E=Shared F=Team
+        //          G=Inv.Split H=Tech.Split ... M=Inv.Bracket N=Tech.Bracket ...
         expect(cellText(sheet, 'A1'), 'Jobs Report');
-        expect(cellText(sheet, 'B5'), 'Invoice Number');
-        expect(cellText(sheet, 'C6'), 'Yes');
-        expect(cellText(sheet, 'D6'), 'Tech One, Tech Two');
+        expect(cellText(sheet, 'B5'), 'Company');         // new admin column
+        expect(cellText(sheet, 'C5'), 'Invoice');         // shifted right by 2
+        expect(cellText(sheet, 'D5'), 'Status');          // new admin column
+        expect(cellText(sheet, 'G5'), 'Inv.Split');       // per-type column
+        expect(cellText(sheet, 'H5'), 'Tech.Split');      // renamed from My.Split
+        expect(cellText(sheet, 'B6'), 'AC Co');           // company name
+        expect(cellText(sheet, 'C6'), 'INV-100');         // invoice number
+        expect(cellText(sheet, 'D6'), 'Pending');         // status (default)
+        expect(cellText(sheet, 'E6'), 'Yes');             // shared
+        expect(cellText(sheet, 'F6'), 'Tech One, Tech Two'); // team
+        expect(cellText(sheet, 'G6'), '4');               // Inv.Split = sharedInvoiceSplitUnits
+        expect(cellText(sheet, 'H6'), '2');               // Tech.Split = techSplitShare
+        expect(cellText(sheet, 'M6'), '2');               // Inv.Bracket = sharedInvoiceBracketCount
+        expect(cellText(sheet, 'N6'), '1');               // Tech.Bracket = techBracketShare
+        // Summary row at row 8 (blank separator at row 7)
         expect(cellText(sheet, 'A8'), 'SUMMARY');
-        expect(cellText(sheet, 'D8'), '2');
-        expect(cellText(sheet, 'G8'), '1');
+        expect(cellText(sheet, 'H8'), '2');               // totalTechSplit
+        expect(cellText(sheet, 'N8'), '1');               // totalTechBracket
       },
     );
 
@@ -83,11 +99,15 @@ void main() {
         generatedAt: DateTime(2026, 4, 2, 9),
       );
 
-      expect(cellText(workbook['Work Expenses'], 'A6'), 'Fuel');
+      // 5 cols: A=Tech B=Category C=Amount(SAR) D=Date E=Note
+      expect(cellText(workbook['Work Expenses'], 'A5'), 'Tech');
+      expect(cellText(workbook['Work Expenses'], 'A6'), 'Tech One');  // tech name
+      expect(cellText(workbook['Work Expenses'], 'B6'), 'Fuel');       // category shifted to B
       expect(cellText(workbook['Work Expenses'], 'A7'), 'TOTAL');
-      expect(cellText(workbook['Work Expenses'], 'B7'), '120.0');
+      expect(cellText(workbook['Work Expenses'], 'C7'), '120.0');      // amount shifted to C
 
-      expect(cellText(workbook['Home Expenses'], 'A6'), 'Groceries');
+      expect(cellText(workbook['Home Expenses'], 'A6'), 'Tech One');   // tech name
+      expect(cellText(workbook['Home Expenses'], 'B6'), 'Groceries');  // category shifted to B
       expect(cellText(workbook['Summary'], 'A6'), 'Work Expenses');
       expect(cellText(workbook['Summary'], 'B8'), '200.0');
       expect(cellText(workbook['Summary'], 'C8'), '200.0');
@@ -115,9 +135,12 @@ void main() {
       );
 
       final sheet = workbook['Earnings'];
-      expect(cellText(sheet, 'A6'), 'Scrap Sale');
+      // 5 cols: A=Tech B=Category C=Amount(SAR) D=Date E=Note
+      expect(cellText(sheet, 'A5'), 'Tech');
+      expect(cellText(sheet, 'A6'), 'Tech One');  // tech name
+      expect(cellText(sheet, 'B6'), 'Scrap Sale'); // category shifted to B
       expect(cellText(sheet, 'A8'), 'TOTAL');
-      expect(cellText(sheet, 'B8'), '350.0');
+      expect(cellText(sheet, 'C8'), '350.0');       // amount shifted to C
     });
   });
 }

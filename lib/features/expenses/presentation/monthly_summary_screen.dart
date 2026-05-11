@@ -82,8 +82,9 @@ class _MonthlySummaryScreenState extends ConsumerState<MonthlySummaryScreen> {
     }
 
     try {
-      return ref.read(sharedInstallerNamesProvider(query).future);
-    } catch (_) {
+      return await ref.read(sharedInstallerNamesProvider(query).future);
+    } catch (e, st) {
+      debugPrint('fetchSharedInstallerNamesByGroup failed: $e\n$st');
       return const <String, List<String>>{};
     }
   }
