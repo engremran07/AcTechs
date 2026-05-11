@@ -65,8 +65,17 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(technicianJobsProvider);
     ref.invalidate(todaysJobsProvider);
     ref.invalidate(pendingApprovalsProvider);
+    ref.invalidate(approvedSharedInstallsProvider);
     ref.invalidate(pendingSharedInstallAggregatesProvider);
     ref.invalidate(staleSharedAggregatesProvider);
+    ref.invalidate(adminJobSummaryProvider);
+    ref.invalidate(adminScopedJobSummaryProvider);
+    ref.invalidate(filteredAdminJobsProvider);
+    ref.invalidate(techJobsByAcTypeProvider);
+    ref.invalidate(technicianJobSummaryProvider);
+    ref.invalidate(monthlyJobsProvider);
+    ref.invalidate(monthlyTechnicianJobSummaryProvider);
+    ref.invalidate(userSharedInstallStatusProvider);
     ref.invalidate(adminSettlementCandidatesProvider);
     ref.invalidate(adminSettlementHistoryProvider);
     ref.invalidate(settlementSummaryProvider);
@@ -85,6 +94,7 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(pendingEarningsProvider);
     ref.invalidate(dailyExpensesProvider);
     ref.invalidate(dailyEarningsProvider);
+    ref.invalidate(monthlyTechnicianInOutSummaryProvider);
     ref.invalidate(pendingAcInstallsProvider);
     ref.invalidate(approvalConfigProvider);
     ref.invalidate(appBrandingProvider);

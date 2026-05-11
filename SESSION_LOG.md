@@ -1,5 +1,45 @@
 # SESSION_LOG
 
+## 2026-05-11 — 30-domain audit (D01–D30): 18 confirmed bugs fixed — APK v2.0.0+76
+
+- Scope: Full multi-phase audit across all domains; Phase 0 previously completed; Phases 1–15 implemented this session
+- False positives confirmed and skipped: D10-F003/F004 (archiveExpense/archiveEarning already have try/catch), D09-F005/F007 (hardDeleteJob/restoreJob admin-only — no period lock by design), D04-F001/F002 (settlement methods already exist)
+- Changes implemented:
+  - **`auth_providers.dart`** signOut(): Added 10 missing `ref.invalidate()` calls — `approvedSharedInstallsProvider`, `adminJobSummaryProvider`, `adminScopedJobSummaryProvider`, `filteredAdminJobsProvider`, `techJobsByAcTypeProvider`, `technicianJobSummaryProvider`, `monthlyJobsProvider`, `monthlyTechnicianJobSummaryProvider`, `userSharedInstallStatusProvider`, `monthlyTechnicianInOutSummaryProvider` — prevents stale state after sign-out.
+  - **`firestore.rules`**: Fixed `reviewedAt is timestamp` → `reviewedAt == request.time` in auto-approve create sections for expenses, earnings, and ac_installs — prevents client from backdating `reviewedAt`.
+  - **`job_repository.dart`** `approvedSharedInstalls()`: Added `.where((job) => !job.isDeleted)` filter so soft-deleted shared installs don't appear in the approved list.
+  - **`job_repository.dart`** `resubmitForApproval()`: Added `_periodLockGuard.ensureUnlockedDocument()` call so techs cannot resubmit a job in a locked period.
+  - **`job_repository.dart`** `fetchStaleSharedAggregates()`: Replaced `Duration(days: 30)` with `Duration(days: AppConstants.staleAggregateThresholdDays)`.
+  - **`expense_repository.dart`** `restoreExpense()`: Added `on PeriodException { rethrow; }` so period lock errors surface instead of being swallowed as generic `ExpenseException.saveFailed()`.
+  - **`earning_repository.dart`** `restoreEarning()`: Same PeriodException rethrow fix.
+  - **`tech_dashboard_screen.dart`**: Fixed 3 `context.go('/tech/submit')` → `context.push('/tech/submit')` (empty-state button, FAB, shared install card tap) — prevents back-stack destruction.
+  - **`company_selector_field.dart`**: Changed `includeNoCompanyOption` default from `true` → `false` — safe, all existing call sites explicitly pass `false`.
+  - **`app_constants.dart`**: Added `noCompanyKey = 'no-company'` and `staleAggregateThresholdDays = 30`.
+  - **`invoice_utils.dart`**: Replaced `'no-company'` literal with `AppConstants.noCompanyKey`; added `app_constants.dart` import.
+  - **`analysis_options.yaml`**: Added 4 lint rules: `unnecessary_const`, `avoid_empty_else`, `use_build_context_synchronously`, `close_sinks`.
+  - **`auth_repository.dart`** `userStream()`: Added `await controller.close()` in `onCancel` callback to satisfy `close_sinks` lint and properly release all resources.
+  - **`.github/workflows/ci.yml`**: Added `timeout-minutes: 15` to `firestore-rules` job — prevents indefinite CI hang.
+  - **`pubspec.yaml`**: Version bumped 1.5.7+65 → 2.0.0+76.
+- Verification:
+  - `get_errors` — 0 issues on all modified files
+  - `flutter analyze --no-pub` — "No issues found!" (ran in 13.0s)
+
+## 2026-05-11 — Stats card data accuracy: rejected/deleted job filtering in technician summaries
+
+- Scope: Stats cards on technician and admin dashboards showing incorrect data; 3 utility files fixed
+- Root cause: All three technician summary utilities were accumulating units, earnings, and expenses for **rejected** entries; `technician_job_summary.dart` also lacked a `isDeleted` guard and used full invoice `totalUnits` for shared installs instead of the technician's own `sharedContributionUnits`.
+- Changes implemented:
+  - **`lib/core/utils/technician_job_summary.dart`**: Added `if (job.isDeleted) continue;` at top of loop; moved unit/bracket accumulation after `if (job.status == JobStatus.rejected) continue;`; shared installs now use `job.sharedContributionUnits` when > 0, falling back to `job.totalUnits` for solo/legacy records.
+  - **`lib/core/utils/technician_in_out_summary.dart`**: Added `if (earning.isRejected) continue;` in earnings loop and `if (expense.isRejected) continue;` in expenses loop.
+  - **`lib/core/utils/technician_day_in_out_summary.dart`**: Added `if (earning.isRejected) continue;` and `if (expense.isRejected) continue;` after the `inRange()` guards in both loops.
+  - **`test/unit/utils/technician_job_summary_test.dart`**: Updated stale expectations (`totalUnits 7→5`, `uninstallTotal 3→1`) to match the corrected behavior where rejected jobs are excluded from unit counts.
+  - **`MASTER_BLUEPRINT.md`**: Corrected stale app version field `1.5.1+59` → `1.5.7+65`.
+- False positives investigated and dismissed (no changes needed): settlement batch methods, `context.go` navigation, sign-out invalidations, Firestore settlement rules, exception catch order, `includeNoCompanyOption`, provider `autoDispose`.
+- Verification:
+  - `get_errors` — 0 issues on all 3 modified utility files
+  - `flutter analyze --no-pub` — "No issues found!" (ran in 157.7s)
+  - `flutter test` — **423/423 passed**
+
 ## 2026-05-09 — Admin panel bug fixes: brackets/uninstalls stats, soft-delete filter, solo edit — APK v1.5.3+61
 
 - Scope: 6 admin panel bugs reported after v1.5.1+59 deployment; all 6 root-caused and fixed

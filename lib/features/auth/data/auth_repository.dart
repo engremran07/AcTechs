@@ -400,6 +400,7 @@ class AuthRepository {
 
     controller.onCancel = () async {
       await sub.cancel();
+      await controller.close();
     };
 
     return controller.stream;

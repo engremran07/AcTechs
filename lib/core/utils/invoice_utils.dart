@@ -1,3 +1,5 @@
+import 'package:ac_techs/core/constants/app_constants.dart';
+
 class InvoiceUtils {
   InvoiceUtils._();
 
@@ -68,7 +70,7 @@ class InvoiceUtils {
     final normalizedInvoice = normalize(invoiceNumber).toLowerCase();
     final normalizedCompanyId = companyId.trim().toLowerCase();
     final companyToken = normalizedCompanyId.isEmpty
-        ? 'no-company'
+        ? AppConstants.noCompanyKey
         : normalizedCompanyId;
     if (normalizedInvoice.isEmpty) {
       return companyToken;

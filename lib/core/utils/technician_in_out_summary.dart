@@ -33,10 +33,12 @@ class TechnicianInOutSummary {
     var homeExpenses = 0.0;
 
     for (final earning in earnings) {
+      if (earning.isRejected) continue;
       totalEarned += earning.amount;
     }
 
     for (final expense in expenses) {
+      if (expense.isRejected) continue;
       if (expense.expenseType == AppConstants.expenseTypeHome) {
         homeExpenses += expense.amount;
       } else {

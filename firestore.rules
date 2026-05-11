@@ -1053,7 +1053,7 @@ service cloud.firestore {
             request.resource.data.reviewedAt == null) ||
           (!inOutApprovalRequired() &&
             request.resource.data.status == 'approved' &&
-            request.resource.data.reviewedAt is timestamp)
+            request.resource.data.reviewedAt == request.time)
         );
 
       allow update: if (isAdmin() &&
@@ -1178,7 +1178,7 @@ service cloud.firestore {
             request.resource.data.reviewedAt == null) ||
           (!inOutApprovalRequired() &&
             request.resource.data.status == 'approved' &&
-            request.resource.data.reviewedAt is timestamp)
+            request.resource.data.reviewedAt == request.time)
         );
 
       allow update: if (isAdmin() &&
@@ -1318,7 +1318,7 @@ service cloud.firestore {
             request.resource.data.reviewedAt == null) ||
           (!inOutApprovalRequired() &&
             request.resource.data.status == 'approved' &&
-            request.resource.data.reviewedAt is timestamp)
+            request.resource.data.reviewedAt == request.time)
         );
 
       allow update: if (isAdmin() &&

@@ -382,7 +382,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () => context.go('/tech/submit'),
+                                    onPressed: () => context.push('/tech/submit'),
                                     icon: const Icon(Icons.add_rounded),
                                     label: Text(
                                       l.submitAJob,
@@ -450,7 +450,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.go('/tech/submit'),
+          onPressed: () => context.push('/tech/submit'),
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
           tooltip: l.newJob,
@@ -722,7 +722,7 @@ class _SharedInstallCard extends ConsumerWidget {
         : ArcticTheme.arcticWarning;
 
     return ArcticCard(
-      onTap: hasSubmitted ? null : () => context.go('/tech/submit', extra: agg),
+      onTap: hasSubmitted ? null : () => context.push('/tech/submit', extra: agg),
       child: Row(
         children: [
           Container(

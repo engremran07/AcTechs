@@ -104,6 +104,8 @@ class EarningRepository {
   Future<void> restoreEarning(String id) async {
     try {
       await _ref.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('restoreEarning error: ${e.code} — ${e.message}');
       throw EarningException.saveFailed();

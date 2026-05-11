@@ -10,7 +10,7 @@ class CompanySelectorField extends StatelessWidget {
     required this.selectedCompanyId,
     required this.onChanged,
     this.enabled = true,
-    this.includeNoCompanyOption = true,
+    this.includeNoCompanyOption = false,
     this.labelText,
     this.hintText,
     this.prefixIcon,

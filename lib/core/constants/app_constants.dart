@@ -95,4 +95,13 @@ class AppConstants {
   // Free Tier Limits
   static const int maxFirestoreReadsPerDay = 50000;
   static const int maxFirestoreWritesPerDay = 20000;
+
+  // Shared Install
+  /// No-company token used when a job has no company assigned.
+  /// Must match the literal used in Firestore groupKey computation.
+  static const String noCompanyKey = 'no-company';
+
+  /// Stale shared install aggregate threshold: aggregates older than this
+  /// many days with no new contributions are eligible for admin cleanup.
+  static const int staleAggregateThresholdDays = 30;
 }

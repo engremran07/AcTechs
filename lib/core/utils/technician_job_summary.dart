@@ -58,9 +58,8 @@ class TechnicianJobSummary {
     var uninstallTotal = 0;
 
     for (final job in jobs) {
+      if (job.isDeleted) continue;
       totalJobs += 1;
-      totalUnits += job.totalUnits;
-      bracketCount += job.effectiveBracketCount;
 
       switch (job.status) {
         case JobStatus.pending:
@@ -74,6 +73,17 @@ class TechnicianJobSummary {
       if (job.isSharedInstall) {
         sharedJobs += 1;
       }
+
+      if (job.status == JobStatus.rejected) continue;
+
+      // For shared installs use the technician's own contribution units;
+      // fall back to totalUnits for solo jobs or legacy shared records.
+      final effectiveUnits =
+          job.isSharedInstall && job.sharedContributionUnits > 0
+          ? job.sharedContributionUnits
+          : job.totalUnits;
+      totalUnits += effectiveUnits;
+      bracketCount += job.effectiveBracketCount;
 
       splitUnits += job.unitsForType(AppConstants.unitTypeSplitAc);
       windowUnits += job.unitsForType(AppConstants.unitTypeWindowAc);

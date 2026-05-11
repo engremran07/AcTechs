@@ -2827,8 +2827,10 @@ class JobRepository {
         .orderBy('submittedAt', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+          (snap) => snap.docs
+              .map((doc) => JobModel.fromFirestore(doc))
+              .where((job) => !job.isDeleted)
+              .toList(),
         );
   }
 
@@ -3108,6 +3110,7 @@ class JobRepository {
   Future<void> resubmitForApproval(String id) async {
     if (id.trim().isEmpty) throw JobException.saveFailed();
     try {
+      await _periodLockGuard.ensureUnlockedDocument(_jobsRef.doc(id));
       await _jobsRef.doc(id).update({
         'status': JobStatus.pending.name,
         'approvedBy': null,
@@ -3187,7 +3190,9 @@ class JobRepository {
   /// and not yet fully consumed. These represent shared installs where not all
   /// team members contributed within the expected time window.
   Future<List<SharedInstallAggregate>> fetchStaleSharedAggregates({
-    Duration threshold = const Duration(days: 30),
+    Duration threshold = const Duration(
+      days: AppConstants.staleAggregateThresholdDays,
+    ),
   }) async {
     final cutoff = DateTime.now().subtract(threshold);
     final snap = await _sharedAggregatesRef

@@ -52,6 +52,7 @@ class TechnicianDayInOutSummary {
 
     for (final earning in earnings) {
       if (!inRange(earning.date)) continue;
+      if (earning.isRejected) continue;
       final date = earning.date!;
       final day = DateTime(date.year, date.month, date.day);
       final item = byDay.putIfAbsent(day, () => _DayAccumulator(day));
@@ -63,6 +64,7 @@ class TechnicianDayInOutSummary {
 
     for (final expense in expenses) {
       if (!inRange(expense.date)) continue;
+      if (expense.isRejected) continue;
       final date = expense.date!;
       final day = DateTime(date.year, date.month, date.day);
       final item = byDay.putIfAbsent(day, () => _DayAccumulator(day));

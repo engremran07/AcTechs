@@ -104,6 +104,8 @@ class ExpenseRepository {
   Future<void> restoreExpense(String id) async {
     try {
       await _ref.doc(id).update({'isDeleted': false, 'deletedAt': null});
+    } on PeriodException {
+      rethrow;
     } on FirebaseException catch (e) {
       debugPrint('restoreExpense error: ${e.code} — ${e.message}');
       throw ExpenseException.saveFailed();

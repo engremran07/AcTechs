@@ -131,6 +131,7 @@ jobs:
   firestore-rules:
     name: Firestore Rules Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Runs in parallel with analyse — both feed into test
     permissions:
       contents: read

@@ -90,12 +90,12 @@ void main() {
       expect(summary.approvedJobs, 1);
       expect(summary.rejectedJobs, 1);
       expect(summary.sharedJobs, 1);
-      expect(summary.totalUnits, 7);
+      expect(summary.totalUnits, 5);
       expect(summary.splitUnits, 2);
       expect(summary.windowUnits, 1);
       expect(summary.freestandingUnits, 1);
       expect(summary.bracketCount, 1);
-      expect(summary.uninstallTotal, 3);
+      expect(summary.uninstallTotal, 1);
     });
 
     test('returns empty summary for empty input', () {
