@@ -382,7 +382,8 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () => context.push('/tech/submit'),
+                                    onPressed: () =>
+                                        context.push('/tech/submit'),
                                     icon: const Icon(Icons.add_rounded),
                                     label: Text(
                                       l.submitAJob,
@@ -722,7 +723,9 @@ class _SharedInstallCard extends ConsumerWidget {
         : ArcticTheme.arcticWarning;
 
     return ArcticCard(
-      onTap: hasSubmitted ? null : () => context.push('/tech/submit', extra: agg),
+      onTap: hasSubmitted
+          ? null
+          : () => context.push('/tech/submit', extra: agg),
       child: Row(
         children: [
           Container(

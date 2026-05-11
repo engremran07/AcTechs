@@ -1,6 +1,6 @@
 # SESSION_LOG
 
-## 2026-05-11 — 30-domain audit (D01–D30): 18 confirmed bugs fixed — APK v2.0.0+76
+## 2026-05-11 — 30-domain audit (D01–D30): 18 confirmed bugs fixed — APK v2.0.1+77
 
 - Scope: Full multi-phase audit across all domains; Phase 0 previously completed; Phases 1–15 implemented this session
 - False positives confirmed and skipped: D10-F003/F004 (archiveExpense/archiveEarning already have try/catch), D09-F005/F007 (hardDeleteJob/restoreJob admin-only — no period lock by design), D04-F001/F002 (settlement methods already exist)

@@ -79,7 +79,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     }
 
     try {
-      return ref.read(sharedInstallerNamesProvider(query).future);
+      return await ref.read(sharedInstallerNamesProvider(query).future);
     } catch (_) {
       return const <String, List<String>>{};
     }
@@ -541,7 +541,8 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
         bytes,
         '$personToken-$locale-$companyToken-$periodToken-jobs-history.pdf',
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('PDF export error: $e\n$st');
       if (!mounted) return;
       AppFeedback.error(context, message: l.couldNotExport);
     }

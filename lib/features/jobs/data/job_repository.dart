@@ -165,8 +165,7 @@ class JobRepository {
           final aggregate = SharedInstallAggregate.fromFirestore(doc);
           final groupKey = aggregate.groupKey.trim();
           if (groupKey.isEmpty) continue;
-          final bucket =
-              namesByGroup[groupKey] ??= LinkedHashSet<String>();
+          final bucket = namesByGroup[groupKey] ??= LinkedHashSet<String>();
           for (final name in aggregate.teamMemberNames) {
             final trimmed = name.trim();
             if (trimmed.isNotEmpty) {
@@ -175,12 +174,9 @@ class JobRepository {
           }
         }
 
-        final missingKeys =
-            chunk
-                .where(
-                  (key) => !(namesByGroup[key]?.isNotEmpty ?? false),
-                )
-                .toList(growable: false);
+        final missingKeys = chunk
+            .where((key) => !(namesByGroup[key]?.isNotEmpty ?? false))
+            .toList(growable: false);
         if (missingKeys.isEmpty) continue;
 
         final jobsSnap = await _jobsRef
