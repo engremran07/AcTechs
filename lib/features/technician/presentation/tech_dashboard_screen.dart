@@ -104,7 +104,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.totalJobs}',
                                   icon: Icons.work_outline_rounded,
                                   color: ArcticTheme.arcticBlue,
-                                  onTap: () => context.go('/tech/history'),
+                                  onTap: () => context.push('/tech/history'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -114,7 +114,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.pendingJobs}',
                                   icon: Icons.pending_outlined,
                                   color: ArcticTheme.arcticPending,
-                                  onTap: () => context.go('/tech/history'),
+                                  onTap: () => context.push('/tech/history'),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -124,7 +124,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.approvedJobs}',
                                   icon: Icons.check_circle_outline,
                                   color: ArcticTheme.arcticSuccess,
-                                  onTap: () => context.go('/tech/history'),
+                                  onTap: () => context.push('/tech/history'),
                                 ),
                               ),
                             ],
@@ -203,7 +203,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   value: '${summary.rejectedJobs}',
                                   icon: Icons.cancel_outlined,
                                   color: ArcticTheme.arcticError,
-                                  onTap: () => context.go('/tech/history'),
+                                  onTap: () => context.push('/tech/history'),
                                 ),
                               ),
                             ],
@@ -425,7 +425,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                       message: l.invoiceCopied,
                                     );
                                   } else if (action == 'view_history') {
-                                    context.go('/tech/history');
+                                    context.push('/tech/history');
                                   }
                                 },
                                 child: _JobCard(

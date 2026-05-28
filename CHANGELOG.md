@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 2.0.6+82
+
+- Fixed: "rejected" stat card on tech dashboard used `context.go('/tech/history')` — destroyed back stack; changed to `context.push('/tech/history')` (NAV-005)
+- Fixed: popup menu "View History" action on tech dashboard used `context.go('/tech/history')` — destroyed back stack; changed to `context.push('/tech/history')` (NAV-006)
+- Fixed: "pending jobs" mini-list on admin dashboard used `context.go('/admin/approvals')` — destroyed back stack; changed to `context.push('/admin/approvals')` (NAV-007)
+- Fixed: approved shared installs error handler on admin dashboard was `const SizedBox.shrink()` — replaced with `_DashCard` showing dash value so errors don't silently swallow the card (UI-002)
+- Fixed: Excel export button in `ReportsHubScreen` used hardcoded `Colors.green.shade700` — replaced with `ArcticTheme.arcticSuccess` (UI-001)
+- Fixed: `ApprovalConfigRepository._mergeConfig()` catch block threw raw untyped `Exception(...)` — changed to `on FirebaseException { rethrow; }` to preserve the typed exception hierarchy (ERR-001)
+
+## 2.0.1+77
+
+- Fixed: 10 missing `ref.invalidate()` calls in `auth_providers.dart` `signOut()` — stale state no longer persists after sign-out for `approvedSharedInstallsProvider`, `adminJobSummaryProvider`, `adminScopedJobSummaryProvider`, `filteredAdminJobsProvider`, `techJobsByAcTypeProvider`, `technicianJobSummaryProvider`, `monthlyJobsProvider`, `monthlyTechnicianJobSummaryProvider`, `userSharedInstallStatusProvider`, `monthlyTechnicianInOutSummaryProvider`
+- Security: `firestore.rules` — fixed `reviewedAt is timestamp` → `reviewedAt == request.time` in auto-approve create sections for expenses, earnings, and ac_installs to prevent client from backdating the reviewed timestamp
+- Fixed: `job_repository.dart` `approvedSharedInstalls()` — added `isDeleted` filter so soft-deleted shared installs no longer appear in the approved list
+- Fixed: `job_repository.dart` `resubmitForApproval()` — added `_periodLockGuard.ensureUnlockedDocument()` so techs cannot resubmit a job in a locked period
+- Fixed: `job_repository.dart` `fetchStaleSharedAggregates()` — replaced magic literal `Duration(days: 30)` with `Duration(days: AppConstants.staleAggregateThresholdDays)`
+- Fixed: `expense_repository.dart` `restoreExpense()` / `earning_repository.dart` `restoreEarning()` — added `on PeriodException { rethrow; }` so period lock errors surface correctly
+- Fixed: `tech_dashboard_screen.dart` — 3 instances of `context.go('/tech/submit')` (empty-state button, FAB, shared install card tap) changed to `context.push('/tech/submit')` to preserve back stack
+- Fixed: `company_selector_field.dart` `includeNoCompanyOption` default changed from `true` → `false` — prevents submitting jobs without a company when companies exist
+- Added: `AppConstants.noCompanyKey = 'no-company'` and `AppConstants.staleAggregateThresholdDays = 30`
+- Fixed: `invoice_utils.dart` — replaced `'no-company'` literal with `AppConstants.noCompanyKey`
+- Governance: `analysis_options.yaml` — added 4 lint rules: `unnecessary_const`, `avoid_empty_else`, `use_build_context_synchronously`, `close_sinks`
+- Fixed: `auth_repository.dart` `userStream()` — added `await controller.close()` in `onCancel` to satisfy `close_sinks` lint and properly release resources
+- CI: added `timeout-minutes: 15` to `firestore-rules` CI job to prevent indefinite hang
+- Version bumped from `1.5.7+65` → `2.0.0+76` then `2.0.1+77`
+
 ## 1.5.3+61
 
 - Fixed: admin dashboard missing Brackets stat card — added `bracketCount` to `AdminJobSummary.fromJobs()` with new dashboard `_DashCard` (Bug 5)

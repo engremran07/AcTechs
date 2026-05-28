@@ -1,5 +1,23 @@
 # SESSION_LOG
 
+## 2026-05-28 — Navigation/color/error bug fixes + comprehensive re-audit — version 2.0.6+82
+
+- Scope: Resumed from compacted prior session; fixed all 6 confirmed bugs; ran comprehensive re-audit of all 117 Dart files + Firestore rules; confirmed codebase is production-clean; updated CHANGELOG, SESSION_LOG, and IMPLEMENTATION_PLAN
+- Bugs fixed:
+  - **NAV-005** (`tech_dashboard_screen.dart` L206): "rejected" stat card `context.go('/tech/history')` → `context.push('/tech/history')` — prevents back-stack destruction
+  - **NAV-006** (`tech_dashboard_screen.dart` L428): popup menu "view_history" branch `context.go('/tech/history')` → `context.push('/tech/history')` — same fix
+  - **NAV-007** (`admin_dashboard_screen.dart` L332): pending jobs list `context.go('/admin/approvals')` → `context.push('/admin/approvals')` — prevents back-stack destruction
+  - **UI-001** (`reports_hub_screen.dart`): Excel button `Colors.green.shade700` → `ArcticTheme.arcticSuccess` — eliminates last hardcoded color in lib/
+  - **UI-002** (`admin_dashboard_screen.dart`): approved shared installs error handler `const SizedBox.shrink()` → `_DashCard` with dash value — errors are no longer silently swallowed
+  - **ERR-001** (`approval_config_repository.dart`): raw `Exception('Failed to update config: ...')` → `on FirebaseException { rethrow; }` — typed exception hierarchy preserved
+- Comprehensive re-audit: Explore subagent scanned all 117 Dart files + Firestore rules; confirmed one reported finding (SEC-001: companies/app_settings `isAuth()`) was already fixed in a prior session — both collections already use `isAdmin() || isActiveUser()`; no additional genuine issues found
+- Governance: CHANGELOG.md updated with 2.0.1+77 and 2.0.6+82 entries; IMPLEMENTATION_PLAN.md created at repo root; session memory note re: plan persistence (plans must be in repo files, not session memory)
+- Verification:
+  - `get_errors` — 0 issues on all 4 modified files
+  - `flutter analyze --no-pub` — "No issues found!" (ran in 10.1s)
+  - `flutter test` — 423/423 passed
+- Version: bumped 2.0.5+81 → 2.0.6+82
+
 ## 2026-05-11 — 30-domain audit (D01–D30): 18 confirmed bugs fixed — APK v2.0.1+77
 
 - Scope: Full multi-phase audit across all domains; Phase 0 previously completed; Phases 1–15 implemented this session

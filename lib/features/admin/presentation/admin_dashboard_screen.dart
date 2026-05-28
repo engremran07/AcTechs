@@ -137,7 +137,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                                   value: '${summary.pendingJobs}',
                                   icon: Icons.pending_outlined,
                                   color: ArcticTheme.arcticPending,
-                                  onTap: () => context.go('/admin/approvals'),
+                                  onTap: () => context.push('/admin/approvals'),
                                 ),
                               ),
                             ],
@@ -247,7 +247,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             ),
                             loading: () =>
                                 const ArcticShimmer(height: 70, count: 1),
-                            error: (_, _) => const SizedBox.shrink(),
+                            error: (_, _) => _DashCard(
+                              title: l.approvedSharedInstalls,
+                              value: '—',
+                              icon: Icons.groups_rounded,
+                              color: ArcticTheme.arcticBlue,
+                            ),
                           ),
                         ],
                       );
@@ -329,7 +334,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             .take(5)
                             .map(
                               (job) => ArcticCard(
-                                onTap: () => context.go('/admin/approvals'),
+                                onTap: () => context.push('/admin/approvals'),
                                 child: Row(
                                   children: [
                                     Expanded(

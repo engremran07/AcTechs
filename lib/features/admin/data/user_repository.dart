@@ -162,16 +162,6 @@ class UserRepository {
       return UserModel.fromFirestore(exactSnap.docs.first);
     }
 
-    final snap = await _usersRef.get();
-    for (final doc in snap.docs) {
-      final candidate = (doc.data()['email'] as String? ?? '')
-          .trim()
-          .toLowerCase();
-      if (candidate == normalized) {
-        return UserModel.fromFirestore(doc);
-      }
-    }
-
     return null;
   }
 

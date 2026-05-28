@@ -746,7 +746,7 @@ class _ReportCard extends StatelessWidget {
                       child: _ExportActionButton(
                         icon: Icons.table_chart_rounded,
                         label: 'Excel',
-                        color: Colors.green.shade700,
+                        color: ArcticTheme.arcticSuccess,
                         isLoading: isExcelLoading,
                         onTap: onExcelTap,
                       ),

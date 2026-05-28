@@ -31,8 +31,8 @@ class ApprovalConfigRepository {
         ...updates,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-    } on FirebaseException catch (e) {
-      throw Exception('Failed to update config: ${e.message}');
+    } on FirebaseException {
+      rethrow;
     }
   }
 
