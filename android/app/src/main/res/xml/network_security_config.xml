@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Explicit network security configuration.
+    Disables cleartext (HTTP) traffic for all domains and trusts only
+    system certificate authorities. Firebase / Firestore use HTTPS exclusively.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

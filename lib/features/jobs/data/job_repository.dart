@@ -489,31 +489,31 @@ class JobRepository {
     final nextConsumedSplitUnits =
         (_readAggregateInt(aggregate, 'consumedSplitUnits') -
                 _unitsForType(job, AppConstants.unitTypeSplitAc))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedWindowUnits =
         (_readAggregateInt(aggregate, 'consumedWindowUnits') -
                 _unitsForType(job, AppConstants.unitTypeWindowAc))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedFreestandingUnits =
         (_readAggregateInt(aggregate, 'consumedFreestandingUnits') -
                 _unitsForType(job, AppConstants.unitTypeFreestandingAc))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedUninstallSplitUnits =
         (_readAggregateInt(aggregate, 'consumedUninstallSplitUnits') -
                 _unitsForType(job, AppConstants.unitTypeUninstallSplit))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedUninstallWindowUnits =
         (_readAggregateInt(aggregate, 'consumedUninstallWindowUnits') -
                 _unitsForType(job, AppConstants.unitTypeUninstallWindow))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedUninstallFreestandingUnits =
         (_readAggregateInt(aggregate, 'consumedUninstallFreestandingUnits') -
                 _unitsForType(job, AppConstants.unitTypeUninstallFreestanding))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedBracketCount =
         (_readAggregateInt(aggregate, 'consumedBracketCount') -
                 _bracketCount(job))
-            .clamp(0, 1 << 31);
+            .clamp(0, 0x7FFFFFFF);
     final nextConsumedDeliveryAmount =
         (_readAggregateDouble(aggregate, 'consumedDeliveryAmount') -
                 (job.charges?.deliveryAmount ?? 0))
@@ -1339,30 +1339,30 @@ class JobRepository {
             tx.update(aggregateRef, {
               'consumedSplitUnits': (curSplit - oldSplit + newSplit).clamp(
                 0,
-                1 << 31,
+                0x7FFFFFFF,
               ),
               'consumedWindowUnits': (curWindow - oldWindow + newWindow).clamp(
                 0,
-                1 << 31,
+                0x7FFFFFFF,
               ),
               'consumedFreestandingUnits':
                   (curFreestanding - oldFreestanding + newFreestanding).clamp(
                     0,
-                    1 << 31,
+                    0x7FFFFFFF,
                   ),
               'consumedUninstallSplitUnits':
                   (curUninstallSplit - oldUninstallSplit + newUninstallSplit)
-                      .clamp(0, 1 << 31),
+                      .clamp(0, 0x7FFFFFFF),
               'consumedUninstallWindowUnits':
                   (curUninstallWindow - oldUninstallWindow + newUninstallWindow)
-                      .clamp(0, 1 << 31),
+                      .clamp(0, 0x7FFFFFFF),
               'consumedUninstallFreestandingUnits':
                   (curUninstallFreestanding -
                           oldUninstallFreestanding +
                           newUninstallFreestanding)
-                      .clamp(0, 1 << 31),
+                      .clamp(0, 0x7FFFFFFF),
               'consumedBracketCount': (curBracket - oldBracket + newBracket)
-                  .clamp(0, 1 << 31),
+                  .clamp(0, 0x7FFFFFFF),
               'consumedDeliveryAmount':
                   (curDelivery - oldDelivery + newDelivery).clamp(
                     0.0,
@@ -2019,30 +2019,30 @@ class JobRepository {
           final updatedConsumed = <String, dynamic>{
             'consumedSplitUnits': (curSplit - oldSplit + newSplit).clamp(
               0,
-              1 << 31,
+              0x7FFFFFFF,
             ),
             'consumedWindowUnits': (curWindow - oldWindow + newWindow).clamp(
               0,
-              1 << 31,
+              0x7FFFFFFF,
             ),
             'consumedFreestandingUnits':
                 (curFreestanding - oldFreestanding + newFreestanding).clamp(
                   0,
-                  1 << 31,
+                  0x7FFFFFFF,
                 ),
             'consumedUninstallSplitUnits':
                 (curUninstallSplit - oldUninstallSplit + newUninstallSplit)
-                    .clamp(0, 1 << 31),
+                    .clamp(0, 0x7FFFFFFF),
             'consumedUninstallWindowUnits':
                 (curUninstallWindow - oldUninstallWindow + newUninstallWindow)
-                    .clamp(0, 1 << 31),
+                    .clamp(0, 0x7FFFFFFF),
             'consumedUninstallFreestandingUnits':
                 (curUninstallFreestanding -
                         oldUninstallFreestanding +
                         newUninstallFreestanding)
-                    .clamp(0, 1 << 31),
+                    .clamp(0, 0x7FFFFFFF),
             'consumedBracketCount': (curBracket - oldBracket + newBracket)
-                .clamp(0, 1 << 31),
+                .clamp(0, 0x7FFFFFFF),
             'consumedDeliveryAmount': (curDelivery - oldDelivery + newDelivery)
                 .clamp(0.0, double.infinity),
             'updatedAt': FieldValue.serverTimestamp(),

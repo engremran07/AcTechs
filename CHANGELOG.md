@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2.0.9+85
+
+- Android: Added `android:supportsRtl="true"` to `AndroidManifest.xml` — enables proper right-to-left layout mirroring for Arabic and Urdu locales on Android
+- Android: Added `android:networkSecurityConfig="@xml/network_security_config"` — explicit network security policy trusting only system CAs with cleartext traffic blocked
+- Android: Added `android:dataExtractionRules="@xml/data_extraction_rules"` — Android 12+ (API 31+) data extraction rules that exclude all app data from cloud backup and device-to-device transfers
+- UX: Change-password dialog in Settings — added `AutofillGroup` wrapper, `AutofillHints.password` on current-password field, `AutofillHints.newPassword` on new/confirm-password fields, and `TextInput.finishAutofillContext(shouldSave: true)` on submit to signal Android password managers to update stored credentials
+
+## 2.0.8+84
+
+- Fixed: `settings_screen.dart` — approval-toggle error handlers used `l.couldNotExport` (wrong string); changed to `l.genericError` for `_toggleJobApproval`, `_toggleInOutApproval`, `_toggleSharedJobApproval` (D08/ERR-002)
+- Fixed: `admin_shared_installs_screen.dart` — `.when(error:)` handler exposed raw `e.toString()` to UI; replaced with `l.genericError` (D08/ERR-003)
+- Fixed: `reports_hub_screen.dart` — 12 raw catch blocks exposed raw exception strings to UI; added `_reportError()` helper using `AppException.message(locale)` when available, `l.genericError` otherwise (D08/ERR-004)
+- Fixed: `job_repository.dart` — `.clamp(0, 1 << 31)` web integer overflow (1 << 31 = -2147483648 in JS bitwise); changed 15 occurrences to `.clamp(0, 0x7FFFFFFF)` (D05/WEB-001)
+- Fixed: `.github/workflows/release.yml` — added keystore integrity verification step (file must exist and be >100 bytes) to prevent silent debug-signing if keystore decode produces an empty or corrupted file (D02/CI-001)
+- Added: `timeout-minutes` to `analyse` (15 min), `test` (20 min), and `build-debug` (30 min) CI jobs to prevent indefinitely-hanging CI runs from consuming runner minutes (D16/CI-002)
+- Security: `firestore.rules` settlement temporal guards — `settlementRequestedAt`, `settlementPaidAt`, `settlementCorrectedAt` all enforce `<= request.time` in all three transition cases to prevent backdated settlements (D01/SEC-001)
+
 ## 2.0.6+82
 
 - Fixed: "rejected" stat card on tech dashboard used `context.go('/tech/history')` — destroyed back stack; changed to `context.push('/tech/history')` (NAV-005)

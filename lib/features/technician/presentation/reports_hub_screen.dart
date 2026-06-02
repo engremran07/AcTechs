@@ -197,7 +197,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -234,7 +234,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -275,7 +275,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         'ac_installs_${AppFormatters.date(range.start).replaceAll('/', '-')}_${AppFormatters.date(range.end).replaceAll('/', '-')}.pdf',
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -316,7 +316,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         'jobs_report_${AppFormatters.date(range.start).replaceAll('/', '-')}_${AppFormatters.date(range.end).replaceAll('/', '-')}.pdf',
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -353,7 +353,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         'shared_installs_${AppFormatters.date(DateTime.now()).replaceAll('/', '-')}.pdf',
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -385,7 +385,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         'settlement_report_${AppFormatters.date(DateTime.now()).replaceAll('/', '-')}.pdf',
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -422,7 +422,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -453,7 +453,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -488,7 +488,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -523,7 +523,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -547,7 +547,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -572,7 +572,7 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
         reportBranding: _buildBranding(),
       );
     } catch (e) {
-      if (mounted) AppFeedback.error(context, message: e.toString());
+      _reportError(e);
     } finally {
       _clearActive();
     }
@@ -634,6 +634,15 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   bool _isSameDay(DateTime? a, DateTime b) {
     if (a == null) return false;
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  void _reportError(Object e) {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
+    AppFeedback.error(
+      context,
+      message: e is AppException ? e.message(l.localeName) : l.genericError,
+    );
   }
 }
 

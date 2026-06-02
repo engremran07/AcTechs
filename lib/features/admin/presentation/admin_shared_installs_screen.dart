@@ -76,13 +76,14 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
                           .toSet()
                           .toList(growable: false)
                         ..sort();
-                  final fallback = groupJobs
-                      .map((j) => _resolveTechnicianName(j, userNamesById))
-                      .map((name) => name.trim())
-                      .where((name) => name.isNotEmpty)
-                      .toSet()
-                      .toList(growable: false)
-                    ..sort();
+                  final fallback =
+                      groupJobs
+                          .map((j) => _resolveTechnicianName(j, userNamesById))
+                          .map((name) => name.trim())
+                          .where((name) => name.isNotEmpty)
+                          .toSet()
+                          .toList(growable: false)
+                        ..sort();
                   final techNames = (resolved.isNotEmpty ? resolved : fallback)
                       .join(', ');
                   return Padding(
@@ -218,7 +219,7 @@ class AdminSharedInstallsScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Text(
-              e.toString(),
+              l.genericError,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

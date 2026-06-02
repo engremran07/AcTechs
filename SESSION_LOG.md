@@ -1,5 +1,65 @@
 # SESSION_LOG
 
+## 2026-05-31 — Android/Play Services exhaustive audit — APK v2.0.9+85
+
+- Scope: Exhaustive audit of all Android platform features, manifest, autofill signals, and security configs; implemented all genuine findings; rebuilt per-ABI APK; installed on R5GL22RGT9V.
+- Audit findings:
+  - `android:supportsRtl` — MISSING from AndroidManifest.xml despite tri-lingual (Arabic/Urdu) RTL support; FIXED — added to `<application>` element
+  - `android:networkSecurityConfig` — MISSING; created `network_security_config.xml` trusting only system CAs with cleartext blocked; added to manifest
+  - `android:dataExtractionRules` — MISSING for Android 12+ backup control; created `data_extraction_rules.xml` excluding all domains; added to manifest (complements existing `fullBackupContent="false"` for API 30-)
+  - Change-password autofill — dialog had no `AutofillGroup`, no `autofillHints`, and no `finishAutofillContext` call; FIXED — wrapped form in `AutofillGroup`, added hints, added `TextInput.finishAutofillContext(shouldSave: true)` before dismiss
+  - Login screen autofill: FALSE POSITIVE — already has `AutofillGroup`, email/password hints, and `finishAutofillContext(shouldSave: true)` ✅
+  - Predictive back: FALSE POSITIVE — `enableOnBackInvokedCallback="true"` already set ✅
+  - Splash screen: FALSE POSITIVE — `windowSplashScreenAnimatedIcon` + `windowSplashScreenBackground` already in values-v31/styles.xml ✅
+  - Adaptive icons: FALSE POSITIVE — mipmap-anydpi-v26/ic_launcher.xml uses foreground + background layers ✅
+  - HTTPS enforcement: FALSE POSITIVE — `usesCleartextTraffic="false"` already set ✅
+  - Backup disabled: FALSE POSITIVE — `allowBackup="false"` + `fullBackupContent="false"` ✅
+  - Locale config: FALSE POSITIVE — `locales_config.xml` with en/ur/ar ✅
+  - firebase_messaging / POST_NOTIFICATIONS: N/A — no FCM push in this app
+  - App shortcuts: N/A — not warranted (no strings.xml infrastructure, low ROI for internal tool)
+- All 423 tests pass; `flutter analyze` clean.
+- Built: arm64-v8a (per-ABI split), armeabi-v7a, x86_64
+- Installed: uninstalled v2.0.8+84 → installed app-arm64-v8a-release.apk v2.0.9+85 on R5GL22RGT9V
+
+## 2026-05-30 — v7 Audit implementation: Phase 0 D01–D03 + Phase 1 D05/D08 + D16 CI — APK v2.0.8+84
+
+- Scope: Implemented confirmed non-false-positive findings from the Ultimate Master Audit Plan v7 (25 domains, 4 phases). Most Phase 0–2 items verified as false positives. Genuine fixes applied across 5 files.
+- Phase 0 D01 Firestore security — all 8 sub-findings verified in firestore.rules:
+  - D01-F001 (settlement temporal guards): ALREADY DONE in prior session ✅
+  - D01-F002 (email spoofing in validOwnUserUpdate): FALSE POSITIVE — `authEmailOrEmpty()` guard already present
+  - D01-F003 (approvalConfigData crashes): FALSE POSITIVE — all callers guard with `!exists()` first
+  - D01-F004 (isAdmin missing role): FALSE POSITIVE — `userData().role is string` already validates
+  - D01-F005 (invoice_claims list asymmetry): FALSE POSITIVE — intentional design, techs use `get` by known ID
+  - D01-F006 (settlementBatchId immutability): FALSE POSITIVE — Cases 2 and 3 enforce `== resource.data.get(...)`
+  - D01-F007 (settlement batch createdAt guard): FALSE POSITIVE / N/A — no separate batch collection
+  - D01-F008 (reviewedAt pattern in auto-approve): FALSE POSITIVE — already `== request.time` in all three collections
+- Phase 0 D02 CI/CD:
+  - D02-F001/F002 (keystore integrity): DONE in prior session — release.yml verification step ✅
+- Phase 0 D03 web (dart:io): FALSE POSITIVE — conditional imports already handle it
+- Phase 1 D04 auth:
+  - userStream() manual StreamController: FALSE POSITIVE — `onCancel` properly cancels subscription and closes controller
+  - _syncProfileFromAuth() error swallowing: Accepted as intentional — background sync, logged but not propagated
+- Phase 1 D05:
+  - D05-F002 clamp overflow: DONE in prior session ✅
+  - Other D05 sub-items: FALSE POSITIVES
+- Phase 1 D08 UI:
+  - Submit button loading state: FALSE POSITIVE — `_isSubmitting` + spinner already implemented
+  - Month nav tap targets: FALSE POSITIVE — Material 3 `IconButton` default is 48dp
+- Phase 1 real fixes:
+  - **`settings_screen.dart`**: 3 approval-toggle error handlers `l.couldNotExport` → `l.genericError` (D08/ERR-002)
+  - **`admin_shared_installs_screen.dart`**: raw `e.toString()` → `l.genericError` in error handler (D08/ERR-003)
+  - **`reports_hub_screen.dart`**: 12 raw catch blocks → `_reportError()` helper (D08/ERR-004)
+- Phase 2 D16 CI/CD real fix:
+  - **`.github/workflows/ci.yml`**: Added `timeout-minutes: 15` to `analyse`, `timeout-minutes: 20` to `test`, `timeout-minutes: 30` to `build-debug` jobs (D16/CI-002)
+- Phase 2 D09/D10/D11 — verified as false positives:
+  - canTechnicianEdit correctionRequired: FALSE POSITIVE — correction_required is settlement state, not job-edit opportunity
+  - normalizeWithCompanyPrefix bounds: FALSE POSITIVE — substring calls are guarded by startsWith/length checks
+  - invoiceClaimDocumentId 'unknown_invoice': FALSE POSITIVE — intentional collision prevention
+- Version bump: 2.0.7+83 → 2.0.8+84
+- Verification:
+  - `flutter analyze --no-pub` — "No issues found!"
+  - `flutter test` — 423/423 passed
+
 ## 2026-05-28 — Navigation/color/error bug fixes + comprehensive re-audit — version 2.0.6+82
 
 - Scope: Resumed from compacted prior session; fixed all 6 confirmed bugs; ran comprehensive re-audit of all 117 Dart files + Firestore rules; confirmed codebase is production-clean; updated CHANGELOG, SESSION_LOG, and IMPLEMENTATION_PLAN

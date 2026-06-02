@@ -206,6 +206,19 @@ jobs:
           echo "$KEYSTORE_FILE" | base64 --decode > android/app/release.keystore
           chmod 600 android/app/release.keystore
 
+      - name: Verify release keystore integrity
+        run: |
+          if [ ! -f android/app/release.keystore ]; then
+            echo "ℹ️  No release keystore — APK will use debug signing"
+            exit 0
+          fi
+          FILE_SIZE=$(wc -c < android/app/release.keystore)
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "❌ release.keystore appears corrupt (${FILE_SIZE} bytes) — aborting"
+            exit 1
+          fi
+          echo "✅ Release keystore present (${FILE_SIZE} bytes) — APK will be release-signed"
+
       - name: Write key.properties
         run: |
           if [ ! -f android/app/release.keystore ]; then

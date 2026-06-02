@@ -40,6 +40,7 @@ jobs:
   analyse:
     name: Flutter Analyse
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -71,6 +72,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [analyse, firestore-rules]
     permissions:
       contents: read
@@ -181,6 +183,7 @@ jobs:
   build-debug:
     name: Build Debug APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: test
     # Skip if manually triggered with build_apk=false
     if: github.event.inputs.build_apk != 'false'

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
@@ -617,7 +618,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       ErrorSnackbar.show(
         context,
-        message: AppLocalizations.of(context)!.couldNotExport,
+        message: AppLocalizations.of(context)!.genericError,
       );
     }
   }
@@ -631,7 +632,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       ErrorSnackbar.show(
         context,
-        message: AppLocalizations.of(context)!.couldNotExport,
+        message: AppLocalizations.of(context)!.genericError,
       );
     }
   }
@@ -645,7 +646,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (!mounted) return;
       ErrorSnackbar.show(
         context,
-        message: AppLocalizations.of(context)!.couldNotExport,
+        message: AppLocalizations.of(context)!.genericError,
       );
     }
   }
@@ -916,56 +917,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l.changePassword),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: currentPasswordCtrl,
-                obscureText: true,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.currentPassword,
-                  prefixIcon: const Icon(Icons.lock_outline),
+        content: AutofillGroup(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: currentPasswordCtrl,
+                  obscureText: true,
+                  textInputAction: TextInputAction.next,
+                  enableInteractiveSelection: true,
+                  autofillHints: const [AutofillHints.password],
+                  decoration: InputDecoration(
+                    hintText: l.currentPassword,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? l.enterPassword : null,
                 ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? l.enterPassword : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: newPasswordCtrl,
-                obscureText: true,
-                textInputAction: TextInputAction.next,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.newPassword,
-                  prefixIcon: const Icon(Icons.password_rounded),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: newPasswordCtrl,
+                  obscureText: true,
+                  textInputAction: TextInputAction.next,
+                  enableInteractiveSelection: true,
+                  autofillHints: const [AutofillHints.newPassword],
+                  decoration: InputDecoration(
+                    hintText: l.newPassword,
+                    prefixIcon: const Icon(Icons.password_rounded),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l.enterPassword;
+                    if (v.length < 6) return l.minChars(6);
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l.enterPassword;
-                  if (v.length < 6) return l.minChars(6);
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: confirmPasswordCtrl,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                enableInteractiveSelection: true,
-                decoration: InputDecoration(
-                  hintText: l.confirmNewPassword,
-                  prefixIcon: const Icon(Icons.verified_user_outlined),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: confirmPasswordCtrl,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  enableInteractiveSelection: true,
+                  autofillHints: const [AutofillHints.newPassword],
+                  decoration: InputDecoration(
+                    hintText: l.confirmNewPassword,
+                    prefixIcon: const Icon(Icons.verified_user_outlined),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l.required;
+                    if (v != newPasswordCtrl.text) return l.passwordsDoNotMatch;
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return l.required;
-                  if (v != newPasswordCtrl.text) return l.passwordsDoNotMatch;
-                  return null;
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -976,6 +982,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
+                TextInput.finishAutofillContext(shouldSave: true);
                 Navigator.pop(ctx, true);
               }
             },
