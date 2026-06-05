@@ -2011,4 +2011,56 @@ class AppLocalizationsAr extends AppLocalizations {
   String adminEditedAt(String date) {
     return 'تم التعديل بواسطة المسؤول في $date';
   }
+
+  @override
+  String get transferJob => 'نقل المهمة';
+
+  @override
+  String get transferToTechnician => 'نقل إلى فني';
+
+  @override
+  String get currentTechnicianLabel => 'الفني الحالي';
+
+  @override
+  String get transferJobConfirmTitle => 'نقل المهمة؟';
+
+  @override
+  String transferJobConfirmBody(String from, String to) {
+    return 'نقل هذه المهمة من $from إلى $to؟';
+  }
+
+  @override
+  String transferJobSuccess(String name) {
+    return 'تم نقل المهمة إلى $name';
+  }
+
+  @override
+  String get transferJobNotAllowed => 'لا يمكن نقل مهمة في تسوية نشطة.';
+
+  @override
+  String get transferredBadge => 'تم النقل';
+
+  @override
+  String transferredFrom(String name) {
+    return 'منقول من $name';
+  }
+
+  @override
+  String get exportBeforeFlushTitle => 'قم بتصدير نسخة احتياطية أولاً';
+
+  @override
+  String get exportBeforeFlushBody =>
+      'هذه العملية لا يمكن التراجع عنها. يُنصح بتصدير بياناتك قبل المتابعة.';
+
+  @override
+  String get exportBeforeFlushCta => 'تصدير الأعمال إلى Excel';
+
+  @override
+  String get iHaveExportedConfirm =>
+      'لقد صدّرت نسخة احتياطية — المتابعة على أي حال';
+
+  @override
+  String importLockedPeriodWarning(int count, String date) {
+    return '$count مهمة(مهام) تقع قبل الفترة المقفلة (قبل $date). سيتم رفضها. افتح القفل من الإعدادات أولاً.';
+  }
 }

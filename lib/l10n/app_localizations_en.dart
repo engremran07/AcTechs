@@ -2013,4 +2013,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String adminEditedAt(String date) {
     return 'Edited by admin on $date';
   }
+
+  @override
+  String get transferJob => 'Transfer Job';
+
+  @override
+  String get transferToTechnician => 'Transfer to Technician';
+
+  @override
+  String get currentTechnicianLabel => 'Current Technician';
+
+  @override
+  String get transferJobConfirmTitle => 'Transfer Job?';
+
+  @override
+  String transferJobConfirmBody(String from, String to) {
+    return 'Transfer this job from $from to $to?';
+  }
+
+  @override
+  String transferJobSuccess(String name) {
+    return 'Job transferred to $name';
+  }
+
+  @override
+  String get transferJobNotAllowed =>
+      'Cannot transfer a job that is in an active settlement.';
+
+  @override
+  String get transferredBadge => 'Transferred';
+
+  @override
+  String transferredFrom(String name) {
+    return 'Transferred from $name';
+  }
+
+  @override
+  String get exportBeforeFlushTitle => 'Export a Backup First';
+
+  @override
+  String get exportBeforeFlushBody =>
+      'This operation is irreversible. It is strongly recommended to export your data before flushing.';
+
+  @override
+  String get exportBeforeFlushCta => 'Export Jobs to Excel';
+
+  @override
+  String get iHaveExportedConfirm =>
+      'I have exported a backup — proceed anyway';
+
+  @override
+  String importLockedPeriodWarning(int count, String date) {
+    return '$count job(s) fall before the locked period (before $date). These will be rejected. Unlock the period in Settings first.';
+  }
 }

@@ -7,6 +7,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/auth/presentation/login_screen.dart';
 import 'package:ac_techs/features/auth/presentation/splash_screen.dart';
+import 'package:ac_techs/features/auth/presentation/update_required_screen.dart';
 import 'package:ac_techs/features/technician/presentation/tech_shell.dart';
 import 'package:ac_techs/features/technician/presentation/tech_dashboard_screen.dart';
 import 'package:ac_techs/features/technician/presentation/submit_job_screen.dart';
@@ -33,6 +34,7 @@ import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart
 import 'package:ac_techs/features/expenses/presentation/ac_installations_screen.dart';
 import 'package:ac_techs/features/expenses/presentation/monthly_summary_screen.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/core/providers/app_build_provider.dart';
 
 final _routerKey = GlobalKey<NavigatorState>();
 
@@ -42,6 +44,7 @@ String? resolveAppRedirect({
   required bool isLoggedIn,
   required AsyncValue<UserModel?> currentUser,
   required ApprovalConfig? approvalConfig,
+  int? appBuildNumber,
 }) {
   final isSplashRoute = matchedLocation == '/splash';
   final isLoginRoute = matchedLocation == '/login';
@@ -69,6 +72,18 @@ String? resolveAppRedirect({
 
   if (!user.isActive) {
     return '/login';
+  }
+
+  // Build gate: if admin has enabled enforceMinimumBuild and the current
+  // build is below the minimum, redirect to the update-required screen.
+  // Admins are exempt so they can always access settings to change the policy.
+  if (!user.isAdmin &&
+      approvalConfig != null &&
+      approvalConfig.enforceMinimumBuild &&
+      appBuildNumber != null &&
+      appBuildNumber < approvalConfig.minSupportedBuildNumber &&
+      matchedLocation != '/update-required') {
+    return '/update-required';
   }
 
   if (isSplashRoute || isLoginRoute) {
@@ -128,6 +143,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(authStateProvider, (_, _) => queueRefresh());
   ref.listen(currentUserProvider, (_, _) => queueRefresh());
   ref.listen(approvalConfigProvider, (_, _) => queueRefresh());
+  ref.listen(appBuildNumberProvider, (_, _) => queueRefresh());
 
   ref.onDispose(() {
     refreshDebounce?.cancel();
@@ -153,6 +169,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authStateProvider);
       final currentUser = ref.read(currentUserProvider);
       final approvalConfig = ref.read(approvalConfigProvider).asData?.value;
+      final appBuildNumber = ref.read(appBuildNumberProvider).asData?.value;
 
       return resolveAppRedirect(
         matchedLocation: state.matchedLocation,
@@ -160,6 +177,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         isLoggedIn: authState.value != null,
         currentUser: currentUser,
         approvalConfig: approvalConfig,
+        appBuildNumber: appBuildNumber,
       );
     },
     routes: [
@@ -174,6 +192,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         pageBuilder: (context, state) =>
             _slideFadePage(pageKey: state.pageKey, child: const LoginScreen()),
+      ),
+      GoRoute(
+        path: '/update-required',
+        pageBuilder: (context, state) => _slideFadePage(
+          pageKey: state.pageKey,
+          child: const UpdateRequiredScreen(),
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) => TechShell(child: child),

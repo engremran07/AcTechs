@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2.1.0+87
+
+- Security: Removed `firebase_options.dart` from git tracking (SEC-001) — file was committed despite `.gitignore` rule; rotate exposed API keys in Firebase Console
+- Feature: Job transfer — admin can reassign any unpaid job to a different technician via new Transfer button in the job verification dialog; transfer tracked with audit fields (`transferredFromTechId`, `transferredFromTechName`, `transferredAt`, `transferredByAdminId`)
+- Feature: Minimum build enforcement (`BIZ-001`) — router redirects techs with outdated APK builds to a new `/update-required` screen when `enforceMinimumBuild` is enabled in approval config
+- Android: WhatsApp + WhatsApp Business package visibility queries added to `AndroidManifest.xml` (AND-001) — fixes silent WhatsApp share failure on Android 11+
+- UX: Flush database screen — prominent export-before-flush recommendation card added to Step 1 with link to Analytics (OPS-001)
+- UX: Historical import — keyword and selection validated before file picker opens (UX-002)
+- UX: Historical import — locked-period pre-flight warning banner shown when parsed jobs fall before `approvalConfig.lockedBeforeDate` (UX-001)
+- Code: Consolidated duplicate `SharedPreferences` / `ActionCodeSettings` constants to `AppConstants` (CQA-001, CQA-002, CQA-003); callers in `main.dart`, `auth_repository.dart`, `login_screen.dart`, `user_repository.dart` updated
+- Fix: `.gitignore` duplicate `.tmp/` block removed (CQA-004)
+- Fix: `archiveNonAdminUsersInChunks()` in `user_repository.dart` now queries `isActive == true && role != admin` to avoid re-archiving already-inactive users (FBR-004)
+- Firestore: Added `status + isDeleted + submittedAt` composite index for `jobs` collection (FBR-001)
+- Firestore: `adminJobTransferAllowed()` security function added; transfer payload limited to 6 audit fields; only permitted for `unpaid` jobs (rules layer)
+
+## 2.0.10+86
+
+- Pre-commit version bump from hook; no additional code changes in this build number
+
 ## 2.0.9+85
 
 - Android: Added `android:supportsRtl="true"` to `AndroidManifest.xml` — enables proper right-to-left layout mirroring for Arabic and Urdu locales on Android

@@ -353,12 +353,12 @@ class UserRepository {
   Future<void> sendPasswordReset(String email) async {
     try {
       final settings = ActionCodeSettings(
-        url: 'https://actechs-d415e.web.app',
+        url: AppConstants.webAppUrl,
         handleCodeInApp: false,
-        androidPackageName: 'com.actechs.pk',
+        androidPackageName: AppConstants.androidPackageName,
         androidInstallApp: false,
         // Match app minimum supported Android API level.
-        androidMinimumVersion: '29',
+        androidMinimumVersion: AppConstants.androidMinimumVersion,
       );
       await FirebaseAuth.instance.sendPasswordResetEmail(
         email: email,
@@ -647,21 +647,23 @@ class UserRepository {
   Future<void> _archiveNonAdminUsersInChunks() async {
     const chunkSize = 400;
     while (true) {
-      final usersSnap = await _usersRef.limit(chunkSize).get();
+      final usersSnap = await _usersRef
+          .where('isActive', isEqualTo: true)
+          .where('role', isNotEqualTo: AppConstants.roleAdmin)
+          .limit(chunkSize)
+          .get();
       if (usersSnap.docs.isEmpty) break;
 
       final batch = firestore.batch();
       var updatedAny = false;
       for (final doc in usersSnap.docs) {
-        final role =
-            doc.data()['role'] as String? ?? AppConstants.roleTechnician;
-        if (role != AppConstants.roleAdmin) {
-          batch.update(doc.reference, {
-            'isActive': false,
-            'archivedAt': FieldValue.serverTimestamp(),
-          });
-          updatedAny = true;
-        }
+        // All docs from the filtered query are active non-admin users;
+        // no role check needed here.
+        batch.update(doc.reference, {
+          'isActive': false,
+          'archivedAt': FieldValue.serverTimestamp(),
+        });
+        updatedAny = true;
       }
 
       if (!updatedAny) {
@@ -678,7 +680,7 @@ class UserRepository {
   Future<void> _scheduleCacheClearOnNextLaunch() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('clear_firestore_cache_on_launch', true);
+      await prefs.setBool(AppConstants.clearFirestoreCacheOnLaunchKey, true);
     } catch (_) {
       // Non-critical: cache flag may fail in test environments without
       // binding initialization. Flush itself already succeeded.

@@ -772,5 +772,40 @@
   "@pendingCollaborationsDescription": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "noPendingCollaborations": "لا توجد تعاونات تركيبات مشتركة معلقة."
+  "noPendingCollaborations": "لا توجد تعاونات تركيبات مشتركة معلقة.",
+
+  "transferJob": "نقل المهمة",
+  "transferToTechnician": "نقل إلى فني",
+  "currentTechnicianLabel": "الفني الحالي",
+  "transferJobConfirmTitle": "نقل المهمة؟",
+  "transferJobConfirmBody": "نقل هذه المهمة من {from} إلى {to}؟",
+  "@transferJobConfirmBody": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "transferJobSuccess": "تم نقل المهمة إلى {name}",
+  "@transferJobSuccess": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "transferJobNotAllowed": "لا يمكن نقل مهمة في تسوية نشطة.",
+  "transferredBadge": "تم النقل",
+  "transferredFrom": "منقول من {name}",
+  "@transferredFrom": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "exportBeforeFlushTitle": "قم بتصدير نسخة احتياطية أولاً",
+  "exportBeforeFlushBody": "هذه العملية لا يمكن التراجع عنها. يُنصح بتصدير بياناتك قبل المتابعة.",
+  "exportBeforeFlushCta": "تصدير الأعمال إلى Excel",
+  "iHaveExportedConfirm": "لقد صدّرت نسخة احتياطية — المتابعة على أي حال",
+
+  "importLockedPeriodWarning": "{count} مهمة(مهام) تقع قبل الفترة المقفلة (قبل {date}). سيتم رفضها. افتح القفل من الإعدادات أولاً.",
+  "@importLockedPeriodWarning": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "date": { "type": "String" }
+    }
+  }
 }

@@ -8,12 +8,10 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/widgets/snackbars.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
-
-const _kRememberEmailKey = 'remember_email';
-const _kRememberMeKey = 'remember_me';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +42,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getBool(_kRememberMeKey) ?? false;
+      final saved = prefs.getBool(AppConstants.rememberMeKey) ?? false;
     if (saved) {
-      final email = prefs.getString(_kRememberEmailKey) ?? '';
+      final email = prefs.getString(AppConstants.rememberEmailKey) ?? '';
       if (mounted) {
         setState(() {
           _rememberMe = true;
@@ -94,11 +92,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // Save / clear remember me
       final prefs = await SharedPreferences.getInstance();
       if (_rememberMe) {
-        await prefs.setBool(_kRememberMeKey, true);
-        await prefs.setString(_kRememberEmailKey, _emailController.text.trim());
+        await prefs.setBool(AppConstants.rememberMeKey, true);
+        await prefs.setString(AppConstants.rememberEmailKey, _emailController.text.trim());
       } else {
-        await prefs.remove(_kRememberMeKey);
-        await prefs.remove(_kRememberEmailKey);
+        await prefs.remove(AppConstants.rememberMeKey);
+        await prefs.remove(AppConstants.rememberEmailKey);
       }
 
       await ref

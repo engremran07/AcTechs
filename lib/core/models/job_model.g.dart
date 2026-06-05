@@ -122,6 +122,10 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   editRequestedAt: _timestampFromJson(json['editRequestedAt']),
   adminEditedBy: json['adminEditedBy'] as String?,
   adminEditedAt: _timestampFromJson(json['adminEditedAt']),
+  transferredFromTechId: json['transferredFromTechId'] as String? ?? '',
+  transferredFromTechName: json['transferredFromTechName'] as String? ?? '',
+  transferredAt: _timestampFromJson(json['transferredAt']),
+  transferredByAdminId: json['transferredByAdminId'] as String? ?? '',
 );
 
 Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
@@ -183,6 +187,10 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'editRequestedAt': _timestampToJson(instance.editRequestedAt),
   'adminEditedBy': instance.adminEditedBy,
   'adminEditedAt': _timestampToJson(instance.adminEditedAt),
+  'transferredFromTechId': instance.transferredFromTechId,
+  'transferredFromTechName': instance.transferredFromTechName,
+  'transferredAt': _timestampToJson(instance.transferredAt),
+  'transferredByAdminId': instance.transferredByAdminId,
 };
 
 const _$JobStatusEnumMap = {

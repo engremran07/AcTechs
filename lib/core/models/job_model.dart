@@ -143,6 +143,12 @@ abstract class JobModel with _$JobModel {
     String? adminEditedBy,
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? adminEditedAt,
+    // Job transfer audit trail (admin-only operation)
+    @Default('') String transferredFromTechId,
+    @Default('') String transferredFromTechName,
+    @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
+    DateTime? transferredAt,
+    @Default('') String transferredByAdminId,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>

@@ -145,6 +145,10 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
                   countdown: _countdown,
                   onProceed: _goToStep2,
                   onCancel: () => context.pop(),
+                  onExportFirst: () {
+                    context.pop();
+                    context.push('/admin/analytics');
+                  },
                 )
               : _Step2View(
                   key: const ValueKey(2),
@@ -181,11 +185,13 @@ class _Step1View extends StatelessWidget {
     required this.countdown,
     required this.onProceed,
     required this.onCancel,
+    required this.onExportFirst,
   });
 
   final int countdown;
   final VoidCallback onProceed;
   final VoidCallback onCancel;
+  final VoidCallback onExportFirst;
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +333,51 @@ class _Step1View extends StatelessWidget {
             ],
           ),
         ).animate().fadeIn(delay: 500.ms),
-        const SizedBox(height: 32),
+        const SizedBox(height: 12),
+
+        // ── Export-before-flush recommendation (OPS-001) ──────────────────
+        ArcticCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.backup_outlined,
+                    color: ArcticTheme.arcticWarning,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.exportBeforeFlushTitle,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: ArcticTheme.arcticWarning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l.exportBeforeFlushBody,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: onExportFirst,
+                icon: const Icon(Icons.table_chart_outlined, size: 16),
+                label: Text(l.exportBeforeFlushCta),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ArcticTheme.arcticWarning,
+                  side: const BorderSide(color: ArcticTheme.arcticWarning),
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 520.ms),
+        const SizedBox(height: 16),
 
         // Countdown / proceed button
         SizedBox(

@@ -473,9 +473,27 @@ service cloud.firestore {
         ]);
     }
 
+    // Admin can transfer a job to a different technician.
+    // Only allowed when job is unpaid (not in any settlement flow).
+    // Records original tech in transferredFrom* fields for audit trail.
+    function adminJobTransferAllowed() {
+      return isAdmin() &&
+        settlementStatusOf(resource.data) == 'unpaid' &&
+        request.resource.data.techId is string &&
+        request.resource.data.techId.size() > 0 &&
+        request.resource.data.techName is string &&
+        request.resource.data.techName.size() > 0 &&
+        request.resource.data.transferredAt == request.time &&
+        request.resource.data.transferredByAdminId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techId', 'techName', 'transferredFromTechId', 'transferredFromTechName',
+          'transferredAt', 'transferredByAdminId'
+        ]);
+    }
+
     function jobUpdateAllowed() {
       return isAdmin()
-        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate())
+        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate() || adminJobTransferAllowed())
         : (technicianSettlementUpdate() || technicianApprovalFlowUpdate());
     }
 

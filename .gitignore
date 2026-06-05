@@ -70,6 +70,3 @@ app.*.map.json
 
 # Reference clones (temp)
 .tmp/
-
-# Reference clones (temp)
-.tmp/

@@ -3182,6 +3182,42 @@ class JobRepository {
     }
   }
 
+  /// Transfers a job to a different technician. Admin-only.
+  /// Only allowed when the job's settlement status is 'unpaid' (not yet
+  /// in any settlement flow). Records the original tech for audit trail.
+  Future<void> transferJob({
+    required String jobId,
+    required String newTechId,
+    required String newTechName,
+    required String adminId,
+  }) async {
+    if (jobId.trim().isEmpty || newTechId.trim().isEmpty) {
+      throw JobException.saveFailed();
+    }
+    try {
+      final docRef = _jobsRef.doc(jobId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw JobException.saveFailed();
+      final job = JobModel.fromFirestore(snap);
+      if (job.settlementStatus != JobSettlementStatus.unpaid) {
+        throw JobException.settlementLocked();
+      }
+      await docRef.update({
+        'techId': newTechId,
+        'techName': newTechName,
+        'transferredFromTechId': job.techId,
+        'transferredFromTechName': job.techName,
+        'transferredAt': FieldValue.serverTimestamp(),
+        'transferredByAdminId': adminId,
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    }
+  }
+
   /// Fetches shared install aggregates that are stale (older than [threshold])
   /// and not yet fully consumed. These represent shared installs where not all
   /// team members contributed within the expected time window.

@@ -772,5 +772,40 @@
   "@pendingCollaborationsDescription": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "noPendingCollaborations": "کوئی زیر التزام مشترکہ انسٹال شراکتیں نہیں۔"
+  "noPendingCollaborations": "کوئی زیر التزام مشترکہ انسٹال شراکتیں نہیں۔",
+
+  "transferJob": "جاب منتقل کریں",
+  "transferToTechnician": "ٹیکنیشن کو منتقل کریں",
+  "currentTechnicianLabel": "موجودہ ٹیکنیشن",
+  "transferJobConfirmTitle": "جاب منتقل کریں؟",
+  "transferJobConfirmBody": "یہ جاب {from} سے {to} کو منتقل کریں؟",
+  "@transferJobConfirmBody": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "transferJobSuccess": "جاب {name} کو منتقل کر دی گئی",
+  "@transferJobSuccess": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "transferJobNotAllowed": "فعال سیٹلمنٹ میں موجود جاب منتقل نہیں کی جا سکتی۔",
+  "transferredBadge": "منتقل",
+  "transferredFrom": "{name} سے منتقل",
+  "@transferredFrom": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "exportBeforeFlushTitle": "پہلے بیک اپ برآمد کریں",
+  "exportBeforeFlushBody": "یہ عمل ناقابلِ واپسی ہے۔ فلش کرنے سے پہلے اپنا ڈیٹا برآمد کرنا تجویز کیا جاتا ہے۔",
+  "exportBeforeFlushCta": "جابز کو Excel میں برآمد کریں",
+  "iHaveExportedConfirm": "میں نے بیک اپ برآمد کر لیا ہے — بہرحال جاری رکھیں",
+
+  "importLockedPeriodWarning": "{count} جاب(جابز) مقفل مدت سے پہلے ({date} سے پہلے) ہیں۔ انہیں مسترد کر دیا جائے گا۔ پہلے ترتیبات میں قفل ہٹائیں۔",
+  "@importLockedPeriodWarning": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "date": { "type": "String" }
+    }
+  }
 }

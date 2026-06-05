@@ -8,9 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 
-const _kRememberEmailKey = 'remember_email';
-const _kRememberMeKey = 'remember_me';
-const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
 const _kProfileSyncAtPrefix = 'profile_sync_at_';
 const _kLastSyncedEmailPrefix = 'profile_sync_email_';
 const _kProfileSyncCooldown = Duration(hours: 24);
@@ -73,9 +70,9 @@ class AuthRepository {
 
   Future<void> _prepareForSignOut() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kRememberMeKey);
-    await prefs.remove(_kRememberEmailKey);
-    await prefs.setBool(_kClearFirestoreCacheOnLaunchKey, true);
+    await prefs.remove(AppConstants.rememberMeKey);
+    await prefs.remove(AppConstants.rememberEmailKey);
+    await prefs.setBool(AppConstants.clearFirestoreCacheOnLaunchKey, true);
   }
 
   Future<void> _forceSessionSignOut() async {
@@ -324,11 +321,11 @@ class AuthRepository {
   Future<void> sendPasswordReset(String email) async {
     try {
       final settings = ActionCodeSettings(
-        url: 'https://actechs-d415e.web.app',
+        url: AppConstants.webAppUrl,
         handleCodeInApp: false,
-        androidPackageName: 'com.actechs.pk',
+        androidPackageName: AppConstants.androidPackageName,
         androidInstallApp: false,
-        androidMinimumVersion: '29',
+        androidMinimumVersion: AppConstants.androidMinimumVersion,
       );
       await auth.sendPasswordResetEmail(
         email: email,

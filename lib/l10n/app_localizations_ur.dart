@@ -2022,4 +2022,57 @@ class AppLocalizationsUr extends AppLocalizations {
   String adminEditedAt(String date) {
     return 'منتظم نے $date کو ترمیم کی';
   }
+
+  @override
+  String get transferJob => 'جاب منتقل کریں';
+
+  @override
+  String get transferToTechnician => 'ٹیکنیشن کو منتقل کریں';
+
+  @override
+  String get currentTechnicianLabel => 'موجودہ ٹیکنیشن';
+
+  @override
+  String get transferJobConfirmTitle => 'جاب منتقل کریں؟';
+
+  @override
+  String transferJobConfirmBody(String from, String to) {
+    return 'یہ جاب $from سے $to کو منتقل کریں؟';
+  }
+
+  @override
+  String transferJobSuccess(String name) {
+    return 'جاب $name کو منتقل کر دی گئی';
+  }
+
+  @override
+  String get transferJobNotAllowed =>
+      'فعال سیٹلمنٹ میں موجود جاب منتقل نہیں کی جا سکتی۔';
+
+  @override
+  String get transferredBadge => 'منتقل';
+
+  @override
+  String transferredFrom(String name) {
+    return '$name سے منتقل';
+  }
+
+  @override
+  String get exportBeforeFlushTitle => 'پہلے بیک اپ برآمد کریں';
+
+  @override
+  String get exportBeforeFlushBody =>
+      'یہ عمل ناقابلِ واپسی ہے۔ فلش کرنے سے پہلے اپنا ڈیٹا برآمد کرنا تجویز کیا جاتا ہے۔';
+
+  @override
+  String get exportBeforeFlushCta => 'جابز کو Excel میں برآمد کریں';
+
+  @override
+  String get iHaveExportedConfirm =>
+      'میں نے بیک اپ برآمد کر لیا ہے — بہرحال جاری رکھیں';
+
+  @override
+  String importLockedPeriodWarning(int count, String date) {
+    return '$count جاب(جابز) مقفل مدت سے پہلے ($date سے پہلے) ہیں۔ انہیں مسترد کر دیا جائے گا۔ پہلے ترتیبات میں قفل ہٹائیں۔';
+  }
 }

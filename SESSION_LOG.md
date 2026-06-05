@@ -1,5 +1,33 @@
 # SESSION_LOG
 
+## 2026-06-XX — v8 Audit — 30 findings + Job Transfer feature — APK v2.1.0+87
+
+- Scope: Full implementation of all 30 findings from the v8 audit report; new Job Transfer admin feature; enforceMinimumBuild runtime gate; per-ABI APK build + deployment.
+- Security:
+  - SEC-001: `firebase_options.dart` removed from git tracking (`git rm --cached`); committed + pushed; user must rotate exposed API keys in Firebase Console (Android: AIzaSyA-G22X…, Web: AIzaSyDETPeE…)
+  - `adminJobTransferAllowed()` Firestore security function: limits transfer payload to 6 specific fields, enforces `unpaid` status, validates `transferredAt == request.time` and `transferredByAdminId == request.auth.uid`
+- Features added:
+  - **Job Transfer**: admin presses Transfer in the job verification dialog → picks active tech from dropdown → calls `JobRepository.transferJob()` → audit fields written to Firestore; Transfer button only shown for unpaid jobs
+  - **enforceMinimumBuild (BIZ-001)**: `app_router.dart` reads `appBuildNumberProvider` and `approvalConfigProvider`; if tech APK build < `minSupportedBuildNumber`, router redirects to `/update-required`; `UpdateRequiredScreen` created
+- Fixes:
+  - AND-001: WhatsApp + WhatsApp Business package visibility queries in AndroidManifest
+  - CQA-001/002/003: Duplicate constants (`_kRememberMeKey`, `_kRememberEmailKey`, `_kClearFirestoreCacheOnLaunchKey`, web/android ActionCodeSettings literals) moved to `AppConstants`; callers updated
+  - CQA-004: Duplicate `.tmp/` block removed from `.gitignore`
+  - FBR-004: `archiveNonAdminUsersInChunks()` query now filters `isActive == true && role != admin` — prevents re-archiving already-inactive users
+  - FBR-001: Composite Firestore index `status + isDeleted + submittedAt` added for `jobs` collection
+  - OPS-001: Flush screen Step 1 now shows export-before-flush recommendation card with link to Analytics
+  - UX-001: Historical import preview dialog shows locked-period warning when parsed jobs predate `approvalConfig.lockedBeforeDate`
+  - UX-002: Historical import validates keyword + technician + company before opening file picker
+- Build:
+  - L10n: 15 new ARB strings added across en/ar/ur (transfer flow, export-before-flush, locked-period warning, update-required)
+  - `JobModel` freezed: 4 new transfer audit fields added; `build_runner` regenerated
+  - `flutter analyze` clean before build
+  - Firestore rules deployed; Firestore indexes deployed
+  - `flutter build apk --release --split-per-abi --no-tree-shake-icons`
+  - Uninstalled + installed arm64-v8a APK on R5GL22RGT9V
+  - APK copy pushed to `/sdcard/Download/AcTechs-v2.1.0+87-arm64.apk`
+  - Committed and pushed as v2.1.0+87
+
 ## 2026-05-31 — Android/Play Services exhaustive audit — APK v2.0.9+85
 
 - Scope: Exhaustive audit of all Android platform features, manifest, autofill signals, and security configs; implemented all genuine findings; rebuilt per-ABI APK; installed on R5GL22RGT9V.

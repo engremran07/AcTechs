@@ -14,6 +14,7 @@ import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/admin/data/historical_jobs_import_service.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
+import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/core/utils/picked_file_bytes.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -50,6 +51,33 @@ class _HistoricalImportScreenState
     // Early return if no valid rows (1.6)
     if (totalImportedRows == 0) {
       return false;
+    }
+
+    // UX-001: Warn if any parsed jobs fall within a locked period.
+    final lockedBefore =
+        ref.read(approvalConfigProvider).asData?.value.lockedBeforeDate;
+    if (lockedBefore != null) {
+      final lockedCount = preparedBatches.fold<int>(
+        0,
+        (sum, b) => sum +
+            b.parsed.jobs
+                .where((job) => job.date != null && job.date!.isBefore(lockedBefore))
+                .length,
+      );
+      if (lockedCount > 0) {
+        final dateStr = '${lockedBefore.year}-'
+            '${lockedBefore.month.toString().padLeft(2, '0')}-'
+            '${lockedBefore.day.toString().padLeft(2, '0')}';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.importLockedPeriodWarning(lockedCount, dateStr)),
+              backgroundColor: ArcticTheme.arcticWarning,
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      }
     }
 
     final totalSkippedRows = preparedBatches.fold<int>(
@@ -281,6 +309,20 @@ class _HistoricalImportScreenState
 
   Future<void> _importFiles() async {
     final l = AppLocalizations.of(context)!;
+    // UX-002: validate keyword before opening the file picker so the admin
+    // does not go through file selection only to see a validation error.
+    if (_technicianKeywordController.text.trim().isEmpty) {
+      ErrorSnackbar.show(context, message: l.importKeywordRequired);
+      return;
+    }
+    if (_selectedTechnician == null) {
+      ErrorSnackbar.show(context, message: l.importTargetTechnicianRequired);
+      return;
+    }
+    if (_selectedCompany == null) {
+      ErrorSnackbar.show(context, message: l.selectCompany);
+      return;
+    }
     final picked = await FilePicker.pickFiles(
       allowMultiple: true,
       withData: true,

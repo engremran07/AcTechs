@@ -104,4 +104,16 @@ class AppConstants {
   /// Stale shared install aggregate threshold: aggregates older than this
   /// many days with no new contributions are eligible for admin cleanup.
   static const int staleAggregateThresholdDays = 30;
+
+  // SharedPreferences keys — canonical source. Use these instead of
+  // private const duplicates in individual files (CQA-001, CQA-002).
+  static const String clearFirestoreCacheOnLaunchKey =
+      'clear_firestore_cache_on_launch';
+  static const String rememberEmailKey = 'remember_email';
+  static const String rememberMeKey = 'remember_me';
+
+  // Firebase / Android deployment constants (CQA-003)
+  static const String webAppUrl = 'https://actechs-d415e.web.app';
+  static const String androidPackageName = 'com.actechs.pk';
+  static const String androidMinimumVersion = '29';
 }

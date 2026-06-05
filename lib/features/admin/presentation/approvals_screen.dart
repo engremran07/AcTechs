@@ -475,6 +475,15 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               },
               child: Text(l.reject),
             ),
+          if (allowActions && job.settlementStatus == JobSettlementStatus.unpaid)
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _showTransferJobDialog(job);
+              },
+              icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+              label: Text(l.transferJob),
+            ),
           if (allowActions)
             FilledButton(
               onPressed: () async {
@@ -566,6 +575,83 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             child: Text(l.approve),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showTransferJobDialog(JobModel job) async {
+    final l = AppLocalizations.of(context)!;
+    final techs = ref.read(allTechniciansProvider).value ?? const [];
+    final available = techs.where((t) => t.isActive && t.uid != job.techId).toList();
+
+    UserModel? selectedTech;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l.transferToTechnician),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${l.currentTechnicianLabel}: ${job.techName}',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (available.isEmpty)
+                  Text(l.transferJobNotAllowed)
+                else
+                  DropdownButton<UserModel>(
+                    value: selectedTech,
+                    isExpanded: true,
+                    hint: Text(l.transferToTechnician),
+                    items: available
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
+                        .toList(),
+                    onChanged: (v) => setDialogState(() => selectedTech = v),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l.cancel),
+            ),
+            if (available.isNotEmpty)
+              FilledButton(
+                onPressed: selectedTech == null
+                    ? null
+                    : () async {
+                        final admin = ref.read(currentUserProvider).value;
+                        if (admin == null) return;
+                        Navigator.of(ctx).pop();
+                        try {
+                          await ref.read(jobRepositoryProvider).transferJob(
+                            jobId: job.id,
+                            newTechId: selectedTech!.uid,
+                            newTechName: selectedTech!.name,
+                            adminId: admin.uid,
+                          );
+                          if (!mounted) return;
+                          AppFeedback.success(
+                            context,
+                            message: l.transferJobSuccess(selectedTech!.name),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          AppFeedback.error(context, message: l.genericError);
+                        }
+                      },
+                child: Text(l.transferJob),
+              ),
+          ],
+        ),
       ),
     );
   }

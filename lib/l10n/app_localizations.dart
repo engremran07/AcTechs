@@ -3824,6 +3824,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edited by admin on {date}'**
   String adminEditedAt(String date);
+
+  /// No description provided for @transferJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Job'**
+  String get transferJob;
+
+  /// No description provided for @transferToTechnician.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer to Technician'**
+  String get transferToTechnician;
+
+  /// No description provided for @currentTechnicianLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Technician'**
+  String get currentTechnicianLabel;
+
+  /// No description provided for @transferJobConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Job?'**
+  String get transferJobConfirmTitle;
+
+  /// No description provided for @transferJobConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer this job from {from} to {to}?'**
+  String transferJobConfirmBody(String from, String to);
+
+  /// No description provided for @transferJobSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Job transferred to {name}'**
+  String transferJobSuccess(String name);
+
+  /// No description provided for @transferJobNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot transfer a job that is in an active settlement.'**
+  String get transferJobNotAllowed;
+
+  /// No description provided for @transferredBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferred'**
+  String get transferredBadge;
+
+  /// No description provided for @transferredFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferred from {name}'**
+  String transferredFrom(String name);
+
+  /// No description provided for @exportBeforeFlushTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export a Backup First'**
+  String get exportBeforeFlushTitle;
+
+  /// No description provided for @exportBeforeFlushBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This operation is irreversible. It is strongly recommended to export your data before flushing.'**
+  String get exportBeforeFlushBody;
+
+  /// No description provided for @exportBeforeFlushCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Jobs to Excel'**
+  String get exportBeforeFlushCta;
+
+  /// No description provided for @iHaveExportedConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'I have exported a backup — proceed anyway'**
+  String get iHaveExportedConfirm;
+
+  /// No description provided for @importLockedPeriodWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} job(s) fall before the locked period (before {date}). These will be rejected. Unlock the period in Settings first.'**
+  String importLockedPeriodWarning(int count, String date);
 }
 
 class _AppLocalizationsDelegate

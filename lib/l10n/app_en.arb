@@ -770,6 +770,39 @@
   "adminEditedBadge": "Admin Edited",
   "adminEditedAt": "Edited by admin on {date}",
   "@adminEditedAt": {
-    "placeholders": { "date": { "type": "String" } }
-  }
+    "placeholders": { "date": { "type": "String" } }  },
+
+  "transferJob": "Transfer Job",
+  "transferToTechnician": "Transfer to Technician",
+  "currentTechnicianLabel": "Current Technician",
+  "transferJobConfirmTitle": "Transfer Job?",
+  "transferJobConfirmBody": "Transfer this job from {from} to {to}?",
+  "@transferJobConfirmBody": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "transferJobSuccess": "Job transferred to {name}",
+  "@transferJobSuccess": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "transferJobNotAllowed": "Cannot transfer a job that is in an active settlement.",
+  "transferredBadge": "Transferred",
+  "transferredFrom": "Transferred from {name}",
+  "@transferredFrom": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "exportBeforeFlushTitle": "Export a Backup First",
+  "exportBeforeFlushBody": "This operation is irreversible. It is strongly recommended to export your data before flushing.",
+  "exportBeforeFlushCta": "Export Jobs to Excel",
+  "iHaveExportedConfirm": "I have exported a backup — proceed anyway",
+
+  "importLockedPeriodWarning": "{count} job(s) fall before the locked period (before {date}). These will be rejected. Unlock the period in Settings first.",
+  "@importLockedPeriodWarning": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "date": { "type": "String" }
+    }  }
 }

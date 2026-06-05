@@ -8,14 +8,13 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/routing/app_router.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
-
-const _kClearFirestoreCacheOnLaunchKey = 'clear_firestore_cache_on_launch';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,14 +52,14 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final shouldClearFirestoreCache =
-      prefs.getBool(_kClearFirestoreCacheOnLaunchKey) ?? false;
+      prefs.getBool(AppConstants.clearFirestoreCacheOnLaunchKey) ?? false;
   if (shouldClearFirestoreCache) {
     try {
       await FirebaseFirestore.instance.clearPersistence();
     } catch (e) {
       debugPrint('Firestore persistence clear skipped: $e');
     } finally {
-      await prefs.remove(_kClearFirestoreCacheOnLaunchKey);
+      await prefs.remove(AppConstants.clearFirestoreCacheOnLaunchKey);
     }
   }
 
