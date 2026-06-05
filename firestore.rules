@@ -545,12 +545,33 @@ service cloud.firestore {
         ]);
     }
 
+    // Tech performs a direct (no-pending) transfer on their own job when
+    // techTransferRequiresApproval == false in the approval config.
+    // approvalConfigData() is already deduplicated — no extra Firestore read.
+    function techDirectTransferAllowed() {
+      let s = settlementStatusOf(resource.data);
+      return isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        exists(approvalConfigDocPath()) &&
+        approvalConfigData().get('techTransferAllowed', false) == true &&
+        approvalConfigData().get('techTransferRequiresApproval', true) == false &&
+        s != 'confirmed' && s != 'disputed_final' &&
+        request.resource.data.techId is string &&
+        request.resource.data.techId.size() > 0 &&
+        request.resource.data.transferredAt == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techId', 'techName', 'transferredFromTechId', 'transferredFromTechName',
+          'transferredAt', 'transferredByAdminId',
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
+        ]);
+    }
+
     function jobUpdateAllowed() {
       return isAdmin()
         ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate() ||
            adminJobTransferAllowed() || adminTransferApprovalAllowed() || adminTransferRejectionAllowed())
         : (technicianSettlementUpdate() || technicianApprovalFlowUpdate() ||
-           techTransferRequestAllowed() || techCancelTransferAllowed());
+           techTransferRequestAllowed() || techCancelTransferAllowed() || techDirectTransferAllowed());
     }
 
     function validAdminSettlementTransition() {

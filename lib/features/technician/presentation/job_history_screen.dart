@@ -641,19 +641,17 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   Future<void> _showTechTransferDialog(
     BuildContext context,
     JobModel job,
-    ApprovalConfig approvalConfig, // reserved for future no-approval path
+    ApprovalConfig approvalConfig,
+    List<UserModel> available,
   ) async {
     final l = AppLocalizations.of(context)!;
-    final techs = ref.read(allTechniciansProvider).value ?? const [];
-    final available = techs
-        .where((t) => t.isActive && t.uid != job.techId)
-        .toList();
+    final isDirect = !approvalConfig.techTransferRequiresApproval;
     UserModel? selected;
     await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l.requestTransfer),
+          title: Text(isDirect ? l.transferJob : l.requestTransfer),
           content: available.isEmpty
               ? Text(l.noActiveTechnicians)
               : DropdownButton<UserModel>(
@@ -679,28 +677,42 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                     : () async {
                         Navigator.of(ctx).pop();
                         try {
-                          await ref
-                              .read(jobRepositoryProvider)
-                              .requestJobTransfer(
-                                jobId: job.id,
-                                targetTechId: selected!.uid,
-                                targetTechName: selected!.name,
-                              );
-                          if (!context.mounted) return;
-                          AppFeedback.success(
-                            context,
-                            message: l.transferRequestSubmitted,
-                          );
-                          // If approval not required, auto-approve using tech's uid
-                          // Note: Firestore rules require admin to approve; when
-                          // techTransferRequiresApproval==false, admin panel
-                          // auto-shows this request prominently.
+                          if (isDirect) {
+                            final currentUser =
+                                ref.read(currentUserProvider).value;
+                            await ref
+                                .read(jobRepositoryProvider)
+                                .transferJobAsTech(
+                                  jobId: job.id,
+                                  newTechId: selected!.uid,
+                                  newTechName: selected!.name,
+                                  techId: currentUser?.uid ?? '',
+                                );
+                            if (!context.mounted) return;
+                            AppFeedback.success(
+                              context,
+                              message: l.transferJobSuccess(selected!.name),
+                            );
+                          } else {
+                            await ref
+                                .read(jobRepositoryProvider)
+                                .requestJobTransfer(
+                                  jobId: job.id,
+                                  targetTechId: selected!.uid,
+                                  targetTechName: selected!.name,
+                                );
+                            if (!context.mounted) return;
+                            AppFeedback.success(
+                              context,
+                              message: l.transferRequestSubmitted,
+                            );
+                          }
                         } catch (_) {
                           if (!context.mounted) return;
                           AppFeedback.error(context, message: l.genericError);
                         }
                       },
-                child: Text(l.requestTransfer),
+                child: Text(isDirect ? l.transferJob : l.requestTransfer),
               ),
           ],
         ),
@@ -714,14 +726,9 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   ) async {
     final l = AppLocalizations.of(context)!;
     try {
-      await ref
-          .read(jobRepositoryProvider)
-          .cancelJobTransferRequest(job.id);
+      await ref.read(jobRepositoryProvider).cancelJobTransferRequest(job.id);
       if (!context.mounted) return;
-      AppFeedback.success(
-        context,
-        message: l.transferRequestCancelled,
-      );
+      AppFeedback.success(context, message: l.transferRequestCancelled);
     } catch (_) {
       if (!context.mounted) return;
       AppFeedback.error(context, message: l.genericError);
@@ -736,6 +743,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   ) {
     final approvalConfig = ref.watch(approvalConfigProvider).value;
     final jobSummary = ref.watch(technicianJobSummaryProvider).value;
+    final availableTechs = ref
+        .watch(activeTechniciansForTeamProvider)
+        .value
+        ?.where((t) => t.isActive)
+        .toList() ??
+        const <UserModel>[];
     return jobs.when(
       data: (jobList) {
         final pendingCount = jobSummary?.pendingJobs ?? 0;
@@ -931,16 +944,21 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                           context,
                                           job,
                                           approvalConfig!,
+                                          availableTechs
+                                              .where((t) => t.uid != job.techId)
+                                              .toList(),
                                         )
                                       : null,
+                                  transferRequiresApproval:
+                                      approvalConfig
+                                          ?.techTransferRequiresApproval ??
+                                      true,
                                   onCancelTransfer:
                                       (approvalConfig?.techTransferAllowed ??
                                               false) &&
                                           job.isTransferPending
-                                      ? () => _cancelTransferRequest(
-                                          context,
-                                          job,
-                                        )
+                                      ? () =>
+                                            _cancelTransferRequest(context, job)
                                       : null,
                                 ),
                               )
@@ -1253,6 +1271,7 @@ class _HistoryJobCard extends StatelessWidget {
     this.onEdit,
     this.onRequestTransfer,
     this.onCancelTransfer,
+    this.transferRequiresApproval = true,
   });
 
   final JobModel job;
@@ -1261,6 +1280,7 @@ class _HistoryJobCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onRequestTransfer;
   final VoidCallback? onCancelTransfer;
+  final bool transferRequiresApproval;
 
   @override
   Widget build(BuildContext context) {
@@ -1492,8 +1512,9 @@ class _HistoryJobCard extends StatelessWidget {
                       color: ArcticTheme.arcticPending,
                     ),
                   ),
-                  backgroundColor:
-                      ArcticTheme.arcticPending.withValues(alpha: 0.12),
+                  backgroundColor: ArcticTheme.arcticPending.withValues(
+                    alpha: 0.12,
+                  ),
                   side: BorderSide(
                     color: ArcticTheme.arcticPending.withValues(alpha: 0.5),
                   ),
@@ -1526,14 +1547,13 @@ class _HistoryJobCard extends StatelessWidget {
               onPressed: onRequestTransfer,
               icon: const Icon(Icons.swap_horiz_rounded, size: 14),
               label: Text(
-                AppLocalizations.of(context)!.requestTransfer,
+                transferRequiresApproval
+                    ? AppLocalizations.of(context)!.requestTransfer
+                    : AppLocalizations.of(context)!.transferJob,
                 style: Theme.of(context).textTheme.labelSmall,
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 minimumSize: const Size(0, 32),
               ),
             ),

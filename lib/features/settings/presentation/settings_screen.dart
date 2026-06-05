@@ -353,10 +353,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       value: config.techTransferAllowed,
                       onChanged: (value) => _toggleTechTransferAllowed(value),
                     ),
-                    if (config.techTransferAllowed) ...[  
+                    if (config.techTransferAllowed) ...[
                       const Divider(height: 1),
                       SwitchListTile.adaptive(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                        ),
                         title: Text(l.techTransferRequiresApprovalToggle),
                         subtitle: Text(l.techTransferRequiresApprovalSubtitle),
                         value: config.techTransferRequiresApproval,

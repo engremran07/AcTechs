@@ -18,8 +18,10 @@ class ApprovalConfig {
   final bool enforceMinimumBuild;
   final int minSupportedBuildNumber;
   final DateTime? lockedBeforeDate;
+
   /// Whether technicians are allowed to initiate job transfers to other techs.
   final bool techTransferAllowed;
+
   /// When [techTransferAllowed] is true, whether tech-initiated transfers
   /// require admin approval before taking effect.
   final bool techTransferRequiresApproval;
@@ -59,7 +61,8 @@ class ApprovalConfig {
       techTransferAllowed: data?['techTransferAllowed'] is bool
           ? data!['techTransferAllowed'] as bool
           : false,
-      techTransferRequiresApproval: data?['techTransferRequiresApproval'] is bool
+      techTransferRequiresApproval:
+          data?['techTransferRequiresApproval'] is bool
           ? data!['techTransferRequiresApproval'] as bool
           : true,
     );

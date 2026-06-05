@@ -3226,10 +3226,49 @@ class JobRepository {
     }
   }
 
+  /// Tech performs a direct (immediate) transfer of their own job when
+  /// [techTransferRequiresApproval] is false — no pending state is created.
+  /// Firestore rules enforce the caller is the current job owner and that the
+  /// approval config permits direct transfers.
+  Future<void> transferJobAsTech({
+    required String jobId,
+    required String newTechId,
+    required String newTechName,
+    required String techId,
+  }) async {
+    if (jobId.trim().isEmpty || newTechId.trim().isEmpty) {
+      throw JobException.saveFailed();
+    }
+    try {
+      final docRef = _jobsRef.doc(jobId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw JobException.saveFailed();
+      final job = JobModel.fromFirestore(snap);
+      if (job.isSettlementLocked) {
+        throw JobException.settlementLocked();
+      }
+      await docRef.update({
+        'techId': newTechId,
+        'techName': newTechName,
+        'transferredFromTechId': job.techId,
+        'transferredFromTechName': job.techName,
+        'transferredAt': FieldValue.serverTimestamp(),
+        'transferredByAdminId': techId,
+        'transferStatus': '',
+        'transferTargetTechId': '',
+        'transferTargetTechName': '',
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    }
+  }
+
   /// Returns a real-time stream of jobs where a tech has requested a transfer
   /// and admin approval is pending.
-  Stream<List<JobModel>> streamPendingTransferRequests() {
-    return _jobsRef
+  Stream<List<JobModel>> streamPendingTransferRequests() {    return _jobsRef
         .where('transferStatus', isEqualTo: 'transfer_pending')
         .orderBy('submittedAt', descending: true)
         .snapshots()
@@ -3285,7 +3324,9 @@ class JobRepository {
       final snap = await docRef.get();
       if (!snap.exists) throw JobException.saveFailed();
       final job = JobModel.fromFirestore(snap);
-      if (job.transferStatus != 'transfer_pending') throw JobException.saveFailed();
+      if (job.transferStatus != 'transfer_pending') {
+        throw JobException.saveFailed();
+      }
       if (job.isSettlementLocked) throw JobException.settlementLocked();
       if (job.transferTargetTechId.isEmpty) throw JobException.saveFailed();
       await docRef.update({

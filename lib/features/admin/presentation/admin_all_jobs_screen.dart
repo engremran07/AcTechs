@@ -52,7 +52,9 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
   Future<void> _showTransferDialog(JobModel job) async {
     final l = AppLocalizations.of(context)!;
     final techs = ref.read(allTechniciansProvider).value ?? const [];
-    final available = techs.where((t) => t.isActive && t.uid != job.techId).toList();
+    final available = techs
+        .where((t) => t.isActive && t.uid != job.techId)
+        .toList();
     UserModel? selectedTech;
 
     await showDialog<void>(
@@ -81,7 +83,8 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                     hint: Text(l.transferToTechnician),
                     items: available
                         .map(
-                          (t) => DropdownMenuItem(value: t, child: Text(t.name)),
+                          (t) =>
+                              DropdownMenuItem(value: t, child: Text(t.name)),
                         )
                         .toList(),
                     onChanged: (v) => setDialogState(() => selectedTech = v),
@@ -103,12 +106,14 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                         if (admin == null) return;
                         Navigator.of(ctx).pop();
                         try {
-                          await ref.read(jobRepositoryProvider).transferJob(
-                            jobId: job.id,
-                            newTechId: selectedTech!.uid,
-                            newTechName: selectedTech!.name,
-                            adminId: admin.uid,
-                          );
+                          await ref
+                              .read(jobRepositoryProvider)
+                              .transferJob(
+                                jobId: job.id,
+                                newTechId: selectedTech!.uid,
+                                newTechName: selectedTech!.name,
+                                adminId: admin.uid,
+                              );
                           if (!mounted) return;
                           AppFeedback.success(
                             context,
@@ -166,8 +171,14 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                   items: [
                     DropdownMenuItem(value: 'all', child: Text(l.all)),
                     DropdownMenuItem(value: 'pending', child: Text(l.pending)),
-                    DropdownMenuItem(value: 'approved', child: Text(l.approved)),
-                    DropdownMenuItem(value: 'rejected', child: Text(l.rejected)),
+                    DropdownMenuItem(
+                      value: 'approved',
+                      child: Text(l.approved),
+                    ),
+                    DropdownMenuItem(
+                      value: 'rejected',
+                      child: Text(l.rejected),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _statusFilter = v ?? 'all'),
                 ),
@@ -188,8 +199,7 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                         ),
                       ),
                     ],
-                    onChanged: (v) =>
-                        setState(() => _techFilter = v ?? ''),
+                    onChanged: (v) => setState(() => _techFilter = v ?? ''),
                   ),
               ],
             ),
@@ -203,8 +213,7 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                   return Center(child: Text(l.noJobsFound));
                 }
                 return RefreshIndicator(
-                  onRefresh: () async =>
-                      ref.invalidate(allJobsProvider),
+                  onRefresh: () async => ref.invalidate(allJobsProvider),
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -214,11 +223,11 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                     itemBuilder: (ctx, i) {
                       final job = jobs[i];
                       return _AllJobTile(
-                        job: job,
-                        onTransfer: job.isSettlementLocked
-                            ? null
-                            : () => _showTransferDialog(job),
-                      )
+                            job: job,
+                            onTransfer: job.isSettlementLocked
+                                ? null
+                                : () => _showTransferDialog(job),
+                          )
                           .animate(delay: (i * 40).ms)
                           .fadeIn()
                           .slideX(begin: 0.03);
@@ -322,9 +331,9 @@ class _AllJobTile extends StatelessWidget {
           '${job.techName} • ${job.clientName} • '
           '${AppFormatters.units(job.totalUnits)}'
           '${job.date != null ? " • ${AppFormatters.date(job.date!)}" : ""}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: cs.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
         ),
         trailing: onTransfer == null
             ? null

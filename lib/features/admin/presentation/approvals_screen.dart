@@ -277,9 +277,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     final successMsg = l.transferRequestRejected;
     final errorMsg = l.genericError;
     try {
-      await ref
-          .read(jobRepositoryProvider)
-          .rejectJobTransferRequest(job.id);
+      await ref.read(jobRepositoryProvider).rejectJobTransferRequest(job.id);
       if (!mounted) return;
       AppFeedback.success(context, message: successMsg);
     } catch (_) {
@@ -1032,22 +1030,29 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                           padding: const EdgeInsets.all(16),
                           children: [
                             // ── Transfer requests section ────────────────
-                            if ((pendingTransferRequests.value ?? const <JobModel>[]).isNotEmpty) ...[
+                            if ((pendingTransferRequests.value ??
+                                    const <JobModel>[])
+                                .isNotEmpty) ...[
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: Text(
-                                  AppLocalizations.of(context)!.transferRequestsTitle,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.transferRequestsTitle,
                                   style: Theme.of(context).textTheme.titleSmall,
                                 ),
                               ),
-                              ...(pendingTransferRequests.value ?? const <JobModel>[]).map(
-                                (job) => _TransferRequestCard(
-                                  job: job,
-                                  onApprove: () =>
-                                      _approveTransferRequest(job),
-                                  onReject: () => _rejectTransferRequest(job),
-                                ),
-                              ),
+                              ...(pendingTransferRequests.value ??
+                                      const <JobModel>[])
+                                  .map(
+                                    (job) => _TransferRequestCard(
+                                      job: job,
+                                      onApprove: () =>
+                                          _approveTransferRequest(job),
+                                      onReject: () =>
+                                          _rejectTransferRequest(job),
+                                    ),
+                                  ),
                               const SizedBox(height: 12),
                             ],
                             if (pendingAcInstallItems.isNotEmpty) ...[
