@@ -64,4 +64,12 @@ class ApprovalConfigRepository {
           : Timestamp.fromDate(date),
     });
   }
+
+  Future<void> setTechTransferAllowed(bool allowed) async {
+    await _mergeConfig({'techTransferAllowed': allowed});
+  }
+
+  Future<void> setTechTransferRequiresApproval(bool required) async {
+    await _mergeConfig({'techTransferRequiresApproval': required});
+  }
 }

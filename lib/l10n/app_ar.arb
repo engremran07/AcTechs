@@ -807,5 +807,26 @@
       "count": { "type": "int" },
       "date": { "type": "String" }
     }
-  }
+  },
+
+  "allJobs": "جميع المهام",
+  "allTechs": "جميع الفنيين",
+  "techTransferAllowedToggle": "السماح للفنيين بنقل المهام",
+  "techTransferAllowedSubtitle": "يمكن للفنيين طلب نقل المهام إلى زملائهم",
+  "techTransferRequiresApprovalToggle": "النقل يتطلب موافقة المشرف",
+  "techTransferRequiresApprovalSubtitle": "طلبات النقل تنتظر مراجعة المشرف قبل التنفيذ",
+  "requestTransfer": "طلب نقل",
+  "cancelTransferRequest": "إلغاء الطلب",
+  "transferPendingBadge": "نقل معلق",
+  "transferRequestsTitle": "طلبات النقل",
+  "noTransferRequests": "لا توجد طلبات نقل معلقة",
+  "approveTransfer": "موافقة",
+  "rejectTransfer": "رفض",
+  "transferTargetTech": "نقل إلى",
+  "transferRequestSubmitted": "تم إرسال طلب النقل",
+  "transferRequestCancelled": "تم إلغاء طلب النقل",
+  "transferRequestRejected": "تم رفض طلب النقل",
+  "noActiveTechnicians": "لا يوجد فنيون نشطون متاحون",
+  "from": "من",
+  "noJobsFound": "لم يتم العثور على مهام"
 }

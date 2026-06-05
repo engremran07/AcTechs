@@ -807,5 +807,26 @@
       "count": { "type": "int" },
       "date": { "type": "String" }
     }
-  }
+  },
+
+  "allJobs": "تمام جابز",
+  "allTechs": "تمام تکنیکار",
+  "techTransferAllowedToggle": "تکنیکار کو جاب ٹرانسفر کی اجازت دیں",
+  "techTransferAllowedSubtitle": "تکنیکار ساتھیوں کو جاب منتقل کرنے کی درخواست کر سکتے ہیں",
+  "techTransferRequiresApprovalToggle": "ٹرانسفر کے لیے ایڈمن کی منظوری درکار ہے",
+  "techTransferRequiresApprovalSubtitle": "ٹیک ٹرانسفر درخواستیں ایڈمن کی جانچ کا انتظار کریں گی",
+  "requestTransfer": "ٹرانسفر درخواست",
+  "cancelTransferRequest": "درخواست منسوخ کریں",
+  "transferPendingBadge": "ٹرانسفر زیرِ التواء",
+  "transferRequestsTitle": "ٹرانسفر درخواستیں",
+  "noTransferRequests": "کوئی زیرِ التواء ٹرانسفر درخواست نہیں",
+  "approveTransfer": "منظور کریں",
+  "rejectTransfer": "مسترد کریں",
+  "transferTargetTech": "منتقل کریں",
+  "transferRequestSubmitted": "ٹرانسفر درخواست جمع ہو گئی",
+  "transferRequestCancelled": "ٹرانسفر درخواست منسوخ ہو گئی",
+  "transferRequestRejected": "ٹرانسفر درخواست مسترد کر دی گئی",
+  "noActiveTechnicians": "کوئی فعال تکنیکار دستیاب نہیں",
+  "from": "سے",
+  "noJobsFound": "کوئی جاب نہیں ملی"
 }

@@ -126,6 +126,9 @@ _JobModel _$JobModelFromJson(Map<String, dynamic> json) => _JobModel(
   transferredFromTechName: json['transferredFromTechName'] as String? ?? '',
   transferredAt: _timestampFromJson(json['transferredAt']),
   transferredByAdminId: json['transferredByAdminId'] as String? ?? '',
+  transferStatus: json['transferStatus'] as String? ?? '',
+  transferTargetTechId: json['transferTargetTechId'] as String? ?? '',
+  transferTargetTechName: json['transferTargetTechName'] as String? ?? '',
 );
 
 Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
@@ -191,6 +194,9 @@ Map<String, dynamic> _$JobModelToJson(_JobModel instance) => <String, dynamic>{
   'transferredFromTechName': instance.transferredFromTechName,
   'transferredAt': _timestampToJson(instance.transferredAt),
   'transferredByAdminId': instance.transferredByAdminId,
+  'transferStatus': instance.transferStatus,
+  'transferTargetTechId': instance.transferTargetTechId,
+  'transferTargetTechName': instance.transferTargetTechName,
 };
 
 const _$JobStatusEnumMap = {

@@ -54,24 +54,35 @@ class _HistoricalImportScreenState
     }
 
     // UX-001: Warn if any parsed jobs fall within a locked period.
-    final lockedBefore =
-        ref.read(approvalConfigProvider).asData?.value.lockedBeforeDate;
+    final lockedBefore = ref
+        .read(approvalConfigProvider)
+        .asData
+        ?.value
+        .lockedBeforeDate;
     if (lockedBefore != null) {
       final lockedCount = preparedBatches.fold<int>(
         0,
-        (sum, b) => sum +
+        (sum, b) =>
+            sum +
             b.parsed.jobs
-                .where((job) => job.date != null && job.date!.isBefore(lockedBefore))
+                .where(
+                  (job) => job.date != null && job.date!.isBefore(lockedBefore),
+                )
                 .length,
       );
       if (lockedCount > 0) {
-        final dateStr = '${lockedBefore.year}-'
+        final dateStr =
+            '${lockedBefore.year}-'
             '${lockedBefore.month.toString().padLeft(2, '0')}-'
             '${lockedBefore.day.toString().padLeft(2, '0')}';
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.importLockedPeriodWarning(lockedCount, dateStr)),
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                )!.importLockedPeriodWarning(lockedCount, dateStr),
+              ),
               backgroundColor: ArcticTheme.arcticWarning,
               duration: const Duration(seconds: 8),
             ),

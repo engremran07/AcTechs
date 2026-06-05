@@ -3908,6 +3908,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} job(s) fall before the locked period (before {date}). These will be rejected. Unlock the period in Settings first.'**
   String importLockedPeriodWarning(int count, String date);
+
+  /// No description provided for @allJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'All Jobs'**
+  String get allJobs;
+
+  /// No description provided for @allTechs.
+  ///
+  /// In en, this message translates to:
+  /// **'All Technicians'**
+  String get allTechs;
+
+  /// No description provided for @techTransferAllowedToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow technician job transfers'**
+  String get techTransferAllowedToggle;
+
+  /// No description provided for @techTransferAllowedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Technicians can request to transfer jobs to colleagues'**
+  String get techTransferAllowedSubtitle;
+
+  /// No description provided for @techTransferRequiresApprovalToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers require admin approval'**
+  String get techTransferRequiresApprovalToggle;
+
+  /// No description provided for @techTransferRequiresApprovalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech transfers wait for admin review before taking effect'**
+  String get techTransferRequiresApprovalSubtitle;
+
+  /// No description provided for @requestTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Request Transfer'**
+  String get requestTransfer;
+
+  /// No description provided for @cancelTransferRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Transfer'**
+  String get cancelTransferRequest;
+
+  /// No description provided for @transferPendingBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Pending'**
+  String get transferPendingBadge;
+
+  /// No description provided for @transferRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Requests'**
+  String get transferRequestsTitle;
+
+  /// No description provided for @noTransferRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending transfer requests'**
+  String get noTransferRequests;
+
+  /// No description provided for @approveTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approveTransfer;
+
+  /// No description provided for @rejectTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get rejectTransfer;
+
+  /// No description provided for @transferTargetTech.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer to'**
+  String get transferTargetTech;
+
+  /// No description provided for @transferRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer request submitted'**
+  String get transferRequestSubmitted;
+
+  /// No description provided for @transferRequestCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer request cancelled'**
+  String get transferRequestCancelled;
+
+  /// No description provided for @transferRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer request rejected'**
+  String get transferRequestRejected;
+
+  /// No description provided for @noActiveTechnicians.
+  ///
+  /// In en, this message translates to:
+  /// **'No active technicians available'**
+  String get noActiveTechnicians;
+
+  /// No description provided for @from.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// No description provided for @noJobsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No jobs found'**
+  String get noJobsFound;
 }
 
 class _AppLocalizationsDelegate

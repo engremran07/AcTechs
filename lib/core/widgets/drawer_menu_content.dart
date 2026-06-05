@@ -153,6 +153,13 @@ class DrawerMenuContent extends ConsumerWidget {
   ) {
     return [
       _DrawerMenuItem(
+        icon: Icons.list_alt_rounded,
+        label: l.allJobs,
+        isActive: location.startsWith('/admin/all-jobs'),
+        activeColor: cs.primary,
+        onTap: () => _navigate(context, '/admin/all-jobs'),
+      ),
+      _DrawerMenuItem(
         icon: Icons.business_rounded,
         label: l.companies,
         isActive: location.startsWith('/admin/companies'),

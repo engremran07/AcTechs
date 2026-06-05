@@ -2835,8 +2835,10 @@ class JobRepository {
         .orderBy('submittedAt', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+          (snap) => snap.docs
+              .map((doc) => JobModel.fromFirestore(doc))
+              .where((job) => !job.isDeleted)
+              .toList(),
         );
   }
 
@@ -3183,8 +3185,10 @@ class JobRepository {
   }
 
   /// Transfers a job to a different technician. Admin-only.
-  /// Only allowed when the job's settlement status is 'unpaid' (not yet
-  /// in any settlement flow). Records the original tech for audit trail.
+  /// Allowed for any non-settlement-locked job (pending, approved, rejected
+  /// are all fine; blocked only if settlement is confirmed or disputed_final).
+  /// Records the original tech for audit trail and clears any pending
+  /// transfer request.
   Future<void> transferJob({
     required String jobId,
     required String newTechId,
@@ -3199,7 +3203,7 @@ class JobRepository {
       final snap = await docRef.get();
       if (!snap.exists) throw JobException.saveFailed();
       final job = JobModel.fromFirestore(snap);
-      if (job.settlementStatus != JobSettlementStatus.unpaid) {
+      if (job.isSettlementLocked) {
         throw JobException.settlementLocked();
       }
       await docRef.update({
@@ -3209,12 +3213,111 @@ class JobRepository {
         'transferredFromTechName': job.techName,
         'transferredAt': FieldValue.serverTimestamp(),
         'transferredByAdminId': adminId,
+        // Clear any pending tech-initiated transfer request.
+        'transferStatus': '',
+        'transferTargetTechId': '',
+        'transferTargetTechName': '',
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();
     } on JobException {
       rethrow;
+    }
+  }
+
+  /// Returns a real-time stream of jobs where a tech has requested a transfer
+  /// and admin approval is pending.
+  Stream<List<JobModel>> streamPendingTransferRequests() {
+    return _jobsRef
+        .where('transferStatus', isEqualTo: 'transfer_pending')
+        .orderBy('submittedAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList(),
+        );
+  }
+
+  /// Tech-initiated transfer request — sets transferStatus to 'transfer_pending'.
+  /// Only allowed when [approvalConfig.techTransferAllowed] is true.
+  Future<void> requestJobTransfer({
+    required String jobId,
+    required String targetTechId,
+    required String targetTechName,
+  }) async {
+    if (jobId.trim().isEmpty || targetTechId.trim().isEmpty) {
+      throw JobException.saveFailed();
+    }
+    try {
+      await _jobsRef.doc(jobId).update({
+        'transferStatus': 'transfer_pending',
+        'transferTargetTechId': targetTechId,
+        'transferTargetTechName': targetTechName,
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Tech cancels their own pending transfer request.
+  Future<void> cancelJobTransferRequest(String jobId) async {
+    try {
+      await _jobsRef.doc(jobId).update({
+        'transferStatus': '',
+        'transferTargetTechId': '',
+        'transferTargetTechName': '',
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Admin approves a tech-initiated transfer request.
+  Future<void> approveJobTransferRequest({
+    required String jobId,
+    required String adminId,
+  }) async {
+    try {
+      final docRef = _jobsRef.doc(jobId);
+      final snap = await docRef.get();
+      if (!snap.exists) throw JobException.saveFailed();
+      final job = JobModel.fromFirestore(snap);
+      if (job.transferStatus != 'transfer_pending') throw JobException.saveFailed();
+      if (job.isSettlementLocked) throw JobException.settlementLocked();
+      if (job.transferTargetTechId.isEmpty) throw JobException.saveFailed();
+      await docRef.update({
+        'techId': job.transferTargetTechId,
+        'techName': job.transferTargetTechName,
+        'transferredFromTechId': job.techId,
+        'transferredFromTechName': job.techName,
+        'transferredAt': FieldValue.serverTimestamp(),
+        'transferredByAdminId': adminId,
+        'transferStatus': '',
+        'transferTargetTechId': '',
+        'transferTargetTechName': '',
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
+    }
+  }
+
+  /// Admin rejects a tech-initiated transfer request.
+  Future<void> rejectJobTransferRequest(String jobId) async {
+    try {
+      await _jobsRef.doc(jobId).update({
+        'transferStatus': '',
+        'transferTargetTechId': '',
+        'transferTargetTechName': '',
+      });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
     }
   }
 

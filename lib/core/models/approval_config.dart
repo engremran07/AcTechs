@@ -8,6 +8,8 @@ class ApprovalConfig {
     required this.enforceMinimumBuild,
     required this.minSupportedBuildNumber,
     required this.lockedBeforeDate,
+    required this.techTransferAllowed,
+    required this.techTransferRequiresApproval,
   });
 
   final bool jobApprovalRequired;
@@ -16,6 +18,11 @@ class ApprovalConfig {
   final bool enforceMinimumBuild;
   final int minSupportedBuildNumber;
   final DateTime? lockedBeforeDate;
+  /// Whether technicians are allowed to initiate job transfers to other techs.
+  final bool techTransferAllowed;
+  /// When [techTransferAllowed] is true, whether tech-initiated transfers
+  /// require admin approval before taking effect.
+  final bool techTransferRequiresApproval;
 
   factory ApprovalConfig.defaults() => const ApprovalConfig(
     jobApprovalRequired: true,
@@ -24,6 +31,8 @@ class ApprovalConfig {
     enforceMinimumBuild: false,
     minSupportedBuildNumber: 1,
     lockedBeforeDate: null,
+    techTransferAllowed: false,
+    techTransferRequiresApproval: true,
   );
 
   factory ApprovalConfig.fromMap(Map<String, dynamic>? data) {
@@ -47,6 +56,12 @@ class ApprovalConfig {
           ? 1
           : minSupportedBuildNumber,
       lockedBeforeDate: _timestampFromConfig(data?['lockedBefore']),
+      techTransferAllowed: data?['techTransferAllowed'] is bool
+          ? data!['techTransferAllowed'] as bool
+          : false,
+      techTransferRequiresApproval: data?['techTransferRequiresApproval'] is bool
+          ? data!['techTransferRequiresApproval'] as bool
+          : true,
     );
   }
 
@@ -64,6 +79,8 @@ class ApprovalConfig {
     int? minSupportedBuildNumber,
     DateTime? lockedBeforeDate,
     bool clearLockedBeforeDate = false,
+    bool? techTransferAllowed,
+    bool? techTransferRequiresApproval,
   }) {
     return ApprovalConfig(
       jobApprovalRequired: jobApprovalRequired ?? this.jobApprovalRequired,
@@ -77,6 +94,9 @@ class ApprovalConfig {
       lockedBeforeDate: clearLockedBeforeDate
           ? null
           : lockedBeforeDate ?? this.lockedBeforeDate,
+      techTransferAllowed: techTransferAllowed ?? this.techTransferAllowed,
+      techTransferRequiresApproval:
+          techTransferRequiresApproval ?? this.techTransferRequiresApproval,
     );
   }
 
@@ -89,6 +109,8 @@ class ApprovalConfig {
     'lockedBefore': lockedBeforeDate == null
         ? null
         : Timestamp.fromDate(lockedBeforeDate!),
+    'techTransferAllowed': techTransferAllowed,
+    'techTransferRequiresApproval': techTransferRequiresApproval,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 
@@ -106,7 +128,9 @@ class ApprovalConfig {
         other.inOutApprovalRequired == inOutApprovalRequired &&
         other.enforceMinimumBuild == enforceMinimumBuild &&
         other.minSupportedBuildNumber == minSupportedBuildNumber &&
-        other.lockedBeforeDate == lockedBeforeDate;
+        other.lockedBeforeDate == lockedBeforeDate &&
+        other.techTransferAllowed == techTransferAllowed &&
+        other.techTransferRequiresApproval == techTransferRequiresApproval;
   }
 
   @override
@@ -117,5 +141,7 @@ class ApprovalConfig {
     enforceMinimumBuild,
     minSupportedBuildNumber,
     lockedBeforeDate,
+    techTransferAllowed,
+    techTransferRequiresApproval,
   );
 }

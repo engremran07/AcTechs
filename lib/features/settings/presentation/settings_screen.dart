@@ -346,6 +346,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onChanged: (value) => _toggleInOutApproval(value),
                     ),
                     const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      title: Text(l.techTransferAllowedToggle),
+                      subtitle: Text(l.techTransferAllowedSubtitle),
+                      value: config.techTransferAllowed,
+                      onChanged: (value) => _toggleTechTransferAllowed(value),
+                    ),
+                    if (config.techTransferAllowed) ...[  
+                      const Divider(height: 1),
+                      SwitchListTile.adaptive(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        title: Text(l.techTransferRequiresApprovalToggle),
+                        subtitle: Text(l.techTransferRequiresApprovalSubtitle),
+                        value: config.techTransferRequiresApproval,
+                        onChanged: (value) =>
+                            _toggleTechTransferRequiresApproval(value),
+                      ),
+                    ],
+                    const Divider(height: 1),
                     ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                       title: Text(l.lockRecordsBefore),
@@ -642,6 +661,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref
           .read(approvalConfigRepositoryProvider)
           .setSharedJobApprovalRequired(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.genericError,
+      );
+    }
+  }
+
+  Future<void> _toggleTechTransferAllowed(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setTechTransferAllowed(value);
+    } on Exception {
+      if (!mounted) return;
+      ErrorSnackbar.show(
+        context,
+        message: AppLocalizations.of(context)!.genericError,
+      );
+    }
+  }
+
+  Future<void> _toggleTechTransferRequiresApproval(bool value) async {
+    try {
+      await ref
+          .read(approvalConfigRepositoryProvider)
+          .setTechTransferRequiresApproval(value);
     } on Exception {
       if (!mounted) return;
       ErrorSnackbar.show(

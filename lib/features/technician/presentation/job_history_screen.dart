@@ -16,8 +16,10 @@ import 'package:ac_techs/core/services/report_branding.dart';
 import 'package:ac_techs/core/providers/locale_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/expenses/providers/expense_providers.dart';
+import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
@@ -636,6 +638,96 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     return summary;
   }
 
+  Future<void> _showTechTransferDialog(
+    BuildContext context,
+    JobModel job,
+    ApprovalConfig approvalConfig, // reserved for future no-approval path
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final techs = ref.read(allTechniciansProvider).value ?? const [];
+    final available = techs
+        .where((t) => t.isActive && t.uid != job.techId)
+        .toList();
+    UserModel? selected;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l.requestTransfer),
+          content: available.isEmpty
+              ? Text(l.noActiveTechnicians)
+              : DropdownButton<UserModel>(
+                  value: selected,
+                  isExpanded: true,
+                  hint: Text(l.transferToTechnician),
+                  items: available
+                      .map(
+                        (t) => DropdownMenuItem(value: t, child: Text(t.name)),
+                      )
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => selected = v),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l.cancel),
+            ),
+            if (available.isNotEmpty)
+              FilledButton(
+                onPressed: selected == null
+                    ? null
+                    : () async {
+                        Navigator.of(ctx).pop();
+                        try {
+                          await ref
+                              .read(jobRepositoryProvider)
+                              .requestJobTransfer(
+                                jobId: job.id,
+                                targetTechId: selected!.uid,
+                                targetTechName: selected!.name,
+                              );
+                          if (!context.mounted) return;
+                          AppFeedback.success(
+                            context,
+                            message: l.transferRequestSubmitted,
+                          );
+                          // If approval not required, auto-approve using tech's uid
+                          // Note: Firestore rules require admin to approve; when
+                          // techTransferRequiresApproval==false, admin panel
+                          // auto-shows this request prominently.
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          AppFeedback.error(context, message: l.genericError);
+                        }
+                      },
+                child: Text(l.requestTransfer),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _cancelTransferRequest(
+    BuildContext context,
+    JobModel job,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .cancelJobTransferRequest(job.id);
+      if (!context.mounted) return;
+      AppFeedback.success(
+        context,
+        message: l.transferRequestCancelled,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      AppFeedback.error(context, message: l.genericError);
+    }
+  }
+
   Widget _buildJobsTab(
     AsyncValue<List<JobModel>> jobs,
     String locale,
@@ -828,6 +920,26 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                                       ? () => context.push(
                                           '/tech/submit',
                                           extra: job,
+                                        )
+                                      : null,
+                                  onRequestTransfer:
+                                      (approvalConfig?.techTransferAllowed ??
+                                              false) &&
+                                          !job.isTransferPending &&
+                                          !job.isSettlementLocked
+                                      ? () => _showTechTransferDialog(
+                                          context,
+                                          job,
+                                          approvalConfig!,
+                                        )
+                                      : null,
+                                  onCancelTransfer:
+                                      (approvalConfig?.techTransferAllowed ??
+                                              false) &&
+                                          job.isTransferPending
+                                      ? () => _cancelTransferRequest(
+                                          context,
+                                          job,
                                         )
                                       : null,
                                 ),
@@ -1139,12 +1251,16 @@ class _HistoryJobCard extends StatelessWidget {
     required this.sharedTechnicianNames,
     required this.onTap,
     this.onEdit,
+    this.onRequestTransfer,
+    this.onCancelTransfer,
   });
 
   final JobModel job;
   final List<String> sharedTechnicianNames;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
+  final VoidCallback? onRequestTransfer;
+  final VoidCallback? onCancelTransfer;
 
   @override
   Widget build(BuildContext context) {
@@ -1356,6 +1472,69 @@ class _HistoryJobCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          // ── Transfer request UI ────────────────────────────────────────
+          if (job.isTransferPending) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Chip(
+                  avatar: const Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 14,
+                    color: ArcticTheme.arcticPending,
+                  ),
+                  label: Text(
+                    AppLocalizations.of(context)!.transferPendingBadge,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: ArcticTheme.arcticPending,
+                    ),
+                  ),
+                  backgroundColor:
+                      ArcticTheme.arcticPending.withValues(alpha: 0.12),
+                  side: BorderSide(
+                    color: ArcticTheme.arcticPending.withValues(alpha: 0.5),
+                  ),
+                  padding: EdgeInsets.zero,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                if (onCancelTransfer != null) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: onCancelTransfer,
+                    icon: const Icon(Icons.cancel_outlined, size: 14),
+                    label: Text(
+                      AppLocalizations.of(context)!.cancelTransferRequest,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: const Size(0, 32),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ] else if (onRequestTransfer != null) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onRequestTransfer,
+              icon: const Icon(Icons.swap_horiz_rounded, size: 14),
+              label: Text(
+                AppLocalizations.of(context)!.requestTransfer,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                minimumSize: const Size(0, 32),
               ),
             ),
           ],

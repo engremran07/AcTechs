@@ -804,5 +804,26 @@
     "placeholders": {
       "count": { "type": "int" },
       "date": { "type": "String" }
-    }  }
+    }  },
+
+  "allJobs": "All Jobs",
+  "allTechs": "All Technicians",
+  "techTransferAllowedToggle": "Allow technician job transfers",
+  "techTransferAllowedSubtitle": "Technicians can request to transfer jobs to colleagues",
+  "techTransferRequiresApprovalToggle": "Transfers require admin approval",
+  "techTransferRequiresApprovalSubtitle": "Tech transfers wait for admin review before taking effect",
+  "requestTransfer": "Request Transfer",
+  "cancelTransferRequest": "Cancel Transfer",
+  "transferPendingBadge": "Transfer Pending",
+  "transferRequestsTitle": "Transfer Requests",
+  "noTransferRequests": "No pending transfer requests",
+  "approveTransfer": "Approve",
+  "rejectTransfer": "Reject",
+  "transferTargetTech": "Transfer to",
+  "transferRequestSubmitted": "Transfer request submitted",
+  "transferRequestCancelled": "Transfer request cancelled",
+  "transferRequestRejected": "Transfer request rejected",
+  "noActiveTechnicians": "No active technicians available",
+  "from": "From",
+  "noJobsFound": "No jobs found"
 }

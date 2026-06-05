@@ -83,6 +83,8 @@ void main() {
         enforceMinimumBuild: true,
         minSupportedBuildNumber: 10,
         lockedBeforeDate: DateTime(2025, 1, 1),
+        techTransferAllowed: false,
+        techTransferRequiresApproval: true,
       );
       final copy = original.copyWith(jobApprovalRequired: true);
       expect(copy.jobApprovalRequired, isTrue);
@@ -99,6 +101,8 @@ void main() {
         enforceMinimumBuild: false,
         minSupportedBuildNumber: 1,
         lockedBeforeDate: DateTime(2025, 1, 1),
+        techTransferAllowed: false,
+        techTransferRequiresApproval: true,
       );
       final copy = original.copyWith(clearLockedBeforeDate: true);
       expect(copy.lockedBeforeDate, isNull);

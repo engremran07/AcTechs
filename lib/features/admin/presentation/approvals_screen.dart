@@ -254,6 +254,40 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     ref.invalidate(pendingAcInstallsProvider);
   }
 
+  Future<void> _approveTransferRequest(JobModel job) async {
+    final l = AppLocalizations.of(context)!;
+    final successMsg = l.transferJobSuccess(job.transferTargetTechName);
+    final errorMsg = l.genericError;
+    final admin = ref.read(currentUserProvider).value;
+    if (admin == null) return;
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .approveJobTransferRequest(jobId: job.id, adminId: admin.uid);
+      if (!mounted) return;
+      AppFeedback.success(context, message: successMsg);
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: errorMsg);
+    }
+  }
+
+  Future<void> _rejectTransferRequest(JobModel job) async {
+    final l = AppLocalizations.of(context)!;
+    final successMsg = l.transferRequestRejected;
+    final errorMsg = l.genericError;
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .rejectJobTransferRequest(job.id);
+      if (!mounted) return;
+      AppFeedback.success(context, message: successMsg);
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: errorMsg);
+    }
+  }
+
   Future<void> _approvePendingInOut({
     required List<EarningModel> earnings,
     required List<ExpenseModel> expenses,
@@ -475,7 +509,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               },
               child: Text(l.reject),
             ),
-          if (allowActions && job.settlementStatus == JobSettlementStatus.unpaid)
+          if (allowActions &&
+              job.settlementStatus == JobSettlementStatus.unpaid)
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.of(ctx).pop();
@@ -582,7 +617,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   Future<void> _showTransferJobDialog(JobModel job) async {
     final l = AppLocalizations.of(context)!;
     final techs = ref.read(allTechniciansProvider).value ?? const [];
-    final available = techs.where((t) => t.isActive && t.uid != job.techId).toList();
+    final available = techs
+        .where((t) => t.isActive && t.uid != job.techId)
+        .toList();
 
     UserModel? selectedTech;
 
@@ -611,7 +648,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                     isExpanded: true,
                     hint: Text(l.transferToTechnician),
                     items: available
-                        .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
+                        .map(
+                          (t) =>
+                              DropdownMenuItem(value: t, child: Text(t.name)),
+                        )
                         .toList(),
                     onChanged: (v) => setDialogState(() => selectedTech = v),
                   ),
@@ -632,12 +672,14 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                         if (admin == null) return;
                         Navigator.of(ctx).pop();
                         try {
-                          await ref.read(jobRepositoryProvider).transferJob(
-                            jobId: job.id,
-                            newTechId: selectedTech!.uid,
-                            newTechName: selectedTech!.name,
-                            adminId: admin.uid,
-                          );
+                          await ref
+                              .read(jobRepositoryProvider)
+                              .transferJob(
+                                jobId: job.id,
+                                newTechId: selectedTech!.uid,
+                                newTechName: selectedTech!.name,
+                                adminId: admin.uid,
+                              );
                           if (!mounted) return;
                           AppFeedback.success(
                             context,
@@ -735,6 +777,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
     final pendingEarnings = ref.watch(pendingEarningsProvider);
     final pendingExpenses = ref.watch(pendingExpensesProvider);
     final pendingAcInstalls = ref.watch(pendingAcInstallsProvider);
+    final pendingTransferRequests = ref.watch(pendingTransferRequestsProvider);
     final usersAsync = ref.watch(allUsersProvider);
     final pendingInOut =
         <_PendingInOutEntry>[
@@ -988,6 +1031,25 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                         child: ListView(
                           padding: const EdgeInsets.all(16),
                           children: [
+                            // ── Transfer requests section ────────────────
+                            if ((pendingTransferRequests.value ?? const <JobModel>[]).isNotEmpty) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  AppLocalizations.of(context)!.transferRequestsTitle,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                              ...(pendingTransferRequests.value ?? const <JobModel>[]).map(
+                                (job) => _TransferRequestCard(
+                                  job: job,
+                                  onApprove: () =>
+                                      _approveTransferRequest(job),
+                                  onReject: () => _rejectTransferRequest(job),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             if (pendingAcInstallItems.isNotEmpty) ...[
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
@@ -1139,22 +1201,24 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                                           .toSet()
                                           .toList(growable: false)
                                         ..sort();
-                                  final fallback = groupJobs
-                                      .map(
-                                        (j) => _resolveTechnicianName(
-                                          j,
-                                          userNamesById,
-                                        ),
-                                      )
-                                      .map((name) => name.trim())
-                                      .where((name) => name.isNotEmpty)
-                                      .toSet()
-                                      .toList(growable: false)
-                                    ..sort();
-                                  final techNames = (resolved.isNotEmpty
-                                          ? resolved
-                                          : fallback)
-                                      .join(', ');
+                                  final fallback =
+                                      groupJobs
+                                          .map(
+                                            (j) => _resolveTechnicianName(
+                                              j,
+                                              userNamesById,
+                                            ),
+                                          )
+                                          .map((name) => name.trim())
+                                          .where((name) => name.isNotEmpty)
+                                          .toSet()
+                                          .toList(growable: false)
+                                        ..sort();
+                                  final techNames =
+                                      (resolved.isNotEmpty
+                                              ? resolved
+                                              : fallback)
+                                          .join(', ');
                                   return ArcticCard(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     onTap: () {
@@ -2197,6 +2261,81 @@ class _SharedApprovalMetric extends StatelessWidget {
           ).textTheme.titleMedium?.copyWith(color: ArcticTheme.arcticBlue),
         ),
       ],
+    );
+  }
+}
+
+class _TransferRequestCard extends StatelessWidget {
+  const _TransferRequestCard({
+    required this.job,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final JobModel job;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: ArcticCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.swap_horiz_rounded, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    job.invoiceNumber,
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${l.from}: ${job.techName}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              '${l.transferTargetTech}: ${job.transferTargetTechName}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onReject,
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    label: Text(l.rejectTransfer),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onApprove,
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: Text(l.approveTransfer),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

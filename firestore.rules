@@ -474,11 +474,12 @@ service cloud.firestore {
     }
 
     // Admin can transfer a job to a different technician.
-    // Only allowed when job is unpaid (not in any settlement flow).
-    // Records original tech in transferredFrom* fields for audit trail.
+    // Allowed for any job not locked in settlement (confirmed / disputed_final).
+    // Clears pending transfer-request fields on completion.
     function adminJobTransferAllowed() {
+      let s = settlementStatusOf(resource.data);
       return isAdmin() &&
-        settlementStatusOf(resource.data) == 'unpaid' &&
+        s != 'confirmed' && s != 'disputed_final' &&
         request.resource.data.techId is string &&
         request.resource.data.techId.size() > 0 &&
         request.resource.data.techName is string &&
@@ -487,14 +488,69 @@ service cloud.firestore {
         request.resource.data.transferredByAdminId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'techId', 'techName', 'transferredFromTechId', 'transferredFromTechName',
-          'transferredAt', 'transferredByAdminId'
+          'transferredAt', 'transferredByAdminId',
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
+        ]);
+    }
+
+    // Tech can request a transfer of their own job to a target tech.
+    function techTransferRequestAllowed() {
+      return isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        resource.data.transferStatus == '' &&
+        request.resource.data.transferStatus == 'transfer_pending' &&
+        request.resource.data.transferTargetTechId is string &&
+        request.resource.data.transferTargetTechId.size() > 0 &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
+        ]);
+    }
+
+    // Tech can cancel their own pending transfer request.
+    function techCancelTransferAllowed() {
+      return isActiveUser() &&
+        resource.data.techId == request.auth.uid &&
+        resource.data.transferStatus == 'transfer_pending' &&
+        request.resource.data.transferStatus == '' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
+        ]);
+    }
+
+    // Admin approves a pending tech transfer request — executes the transfer.
+    function adminTransferApprovalAllowed() {
+      let s = settlementStatusOf(resource.data);
+      return isAdmin() &&
+        resource.data.transferStatus == 'transfer_pending' &&
+        s != 'confirmed' && s != 'disputed_final' &&
+        request.resource.data.techId is string &&
+        request.resource.data.techId.size() > 0 &&
+        request.resource.data.transferStatus == '' &&
+        request.resource.data.transferredAt == request.time &&
+        request.resource.data.transferredByAdminId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'techId', 'techName', 'transferredFromTechId', 'transferredFromTechName',
+          'transferredAt', 'transferredByAdminId',
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
+        ]);
+    }
+
+    // Admin rejects a pending tech transfer request — clears request fields.
+    function adminTransferRejectionAllowed() {
+      return isAdmin() &&
+        resource.data.transferStatus == 'transfer_pending' &&
+        request.resource.data.transferStatus == '' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'transferStatus', 'transferTargetTechId', 'transferTargetTechName'
         ]);
     }
 
     function jobUpdateAllowed() {
       return isAdmin()
-        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate() || adminJobTransferAllowed())
-        : (technicianSettlementUpdate() || technicianApprovalFlowUpdate());
+        ? (adminSettlementUpdate() || adminGeneralJobUpdateAllowed() || adminApprovedJobUpdate() ||
+           adminJobTransferAllowed() || adminTransferApprovalAllowed() || adminTransferRejectionAllowed())
+        : (technicianSettlementUpdate() || technicianApprovalFlowUpdate() ||
+           techTransferRequestAllowed() || techCancelTransferAllowed());
     }
 
     function validAdminSettlementTransition() {

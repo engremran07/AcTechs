@@ -172,6 +172,22 @@ final pendingApprovalsProvider = StreamProvider.autoDispose<List<JobModel>>((
   return ref.watch(jobRepositoryProvider).pendingApprovals();
 });
 
+/// All non-deleted jobs for the admin "All Jobs" screen.
+/// autoDispose — listener is active only while the screen is open.
+final allJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+  final user = ref.watch(currentUserProvider).value;
+  if (user == null || !user.isAdmin) return Stream.value([]);
+  return ref.watch(jobRepositoryProvider).allJobs();
+});
+
+/// Jobs where a tech-initiated transfer is pending admin approval.
+final pendingTransferRequestsProvider =
+    StreamProvider.autoDispose<List<JobModel>>((ref) {
+      final user = ref.watch(currentUserProvider).value;
+      if (user == null || !user.isAdmin) return Stream.value([]);
+      return ref.watch(jobRepositoryProvider).streamPendingTransferRequests();
+    });
+
 final approvedSharedInstallsProvider =
     StreamProvider.autoDispose<List<JobModel>>((ref) {
       final user = ref.watch(currentUserProvider).value;

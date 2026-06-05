@@ -2066,4 +2066,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String importLockedPeriodWarning(int count, String date) {
     return '$count job(s) fall before the locked period (before $date). These will be rejected. Unlock the period in Settings first.';
   }
+
+  @override
+  String get allJobs => 'All Jobs';
+
+  @override
+  String get allTechs => 'All Technicians';
+
+  @override
+  String get techTransferAllowedToggle => 'Allow technician job transfers';
+
+  @override
+  String get techTransferAllowedSubtitle =>
+      'Technicians can request to transfer jobs to colleagues';
+
+  @override
+  String get techTransferRequiresApprovalToggle =>
+      'Transfers require admin approval';
+
+  @override
+  String get techTransferRequiresApprovalSubtitle =>
+      'Tech transfers wait for admin review before taking effect';
+
+  @override
+  String get requestTransfer => 'Request Transfer';
+
+  @override
+  String get cancelTransferRequest => 'Cancel Transfer';
+
+  @override
+  String get transferPendingBadge => 'Transfer Pending';
+
+  @override
+  String get transferRequestsTitle => 'Transfer Requests';
+
+  @override
+  String get noTransferRequests => 'No pending transfer requests';
+
+  @override
+  String get approveTransfer => 'Approve';
+
+  @override
+  String get rejectTransfer => 'Reject';
+
+  @override
+  String get transferTargetTech => 'Transfer to';
+
+  @override
+  String get transferRequestSubmitted => 'Transfer request submitted';
+
+  @override
+  String get transferRequestCancelled => 'Transfer request cancelled';
+
+  @override
+  String get transferRequestRejected => 'Transfer request rejected';
+
+  @override
+  String get noActiveTechnicians => 'No active technicians available';
+
+  @override
+  String get from => 'From';
+
+  @override
+  String get noJobsFound => 'No jobs found';
 }

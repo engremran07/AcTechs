@@ -2075,4 +2075,67 @@ class AppLocalizationsUr extends AppLocalizations {
   String importLockedPeriodWarning(int count, String date) {
     return '$count جاب(جابز) مقفل مدت سے پہلے ($date سے پہلے) ہیں۔ انہیں مسترد کر دیا جائے گا۔ پہلے ترتیبات میں قفل ہٹائیں۔';
   }
+
+  @override
+  String get allJobs => 'تمام جابز';
+
+  @override
+  String get allTechs => 'تمام تکنیکار';
+
+  @override
+  String get techTransferAllowedToggle => 'تکنیکار کو جاب ٹرانسفر کی اجازت دیں';
+
+  @override
+  String get techTransferAllowedSubtitle =>
+      'تکنیکار ساتھیوں کو جاب منتقل کرنے کی درخواست کر سکتے ہیں';
+
+  @override
+  String get techTransferRequiresApprovalToggle =>
+      'ٹرانسفر کے لیے ایڈمن کی منظوری درکار ہے';
+
+  @override
+  String get techTransferRequiresApprovalSubtitle =>
+      'ٹیک ٹرانسفر درخواستیں ایڈمن کی جانچ کا انتظار کریں گی';
+
+  @override
+  String get requestTransfer => 'ٹرانسفر درخواست';
+
+  @override
+  String get cancelTransferRequest => 'درخواست منسوخ کریں';
+
+  @override
+  String get transferPendingBadge => 'ٹرانسفر زیرِ التواء';
+
+  @override
+  String get transferRequestsTitle => 'ٹرانسفر درخواستیں';
+
+  @override
+  String get noTransferRequests => 'کوئی زیرِ التواء ٹرانسفر درخواست نہیں';
+
+  @override
+  String get approveTransfer => 'منظور کریں';
+
+  @override
+  String get rejectTransfer => 'مسترد کریں';
+
+  @override
+  String get transferTargetTech => 'منتقل کریں';
+
+  @override
+  String get transferRequestSubmitted => 'ٹرانسفر درخواست جمع ہو گئی';
+
+  @override
+  String get transferRequestCancelled => 'ٹرانسفر درخواست منسوخ ہو گئی';
+
+  @override
+  String get transferRequestRejected => 'ٹرانسفر درخواست مسترد کر دی گئی';
+
+  @override
+  String get noActiveTechnicians => 'کوئی فعال تکنیکار دستیاب نہیں';
+
+  @override
+  String get from => 'سے';
+
+  @override
+  String get noJobsFound => 'کوئی جاب نہیں ملی';
 }

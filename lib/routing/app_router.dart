@@ -28,6 +28,7 @@ import 'package:ac_techs/features/admin/presentation/team_screen.dart';
 import 'package:ac_techs/features/admin/presentation/admin_shared_installs_screen.dart';
 import 'package:ac_techs/features/admin/presentation/flush_database_screen.dart';
 import 'package:ac_techs/features/admin/presentation/historical_import_screen.dart';
+import 'package:ac_techs/features/admin/presentation/admin_all_jobs_screen.dart';
 import 'package:ac_techs/features/settings/presentation/settings_screen.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/expenses/presentation/daily_in_out_screen.dart';
@@ -390,6 +391,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => _slideFadePage(
               pageKey: state.pageKey,
               child: const FlushDatabaseScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/all-jobs',
+            pageBuilder: (context, state) => _slideFadePage(
+              pageKey: state.pageKey,
+              child: const AdminAllJobsScreen(),
             ),
           ),
           GoRoute(

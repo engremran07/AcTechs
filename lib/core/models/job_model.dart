@@ -149,6 +149,10 @@ abstract class JobModel with _$JobModel {
     @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)
     DateTime? transferredAt,
     @Default('') String transferredByAdminId,
+    // Tech-initiated transfer request fields
+    @Default('') String transferStatus,
+    @Default('') String transferTargetTechId,
+    @Default('') String transferTargetTechName,
   }) = _JobModel;
 
   factory JobModel.fromJson(Map<String, dynamic> json) =>
@@ -187,6 +191,9 @@ extension JobModelX on JobModel {
       settlementStatus == JobSettlementStatus.disputedFinal;
   bool get isSettlementLocked =>
       isSettlementConfirmed || isSettlementDisputedFinal;
+
+  /// True when a tech-initiated transfer request is pending admin review.
+  bool get isTransferPending => transferStatus == 'transfer_pending';
 
   bool get hasInvoiceConflict => importMeta['invoiceConflict'] == true;
 

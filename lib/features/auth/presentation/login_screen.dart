@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getBool(AppConstants.rememberMeKey) ?? false;
+    final saved = prefs.getBool(AppConstants.rememberMeKey) ?? false;
     if (saved) {
       final email = prefs.getString(AppConstants.rememberEmailKey) ?? '';
       if (mounted) {
@@ -93,7 +93,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       if (_rememberMe) {
         await prefs.setBool(AppConstants.rememberMeKey, true);
-        await prefs.setString(AppConstants.rememberEmailKey, _emailController.text.trim());
+        await prefs.setString(
+          AppConstants.rememberEmailKey,
+          _emailController.text.trim(),
+        );
       } else {
         await prefs.remove(AppConstants.rememberMeKey);
         await prefs.remove(AppConstants.rememberEmailKey);

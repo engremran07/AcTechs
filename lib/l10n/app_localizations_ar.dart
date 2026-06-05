@@ -2063,4 +2063,66 @@ class AppLocalizationsAr extends AppLocalizations {
   String importLockedPeriodWarning(int count, String date) {
     return '$count مهمة(مهام) تقع قبل الفترة المقفلة (قبل $date). سيتم رفضها. افتح القفل من الإعدادات أولاً.';
   }
+
+  @override
+  String get allJobs => 'جميع المهام';
+
+  @override
+  String get allTechs => 'جميع الفنيين';
+
+  @override
+  String get techTransferAllowedToggle => 'السماح للفنيين بنقل المهام';
+
+  @override
+  String get techTransferAllowedSubtitle =>
+      'يمكن للفنيين طلب نقل المهام إلى زملائهم';
+
+  @override
+  String get techTransferRequiresApprovalToggle => 'النقل يتطلب موافقة المشرف';
+
+  @override
+  String get techTransferRequiresApprovalSubtitle =>
+      'طلبات النقل تنتظر مراجعة المشرف قبل التنفيذ';
+
+  @override
+  String get requestTransfer => 'طلب نقل';
+
+  @override
+  String get cancelTransferRequest => 'إلغاء الطلب';
+
+  @override
+  String get transferPendingBadge => 'نقل معلق';
+
+  @override
+  String get transferRequestsTitle => 'طلبات النقل';
+
+  @override
+  String get noTransferRequests => 'لا توجد طلبات نقل معلقة';
+
+  @override
+  String get approveTransfer => 'موافقة';
+
+  @override
+  String get rejectTransfer => 'رفض';
+
+  @override
+  String get transferTargetTech => 'نقل إلى';
+
+  @override
+  String get transferRequestSubmitted => 'تم إرسال طلب النقل';
+
+  @override
+  String get transferRequestCancelled => 'تم إلغاء طلب النقل';
+
+  @override
+  String get transferRequestRejected => 'تم رفض طلب النقل';
+
+  @override
+  String get noActiveTechnicians => 'لا يوجد فنيون نشطون متاحون';
+
+  @override
+  String get from => 'من';
+
+  @override
+  String get noJobsFound => 'لم يتم العثور على مهام';
 }
