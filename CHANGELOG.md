@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2.2.2+91
+
+- Feature: What's New dialog — shown once per app version for both admins and technicians; lists new features and bug fixes in English, Urdu, and Arabic; dismissed with "Got It" or the ✕ button; uses `SharedPreferences` to ensure it never repeats for the same version build
+- Feature: WhatsApp chooser bottom sheet — when opening a contact's WhatsApp chat, a bottom sheet lets the user pick WhatsApp Business or regular WhatsApp if both are installed; falls back to direct open if only one is installed; falls back to `wa.me` link on web
+- Feature: Phone number field added to the Add Technician dialog; saved to Firestore user document
+- Feature: "Transferred" badge on job cards (tech history + admin all-jobs) and transfer details section on job detail screen — shows original tech name and transfer date
+- Feature: Admin bulk job actions — long-press to enter multi-select mode, then bulk-transfer or bulk-cancel transfer requests for selected jobs; BulkActionBar shows selected count with clear and per-action buttons
+- Performance: `allJobs()` stream limited to 150 most-recent documents; limit note banner shown below filters
+- Repo: `bulkTransferJobs`, `bulkCancelTransferRequests`, `bulkRequestJobTransfers`, `bulkTransferJobsAsTech` added to `JobRepository`
+- L10n: 9 new strings added across en/ur/ar ARBs (`bulkTransferSuccess`, `bulkTransferFailed`, `bulkCancelTransferSuccess`, `bulkCancelTransferFailed`, `bulkRequestTransferSuccess`, `allJobsLimitNote`, `longPressToSelect`, `whatsNewTitle`, `whatsNewGotIt`)
+- Fix: Dangling docstring fragment in `job_repository.dart` `bulkTransferJobs` closing brace — restored `fetchStaleSharedAggregates` doc comment
+
+## 2.2.1+90
+
+- Fix: "Request Transfer" button shown on tech job cards even when `techTransferRequiresApproval` is false — now creates a direct transfer (no approval step) when approval is not required
+- Fix: Technician job transfer dialog showed "No active technicians" — changed from `allTechniciansProvider` to `activeTechniciansForTeamProvider`
+- Feature: `JobRepository.transferJobAsTech()` — tech-side direct transfer (no pending state) when approval is disabled
+- Firestore: `techDirectTransferAllowed()` helper function added to rules; `jobUpdateAllowed()` tech branch updated to support direct transfer payload
+
 ## 2.1.0+87
 
 - Security: Removed `firebase_options.dart` from git tracking (SEC-001) — file was committed despite `.gitignore` rule; rotate exposed API keys in Firebase Console

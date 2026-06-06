@@ -1,6 +1,28 @@
 # SESSION_LOG
 
-## 2026-06-XX — v8 Audit — 30 findings + Job Transfer feature — APK v2.1.0+87
+## 2026-06-06 — Feature batch + What's New dialog — APK v2.2.2+91 (pubspec bumped to 2.2.3+92 by pre-commit hook)
+
+- Scope: WhatsApp chooser, phone field in user creation, transferred badge, multi-select bulk actions in admin all-jobs screen, allJobs() limit, What's New dialog, governance docs sync.
+- Bug fixes (shipped as v2.2.1+90 earlier in session):
+  - Fixed "Request Transfer" button shown when `techTransferRequiresApproval` is false — now performs direct transfer
+  - Fixed "No active technicians" error — switched to `activeTechniciansForTeamProvider`
+  - Added `JobRepository.transferJobAsTech()` + `techDirectTransferAllowed()` Firestore rule
+- Features:
+  - **WhatsApp chooser**: `WhatsAppLauncher.showChooser()` shows bottom sheet with Business / Regular options when both apps installed; 8 call sites migrated; batch loop keeps `openChatWithMessage` direct
+  - **Phone in create user**: `_showAddTechnicianDialog` now has optional phone field; `createUser()` accepts and saves `phone` param
+  - **Transferred badge**: appears on `_HistoryJobCard` and `_AllJobTile` when `transferredFromTechId.isNotEmpty && !isTransferPending`; transfer details (from whom + date) added to `job_details_screen.dart`
+  - **Bulk job actions (admin)**: `_AdminAllJobsScreenState` has `_selectedJobIds` + `_isBulkProcessing`; long-press enters selection mode; `BulkActionBar` with Transfer and Cancel-Transfer actions; `_showBulkTransferDialog()` and `_bulkCancelTransferRequests()` methods; `_AllJobTile` updated with `isSelected`/`onTap`/`onLongPress` params
+  - **allJobs limit**: `allJobs()` stream capped at `.limit(150)`; limit-note banner shown in AdminAllJobsScreen
+  - **Bulk repo methods**: `bulkTransferJobs`, `bulkCancelTransferRequests`, `bulkRequestJobTransfers`, `bulkTransferJobsAsTech` added to `JobRepository`
+  - **What's New dialog**: `WhatsNewChecker.checkAndShow(context)` called from both `TechShell` and `AdminShell` `initState` via `addPostFrameCallback`; compares `PackageInfo` version+buildNumber against `SharedPreferences` `last_seen_version`; `WhatsNewDialog` shows changelog for current + 2 previous versions in user's locale; `AppConstants.lastSeenVersionKey` added
+  - **L10n**: 9 new strings in en/ur/ar ARBs
+- Zero-problems policy: `flutter analyze --no-pub` exits 0 — "No issues found!"
+- Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons` → arm64-v8a 31.2 MB
+- Device: uninstalled + installed arm64 APK on R5GL22RGT9V
+- APK copy pushed to `/sdcard/Download/AcTechs-v2.2.2+91-arm64.apk`
+- Committed as `cfcadc7` — pre-commit hook bumped pubspec to v2.2.3+92
+
+
 
 - Scope: Full implementation of all 30 findings from the v8 audit report; new Job Transfer admin feature; enforceMinimumBuild runtime gate; per-ABI APK build + deployment.
 - Security:
