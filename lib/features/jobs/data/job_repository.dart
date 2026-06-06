@@ -2833,6 +2833,7 @@ class JobRepository {
   Stream<List<JobModel>> allJobs() {
     return _jobsRef
         .orderBy('submittedAt', descending: true)
+        .limit(150)
         .snapshots()
         .map(
           (snap) => snap.docs
@@ -3268,7 +3269,8 @@ class JobRepository {
 
   /// Returns a real-time stream of jobs where a tech has requested a transfer
   /// and admin approval is pending.
-  Stream<List<JobModel>> streamPendingTransferRequests() {    return _jobsRef
+  Stream<List<JobModel>> streamPendingTransferRequests() {
+    return _jobsRef
         .where('transferStatus', isEqualTo: 'transfer_pending')
         .orderBy('submittedAt', descending: true)
         .snapshots()
@@ -3356,6 +3358,120 @@ class JobRepository {
         'transferTargetTechId': '',
         'transferTargetTechName': '',
       });
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Admin: bulk-transfer multiple jobs to one technician.
+  /// Each job is transferred independently; jobs already locked (settlement
+  /// in progress) are skipped silently.
+  Future<int> bulkTransferJobs({
+    required List<String> jobIds,
+    required String newTechId,
+    required String newTechName,
+    required String adminId,
+  }) async {
+    if (jobIds.isEmpty) return 0;
+    int transferred = 0;
+    try {
+      for (final id in jobIds) {
+        try {
+          await transferJob(
+            jobId: id,
+            newTechId: newTechId,
+            newTechName: newTechName,
+            adminId: adminId,
+          );
+          transferred++;
+        } on JobException {
+          // skip locked or missing jobs
+        }
+      }
+      return transferred;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Tech: bulk-cancel multiple pending transfer requests in one batch.
+  Future<void> bulkCancelTransferRequests(List<String> jobIds) async {
+    if (jobIds.isEmpty) return;
+    try {
+      const chunkSize = 500;
+      for (var i = 0; i < jobIds.length; i += chunkSize) {
+        final chunk =
+            jobIds.sublist(i, (i + chunkSize).clamp(0, jobIds.length));
+        final batch = firestore.batch();
+        for (final id in chunk) {
+          batch.update(_jobsRef.doc(id), {
+            'transferStatus': '',
+            'transferTargetTechId': '',
+            'transferTargetTechName': '',
+          });
+        }
+        await batch.commit();
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Tech: bulk-request transfer for multiple jobs to one target technician.
+  Future<void> bulkRequestJobTransfers({
+    required List<String> jobIds,
+    required String targetTechId,
+    required String targetTechName,
+  }) async {
+    if (jobIds.isEmpty) return;
+    try {
+      const chunkSize = 500;
+      for (var i = 0; i < jobIds.length; i += chunkSize) {
+        final chunk =
+            jobIds.sublist(i, (i + chunkSize).clamp(0, jobIds.length));
+        final batch = firestore.batch();
+        for (final id in chunk) {
+          batch.update(_jobsRef.doc(id), {
+            'transferStatus': 'transfer_pending',
+            'transferTargetTechId': targetTechId,
+            'transferTargetTechName': targetTechName,
+          });
+        }
+        await batch.commit();
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') throw JobException.permissionDenied();
+      throw JobException.saveFailed();
+    }
+  }
+
+  /// Tech: bulk direct-transfer jobs (when techTransferRequiresApproval==false).
+  Future<int> bulkTransferJobsAsTech({
+    required List<String> jobIds,
+    required String newTechId,
+    required String newTechName,
+    required String techId,
+  }) async {
+    if (jobIds.isEmpty) return 0;
+    int transferred = 0;
+    try {
+      for (final id in jobIds) {
+        try {
+          await transferJobAsTech(
+            jobId: id,
+            newTechId: newTechId,
+            newTechName: newTechName,
+            techId: techId,
+          );
+          transferred++;
+        } on JobException {
+          // skip locked or missing
+        }
+      }
+      return transferred;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();

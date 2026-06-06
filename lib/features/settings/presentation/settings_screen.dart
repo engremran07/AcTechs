@@ -529,17 +529,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : l.contactLabel,
                         phoneNumber: phone,
                         onCallTap: () => _launchCall(phone),
-                        onWhatsAppTap: () async {
-                          final opened = await WhatsAppLauncher.openChat(phone);
-                          if (!opened && context.mounted) {
-                            AppFeedback.error(
-                              context,
-                              message: AppLocalizations.of(
-                                context,
-                              )!.whatsappNotAvailable,
-                            );
-                          }
-                        },
+                        onWhatsAppTap: () => WhatsAppLauncher.showChooser(
+                          context,
+                          phone,
+                        ),
                       ),
                     ];
                   },

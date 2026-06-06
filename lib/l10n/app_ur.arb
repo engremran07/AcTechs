@@ -809,6 +809,19 @@
     }
   },
 
+  "bulkTransferSuccess": "{count} جابز ٹرانسفر ہو گئیں",
+  "@bulkTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkTransferFailed": "بلک ٹرانسفر ناکام ہوا۔ دوبارہ کوشش کریں۔",
+  "bulkCancelTransferSuccess": "{count} ٹرانسفر درخواستیں منسوخ ہو گئیں",
+  "@bulkCancelTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkCancelTransferFailed": "بلک منسوخی ناکام ہوئی۔ دوبارہ کوشش کریں۔",
+  "bulkRequestTransferSuccess": "{count} جابز کے لیے ٹرانسفر کی درخواست دی گئی",
+  "@bulkRequestTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "allJobsLimitNote": "آخری 150 جابز دکھائی جا رہی ہیں۔ فلٹر استعمال کریں۔",
+  "longPressToSelect": "منتخب کرنے کے لیے دیر تک دبائیں",
+  "whatsNewTitle": "نئی تازہ کاریاں",
+  "whatsNewGotIt": "سمجھ گیا",
+
   "allJobs": "تمام جابز",
   "allTechs": "تمام تکنیکار",
   "techTransferAllowedToggle": "تکنیکار کو جاب ٹرانسفر کی اجازت دیں",

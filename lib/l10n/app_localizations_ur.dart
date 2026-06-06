@@ -2077,6 +2077,41 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String bulkTransferSuccess(int count) {
+    return '$count جابز ٹرانسفر ہو گئیں';
+  }
+
+  @override
+  String get bulkTransferFailed => 'بلک ٹرانسفر ناکام ہوا۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String bulkCancelTransferSuccess(int count) {
+    return '$count ٹرانسفر درخواستیں منسوخ ہو گئیں';
+  }
+
+  @override
+  String get bulkCancelTransferFailed =>
+      'بلک منسوخی ناکام ہوئی۔ دوبارہ کوشش کریں۔';
+
+  @override
+  String bulkRequestTransferSuccess(int count) {
+    return '$count جابز کے لیے ٹرانسفر کی درخواست دی گئی';
+  }
+
+  @override
+  String get allJobsLimitNote =>
+      'آخری 150 جابز دکھائی جا رہی ہیں۔ فلٹر استعمال کریں۔';
+
+  @override
+  String get longPressToSelect => 'منتخب کرنے کے لیے دیر تک دبائیں';
+
+  @override
+  String get whatsNewTitle => 'نئی تازہ کاریاں';
+
+  @override
+  String get whatsNewGotIt => 'سمجھ گیا';
+
+  @override
   String get allJobs => 'تمام جابز';
 
   @override

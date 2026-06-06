@@ -809,6 +809,19 @@
     }
   },
 
+  "bulkTransferSuccess": "تم نقل {count} مهمة",
+  "@bulkTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkTransferFailed": "فشل النقل الجماعي. حاول مرة أخرى.",
+  "bulkCancelTransferSuccess": "تم إلغاء {count} طلب نقل",
+  "@bulkCancelTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkCancelTransferFailed": "فشل الإلغاء الجماعي. حاول مرة أخرى.",
+  "bulkRequestTransferSuccess": "تم طلب نقل {count} مهمة",
+  "@bulkRequestTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "whatsNewTitle": "\u0645\u0627 \u0627\u0644\u062C\u062F\u064A\u062F",
+  "whatsNewGotIt": "\u0641\u0647\u0645\u062A",
+  "allJobsLimitNote": "عرض آخر 150 مهمة. استخدم الفلاتر لتضييق النتائج.",
+  "longPressToSelect": "اضغط مطولاً لتحديد مهمة",
+
   "allJobs": "جميع المهام",
   "allTechs": "جميع الفنيين",
   "techTransferAllowedToggle": "السماح للفنيين بنقل المهام",

@@ -111,6 +111,7 @@ class AppConstants {
       'clear_firestore_cache_on_launch';
   static const String rememberEmailKey = 'remember_email';
   static const String rememberMeKey = 'remember_me';
+  static const String lastSeenVersionKey = 'last_seen_version';
 
   // Firebase / Android deployment constants (CQA-003)
   static const String webAppUrl = 'https://actechs-d415e.web.app';

@@ -552,20 +552,11 @@ class _InvoiceSettlementsScreenState
                                             return const SizedBox.shrink();
                                           }
                                           return IconButton(
-                                            onPressed: () async {
-                                              final opened =
-                                                  await WhatsAppLauncher.openChat(
-                                                    techPhone,
-                                                  );
-                                              if (!opened && ctx.mounted) {
-                                                AppFeedback.error(
+                                            onPressed: () =>
+                                                WhatsAppLauncher.showChooser(
                                                   ctx,
-                                                  message: AppLocalizations.of(
-                                                    ctx,
-                                                  )!.whatsappNotAvailable,
-                                                );
-                                              }
-                                            },
+                                                  techPhone,
+                                                ),
                                             icon: const FaIcon(
                                               FontAwesomeIcons.whatsapp,
                                               color: ArcticTheme.arcticSuccess,

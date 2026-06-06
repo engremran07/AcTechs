@@ -619,19 +619,10 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () async {
-                    final opened = await WhatsAppLauncher.openChat(
-                      job.clientContact,
-                    );
-                    if (!opened && context.mounted) {
-                      AppFeedback.error(
-                        context,
-                        message: AppLocalizations.of(
-                          context,
-                        )!.whatsappNotAvailable,
-                      );
-                    }
-                  },
+                  onPressed: () => WhatsAppLauncher.showChooser(
+                    context,
+                    job.clientContact,
+                  ),
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,
                     size: 16,

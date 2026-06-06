@@ -190,6 +190,7 @@ class UserRepository {
     required String email,
     required String password,
     required String role,
+    String phone = '',
   }) async {
     FirebaseApp? secondaryApp;
     User? secondaryUser;
@@ -222,6 +223,7 @@ class UserRepository {
         'isActive': true,
         'language': 'en',
         'themeMode': 'dark',
+        'phone': phone.trim(),
         'createdAt': FieldValue.serverTimestamp(),
       });
 

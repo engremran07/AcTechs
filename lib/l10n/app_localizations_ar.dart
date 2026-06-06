@@ -2065,6 +2065,40 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String bulkTransferSuccess(int count) {
+    return 'تم نقل $count مهمة';
+  }
+
+  @override
+  String get bulkTransferFailed => 'فشل النقل الجماعي. حاول مرة أخرى.';
+
+  @override
+  String bulkCancelTransferSuccess(int count) {
+    return 'تم إلغاء $count طلب نقل';
+  }
+
+  @override
+  String get bulkCancelTransferFailed => 'فشل الإلغاء الجماعي. حاول مرة أخرى.';
+
+  @override
+  String bulkRequestTransferSuccess(int count) {
+    return 'تم طلب نقل $count مهمة';
+  }
+
+  @override
+  String get allJobsLimitNote =>
+      'عرض آخر 150 مهمة. استخدم الفلاتر لتضييق النتائج.';
+
+  @override
+  String get longPressToSelect => 'اضغط مطولاً لتحديد مهمة';
+
+  @override
+  String get whatsNewTitle => 'ما الجديد';
+
+  @override
+  String get whatsNewGotIt => 'فهمت';
+
+  @override
   String get allJobs => 'جميع المهام';
 
   @override

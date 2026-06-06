@@ -1635,19 +1635,10 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                         return const SizedBox.shrink();
                       }
                       return IconButton(
-                        onPressed: () async {
-                          final opened = await WhatsAppLauncher.openChat(
-                            techPhone,
-                          );
-                          if (!opened && context.mounted) {
-                            AppFeedback.error(
-                              context,
-                              message: AppLocalizations.of(
-                                context,
-                              )!.whatsappNotAvailable,
-                            );
-                          }
-                        },
+                        onPressed: () => WhatsAppLauncher.showChooser(
+                          context,
+                          techPhone,
+                        ),
                         icon: const FaIcon(
                           FontAwesomeIcons.whatsapp,
                           color: ArcticTheme.arcticSuccess,
@@ -1693,19 +1684,10 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () async {
-                        final opened = await WhatsAppLauncher.openChat(
-                          job.clientContact,
-                        );
-                        if (!opened && context.mounted) {
-                          AppFeedback.error(
-                            context,
-                            message: AppLocalizations.of(
-                              context,
-                            )!.whatsappNotAvailable,
-                          );
-                        }
-                      },
+                      onPressed: () => WhatsAppLauncher.showChooser(
+                        context,
+                        job.clientContact,
+                      ),
                       icon: const FaIcon(
                         FontAwesomeIcons.whatsapp,
                         color: ArcticTheme.arcticSuccess,

@@ -806,6 +806,19 @@
       "date": { "type": "String" }
     }  },
 
+  "bulkTransferSuccess": "Transferred {count} jobs",
+  "@bulkTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkTransferFailed": "Bulk transfer failed. Try again.",
+  "bulkCancelTransferSuccess": "Cancelled {count} transfer requests",
+  "@bulkCancelTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "bulkCancelTransferFailed": "Bulk cancel failed. Try again.",
+  "bulkRequestTransferSuccess": "Transfer requested for {count} jobs",
+  "@bulkRequestTransferSuccess": { "placeholders": { "count": { "type": "int" } } },
+  "allJobsLimitNote": "Showing most recent 150 jobs. Use filters to narrow results.",
+  "longPressToSelect": "Long press a job to select",
+  "whatsNewTitle": "What\u2019s New",
+  "whatsNewGotIt": "Got It",
+
   "allJobs": "All Jobs",
   "allTechs": "All Technicians",
   "techTransferAllowedToggle": "Allow technician job transfers",

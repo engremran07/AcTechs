@@ -3909,6 +3909,60 @@ abstract class AppLocalizations {
   /// **'{count} job(s) fall before the locked period (before {date}). These will be rejected. Unlock the period in Settings first.'**
   String importLockedPeriodWarning(int count, String date);
 
+  /// No description provided for @bulkTransferSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferred {count} jobs'**
+  String bulkTransferSuccess(int count);
+
+  /// No description provided for @bulkTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk transfer failed. Try again.'**
+  String get bulkTransferFailed;
+
+  /// No description provided for @bulkCancelTransferSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled {count} transfer requests'**
+  String bulkCancelTransferSuccess(int count);
+
+  /// No description provided for @bulkCancelTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulk cancel failed. Try again.'**
+  String get bulkCancelTransferFailed;
+
+  /// No description provided for @bulkRequestTransferSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer requested for {count} jobs'**
+  String bulkRequestTransferSuccess(int count);
+
+  /// No description provided for @allJobsLimitNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing most recent 150 jobs. Use filters to narrow results.'**
+  String get allJobsLimitNote;
+
+  /// No description provided for @longPressToSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Long press a job to select'**
+  String get longPressToSelect;
+
+  /// No description provided for @whatsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s New'**
+  String get whatsNewTitle;
+
+  /// No description provided for @whatsNewGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got It'**
+  String get whatsNewGotIt;
+
   /// No description provided for @allJobs.
   ///
   /// In en, this message translates to:

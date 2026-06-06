@@ -22,6 +22,8 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
   String _searchQuery = '';
   String _statusFilter = 'all'; // 'all' | 'pending' | 'approved' | 'rejected'
   String _techFilter = ''; // techId, or '' for all
+  final Set<String> _selectedJobIds = {};
+  bool _isBulkProcessing = false;
 
   List<JobModel> _applyFilters(List<JobModel> all) {
     var result = all;
@@ -132,6 +134,119 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
     );
   }
 
+  Future<void> _showBulkTransferDialog() async {
+    final l = AppLocalizations.of(context)!;
+    final techs = ref.read(allTechniciansProvider).value ?? const [];
+    final available = techs.where((t) => t.isActive).toList();
+    UserModel? selected;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l.transferJob),
+          content: available.isEmpty
+              ? Text(l.noActiveTechnicians)
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${l.selectedCount(_selectedJobIds.length)} — ${l.transferToTechnician}',
+                      style: Theme.of(ctx).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButton<UserModel>(
+                      value: selected,
+                      isExpanded: true,
+                      hint: Text(l.transferToTechnician),
+                      items: available
+                          .map(
+                            (t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(t.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setDialogState(() => selected = v),
+                    ),
+                  ],
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(l.cancel),
+            ),
+            if (available.isNotEmpty)
+              FilledButton(
+                onPressed: selected == null
+                    ? null
+                    : () => Navigator.of(ctx).pop(true),
+                child: Text(l.transferJob),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selected == null) return;
+    if (!mounted) return;
+
+    setState(() => _isBulkProcessing = true);
+    try {
+      final admin = ref.read(currentUserProvider).value;
+      if (admin == null) return;
+      final count = await ref.read(jobRepositoryProvider).bulkTransferJobs(
+        jobIds: _selectedJobIds.toList(),
+        newTechId: selected!.uid,
+        newTechName: selected!.name,
+        adminId: admin.uid,
+      );
+      if (!mounted) return;
+      setState(() => _selectedJobIds.clear());
+      AppFeedback.success(
+        context,
+        message: AppLocalizations.of(context)!.bulkTransferSuccess(count),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(
+        context,
+        message: AppLocalizations.of(context)!.bulkTransferFailed,
+      );
+    } finally {
+      if (mounted) setState(() => _isBulkProcessing = false);
+    }
+  }
+
+  Future<void> _bulkCancelTransferRequests(List<JobModel> visibleJobs) async {
+    final l = AppLocalizations.of(context)!;
+    final pendingIds = _selectedJobIds
+        .where(
+          (id) => visibleJobs.any((j) => j.id == id && j.isTransferPending),
+        )
+        .toList();
+    if (pendingIds.isEmpty) return;
+
+    setState(() => _isBulkProcessing = true);
+    try {
+      await ref
+          .read(jobRepositoryProvider)
+          .bulkCancelTransferRequests(pendingIds);
+      if (!mounted) return;
+      setState(() => _selectedJobIds.clear());
+      AppFeedback.success(
+        context,
+        message: l.bulkCancelTransferSuccess(pendingIds.length),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: l.bulkCancelTransferFailed);
+    } finally {
+      if (mounted) setState(() => _isBulkProcessing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -204,11 +319,51 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
               ],
             ),
           ),
+          // ── Bulk action bar ─────────────────────────────────────────────
+          if (_selectedJobIds.isNotEmpty)
+            BulkActionBar(
+              selectedCount: _selectedJobIds.length,
+              isProcessing: _isBulkProcessing,
+              onClear: () => setState(() => _selectedJobIds.clear()),
+              actions: [
+                BulkAction(
+                  label: l.transferJob,
+                  icon: Icons.swap_horiz_rounded,
+                  color: ArcticTheme.arcticBlue,
+                  onPressed: _showBulkTransferDialog,
+                ),
+                BulkAction(
+                  label: l.cancelTransferRequest,
+                  icon: Icons.cancel_outlined,
+                  color: ArcticTheme.arcticWarning,
+                  onPressed: () => jobsAsync.whenData(
+                    (all) => _bulkCancelTransferRequests(_applyFilters(all)),
+                  ),
+                ),
+              ],
+            ),
+          // ── Limit note ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                l.allJobsLimitNote,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
           // ── Job list ────────────────────────────────────────────────────
           Expanded(
             child: jobsAsync.when(
               data: (all) {
                 final jobs = _applyFilters(all);
+                // Prune stale selections
+                _selectedJobIds.removeWhere(
+                  (id) => !jobs.any((j) => j.id == id),
+                );
                 if (jobs.isEmpty) {
                   return Center(child: Text(l.noJobsFound));
                 }
@@ -222,11 +377,27 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                     itemCount: jobs.length,
                     itemBuilder: (ctx, i) {
                       final job = jobs[i];
+                      final isSelected = _selectedJobIds.contains(job.id);
                       return _AllJobTile(
                             job: job,
-                            onTransfer: job.isSettlementLocked
-                                ? null
-                                : () => _showTransferDialog(job),
+                            isSelected: isSelected,
+                            onTransfer:
+                                _selectedJobIds.isEmpty &&
+                                    !job.isSettlementLocked
+                                ? () => _showTransferDialog(job)
+                                : null,
+                            onTap: _selectedJobIds.isNotEmpty
+                                ? () => setState(() {
+                                    if (isSelected) {
+                                      _selectedJobIds.remove(job.id);
+                                    } else {
+                                      _selectedJobIds.add(job.id);
+                                    }
+                                  })
+                                : null,
+                            onLongPress: () => setState(() {
+                              _selectedJobIds.add(job.id);
+                            }),
                           )
                           .animate(delay: (i * 40).ms)
                           .fadeIn()
@@ -256,10 +427,19 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
 // ── Job tile ──────────────────────────────────────────────────────────────────
 
 class _AllJobTile extends StatelessWidget {
-  const _AllJobTile({required this.job, this.onTransfer});
+  const _AllJobTile({
+    required this.job,
+    this.isSelected = false,
+    this.onTransfer,
+    this.onTap,
+    this.onLongPress,
+  });
 
   final JobModel job;
+  final bool isSelected;
   final VoidCallback? onTransfer;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -282,8 +462,22 @@ class _AllJobTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
+      color: isSelected
+          ? cs.primary.withValues(alpha: 0.12)
+          : null,
+      shape: isSelected
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: cs.primary, width: 1.5),
+            )
+          : null,
       child: ListTile(
         dense: true,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        leading: isSelected
+            ? Icon(Icons.check_circle_rounded, color: cs.primary)
+            : null,
         title: Row(
           children: [
             Expanded(
@@ -319,6 +513,27 @@ class _AllJobTile extends StatelessWidget {
                   l.transferPendingBadge,
                   style: const TextStyle(
                     color: ArcticTheme.arcticWarning,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+            if (job.transferredFromTechId.isNotEmpty &&
+                !job.isTransferPending) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(
+                    alpha: 0.08,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  l.transferredBadge,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),

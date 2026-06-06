@@ -204,6 +204,48 @@ class JobDetailsScreen extends ConsumerWidget {
                           ],
                         ),
                       ],
+                      // Transferred badge
+                      if (job.transferredFromTechId.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 14,
+                              color: ArcticTheme.arcticTextSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                l.transferredFrom(
+                                  job.transferredFromTechName.isNotEmpty
+                                      ? job.transferredFromTechName
+                                      : job.transferredFromTechId,
+                                ),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: ArcticTheme.arcticTextSecondary,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (job.transferredAt != null) ...[
+                          const SizedBox(height: 2),
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(
+                              start: 18,
+                            ),
+                            child: Text(
+                              AppFormatters.date(job.transferredAt!),
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: ArcticTheme.arcticTextSecondary,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ],
                       const SizedBox(height: 12),
                       _DetailRow(
                         icon: Icons.business_outlined,
@@ -227,20 +269,10 @@ class JobDetailsScreen extends ConsumerWidget {
                         trailing: job.clientContact.trim().isEmpty
                             ? null
                             : IconButton(
-                                onPressed: () async {
-                                  final opened =
-                                      await WhatsAppLauncher.openChat(
-                                        job.clientContact,
-                                      );
-                                  if (!opened && context.mounted) {
-                                    AppFeedback.error(
-                                      context,
-                                      message: AppLocalizations.of(
-                                        context,
-                                      )!.whatsappNotAvailable,
-                                    );
-                                  }
-                                },
+                                onPressed: () => WhatsAppLauncher.showChooser(
+                                  context,
+                                  job.clientContact,
+                                ),
                                 icon: const FaIcon(
                                   FontAwesomeIcons.whatsapp,
                                   color: ArcticTheme.arcticSuccess,

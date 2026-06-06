@@ -81,6 +81,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final nameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     String selectedRole = AppConstants.roleTechnician;
 
@@ -127,7 +128,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   TextFormField(
                     controller: passCtrl,
                     obscureText: true,
-                    textInputAction: TextInputAction.done,
+                    textInputAction: TextInputAction.next,
                     enableInteractiveSelection: true,
                     decoration: InputDecoration(
                       hintText: l.password,
@@ -137,6 +138,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                       if (v == null || v.length < 6) return l.minChars(6);
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.done,
+                    enableInteractiveSelection: true,
+                    decoration: InputDecoration(
+                      hintText: l.phone,
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -195,6 +207,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             email: emailCtrl.text.trim(),
             password: passCtrl.text,
             role: selectedRole,
+            phone: phoneCtrl.text.trim(),
           );
       if (!mounted) return;
       // Invalidate provider to show new user in team list
@@ -691,16 +704,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           onToggleActive: () => _toggleUserStatus(tech),
           onDelete: () => _handleDeleteUser(tech),
           onWhatsApp: tech.phone.isNotEmpty
-              ? () async {
-                  final opened = await WhatsAppLauncher.openChat(tech.phone);
-                  if (!opened) {
-                    if (!mounted) return;
-                    final msg = AppLocalizations.of(
-                      context,
-                    )!.whatsappNotAvailable;
-                    AppFeedback.error(context, message: msg);
-                  }
-                }
+              ? () => WhatsAppLauncher.showChooser(context, tech.phone)
               : null,
         ),
       ),

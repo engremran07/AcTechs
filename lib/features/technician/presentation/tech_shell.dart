@@ -20,6 +20,14 @@ class _TechShellState extends ConsumerState<TechShell> {
   final _drawerController = ZoomDrawerController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) WhatsNewChecker.checkAndShow(context);
+    });
+  }
+
+  @override
   void dispose() {
     super.dispose();
   }

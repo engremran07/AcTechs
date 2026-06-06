@@ -2068,6 +2068,40 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bulkTransferSuccess(int count) {
+    return 'Transferred $count jobs';
+  }
+
+  @override
+  String get bulkTransferFailed => 'Bulk transfer failed. Try again.';
+
+  @override
+  String bulkCancelTransferSuccess(int count) {
+    return 'Cancelled $count transfer requests';
+  }
+
+  @override
+  String get bulkCancelTransferFailed => 'Bulk cancel failed. Try again.';
+
+  @override
+  String bulkRequestTransferSuccess(int count) {
+    return 'Transfer requested for $count jobs';
+  }
+
+  @override
+  String get allJobsLimitNote =>
+      'Showing most recent 150 jobs. Use filters to narrow results.';
+
+  @override
+  String get longPressToSelect => 'Long press a job to select';
+
+  @override
+  String get whatsNewTitle => 'What’s New';
+
+  @override
+  String get whatsNewGotIt => 'Got It';
+
+  @override
   String get allJobs => 'All Jobs';
 
   @override

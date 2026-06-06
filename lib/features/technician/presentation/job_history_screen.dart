@@ -678,8 +678,9 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
                         Navigator.of(ctx).pop();
                         try {
                           if (isDirect) {
-                            final currentUser =
-                                ref.read(currentUserProvider).value;
+                            final currentUser = ref
+                                .read(currentUserProvider)
+                                .value;
                             await ref
                                 .read(jobRepositoryProvider)
                                 .transferJobAsTech(
@@ -743,11 +744,12 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
   ) {
     final approvalConfig = ref.watch(approvalConfigProvider).value;
     final jobSummary = ref.watch(technicianJobSummaryProvider).value;
-    final availableTechs = ref
-        .watch(activeTechniciansForTeamProvider)
-        .value
-        ?.where((t) => t.isActive)
-        .toList() ??
+    final availableTechs =
+        ref
+            .watch(activeTechniciansForTeamProvider)
+            .value
+            ?.where((t) => t.isActive)
+            .toList() ??
         const <UserModel>[];
     return jobs.when(
       data: (jobList) {
@@ -1419,19 +1421,10 @@ class _HistoryJobCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () async {
-                    final opened = await WhatsAppLauncher.openChat(
-                      job.clientContact,
-                    );
-                    if (!opened && context.mounted) {
-                      AppFeedback.error(
-                        context,
-                        message: AppLocalizations.of(
-                          context,
-                        )!.whatsappNotAvailable,
-                      );
-                    }
-                  },
+                  onPressed: () => WhatsAppLauncher.showChooser(
+                    context,
+                    job.clientContact,
+                  ),
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,
                     color: ArcticTheme.arcticSuccess,
@@ -1493,6 +1486,31 @@ class _HistoryJobCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+          // ── Transferred badge ──────────────────────────────────────────
+          if (job.transferredFromTechId.isNotEmpty && !job.isTransferPending) ...[
+            const SizedBox(height: 8),
+            Chip(
+              avatar: const Icon(
+                Icons.swap_horiz_rounded,
+                size: 14,
+                color: ArcticTheme.arcticTextSecondary,
+              ),
+              label: Text(
+                AppLocalizations.of(context)!.transferredBadge,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: ArcticTheme.arcticTextSecondary,
+                ),
+              ),
+              backgroundColor: ArcticTheme.arcticTextSecondary.withValues(
+                alpha: 0.10,
+              ),
+              side: BorderSide(
+                color: ArcticTheme.arcticTextSecondary.withValues(alpha: 0.3),
+              ),
+              padding: EdgeInsets.zero,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ],
           // ── Transfer request UI ────────────────────────────────────────
