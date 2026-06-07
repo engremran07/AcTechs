@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.2.7+96
+
+- Governance: MASTER_BLUEPRINT and CHANGELOG synced to current pubspec after pre-commit hook bumps
+
 ## 2.2.6+95
 
 - Governance: MASTER_BLUEPRINT and CHANGELOG synced after pre-commit hook version bump
