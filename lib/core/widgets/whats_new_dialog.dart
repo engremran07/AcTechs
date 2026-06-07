@@ -133,10 +133,7 @@ class WhatsNewDialog extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  cs.primary,
-                  cs.primary.withValues(alpha: 0.7),
-                ],
+                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
                 begin: AlignmentDirectional.topStart,
                 end: AlignmentDirectional.bottomEnd,
               ),
@@ -180,10 +177,7 @@ class WhatsNewDialog extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
                   onPressed: () => Navigator.of(context).pop(),
                   tooltip: l.cancel,
                 ),
@@ -224,17 +218,14 @@ class WhatsNewDialog extends StatelessWidget {
     for (final version in ordered) {
       final localeMap = _changelog[version];
       if (localeMap == null) continue;
-      final items =
-          localeMap[lang] ?? localeMap['en'] ?? const <String>[];
+      final items = localeMap[lang] ?? localeMap['en'] ?? const <String>[];
       if (items.isEmpty) continue;
 
       if (widgets.isNotEmpty) {
         widgets.add(const Divider(height: 24));
       }
 
-      widgets.add(
-        _VersionSection(version: version, items: items),
-      );
+      widgets.add(_VersionSection(version: version, items: items));
     }
 
     return widgets;
@@ -308,10 +299,7 @@ class _VersionSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    top: 5,
-                    end: 8,
-                  ),
+                  padding: const EdgeInsetsDirectional.only(top: 5, end: 8),
                   child: Container(
                     width: 5,
                     height: 5,
@@ -321,9 +309,7 @@ class _VersionSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Text(item, style: tt.bodySmall),
-                ),
+                Expanded(child: Text(item, style: tt.bodySmall)),
               ],
             ),
           ),

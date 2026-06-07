@@ -9,6 +9,7 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:ac_techs/core/utils/job_search_filter.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class AdminAllJobsScreen extends ConsumerStatefulWidget {
@@ -37,16 +38,9 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
           .where((j) => j.techId == _techFilter)
           .toList(growable: false);
     }
-    final q = _searchQuery.trim().toLowerCase();
+    final q = _searchQuery.trim();
     if (q.isNotEmpty) {
-      result = result
-          .where(
-            (j) =>
-                j.invoiceNumber.toLowerCase().contains(q) ||
-                j.techName.toLowerCase().contains(q) ||
-                j.clientName.toLowerCase().contains(q),
-          )
-          .toList(growable: false);
+      result = JobSearchFilter.apply(result, query: q);
     }
     return result;
   }
@@ -162,10 +156,8 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                       hint: Text(l.transferToTechnician),
                       items: available
                           .map(
-                            (t) => DropdownMenuItem(
-                              value: t,
-                              child: Text(t.name),
-                            ),
+                            (t) =>
+                                DropdownMenuItem(value: t, child: Text(t.name)),
                           )
                           .toList(),
                       onChanged: (v) => setDialogState(() => selected = v),
@@ -196,12 +188,14 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
     try {
       final admin = ref.read(currentUserProvider).value;
       if (admin == null) return;
-      final count = await ref.read(jobRepositoryProvider).bulkTransferJobs(
-        jobIds: _selectedJobIds.toList(),
-        newTechId: selected!.uid,
-        newTechName: selected!.name,
-        adminId: admin.uid,
-      );
+      final count = await ref
+          .read(jobRepositoryProvider)
+          .bulkTransferJobs(
+            jobIds: _selectedJobIds.toList(),
+            newTechId: selected!.uid,
+            newTechName: selected!.name,
+            adminId: admin.uid,
+          );
       if (!mounted) return;
       setState(() => _selectedJobIds.clear());
       AppFeedback.success(
@@ -462,9 +456,7 @@ class _AllJobTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      color: isSelected
-          ? cs.primary.withValues(alpha: 0.12)
-          : null,
+      color: isSelected ? cs.primary.withValues(alpha: 0.12) : null,
       shape: isSelected
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -525,9 +517,9 @@ class _AllJobTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(
-                    alpha: 0.08,
-                  ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

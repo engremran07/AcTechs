@@ -841,5 +841,14 @@
   "transferRequestRejected": "ٹرانسفر درخواست مسترد کر دی گئی",
   "noActiveTechnicians": "کوئی فعال تکنیکار دستیاب نہیں",
   "from": "سے",
-  "noJobsFound": "کوئی جاب نہیں ملی"
+  "noJobsFound": "کوئی جاب نہیں ملی",
+  "selectCountryCode": "ملک کا کوڈ منتخب کریں",
+  "phoneLocalHint": "مقامی نمبر",
+  "invalidPhone": "درست فون نمبر درج کریں",
+  "whatsappAppLabel": "واٹس ایپ",
+  "whatsappBusinessLabel": "واٹس ایپ بزنس",
+  "cancelTransferConfirm": "یہ ٹرانسفر درخواست منسوخ کریں؟",
+  "transferRequestSent": "ٹرانسفر درخواست بھیج دی گئی",
+  "jobTransferred": "جاب کامیابی سے ٹرانسفر ہو گئی",
+  "searchByTechClientInvoicePhone": "تکنیکار، کلائنٹ، انوائس یا فون سے تلاش کریں"
 }

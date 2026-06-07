@@ -2159,4 +2159,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noJobsFound => 'لم يتم العثور على مهام';
+
+  @override
+  String get selectCountryCode => 'اختر رمز الدولة';
+
+  @override
+  String get phoneLocalHint => 'رقم محلي';
+
+  @override
+  String get invalidPhone => 'أدخل رقم هاتف صحيحاً';
+
+  @override
+  String get whatsappAppLabel => 'واتسأب';
+
+  @override
+  String get whatsappBusinessLabel => 'واتسأب بيزنس';
+
+  @override
+  String get cancelTransferConfirm => 'هل تريد إلغاء طلب النقل هذا؟';
+
+  @override
+  String get transferRequestSent => 'تم إرسال طلب النقل';
+
+  @override
+  String get jobTransferred => 'تم نقل المهمة بنجاح';
+
+  @override
+  String get searchByTechClientInvoicePhone =>
+      'ابحث بالفني أو العميل أو الفاتورة أو الهاتف';
 }

@@ -1,6 +1,30 @@
 # SESSION_LOG
 
-## 2026-06-06 — Feature batch + What's New dialog — APK v2.2.2+91 (pubspec bumped to 2.2.3+92 by pre-commit hook)
+## 2026-06-08 — v9 Audit Implementation Batch — APK v2.2.3+92 → pubspec v2.2.4+93
+
+- Scope: Full implementation of all P1/P2 findings from the v9 ultimate audit report.
+- Critical fixes:
+  - AUTH-003: Added `allJobsProvider` + `pendingTransferRequestsProvider` to `signOut()` invalidation list in `auth_providers.dart`
+  - CQA-001: Renamed `transferredByAdminId` → `transferredByTechId` in `transferJobAsTech()` — correct audit trail for tech-initiated transfers
+  - WA-001: `WhatsAppLauncher.normalizeNumber()` now prepends country code for local '0X...' numbers (KSA default)
+  - WA-005: WhatsApp chooser bottom sheet labels use localized ARB keys
+  - SEC-002: `--dart-define=FIREBASE_APP_CHECK_WEB_KEY` added to all web build steps in ci.yml and release.yml
+  - CI-001: Coverage threshold raised from 60% to 80%
+- Features added:
+  - **PhoneInputField widget**: country code picker (95+ countries, KSA default), E.164 normalization, `CountryDialCode` model with `PhoneDisplayExtension.toDisplayPhone()`
+  - **JobSearchFilter / UserSearchFilter**: centralised search replacing three copy-pasted lambdas; adds phone-number (digits-only) and Firestore doc ID search
+  - **Tech transfer UI in JobDetailsScreen**: request transfer button + cancel pending request button; respects `techTransferAllowed` + `techTransferRequiresApproval`; imported `activeTechniciansForTeamProvider`
+  - **AAB build**: `flutter build appbundle --release` added to `release.yml`; AAB artifact uploaded alongside APKs
+  - **CI version-drift gate**: new hygiene step in `ci.yml` that fails if `MASTER_BLUEPRINT.md` version ≠ `pubspec.yaml` version
+- Screens updated: `approvals_screen`, `admin_all_jobs_screen`, `job_history_screen`, `team_screen` (search + phone), `job_details_screen` (transfer UI)
+- New files: `lib/core/models/country_dial_code.dart`, `lib/core/widgets/phone_input_field.dart`, `lib/core/utils/job_search_filter.dart`
+- L10n: 9 new strings in en/ur/ar ARBs
+- Zero-problems policy: `flutter analyze --no-pub` exits 0 — verified before build
+- Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons` + `flutter build appbundle --release`
+- Device: uninstalled + installed arm64 APK on R5GL22RGT9V
+- Committed and pushed
+
+
 
 - Scope: WhatsApp chooser, phone field in user creation, transferred badge, multi-select bulk actions in admin all-jobs screen, allJobs() limit, What's New dialog, governance docs sync.
 - Bug fixes (shipped as v2.2.1+90 earlier in session):

@@ -10,6 +10,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
+import 'package:ac_techs/core/utils/job_search_filter.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -143,16 +144,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   }
 
   List<JobModel> _filter(List<JobModel> jobs) {
-    if (_search.isEmpty) return jobs;
-    final q = _search.toLowerCase();
-    return jobs
-        .where(
-          (j) =>
-              j.clientName.toLowerCase().contains(q) ||
-              j.techName.toLowerCase().contains(q) ||
-              j.invoiceNumber.toLowerCase().contains(q),
-        )
-        .toList();
+    return JobSearchFilter.apply(jobs, query: _search);
   }
 
   Future<void> _bulkApprove() async {
@@ -1635,10 +1627,8 @@ class _ApprovalCardState extends ConsumerState<_ApprovalCard> {
                         return const SizedBox.shrink();
                       }
                       return IconButton(
-                        onPressed: () => WhatsAppLauncher.showChooser(
-                          context,
-                          techPhone,
-                        ),
+                        onPressed: () =>
+                            WhatsAppLauncher.showChooser(context, techPhone),
                         icon: const FaIcon(
                           FontAwesomeIcons.whatsapp,
                           color: ArcticTheme.arcticSuccess,

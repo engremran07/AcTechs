@@ -841,5 +841,14 @@
   "transferRequestRejected": "تم رفض طلب النقل",
   "noActiveTechnicians": "لا يوجد فنيون نشطون متاحون",
   "from": "من",
-  "noJobsFound": "لم يتم العثور على مهام"
+  "noJobsFound": "لم يتم العثور على مهام",
+  "selectCountryCode": "اختر رمز الدولة",
+  "phoneLocalHint": "رقم محلي",
+  "invalidPhone": "أدخل رقم هاتف صحيحاً",
+  "whatsappAppLabel": "واتسأب",
+  "whatsappBusinessLabel": "واتسأب بيزنس",
+  "cancelTransferConfirm": "هل تريد إلغاء طلب النقل هذا؟",
+  "transferRequestSent": "تم إرسال طلب النقل",
+  "jobTransferred": "تم نقل المهمة بنجاح",
+  "searchByTechClientInvoicePhone": "ابحث بالفني أو العميل أو الفاتورة أو الهاتف"
 }

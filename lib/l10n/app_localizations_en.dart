@@ -2163,4 +2163,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noJobsFound => 'No jobs found';
+
+  @override
+  String get selectCountryCode => 'Select Country Code';
+
+  @override
+  String get phoneLocalHint => 'Local number';
+
+  @override
+  String get invalidPhone => 'Enter a valid phone number';
+
+  @override
+  String get whatsappAppLabel => 'WhatsApp';
+
+  @override
+  String get whatsappBusinessLabel => 'WhatsApp Business';
+
+  @override
+  String get cancelTransferConfirm => 'Cancel this transfer request?';
+
+  @override
+  String get transferRequestSent => 'Transfer request sent';
+
+  @override
+  String get jobTransferred => 'Job transferred successfully';
+
+  @override
+  String get searchByTechClientInvoicePhone =>
+      'Search by tech, client, invoice, or phone';
 }

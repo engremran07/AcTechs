@@ -112,7 +112,7 @@ jobs:
           path: coverage/lcov.info
           retention-days: 7
 
-      - name: Enforce coverage threshold (60%)
+      - name: Enforce coverage threshold (80%)
         run: |
           if ! command -v lcov &> /dev/null; then
             sudo apt-get install -y lcov --quiet
@@ -124,11 +124,11 @@ jobs:
             echo "ERROR: Could not parse coverage from lcov summary."
             exit 1
           fi
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-            echo "FAIL: Line coverage ${COVERAGE}% is below the 60% threshold."
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "FAIL: Line coverage ${COVERAGE}% is below the 80% threshold."
             exit 1
           fi
-          echo "PASS: Coverage ${COVERAGE}% meets the 60% threshold."
+          echo "PASS: Coverage ${COVERAGE}% meets the 80% threshold."
 
   firestore-rules:
     name: Firestore Rules Tests
@@ -343,7 +343,7 @@ jobs:
         run: echo "Ly8gaWdub3JlX2Zvcl9maWxlOiBsaW5lc19sb25nZXJfdGhhbl84MF9jaGFycywgYXZvaWRfY2xhc3Nlc193aXRoX29ubHlfc3RhdGljX21lbWJlcnMKLy8gQ0kgc3R1YiAtIG5vdCB1c2VkIGF0IHJ1bnRpbWUuCmltcG9ydCAncGFja2FnZTpmaXJlYmFzZV9jb3JlL2ZpcmViYXNlX2NvcmUuZGFydCcgc2hvdyBGaXJlYmFzZU9wdGlvbnM7CgpjbGFzcyBEZWZhdWx0RmlyZWJhc2VPcHRpb25zIHsKICBzdGF0aWMgRmlyZWJhc2VPcHRpb25zIGdldCBjdXJyZW50UGxhdGZvcm0gPT4KICAgICAgdGhyb3cgVW5zdXBwb3J0ZWRFcnJvcignQ0kgc3R1YiBvbmx5LicpOwp9Cg==" | base64 --decode > lib/firebase_options.dart
 
       - name: Build web
-        run: flutter build web --release --no-wasm-dry-run
+        run: flutter build web --release --no-wasm-dry-run --dart-define=FIREBASE_APP_CHECK_WEB_KEY=${{ secrets.FIREBASE_APP_CHECK_WEB_KEY }}
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
@@ -377,6 +377,18 @@ jobs:
             fi
           done
           echo "✅ Governance continuity files present"
+
+      - name: Gate — MASTER_BLUEPRINT version matches pubspec
+        run: |
+          BLUEPRINT_VER=$(grep 'Current app version:' MASTER_BLUEPRINT.md | grep -oP '[\d]+\.[\d]+\.[\d]+\+[\d]+')
+          PUBSPEC_VER=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | tr -d '\r')
+          echo "Blueprint: ${BLUEPRINT_VER}  pubspec: ${PUBSPEC_VER}"
+          if [ "$BLUEPRINT_VER" != "$PUBSPEC_VER" ]; then
+            echo "❌ FAIL: MASTER_BLUEPRINT.md version '${BLUEPRINT_VER}' does not match pubspec.yaml version '${PUBSPEC_VER}'."
+            echo "Fix: update the 'Current app version:' line in MASTER_BLUEPRINT.md."
+            exit 1
+          fi
+          echo "✅ MASTER_BLUEPRINT version is in sync"
 
       - name: Gate — Collection name consistency
         run: |

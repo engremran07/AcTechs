@@ -619,10 +619,8 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => WhatsAppLauncher.showChooser(
-                    context,
-                    job.clientContact,
-                  ),
+                  onPressed: () =>
+                      WhatsAppLauncher.showChooser(context, job.clientContact),
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,
                     size: 16,

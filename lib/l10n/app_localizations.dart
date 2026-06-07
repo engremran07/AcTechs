@@ -4082,6 +4082,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No jobs found'**
   String get noJobsFound;
+
+  /// No description provided for @selectCountryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Country Code'**
+  String get selectCountryCode;
+
+  /// No description provided for @phoneLocalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Local number'**
+  String get phoneLocalHint;
+
+  /// No description provided for @invalidPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid phone number'**
+  String get invalidPhone;
+
+  /// No description provided for @whatsappAppLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsappAppLabel;
+
+  /// No description provided for @whatsappBusinessLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp Business'**
+  String get whatsappBusinessLabel;
+
+  /// No description provided for @cancelTransferConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this transfer request?'**
+  String get cancelTransferConfirm;
+
+  /// No description provided for @transferRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer request sent'**
+  String get transferRequestSent;
+
+  /// No description provided for @jobTransferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Job transferred successfully'**
+  String get jobTransferred;
+
+  /// No description provided for @searchByTechClientInvoicePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by tech, client, invoice, or phone'**
+  String get searchByTechClientInvoicePhone;
 }
 
 class _AppLocalizationsDelegate

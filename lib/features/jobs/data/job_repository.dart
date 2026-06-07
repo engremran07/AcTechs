@@ -3254,7 +3254,7 @@ class JobRepository {
         'transferredFromTechId': job.techId,
         'transferredFromTechName': job.techName,
         'transferredAt': FieldValue.serverTimestamp(),
-        'transferredByAdminId': techId,
+        'transferredByTechId': techId,
         'transferStatus': '',
         'transferTargetTechId': '',
         'transferTargetTechName': '',
@@ -3402,8 +3402,10 @@ class JobRepository {
     try {
       const chunkSize = 500;
       for (var i = 0; i < jobIds.length; i += chunkSize) {
-        final chunk =
-            jobIds.sublist(i, (i + chunkSize).clamp(0, jobIds.length));
+        final chunk = jobIds.sublist(
+          i,
+          (i + chunkSize).clamp(0, jobIds.length),
+        );
         final batch = firestore.batch();
         for (final id in chunk) {
           batch.update(_jobsRef.doc(id), {
@@ -3430,8 +3432,10 @@ class JobRepository {
     try {
       const chunkSize = 500;
       for (var i = 0; i < jobIds.length; i += chunkSize) {
-        final chunk =
-            jobIds.sublist(i, (i + chunkSize).clamp(0, jobIds.length));
+        final chunk = jobIds.sublist(
+          i,
+          (i + chunkSize).clamp(0, jobIds.length),
+        );
         final batch = firestore.batch();
         for (final id in chunk) {
           batch.update(_jobsRef.doc(id), {

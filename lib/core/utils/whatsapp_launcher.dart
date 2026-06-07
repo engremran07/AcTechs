@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ac_techs/core/models/country_dial_code.dart';
+import 'package:ac_techs/l10n/app_localizations.dart';
 
 class WhatsAppLauncher {
   WhatsAppLauncher._();
@@ -10,12 +12,26 @@ class WhatsAppLauncher {
   static const _waBizPackage = 'com.whatsapp.w4b';
   static const _waColor = Color(0xFF25D366);
 
-  static String normalizeNumber(String raw) {
-    final digits = raw.replaceAll(RegExp(r'[^0-9+]'), '').trim();
-    if (digits.isEmpty) return '';
-    if (digits.startsWith('+')) return digits.substring(1);
-    if (digits.startsWith('00')) return digits.substring(2);
-    return digits;
+  /// Normalises [raw] to E.164 digits-only (no '+').
+  /// Handles:
+  ///   '+966554123456'  → '966554123456'
+  ///   '00966554123456' → '966554123456'
+  ///   '0554123456'     → '966554123456'  (KSA local with leading 0)
+  ///   '966554123456'   → '966554123456'  (already E.164)
+  /// [defaultCountry] controls which country prefix is prepended for
+  /// local numbers that start with '0'. Defaults to KSA.
+  static String normalizeNumber(
+    String raw, {
+    CountryDialCode defaultCountry = CountryDialCode.ksa,
+  }) {
+    var n = raw.trim().replaceAll(RegExp(r'[\s\-\(\)\.]+'), '');
+    if (n.isEmpty) return '';
+    if (n.startsWith('+')) n = n.substring(1);
+    if (n.startsWith('00')) n = n.substring(2);
+    // Local format — prepend default country prefix
+    if (n.startsWith('0')) n = '${defaultCountry.dialCode}${n.substring(1)}';
+    // Strip any remaining non-digit chars
+    return n.replaceAll(RegExp(r'\D'), '');
   }
 
   /// Returns true when the given app package is installed on this Android
@@ -36,8 +52,9 @@ class WhatsAppLauncher {
     String package, {
     String? message,
   }) async {
-    final textParam =
-        message != null ? '?text=${Uri.encodeComponent(message)}' : '';
+    final textParam = message != null
+        ? '?text=${Uri.encodeComponent(message)}'
+        : '';
     if (!kIsWeb) {
       final intentUri = Uri.parse(
         'intent://send?phone=$normalized'
@@ -63,8 +80,9 @@ class WhatsAppLauncher {
     BuildContext context,
     String rawPhone, {
     String? message,
+    CountryDialCode defaultCountry = CountryDialCode.ksa,
   }) async {
-    final normalized = normalizeNumber(rawPhone);
+    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
     if (normalized.isEmpty) return;
 
     final hasBiz = await _isInstalled(_waBizPackage);
@@ -74,8 +92,9 @@ class WhatsAppLauncher {
 
     // Neither app installed — open web link directly.
     if (!hasBiz && !hasWa) {
-      final textParam =
-          message != null ? '?text=${Uri.encodeComponent(message)}' : '';
+      final textParam = message != null
+          ? '?text=${Uri.encodeComponent(message)}'
+          : '';
       await launchUrl(
         Uri.parse('https://wa.me/$normalized$textParam'),
         mode: LaunchMode.externalApplication,
@@ -95,6 +114,7 @@ class WhatsAppLauncher {
 
     // Both installed — let the user choose.
     if (!context.mounted) return;
+    final l = AppLocalizations.of(context)!;
     await showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -102,11 +122,8 @@ class WhatsAppLauncher {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const FaIcon(
-                FontAwesomeIcons.whatsapp,
-                color: _waColor,
-              ),
-              title: const Text('WhatsApp Business'),
+              leading: const FaIcon(FontAwesomeIcons.whatsapp, color: _waColor),
+              title: Text(l.whatsappBusinessLabel),
               onTap: () async {
                 Navigator.of(ctx).pop();
                 await _openInPackage(
@@ -117,18 +134,11 @@ class WhatsAppLauncher {
               },
             ),
             ListTile(
-              leading: const FaIcon(
-                FontAwesomeIcons.whatsapp,
-                color: _waColor,
-              ),
-              title: const Text('WhatsApp'),
+              leading: const FaIcon(FontAwesomeIcons.whatsapp, color: _waColor),
+              title: Text(l.whatsappAppLabel),
               onTap: () async {
                 Navigator.of(ctx).pop();
-                await _openInPackage(
-                  normalized,
-                  _waPackage,
-                  message: message,
-                );
+                await _openInPackage(normalized, _waPackage, message: message);
               },
             ),
           ],
@@ -142,15 +152,14 @@ class WhatsAppLauncher {
     BuildContext context,
     String rawPhone,
     String message,
-  ) =>
-      showChooser(context, rawPhone, message: message);
+  ) => showChooser(context, rawPhone, message: message);
 
   // ── Legacy direct methods kept for bulk / programmatic flows ──────────────
 
   /// Direct open via wa.me (no chooser). Use for batch notifications where
   /// showing a per-contact dialog would be disruptive.
-  static Future<bool> openChat(String rawPhone) async {
-    final normalized = normalizeNumber(rawPhone);
+  static Future<bool> openChat(String rawPhone, {CountryDialCode defaultCountry = CountryDialCode.ksa}) async {
+    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
     if (normalized.isEmpty) return false;
     try {
       return launchUrl(

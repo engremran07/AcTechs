@@ -2173,4 +2173,32 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get noJobsFound => 'کوئی جاب نہیں ملی';
+
+  @override
+  String get selectCountryCode => 'ملک کا کوڈ منتخب کریں';
+
+  @override
+  String get phoneLocalHint => 'مقامی نمبر';
+
+  @override
+  String get invalidPhone => 'درست فون نمبر درج کریں';
+
+  @override
+  String get whatsappAppLabel => 'واٹس ایپ';
+
+  @override
+  String get whatsappBusinessLabel => 'واٹس ایپ بزنس';
+
+  @override
+  String get cancelTransferConfirm => 'یہ ٹرانسفر درخواست منسوخ کریں؟';
+
+  @override
+  String get transferRequestSent => 'ٹرانسفر درخواست بھیج دی گئی';
+
+  @override
+  String get jobTransferred => 'جاب کامیابی سے ٹرانسفر ہو گئی';
+
+  @override
+  String get searchByTechClientInvoicePhone =>
+      'تکنیکار، کلائنٹ، انوائس یا فون سے تلاش کریں';
 }

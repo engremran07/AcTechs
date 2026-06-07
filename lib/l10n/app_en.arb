@@ -838,5 +838,14 @@
   "transferRequestRejected": "Transfer request rejected",
   "noActiveTechnicians": "No active technicians available",
   "from": "From",
-  "noJobsFound": "No jobs found"
+  "noJobsFound": "No jobs found",
+  "selectCountryCode": "Select Country Code",
+  "phoneLocalHint": "Local number",
+  "invalidPhone": "Enter a valid phone number",
+  "whatsappAppLabel": "WhatsApp",
+  "whatsappBusinessLabel": "WhatsApp Business",
+  "cancelTransferConfirm": "Cancel this transfer request?",
+  "transferRequestSent": "Transfer request sent",
+  "jobTransferred": "Job transferred successfully",
+  "searchByTechClientInvoicePhone": "Search by tech, client, invoice, or phone"
 }

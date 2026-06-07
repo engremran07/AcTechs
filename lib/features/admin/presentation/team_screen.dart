@@ -7,6 +7,7 @@ import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
+import 'package:ac_techs/core/utils/job_search_filter.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -24,15 +25,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   bool _selectMode = false;
 
   List<UserModel> _filter(List<UserModel> techs) {
-    if (_search.isEmpty) return techs;
-    final q = _search.toLowerCase();
-    return techs
-        .where(
-          (t) =>
-              t.name.toLowerCase().contains(q) ||
-              t.email.toLowerCase().contains(q),
-        )
-        .toList();
+    return UserSearchFilter.apply(techs, query: _search);
   }
 
   void _toggleSelect(String uid) {
@@ -140,15 +133,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    textInputAction: TextInputAction.done,
-                    enableInteractiveSelection: true,
-                    decoration: InputDecoration(
-                      hintText: l.phone,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                    ),
+                  PhoneInputField(
+                    initialValue: phoneCtrl.text,
+                    onChanged: (e164) => phoneCtrl.text = e164,
+                    optional: true,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -263,14 +251,10 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: phoneCtrl,
-                  textInputAction: TextInputAction.next,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    hintText: l.phone,
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                  ),
+                PhoneInputField(
+                  initialValue: phoneCtrl.text,
+                  onChanged: (e164) => phoneCtrl.text = e164,
+                  optional: true,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(

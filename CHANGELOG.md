@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 2.2.4+93
+
+- Feature: Country code picker in phone input — `PhoneInputField` widget with full 95+ country list, KSA pre-selected, E.164 normalization on output; replaces raw TextFormField in team screen add/edit dialogs
+- Feature: Centralised search — `JobSearchFilter.apply()` now searches invoice number, Firestore doc ID, client name, client contact (digits-only phone match), and tech name; replaces three separate copy-pasted filter lambdas in approvals, all-jobs, and history screens
+- Feature: `UserSearchFilter.apply()` for team screen — also searches phone digits
+- Feature: Tech-initiated transfer UI — transfer request button + cancel button added to `JobDetailsScreen`; shows current pending target; uses `requestJobTransfer()` or direct `transferJobAsTech()` depending on approval config; `activeTechniciansForTeamProvider` imported from admin providers
+- Feature: CI/CD — App Bundle (AAB) build step added to `release.yml`; both APK and AAB now produced and uploaded as artifacts on every release
+- Feature: CI/CD — MASTER_BLUEPRINT version-drift gate added to `ci.yml` hygiene job; fails if `MASTER_BLUEPRINT.md` version does not match `pubspec.yaml`
+- Feature: CI/CD — `FIREBASE_APP_CHECK_WEB_KEY` passed as `--dart-define` to all web build steps in `ci.yml` and `release.yml` (SEC-002 fix)
+- Fix: `signOut()` now invalidates `allJobsProvider` and `pendingTransferRequestsProvider` — prevents stale job data after user switch (AUTH-003)
+- Fix: `transferJobAsTech()` — field renamed from `transferredByAdminId` to `transferredByTechId` to correctly record tech-to-tech transfer audit trail (CQA-001)
+- Fix: `WhatsAppLauncher.normalizeNumber()` now expands local KSA numbers (0554XXXXXX → 966554XXXXXX) and any other local format with leading 0; `defaultCountry` parameter added (WA-001)
+- Fix: WhatsApp chooser bottom sheet labels localized — `whatsappAppLabel` / `whatsappBusinessLabel` ARB keys used instead of hardcoded English (WA-005)
+- Fix: CI coverage threshold raised from 60% to 80% (CI-001)
+- L10n: 9 new strings in en/ur/ar: `selectCountryCode`, `phoneLocalHint`, `invalidPhone`, `whatsappAppLabel`, `whatsappBusinessLabel`, `cancelTransferConfirm`, `transferRequestSent`, `jobTransferred`, `searchByTechClientInvoicePhone`
+- Models: `CountryDialCode` — 95+ country list with flag emoji, dial prefix, ISO code; `PhoneDisplayExtension.toDisplayPhone()` for formatted display
+- Utilities: `JobSearchFilter` + `UserSearchFilter` in `lib/core/utils/job_search_filter.dart`
+
 ## 2.2.2+91
 
 - Feature: What's New dialog — shown once per app version for both admins and technicians; lists new features and bug fixes in English, Urdu, and Arabic; dismissed with "Got It" or the ✕ button; uses `SharedPreferences` to ensure it never repeats for the same version build

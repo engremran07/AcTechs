@@ -288,7 +288,7 @@ jobs:
         run: flutter test
 
       - name: Build web
-        run: flutter build web --release --no-wasm-dry-run
+        run: flutter build web --release --no-wasm-dry-run --dart-define=FIREBASE_APP_CHECK_WEB_KEY=${{ secrets.FIREBASE_APP_CHECK_WEB_KEY }}
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
@@ -298,6 +298,12 @@ jobs:
           retention-days: 30
 
       # ── Build APKs ─────────────────────────────────────────────────────────
+      - name: Build release APK
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+
+      - name: Build release App Bundle (AAB)
+        run: flutter build appbundle --release --no-tree-shake-icons
+
       - name: Build debug APK
         run: flutter build apk --debug --split-per-abi
 
@@ -326,6 +332,14 @@ jobs:
         with:
           name: ac-techs-${{ steps.app_version.outputs.full }}-apks
           path: build/app/outputs/flutter-apk/ac-techs-*.apk
+          retention-days: 30
+
+      # ── Upload AAB artifact ─────────────────────────────────────────────────
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ac-techs-${{ steps.app_version.outputs.full }}-aab
+          path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
       # ── Generate changelog from commits since last tag ─────────────────────

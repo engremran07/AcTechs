@@ -10,6 +10,7 @@ import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/technician_day_in_out_summary.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
+import 'package:ac_techs/core/utils/job_search_filter.dart';
 import 'package:ac_techs/core/services/pdf_generator.dart';
 import 'package:ac_techs/core/services/excel_export.dart';
 import 'package:ac_techs/core/services/report_branding.dart';
@@ -576,15 +577,7 @@ class _JobHistoryScreenState extends ConsumerState<JobHistoryScreen>
     }
 
     if (_search.isNotEmpty) {
-      final q = _search.toLowerCase();
-      filtered = filtered
-          .where(
-            (j) =>
-                j.clientName.toLowerCase().contains(q) ||
-                j.invoiceNumber.toLowerCase().contains(q) ||
-                j.sharedInstallGroupKey.toLowerCase().contains(q),
-          )
-          .toList();
+      filtered = JobSearchFilter.apply(filtered, query: _search);
     }
 
     if (_statusFilter == 'shared') {
@@ -1421,10 +1414,8 @@ class _HistoryJobCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => WhatsAppLauncher.showChooser(
-                    context,
-                    job.clientContact,
-                  ),
+                  onPressed: () =>
+                      WhatsAppLauncher.showChooser(context, job.clientContact),
                   icon: const FaIcon(
                     FontAwesomeIcons.whatsapp,
                     color: ArcticTheme.arcticSuccess,
@@ -1489,7 +1480,8 @@ class _HistoryJobCard extends StatelessWidget {
             ),
           ],
           // ── Transferred badge ──────────────────────────────────────────
-          if (job.transferredFromTechId.isNotEmpty && !job.isTransferPending) ...[
+          if (job.transferredFromTechId.isNotEmpty &&
+              !job.isTransferPending) ...[
             const SizedBox(height: 8),
             Chip(
               avatar: const Icon(

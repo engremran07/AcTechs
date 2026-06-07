@@ -12,6 +12,7 @@ import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 
 class JobDetailsScreen extends ConsumerWidget {
   const JobDetailsScreen({required this.jobId, this.initialJob, super.key});
@@ -246,6 +247,116 @@ class JobDetailsScreen extends ConsumerWidget {
                           ),
                         ],
                       ],
+                      // ── Tech transfer request UI ────────────────────────
+                      if ((approvalConfig?.techTransferAllowed ?? false) &&
+                          !job.isSettlementLocked &&
+                          job.isPending) ...[
+                        const SizedBox(height: 12),
+                        if (job.isTransferPending) ...[
+                          // Show pending badge + cancel button
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: ArcticTheme.arcticWarning
+                                      .withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  l.transferPendingBadge,
+                                  style: const TextStyle(
+                                    color: ArcticTheme.arcticWarning,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                job.transferTargetTechName,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dlg) => AlertDialog(
+                                    title: Text(l.cancelTransferRequest),
+                                    content: Text(l.cancelTransferConfirm),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(dlg).pop(false),
+                                        child: Text(l.cancel),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.of(dlg).pop(true),
+                                        child: Text(l.confirm),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed != true) return;
+                                if (!context.mounted) return;
+                                try {
+                                  await ref
+                                      .read(jobRepositoryProvider)
+                                      .cancelJobTransferRequest(job.id);
+                                  if (!context.mounted) return;
+                                  AppFeedback.success(
+                                    context,
+                                    message: l.transferRequestCancelled,
+                                  );
+                                } catch (_) {
+                                  if (!context.mounted) return;
+                                  AppFeedback.error(
+                                    context,
+                                    message: l.genericError,
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.cancel_outlined),
+                              label: Text(l.cancelTransferRequest),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: ArcticTheme.arcticWarning,
+                                side: const BorderSide(
+                                  color: ArcticTheme.arcticWarning,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          // Request transfer button
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showRequestTransferDialog(
+                                context,
+                                ref,
+                                job,
+                                approvalConfig,
+                              ),
+                              icon: const Icon(Icons.swap_horiz_rounded),
+                              label: Text(
+                                (approvalConfig?.techTransferRequiresApproval ??
+                                        true)
+                                    ? l.requestTransfer
+                                    : l.transferJob,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                       const SizedBox(height: 12),
                       _DetailRow(
                         icon: Icons.business_outlined,
@@ -463,6 +574,91 @@ class JobDetailsScreen extends ConsumerWidget {
       }
     }
     return null;
+  }
+
+  Future<void> _showRequestTransferDialog(
+    BuildContext context,
+    WidgetRef ref,
+    JobModel job,
+    ApprovalConfig? approvalConfig,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final techs = ref.read(activeTechniciansForTeamProvider).value ?? const [];
+    final available = techs
+        .where((t) => t.isActive && t.uid != job.techId)
+        .toList();
+
+    if (available.isEmpty) {
+      AppFeedback.error(context, message: l.noActiveTechnicians);
+      return;
+    }
+
+    UserModel? selected;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dlg) => StatefulBuilder(
+        builder: (dlg, setS) => AlertDialog(
+          title: Text(
+            (approvalConfig?.techTransferRequiresApproval ?? true)
+                ? l.requestTransfer
+                : l.transferJob,
+          ),
+          content: DropdownButton<UserModel>(
+            isExpanded: true,
+            value: selected,
+            hint: Text(l.transferToTechnician),
+            items: available
+                .map(
+                  (t) => DropdownMenuItem(value: t, child: Text(t.name)),
+                )
+                .toList(),
+            onChanged: (v) => setS(() => selected = v),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dlg).pop(false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: selected == null
+                  ? null
+                  : () => Navigator.of(dlg).pop(true),
+              child: Text(l.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selected == null) return;
+    if (!context.mounted) return;
+
+    try {
+      final repo = ref.read(jobRepositoryProvider);
+      if (approvalConfig?.techTransferRequiresApproval ?? true) {
+        await repo.requestJobTransfer(
+          jobId: job.id,
+          targetTechId: selected!.uid,
+          targetTechName: selected!.name,
+        );
+        if (!context.mounted) return;
+        AppFeedback.success(context, message: l.transferRequestSent);
+      } else {
+        final currentUser = ref.read(currentUserProvider).value;
+        if (currentUser == null) return;
+        await repo.transferJobAsTech(
+          jobId: job.id,
+          newTechId: selected!.uid,
+          newTechName: selected!.name,
+          techId: currentUser.uid,
+        );
+        if (!context.mounted) return;
+        AppFeedback.success(context, message: l.jobTransferred);
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      AppFeedback.error(context, message: l.genericError);
+    }
   }
 }
 

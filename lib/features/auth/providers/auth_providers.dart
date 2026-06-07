@@ -84,6 +84,8 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(allUsersProvider);
     ref.invalidate(allCompaniesProvider);
     ref.invalidate(activeCompaniesProvider);
+    ref.invalidate(allJobsProvider);
+    ref.invalidate(pendingTransferRequestsProvider);
     ref.invalidate(techExpensesProvider);
     ref.invalidate(todaysExpensesProvider);
     ref.invalidate(monthlyExpensesProvider);
