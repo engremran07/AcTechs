@@ -9,6 +9,49 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.2.5': {
+    'en': [
+      'Country code picker on all phone number fields — KSA pre-selected, 95+ countries, E.164 normalisation',
+      'Search now covers phone number and job ID in approvals, all-jobs, and history screens',
+      'Technician transfer request button added to job detail screen — request, cancel, or direct-transfer',
+      'WhatsApp numbers normalised automatically — local KSA numbers (05XX…) now open correctly',
+      'WhatsApp chooser labels now translated in Arabic and Urdu',
+      'CI now builds an Android App Bundle (AAB) for Play Store submissions',
+    ],
+    'ur': [
+      'تمام فون نمبر خانوں میں ملک کوڈ منتخب کریں — سعودی عرب پہلے سے منتخب، 95+ ممالک',
+      'فون نمبر اور جاب ID سے تلاش — اپروولز، تمام جابز اور تاریخ اسکرین میں',
+      'جاب ڈیٹیل اسکرین پر تکنیشن ٹرانسفر درخواست بٹن — درخواست دیں، منسوخ کریں یا براہ راست منتقل کریں',
+      'واٹس ایپ نمبر خودکار درست — مقامی کے ایس اے نمبر (05XX…) اب درست کھلتے ہیں',
+      'واٹس ایپ چوزر لیبل اردو اور عربی میں ترجمہ شدہ',
+      'CI اب Play Store کے لیے Android App Bundle (AAB) بناتا ہے',
+    ],
+    'ar': [
+      'منتقي رمز الدولة في جميع حقول الهاتف — المملكة العربية السعودية محددة مسبقاً، 95+ دولة',
+      'البحث يشمل الآن رقم الهاتف ومعرّف المهمة في شاشات الموافقات والمهام والسجل',
+      'زر طلب نقل المهمة في شاشة تفاصيل المهمة — اطلب أو ألغِ أو انقل مباشرةً',
+      'تطبيع أرقام واتساب تلقائياً — الأرقام المحلية السعودية (05XX…) تُفتح بشكل صحيح الآن',
+      'تسميات اختيار واتساب مترجمة للعربية والأردية',
+      'CI يبني الآن Android App Bundle (AAB) لمتجر Play',
+    ],
+  },
+  '2.2.4': {
+    'en': [
+      'What\'s New dialog added — shown once per update with feature list in English, Urdu, and Arabic',
+      'Governance: CI now enforces that MASTER_BLUEPRINT version matches pubspec.yaml',
+      'CI/CD coverage threshold raised from 60% to 80%',
+    ],
+    'ur': [
+      '"نیا کیا ہے" ڈائیلاگ شامل — ہر اپڈیٹ پر ایک بار اردو، انگریزی اور عربی میں',
+      'گورننس: CI اب یقینی بناتا ہے کہ MASTER_BLUEPRINT ورژن pubspec.yaml سے مطابقت رکھے',
+      'CI کوریج کی حد 60% سے بڑھا کر 80% کر دی گئی',
+    ],
+    'ar': [
+      'إضافة مربع حوار "ما الجديد" — يظهر مرة واحدة عند كل تحديث بالعربية والأردية والإنجليزية',
+      'الحوكمة: يتحقق CI الآن من تطابق إصدار MASTER_BLUEPRINT مع pubspec.yaml',
+      'رُفع حد التغطية في CI من 60% إلى 80%',
+    ],
+  },
   '2.2.2': {
     'en': [
       'WhatsApp chooser: pick Business or regular WhatsApp when opening a contact\'s chat',

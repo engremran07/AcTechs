@@ -116,22 +116,27 @@ The VS Code Problems panel AND `flutter analyze` output MUST show **zero issues 
 - Todo items from a prior session silently dropped
 
 1. **Bump `pubspec.yaml` version first** — increment `versionName` AND `versionCode` (`+N` integer). versionCode must always increase. Never build twice with the same versionCode.
-2. Run `flutter analyze` → must output "No issues found!" — zero warnings, infos, hints
-3. Run `flutter test` → must pass 100%
-4. Run `dart run build_runner build --delete-conflicting-outputs` if freezed models changed
-5. Run `flutter gen-l10n` if ARB files changed
-6. **Deploy Firestore rules if `firestore.rules` changed**: `firebase deploy --only firestore:rules --project actechs-d415e`
-7. **Deploy Firestore indexes if `firestore.indexes.json` changed**: `firebase deploy --only firestore:indexes --project actechs-d415e`
-8. Build APK: `flutter build apk --release`
-9. **Uninstall old APK first**, then install new one:
+2. **Update `lib/core/widgets/whats_new_dialog.dart` `_changelog` map** — add a new version key matching the new `versionName` (e.g. `'2.3.0'`) with bullet items in `en`, `ur`, and `ar`. The dialog is keyed by `PackageInfo.version` (the part before `+`). If this step is skipped, users will see stale changelog content on first launch after updating.
+3. **Update `MASTER_BLUEPRINT.md`** — change `Current app version:` to the new version BEFORE building. If the pre-commit hook bumps the version, update MASTER_BLUEPRINT again after the commit.
+4. **Update `CHANGELOG.md`** — prepend a new `## X.Y.Z+N` section describing all changes.
+5. Run `flutter analyze` → must output "No issues found!" — zero warnings, infos, hints
+6. Run `flutter test` → must pass 100%
+7. Run `dart run build_runner build --delete-conflicting-outputs` if freezed models changed
+8. Run `flutter gen-l10n` if ARB files changed
+9. **Deploy Firestore rules if `firestore.rules` changed**: `firebase deploy --only firestore:rules --project actechs-d415e`
+10. **Deploy Firestore indexes if `firestore.indexes.json` changed**: `firebase deploy --only firestore:indexes --project actechs-d415e`
+11. Build APK: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
+12. **Uninstall old APK first**, then install new one:
 
    ```powershell
    $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
    & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> uninstall com.actechs.pk
-   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-release.apk
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
+   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> push "d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk" /sdcard/Download/AcTechs-vX.X.X+N-arm64.apk
    ```
 
-10. Commit only after all above steps succeed
+13. `git add -A && git commit` — pre-commit hook will bump the version; update MASTER_BLUEPRINT after if the version changed.
+14. `git push origin main`
 
 ### Firestore Alignment — Blocking Rule
 

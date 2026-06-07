@@ -98,7 +98,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
       children: [
         // ── Country code button ──────────────────────────────────────────
         Semantics(
-          label: '${l.selectCountryCode}: ${_country.name} ${_country.prefixLabel}',
+          label:
+              '${l.selectCountryCode}: ${_country.name} ${_country.prefixLabel}',
           button: true,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
@@ -136,9 +137,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             onChanged: (_) => _notifyChanged(),
             decoration: InputDecoration(
               labelText: widget.labelText ?? l.phone,
-              hintText: widget.hintText ??
-                  _country.localPattern ??
-                  l.phoneLocalHint,
+              hintText:
+                  widget.hintText ?? _country.localPattern ?? l.phoneLocalHint,
               prefixIcon: const Icon(Icons.phone_outlined),
             ),
             validator: widget.optional
@@ -179,10 +179,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
 // ---------------------------------------------------------------------------
 
 class _CountryPickerSheet extends StatefulWidget {
-  const _CountryPickerSheet({
-    required this.selected,
-    required this.onSelected,
-  });
+  const _CountryPickerSheet({required this.selected, required this.onSelected});
 
   final CountryDialCode selected;
   final ValueChanged<CountryDialCode> onSelected;

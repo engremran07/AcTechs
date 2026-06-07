@@ -262,8 +262,9 @@ class JobDetailsScreen extends ConsumerWidget {
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: ArcticTheme.arcticWarning
-                                      .withValues(alpha: 0.15),
+                                  color: ArcticTheme.arcticWarning.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
@@ -608,9 +609,7 @@ class JobDetailsScreen extends ConsumerWidget {
             value: selected,
             hint: Text(l.transferToTechnician),
             items: available
-                .map(
-                  (t) => DropdownMenuItem(value: t, child: Text(t.name)),
-                )
+                .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
                 .toList(),
             onChanged: (v) => setS(() => selected = v),
           ),

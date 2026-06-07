@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.5+94
+
+- Fix: What's New dialog `_changelog` map updated with entries for v2.2.4 and v2.2.5 — the dialog was showing stale content because new version keys were absent from the in-code map
+- Fix: MASTER_BLUEPRINT.md version synced to match pubspec.yaml after pre-commit hook bump
+- Rule: sign-off sequence now explicitly requires updating `whats_new_dialog.dart` `_changelog` before every build
+
 ## 2.2.4+93
 
 - Feature: Country code picker in phone input — `PhoneInputField` widget with full 95+ country list, KSA pre-selected, E.164 normalization on output; replaces raw TextFormField in team screen add/edit dialogs

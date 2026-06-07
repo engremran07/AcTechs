@@ -82,7 +82,10 @@ class WhatsAppLauncher {
     String? message,
     CountryDialCode defaultCountry = CountryDialCode.ksa,
   }) async {
-    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
+    final normalized = normalizeNumber(
+      rawPhone,
+      defaultCountry: defaultCountry,
+    );
     if (normalized.isEmpty) return;
 
     final hasBiz = await _isInstalled(_waBizPackage);
@@ -158,8 +161,14 @@ class WhatsAppLauncher {
 
   /// Direct open via wa.me (no chooser). Use for batch notifications where
   /// showing a per-contact dialog would be disruptive.
-  static Future<bool> openChat(String rawPhone, {CountryDialCode defaultCountry = CountryDialCode.ksa}) async {
-    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
+  static Future<bool> openChat(
+    String rawPhone, {
+    CountryDialCode defaultCountry = CountryDialCode.ksa,
+  }) async {
+    final normalized = normalizeNumber(
+      rawPhone,
+      defaultCountry: defaultCountry,
+    );
     if (normalized.isEmpty) return false;
     try {
       return launchUrl(
