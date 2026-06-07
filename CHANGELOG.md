@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.2.6+95
+
+- Governance: MASTER_BLUEPRINT and CHANGELOG synced after pre-commit hook version bump
+
 ## 2.2.5+94
 
 - Fix: What's New dialog `_changelog` map updated with entries for v2.2.4 and v2.2.5 — the dialog was showing stale content because new version keys were absent from the in-code map
