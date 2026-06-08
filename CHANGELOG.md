@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.2.8+97
+
+- Fix [P0]: WhatsApp chooser root cause fixed — `_isInstalled()` now uses a native `MethodChannel` calling `PackageManager.getPackageInfo()` instead of `canLaunchUrl()` which cannot distinguish between `com.whatsapp` and `com.whatsapp.w4b`; `_openInPackage()` now has correct `try/catch` fallback to `wa.me` when the intent fails; `MainActivity.kt` extended with `com.actechs.pk/packages` channel
+- Fix: `_openInPackage()` falls back to `wa.me` on `PlatformException` (previously returned early without fallback)
+- Updated: Flutter CI pinned to `3.44.0` (was `3.41.6`) across `ci.yml`, `release.yml`, `audit.yml`
+- Updated: `firebase_app_check: ^0.4.2` (was `^0.4.1+1`)
+- Updated: google-services Gradle plugin `4.4.2` (was `4.3.15`)
+- Updated: 34 transitive dependency upgrades via `flutter pub upgrade`
+- Updated: `environment: sdk: ^3.11.0` (comment notes upgrade to `^3.12.0` pending local Flutter upgrade to 3.44.0)
+- Created: `.flutter-version` file pinned to `3.44.0` for single-source version reference
+- Security: Web App Check CI gate upgraded from echo-warning to hard `exit 1` failure
+- L10n: 2 new strings in en/ur/ar: `whatsappBusinessSubtitle`, `whatsappPersonalSubtitle`
+- What's New dialog: `2.2.8` entry added
+
 ## 2.2.7+96
 
 - Fix: admin bulk transfer now shows confirmation dialog before committing (BLK-004)

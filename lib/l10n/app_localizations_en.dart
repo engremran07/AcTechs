@@ -2194,4 +2194,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cannotBeUndone => 'This action cannot be undone.';
+
+  @override
+  String get whatsappBusinessSubtitle => 'WhatsApp Business';
+
+  @override
+  String get whatsappPersonalSubtitle => 'Personal WhatsApp';
+
+  @override
+  String get settlementCapWarning =>
+      'Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results.';
 }

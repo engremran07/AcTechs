@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -31,6 +32,19 @@ class _InvoiceSettlementsScreenState
   String _scope = _scopePending;
   DateTimeRange? _dateRange;
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // STK-001: prevent screenshots of settlement data during screen sharing
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   List<JobModel> _filterJobs(List<JobModel> jobs) {
     return jobs
@@ -375,6 +389,31 @@ class _InvoiceSettlementsScreenState
 
             return Column(
               children: [
+                // PER-001: warn when the 200-record cap was hit
+                if (jobs.length >= 200)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 14,
+                          color: ArcticTheme.arcticWarning,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            l.settlementCapWarning,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: ArcticTheme.arcticWarning),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
                   child: Row(

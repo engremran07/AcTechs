@@ -4142,6 +4142,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This action cannot be undone.'**
   String get cannotBeUndone;
+
+  /// No description provided for @whatsappBusinessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp Business'**
+  String get whatsappBusinessSubtitle;
+
+  /// No description provided for @whatsappPersonalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal WhatsApp'**
+  String get whatsappPersonalSubtitle;
+
+  /// No description provided for @settlementCapWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results.'**
+  String get settlementCapWarning;
 }
 
 class _AppLocalizationsDelegate

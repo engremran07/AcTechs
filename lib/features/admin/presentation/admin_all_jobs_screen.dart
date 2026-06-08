@@ -319,9 +319,9 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                     ),
                   ],
                   onChanged: (v) => setState(() {
-                      _statusFilter = v ?? 'all';
-                      _selectedJobIds.clear();
-                    }),
+                    _statusFilter = v ?? 'all';
+                    _selectedJobIds.clear();
+                  }),
                 ),
                 const SizedBox(width: 8),
                 // Technician filter
@@ -397,56 +397,55 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                           alignment: AlignmentDirectional.centerStart,
                           child: Text(
                             l.allJobsLimitNote,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                         ),
                       ),
                     Expanded(
                       child: RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(allJobsProvider),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+                        onRefresh: () async => ref.invalidate(allJobsProvider),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          itemCount: jobs.length,
+                          itemBuilder: (ctx, i) {
+                            final job = jobs[i];
+                            final isSelected = _selectedJobIds.contains(job.id);
+                            return _AllJobTile(
+                                  job: job,
+                                  isSelected: isSelected,
+                                  onTransfer:
+                                      _selectedJobIds.isEmpty &&
+                                          !job.isSettlementLocked
+                                      ? () => _showTransferDialog(job)
+                                      : null,
+                                  onTap: _selectedJobIds.isNotEmpty
+                                      ? () => setState(() {
+                                          if (isSelected) {
+                                            _selectedJobIds.remove(job.id);
+                                          } else {
+                                            _selectedJobIds.add(job.id);
+                                          }
+                                        })
+                                      : null,
+                                  onLongPress: () => setState(() {
+                                    _selectedJobIds.add(job.id);
+                                  }),
+                                )
+                                .animate(delay: (i * 40).ms)
+                                .fadeIn()
+                                .slideX(begin: 0.03);
+                          },
+                        ),
+                      ),
                     ),
-                    itemCount: jobs.length,
-                    itemBuilder: (ctx, i) {
-                      final job = jobs[i];
-                      final isSelected = _selectedJobIds.contains(job.id);
-                      return _AllJobTile(
-                            job: job,
-                            isSelected: isSelected,
-                            onTransfer:
-                                _selectedJobIds.isEmpty &&
-                                    !job.isSettlementLocked
-                                ? () => _showTransferDialog(job)
-                                : null,
-                            onTap: _selectedJobIds.isNotEmpty
-                                ? () => setState(() {
-                                    if (isSelected) {
-                                      _selectedJobIds.remove(job.id);
-                                    } else {
-                                      _selectedJobIds.add(job.id);
-                                    }
-                                  })
-                                : null,
-                            onLongPress: () => setState(() {
-                              _selectedJobIds.add(job.id);
-                            }),
-                          )
-                          .animate(delay: (i * 40).ms)
-                          .fadeIn()
-                          .slideX(begin: 0.03);
-                    },
-                  ),
-                ),
-                  ),
                   ],
                 );
               },

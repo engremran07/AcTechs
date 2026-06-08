@@ -848,5 +848,8 @@
   "transferRequestSent": "Transfer request sent",
   "jobTransferred": "Job transferred successfully",
   "searchByTechClientInvoicePhone": "Search by tech, client, invoice, or phone",
-  "cannotBeUndone": "This action cannot be undone."
+  "cannotBeUndone": "This action cannot be undone.",
+  "whatsappBusinessSubtitle": "WhatsApp Business",
+  "whatsappPersonalSubtitle": "Personal WhatsApp",
+  "settlementCapWarning": "Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results."
 }

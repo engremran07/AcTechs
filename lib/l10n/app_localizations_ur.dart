@@ -2204,4 +2204,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get cannotBeUndone => 'یہ عمل واپس نہیں ہو سکتا۔';
+
+  @override
+  String get whatsappBusinessSubtitle => 'واٹس ایپ بزنس';
+
+  @override
+  String get whatsappPersonalSubtitle => 'ذاتی واٹس ایپ';
+
+  @override
+  String get settlementCapWarning =>
+      'آخری 200 ریکارڈ دکھائے جا رہے ہیں۔ بعض پرانی غیر ادا کی گئی جابز نظر نہیں آ سکتیں — تاریخ فلٹر استعمال کریں۔';
 }

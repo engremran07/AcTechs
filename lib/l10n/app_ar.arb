@@ -851,5 +851,8 @@
   "transferRequestSent": "تم إرسال طلب النقل",
   "jobTransferred": "تم نقل المهمة بنجاح",
   "searchByTechClientInvoicePhone": "ابحث بالفني أو العميل أو الفاتورة أو الهاتف",
-  "cannotBeUndone": "لا يمكن التراجع عن هذا الإجراء."
+  "cannotBeUndone": "لا يمكن التراجع عن هذا الإجراء.",
+  "whatsappBusinessSubtitle": "واتسأب للأعمال",
+  "whatsappPersonalSubtitle": "واتسأب الشخصي",
+  "settlementCapWarning": "يعرض آخر 200 سجل. قد تكون بعض المهام غير المسوَّاة الأقدم غير ظاهرة — استخدم فلاتر التاريخ."
 }

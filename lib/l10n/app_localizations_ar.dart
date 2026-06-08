@@ -2190,4 +2190,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cannotBeUndone => 'لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get whatsappBusinessSubtitle => 'واتسأب للأعمال';
+
+  @override
+  String get whatsappPersonalSubtitle => 'واتسأب الشخصي';
+
+  @override
+  String get settlementCapWarning =>
+      'يعرض آخر 200 سجل. قد تكون بعض المهام غير المسوَّاة الأقدم غير ظاهرة — استخدم فلاتر التاريخ.';
 }

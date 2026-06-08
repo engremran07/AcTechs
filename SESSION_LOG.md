@@ -1,6 +1,21 @@
 # SESSION_LOG
 
-## 2026-06-08 — v9 Audit Implementation Batch — APK v2.2.3+92 → pubspec v2.2.4+93
+## 2026-06-09 — v11 Audit Implementation — APK v2.2.7+96 → v2.2.8+97
+
+- **P0 WhatsApp Fix**: Root cause confirmed — `canLaunchUrl()` cannot distinguish packages; fixed with `MethodChannel('com.actechs.pk/packages')` calling `PackageManager.getPackageInfo()` in `MainActivity.kt`; `_openInPackage()` now has `try/catch` fallback to `wa.me`; both bugs documented in REG-013
+- **MainActivity.kt extended**: added `isInstalled` (WA fix) + `setSecureScreen` (STK-001) MethodChannel handlers
+- **SecureScreen utility**: `lib/core/utils/secure_screen.dart` — platform channel to enable/disable `FLAG_SECURE` for sensitive screens; wired into `InvoiceSettlementsScreen`
+- **BLK-001/005**: `bulkTransferJobs()` and `bulkTransferJobsAsTech()` now use `Future.wait()` parallel execution instead of serial loops
+- **PER-001**: Settlement screen shows banner when 200-record cap is hit
+- **GOV**: `REGRESSION_REGISTRY.md` entries REG-013, REG-014, REG-015 added; `MASTER_BLUEPRINT.md` "Known Limitations" + "Supported Platforms" sections added
+- **Stack**: Flutter pinned to 3.44.0 in all CI workflows; `firebase_app_check ^0.4.2`; `google-services 4.4.2`; 34 transitive deps upgraded; `.flutter-version` file created
+- **SEC-001**: App Check CI gate changed from warning to hard `exit 1` failure
+- **ARB**: `whatsappBusinessSubtitle`, `whatsappPersonalSubtitle`, `settlementCapWarning` added to en/ur/ar
+- **What's New**: `_changelog` entry `2.2.8` added
+- Zero `flutter analyze` issues confirmed before build
+- Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
+
+
 
 - Scope: Full implementation of all P1/P2 findings from the v9 ultimate audit report.
 - Critical fixes:

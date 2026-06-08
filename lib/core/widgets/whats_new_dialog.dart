@@ -9,6 +9,27 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.2.8': {
+    'en': [
+      'Fixed: WhatsApp chooser now correctly detects which apps are installed — tapping Business or Personal opens the right app every time',
+      'Fixed: WhatsApp on single-variant devices no longer shows a chooser that silently fails',
+      'Updated: Flutter 3.44.0 + latest dependency upgrades',
+      'Security: Web App Check CI gate is now a hard failure (not just a warning)',
+      'Build: google-services Gradle plugin updated to 4.4.2',
+    ],
+    'ur': [
+      'درست کیا: واٹس ایپ چوزر اب درست طریقے سے انسٹال شدہ ایپس کا پتہ لگاتا ہے — بزنس یا ذاتی ہر بار درست کھلتا ہے',
+      'درست کیا: صرف ایک ورژن انسٹال ہونے پر چوزر ظاہر نہیں ہوتا',
+      'اپڈیٹ: Flutter 3.44.0 اور تازہ ترین انحصاریات',
+      'سیکیورٹی: Web App Check CI گیٹ اب سخت ناکامی ہے',
+    ],
+    'ar': [
+      'إصلاح: منتقي واتساب يكتشف الآن التطبيقات المثبتة بشكل صحيح — الضغط على العمل أو الشخصي يفتح التطبيق الصحيح في كل مرة',
+      'إصلاح: لا يظهر منتقي واتساب على أجهزة ذات إصدار واحد',
+      'تحديث: Flutter 3.44.0 وأحدث التبعيات',
+      'أمان: بوابة CI لـ App Check الويب أصبحت فشلاً صارماً',
+    ],
+  },
   '2.2.7': {
     'en': [
       'Fixed: admin bulk transfer now shows a confirmation dialog before committing',

@@ -3387,9 +3387,9 @@ class JobRepository {
     }
   }
 
-  /// Admin: bulk-transfer multiple jobs to one technician.
-  /// Each job is transferred independently; jobs already locked (settlement
-  /// in progress) are skipped silently.
+  /// Admin: bulk-transfer multiple jobs to one technician in parallel.
+  /// Jobs already locked (settlement in progress) are skipped silently.
+  /// Returns the count of successfully transferred jobs.
   Future<int> bulkTransferJobs({
     required List<String> jobIds,
     required String newTechId,
@@ -3397,22 +3397,20 @@ class JobRepository {
     required String adminId,
   }) async {
     if (jobIds.isEmpty) return 0;
-    int transferred = 0;
     try {
-      for (final id in jobIds) {
-        try {
-          await transferJob(
+      // BLK-001: run all transfers in parallel instead of serial loop.
+      // Each transfer is independent — a failed job does not block others.
+      final results = await Future.wait(
+        jobIds.map(
+          (id) => transferJob(
             jobId: id,
             newTechId: newTechId,
             newTechName: newTechName,
             adminId: adminId,
-          );
-          transferred++;
-        } on JobException {
-          // skip locked or missing jobs
-        }
-      }
-      return transferred;
+          ).then((_) => true).catchError((_) => false),
+        ),
+      );
+      return results.where((ok) => ok).length;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();
@@ -3475,7 +3473,7 @@ class JobRepository {
     }
   }
 
-  /// Tech: bulk direct-transfer jobs (when techTransferRequiresApproval==false).
+  /// Tech: bulk direct-transfer jobs in parallel (when techTransferRequiresApproval==false).
   Future<int> bulkTransferJobsAsTech({
     required List<String> jobIds,
     required String newTechId,
@@ -3483,22 +3481,19 @@ class JobRepository {
     required String techId,
   }) async {
     if (jobIds.isEmpty) return 0;
-    int transferred = 0;
     try {
-      for (final id in jobIds) {
-        try {
-          await transferJobAsTech(
+      // BLK-005: parallel transfers instead of serial loop.
+      final results = await Future.wait(
+        jobIds.map(
+          (id) => transferJobAsTech(
             jobId: id,
             newTechId: newTechId,
             newTechName: newTechName,
             techId: techId,
-          );
-          transferred++;
-        } on JobException {
-          // skip locked or missing
-        }
-      }
-      return transferred;
+          ).then((_) => true).catchError((_) => false),
+        ),
+      );
+      return results.where((ok) => ok).length;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();

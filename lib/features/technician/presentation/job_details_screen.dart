@@ -252,7 +252,10 @@ class JobDetailsScreen extends ConsumerWidget {
                           !job.isSettlementLocked &&
                           job.isPending &&
                           // UX-002: hide when job is in a locked period
-                          !(approvalConfig?.locksDate(job.date ?? DateTime.now()) ?? false)) ...[
+                          !(approvalConfig?.locksDate(
+                                job.date ?? DateTime.now(),
+                              ) ??
+                              false)) ...[
                         const SizedBox(height: 12),
                         if (job.isTransferPending) ...[
                           // Show pending badge + cancel button

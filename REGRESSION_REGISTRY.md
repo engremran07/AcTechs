@@ -16,6 +16,9 @@ This file records previously fixed regressions that must not be reintroduced.
 | REG-010 | Dashboard affordance | Summary cards looked tappable but some did nothing | Visual affordance exceeded actual interaction wiring | Dashboard stat-card tap fixes and widget regression tests |
 | REG-011 | Settlement flow | Techs could not respond to settlement requests for jobs in locked periods | `technicianSettlementUpdate()` included `dateIsUnlocked()` guard, blocking settlement responses after period lock | Removed `dateIsUnlocked` from settlement-response path; emulator regression test REG-011 added |
 | REG-012 | Edit re-approval | Approved jobs could not re-enter the approval flow for correction | No Firestore rule branch existed for approved→pending status transition initiated by technician | Added 4th branch to `technicianApprovalFlowUpdate()` for re-approval; `editRequestedAt` timestamp enforced |
+| REG-013 | WhatsApp chooser | Chooser appeared on single-variant devices and tapping the non-installed app did nothing | `canLaunchUrl()` with `intent://` URIs checks the URI scheme (whatsapp://) not the specific package; both `_isInstalled()` calls returned `true` regardless of which app was installed | `_isInstalled()` now uses `PackageManager.getPackageInfo()` via `MethodChannel`; `_openInPackage()` has `try/catch` fallback to `wa.me` |
+| REG-014 | Bulk transfer performance | Bulk-transferring 50 jobs took 30+ seconds | `bulkTransferJobs()` and `bulkTransferJobsAsTech()` used serial `for` loops with `await` per job | Replaced with `Future.wait()` parallel execution |
+| REG-015 | Settlement cap silent truncation | Settlement screen silently showed only 200 most-recent records; older unsettled jobs were invisible | `fetchSettlementCandidates()` hard-coded `.limit(200)` with no user-visible indicator | Added cap-hit banner in UI showing "Showing 200 most-recent records" when `jobs.length >= 200` |
 
 ## Use
 
