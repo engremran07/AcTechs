@@ -2187,4 +2187,7 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get searchByTechClientInvoicePhone =>
       'ابحث بالفني أو العميل أو الفاتورة أو الهاتف';
+
+  @override
+  String get cannotBeUndone => 'لا يمكن التراجع عن هذا الإجراء.';
 }

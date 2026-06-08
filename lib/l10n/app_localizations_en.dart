@@ -2191,4 +2191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get searchByTechClientInvoicePhone =>
       'Search by tech, client, invoice, or phone';
+
+  @override
+  String get cannotBeUndone => 'This action cannot be undone.';
 }

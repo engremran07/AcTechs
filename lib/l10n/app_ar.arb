@@ -850,5 +850,6 @@
   "cancelTransferConfirm": "هل تريد إلغاء طلب النقل هذا؟",
   "transferRequestSent": "تم إرسال طلب النقل",
   "jobTransferred": "تم نقل المهمة بنجاح",
-  "searchByTechClientInvoicePhone": "ابحث بالفني أو العميل أو الفاتورة أو الهاتف"
+  "searchByTechClientInvoicePhone": "ابحث بالفني أو العميل أو الفاتورة أو الهاتف",
+  "cannotBeUndone": "لا يمكن التراجع عن هذا الإجراء."
 }

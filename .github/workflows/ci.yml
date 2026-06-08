@@ -262,40 +262,6 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve firebase_options.dart
-        env:
-          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
-        run: |
-          mkdir -p lib
-
-          if [ -z "$FIREBASE_OPTIONS_DART" ]; then
-            if [ -f lib/firebase_options.dart ]; then
-              echo "Using checked-in lib/firebase_options.dart"
-              exit 0
-            fi
-
-            cat > lib/firebase_options.dart <<'EOF'
-          // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
-          // CI debug stub - not used at runtime.
-          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-
-          class DefaultFirebaseOptions {
-            static FirebaseOptions get currentPlatform =>
-                throw UnsupportedError('CI debug stub only.');
-          }
-          EOF
-            echo "Using generated debug stub firebase_options.dart"
-            exit 0
-          fi
-
-          echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
-          echo "Using firebase_options.dart from FIREBASE_OPTIONS_DART secret"
-
-          if ! grep -q "class DefaultFirebaseOptions" lib/firebase_options.dart; then
-            echo "firebase_options.dart is invalid or missing DefaultFirebaseOptions"
-            exit 1
-          fi
-
       - name: Install dependencies
         run: flutter pub get
 
@@ -453,3 +419,36 @@ jobs:
             exit 1
           fi
           echo "✅ Bottom nav documentation correct"
+
+      - name: Gate — WhatsNewDialog has changelog entry for current version
+        run: |
+          PUBSPEC_VER=$(grep "^version:" pubspec.yaml | awk '{print $2}' | cut -d'+' -f1 | tr -d '\r')
+          echo "Checking _changelog for version: $PUBSPEC_VER"
+          if ! grep -q "'$PUBSPEC_VER'" lib/core/widgets/whats_new_dialog.dart; then
+            echo "❌ FAIL: whats_new_dialog.dart has no _changelog entry for v$PUBSPEC_VER"
+            echo "Fix: add a '$PUBSPEC_VER' key with en/ur/ar bullet items to _changelog map"
+            exit 1
+          fi
+          echo "✅ _changelog entry present for v$PUBSPEC_VER"
+
+      - name: Gate — No Colors.white hardcoded in Dart source
+        run: |
+          MATCHES=$(grep -REn "Colors\.white" lib/ --include="*.dart" \
+            --exclude="*.freezed.dart" --exclude="*.g.dart" 2>/dev/null || true)
+          if [ -n "$MATCHES" ]; then
+            echo "❌ FAIL: Hardcoded Colors.white found — use Theme.of(context).colorScheme.onPrimary or ArcticTheme constants"
+            echo "$MATCHES"
+            exit 1
+          fi
+          echo "✅ No hardcoded Colors.white in Dart source"
+
+      - name: Gate — FIREBASE_APP_CHECK_WEB_KEY secret non-empty
+        env:
+          WEB_APP_CHECK_KEY: ${{ secrets.FIREBASE_APP_CHECK_WEB_KEY }}
+        run: |
+          if [ -z "$WEB_APP_CHECK_KEY" ]; then
+            echo "⚠️  WARNING: FIREBASE_APP_CHECK_WEB_KEY secret is not set — web build will use placeholder key"
+            echo "   Register the production domain with reCAPTCHA v3 in Firebase Console and add the key as a GitHub secret"
+          else
+            echo "✅ FIREBASE_APP_CHECK_WEB_KEY is configured"
+          fi

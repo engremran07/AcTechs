@@ -114,7 +114,8 @@ class ApprovalConfig {
         : Timestamp.fromDate(lockedBeforeDate!),
     'techTransferAllowed': techTransferAllowed,
     'techTransferRequiresApproval': techTransferRequiresApproval,
-    'updatedAt': FieldValue.serverTimestamp(),
+    // Note: 'updatedAt' is intentionally omitted — added at the repository
+    // call site via _mergeConfig() so the model stays Firestore-agnostic.
   };
 
   bool locksDate(DateTime value) {

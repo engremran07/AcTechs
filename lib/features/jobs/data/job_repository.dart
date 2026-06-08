@@ -2232,6 +2232,9 @@ class JobRepository {
   }
 
   Future<List<JobModel>> fetchSettlementCandidates() async {
+    // PER-001: warn when the 200-record cap is in danger of hiding records.
+    // Full count aggregation requires Blaze tier; emit a debugPrint as a
+    // developer-facing signal until the deployment upgrades.
     final snap = await _jobsRef
         .where('status', isEqualTo: JobStatus.approved.name)
         .where(
@@ -2244,6 +2247,14 @@ class JobRepository {
         .orderBy('date', descending: true)
         .limit(200)
         .get();
+
+    if (snap.docs.length >= 200) {
+      debugPrint(
+        '[JobRepository] WARNING: fetchSettlementCandidates hit the 200-record cap. '
+        'Some unsettled jobs may not be visible. Consider upgrading to Blaze tier '
+        'for COUNT aggregation queries (PER-001).',
+      );
+    }
 
     return snap.docs.map((doc) => JobModel.fromFirestore(doc)).toList();
   }
@@ -3322,25 +3333,27 @@ class JobRepository {
     required String adminId,
   }) async {
     try {
-      final docRef = _jobsRef.doc(jobId);
-      final snap = await docRef.get();
-      if (!snap.exists) throw JobException.saveFailed();
-      final job = JobModel.fromFirestore(snap);
-      if (job.transferStatus != 'transfer_pending') {
-        throw JobException.saveFailed();
-      }
-      if (job.isSettlementLocked) throw JobException.settlementLocked();
-      if (job.transferTargetTechId.isEmpty) throw JobException.saveFailed();
-      await docRef.update({
-        'techId': job.transferTargetTechId,
-        'techName': job.transferTargetTechName,
-        'transferredFromTechId': job.techId,
-        'transferredFromTechName': job.techName,
-        'transferredAt': FieldValue.serverTimestamp(),
-        'transferredByAdminId': adminId,
-        'transferStatus': '',
-        'transferTargetTechId': '',
-        'transferTargetTechName': '',
+      await firestore.runTransaction((tx) async {
+        final docRef = _jobsRef.doc(jobId);
+        final snap = await tx.get(docRef);
+        if (!snap.exists) throw JobException.saveFailed();
+        final job = JobModel.fromFirestore(snap);
+        if (job.transferStatus != 'transfer_pending') {
+          throw JobException.saveFailed();
+        }
+        if (job.isSettlementLocked) throw JobException.settlementLocked();
+        if (job.transferTargetTechId.isEmpty) throw JobException.saveFailed();
+        tx.update(docRef, {
+          'techId': job.transferTargetTechId,
+          'techName': job.transferTargetTechName,
+          'transferredFromTechId': job.techId,
+          'transferredFromTechName': job.techName,
+          'transferredAt': FieldValue.serverTimestamp(),
+          'transferredByAdminId': adminId,
+          'transferStatus': '',
+          'transferTargetTechId': '',
+          'transferTargetTechName': '',
+        });
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
@@ -3353,14 +3366,24 @@ class JobRepository {
   /// Admin rejects a tech-initiated transfer request.
   Future<void> rejectJobTransferRequest(String jobId) async {
     try {
-      await _jobsRef.doc(jobId).update({
-        'transferStatus': '',
-        'transferTargetTechId': '',
-        'transferTargetTechName': '',
+      await firestore.runTransaction((tx) async {
+        final docRef = _jobsRef.doc(jobId);
+        final snap = await tx.get(docRef);
+        if (!snap.exists) throw JobException.saveFailed();
+        final job = JobModel.fromFirestore(snap);
+        // Only clear if still pending — concurrent approval may have already acted
+        if (job.transferStatus != 'transfer_pending') return;
+        tx.update(docRef, {
+          'transferStatus': '',
+          'transferTargetTechId': '',
+          'transferTargetTechName': '',
+        });
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') throw JobException.permissionDenied();
       throw JobException.saveFailed();
+    } on JobException {
+      rethrow;
     }
   }
 

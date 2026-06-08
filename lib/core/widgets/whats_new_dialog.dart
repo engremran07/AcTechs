@@ -9,6 +9,43 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.2.7': {
+    'en': [
+      'Fixed: admin bulk transfer now shows a confirmation dialog before committing',
+      'Fixed: filter changes in the All Jobs screen now clear multi-selection',
+      'Fixed: job limit note only shown when 150-record cap is actually hit',
+      'Fixed: tech transfer button hidden for jobs in a locked period',
+      'Improved: WhatsNew dialog now skips display for governance-only version bumps',
+      'Improved: WhatsNew dialog uses theme-adaptive colors (no hardcoded white)',
+      'Pre-commit hook: governance-only commits no longer trigger a version bump',
+      'CI: added gates for _changelog completeness, Colors.white, and App Check key',
+      'Security: transfer approve/reject now use atomic Firestore transactions',
+      'Fix: ApprovalConfig.toMap() no longer leaks FieldValue into the model layer',
+      'Fix: phone input strips all leading zeros (not just one)',
+      'Fix: phone input adds autofill hints for password managers',
+      'CI: removed dead "Resolve firebase_options.dart" step from build-debug job',
+    ],
+    'ur': [
+      'درست کیا: بلک ٹرانسفر سے پہلے تصدیقی ڈائیلاگ شامل',
+      'درست کیا: فلٹر بدلنے پر ملٹی سیلیکشن صاف ہو جاتی ہے',
+      'درست کیا: جاب لمٹ نوٹ صرف اس وقت دکھائی دیتا ہے جب 150 کی حد پہنچے',
+      'درست کیا: بند پیریڈ کی جابز پر ٹرانسفر بٹن چھپا دیا گیا',
+      'بہتری: "نیا کیا ہے" ڈائیلاگ صرف اصل اپڈیٹ پر دکھائی دیتا ہے',
+      'بہتری: ڈائیلاگ کے رنگ تھیم کے مطابق ڈھلتے ہیں',
+      'بہتری: گورننس کمٹ پر ورژن نمبر نہیں بڑھتا',
+      'سیکیورٹی: ٹرانسفر منظوری/مسترد اب محفوظ Firestore ٹرانزیکشن استعمال کرتے ہیں',
+    ],
+    'ar': [
+      'إصلاح: إضافة حوار تأكيد قبل تنفيذ النقل الجماعي',
+      'إصلاح: تغيير الفلتر يمسح التحديد المتعدد تلقائياً',
+      'إصلاح: ملاحظة حد المهام تظهر فقط عند بلوغ 150 سجلاً',
+      'إصلاح: إخفاء زر النقل للمهام في الفترة المقفلة',
+      'تحسين: حوار "ما الجديد" يظهر فقط عند تحديثات حقيقية',
+      'تحسين: ألوان الحوار تتكيف مع قالب التطبيق',
+      'تحسين: الإيداعات الإدارية لا تسبب زيادة رقم الإصدار',
+      'أمان: الموافقة/الرفض على النقل تستخدم معاملات Firestore الآمنة',
+    ],
+  },
   '2.2.5': {
     'en': [
       'Country code picker on all phone number fields — KSA pre-selected, 95+ countries, E.164 normalisation',
@@ -124,22 +161,28 @@ class WhatsNewChecker {
   static Future<void> checkAndShow(BuildContext context) async {
     final info = await PackageInfo.fromPlatform();
     final currentVersion = '${info.version}+${info.buildNumber}';
+
+    // WND-002: skip silently if this version has no changelog entry.
+    // Governance-only bumps produce phantom versions with no user-facing content.
+    if (!_changelog.containsKey(info.version)) return;
+
     final prefs = await SharedPreferences.getInstance();
     final lastSeen = prefs.getString(AppConstants.lastSeenVersionKey) ?? '';
 
     if (lastSeen == currentVersion) return;
 
-    // Persist immediately so the dialog cannot show twice even if dismissed
-    // mid-animation or the app is backgrounded.
-    await prefs.setString(AppConstants.lastSeenVersionKey, currentVersion);
-
     if (!context.mounted) return;
 
+    // WND-003: persist AFTER the dialog is shown (not before) so a background
+    // event cannot mark the dialog as seen without it actually displaying.
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => WhatsNewDialog(versionName: info.version),
     );
+
+    // Dialog was shown (or dismissed) — mark this version as seen.
+    await prefs.setString(AppConstants.lastSeenVersionKey, currentVersion);
   }
 }
 
@@ -189,12 +232,12 @@ class WhatsNewDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: cs.onPrimary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.new_releases_rounded,
-                    color: Colors.white,
+                    color: cs.onPrimary,
                     size: 28,
                   ),
                 ),
@@ -206,21 +249,21 @@ class WhatsNewDialog extends StatelessWidget {
                       Text(
                         l.whatsNewTitle,
                         style: tt.titleLarge?.copyWith(
-                          color: Colors.white,
+                          color: cs.onPrimary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
                         'v$versionName',
                         style: tt.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: cs.onPrimary.withValues(alpha: 0.85),
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  icon: Icon(Icons.close_rounded, color: cs.onPrimary),
                   onPressed: () => Navigator.of(context).pop(),
                   tooltip: l.cancel,
                 ),
@@ -283,7 +326,7 @@ class WhatsNewDialog extends StatelessWidget {
       keys.remove(versionName);
       keys.insert(0, versionName);
     }
-    return keys.take(3).toList();
+    return keys.take(5).toList();
   }
 
   static int _compareVersions(String a, String b) {

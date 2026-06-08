@@ -2201,4 +2201,7 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get searchByTechClientInvoicePhone =>
       'تکنیکار، کلائنٹ، انوائس یا فون سے تلاش کریں';
+
+  @override
+  String get cannotBeUndone => 'یہ عمل واپس نہیں ہو سکتا۔';
 }

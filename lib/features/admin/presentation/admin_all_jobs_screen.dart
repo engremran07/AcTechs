@@ -184,6 +184,32 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
     if (confirmed != true || selected == null) return;
     if (!mounted) return;
 
+    // BLK-004: confirmation before committing bulk transfer
+    final l2 = AppLocalizations.of(context)!;
+    final jobCount = _selectedJobIds.length;
+    final finalConfirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l2.transferJob),
+        content: Text(
+          '${l2.selectedCount(jobCount)} \u2192 ${selected!.name}?\n${l2.cannotBeUndone}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l2.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l2.transferJob),
+          ),
+        ],
+      ),
+    );
+
+    if (finalConfirm != true) return;
+    if (!mounted) return;
+
     setState(() => _isBulkProcessing = true);
     try {
       final admin = ref.read(currentUserProvider).value;
@@ -268,7 +294,10 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    onChanged: (v) => setState(() => _searchQuery = v),
+                    onChanged: (v) => setState(() {
+                      _searchQuery = v;
+                      _selectedJobIds.clear();
+                    }),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -289,7 +318,10 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                       child: Text(l.rejected),
                     ),
                   ],
-                  onChanged: (v) => setState(() => _statusFilter = v ?? 'all'),
+                  onChanged: (v) => setState(() {
+                      _statusFilter = v ?? 'all';
+                      _selectedJobIds.clear();
+                    }),
                 ),
                 const SizedBox(width: 8),
                 // Technician filter
@@ -308,7 +340,10 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                         ),
                       ),
                     ],
-                    onChanged: (v) => setState(() => _techFilter = v ?? ''),
+                    onChanged: (v) => setState(() {
+                      _techFilter = v ?? '';
+                      _selectedJobIds.clear();
+                    }),
                   ),
               ],
             ),
@@ -336,19 +371,6 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                 ),
               ],
             ),
-          // ── Limit note ──────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                l.allJobsLimitNote,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
           // ── Job list ────────────────────────────────────────────────────
           Expanded(
             child: jobsAsync.when(
@@ -358,10 +380,35 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                 _selectedJobIds.removeWhere(
                   (id) => !jobs.any((j) => j.id == id),
                 );
+                // UX-001: only show limit note when the cap was hit (≥ 150 docs returned)
+                final limitHit = all.length >= 150;
                 if (jobs.isEmpty) {
                   return Center(child: Text(l.noJobsFound));
                 }
-                return RefreshIndicator(
+                return Column(
+                  children: [
+                    if (limitHit)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 2,
+                        ),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            l.allJobsLimitNote,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: RefreshIndicator(
                   onRefresh: () async => ref.invalidate(allJobsProvider),
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(
@@ -398,6 +445,9 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
                           .slideX(begin: 0.03);
                     },
                   ),
+                ),
+                  ),
+                  ],
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),

@@ -847,5 +847,6 @@
   "cancelTransferConfirm": "Cancel this transfer request?",
   "transferRequestSent": "Transfer request sent",
   "jobTransferred": "Job transferred successfully",
-  "searchByTechClientInvoicePhone": "Search by tech, client, invoice, or phone"
+  "searchByTechClientInvoicePhone": "Search by tech, client, invoice, or phone",
+  "cannotBeUndone": "This action cannot be undone."
 }

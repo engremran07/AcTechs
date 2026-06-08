@@ -4136,6 +4136,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search by tech, client, invoice, or phone'**
   String get searchByTechClientInvoicePhone;
+
+  /// No description provided for @cannotBeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get cannotBeUndone;
 }
 
 class _AppLocalizationsDelegate

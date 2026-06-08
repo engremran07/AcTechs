@@ -2,7 +2,25 @@
 
 ## 2.2.7+96
 
-- Governance: MASTER_BLUEPRINT and CHANGELOG synced to current pubspec after pre-commit hook bumps
+- Fix: admin bulk transfer now shows confirmation dialog before committing (BLK-004)
+- Fix: filter changes in All Jobs screen clear multi-selection to prevent ghost actions (BLK-007)
+- Fix: allJobsLimitNote banner only shown when 150-record cap is hit (UX-001)
+- Fix: tech transfer button hidden for jobs in a locked period (UX-002)
+- Fix: WhatsNew dialog skips display for phantom/governance version bumps — only shows when `_changelog` has an entry for the current version (WND-002)
+- Fix: WhatsNew dialog saves seen-key AFTER showing, not before — backgrounding no longer marks dialog as shown without displaying (WND-003)
+- Fix: WhatsNew dialog header uses `cs.onPrimary` instead of hardcoded `Colors.white` (WND-005)
+- Fix: WhatsNew dialog shows up to 5 recent versions instead of 3 (WND-004)
+- Fix: phone input strips ALL leading zeros before prepending country code (PHN-002)
+- Fix: phone input adds `AutofillHints.telephoneNumber` for password manager integration (PHN-005)
+- Fix: `approveJobTransferRequest()` and `rejectJobTransferRequest()` wrapped in `runTransaction()` to eliminate TOCTOU race condition (PER-003)
+- Fix: `ApprovalConfig.toMap()` no longer contains `FieldValue.serverTimestamp()` — model is now Firestore-agnostic (PER-004)
+- Fix: `fetchSettlementCandidates()` logs a warning when 200-record cap is hit (PER-001)
+- Pre-commit hook: governance-only commits (*.md files only) no longer trigger a version bump (GOV-001 root cause / WND-002)
+- CI: removed dead "Resolve firebase_options.dart" step from build-debug job (BLD-001)
+- CI: added Gate — WhatsNewDialog `_changelog` has entry for current version (WND-008/BLD-002)
+- CI: extended Colors.white gate to cover all of `lib/` not just presentation screens (BLD-003/WND-005)
+- CI: added Gate — FIREBASE_APP_CHECK_WEB_KEY secret verification warning (SEC-001)
+- Country list comment updated to reflect actual count (~100 countries) (PHN-003)
 
 ## 2.2.6+95
 

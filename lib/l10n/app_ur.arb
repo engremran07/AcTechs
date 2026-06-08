@@ -850,5 +850,6 @@
   "cancelTransferConfirm": "یہ ٹرانسفر درخواست منسوخ کریں؟",
   "transferRequestSent": "ٹرانسفر درخواست بھیج دی گئی",
   "jobTransferred": "جاب کامیابی سے ٹرانسفر ہو گئی",
-  "searchByTechClientInvoicePhone": "تکنیکار، کلائنٹ، انوائس یا فون سے تلاش کریں"
+  "searchByTechClientInvoicePhone": "تکنیکار، کلائنٹ، انوائس یا فون سے تلاش کریں",
+  "cannotBeUndone": "یہ عمل واپس نہیں ہو سکتا۔"
 }

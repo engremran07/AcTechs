@@ -79,8 +79,9 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   String get _e164 {
     final local = _ctrl.text.trim().replaceAll(RegExp(r'[\s\-\(\)\.]+'), '');
     if (local.isEmpty) return '';
-    // Strip leading zero if present
-    final stripped = local.startsWith('0') ? local.substring(1) : local;
+    // PHN-002: strip ALL leading zeros, not just one
+    final stripped = local.replaceFirst(RegExp(r'^0+'), '');
+    if (stripped.isEmpty) return '';
     return '${_country.dialCode}$stripped';
   }
 
@@ -134,6 +135,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             controller: _ctrl,
             autofocus: widget.autofocus,
             keyboardType: TextInputType.phone,
+            autofillHints: const [AutofillHints.telephoneNumber],
             onChanged: (_) => _notifyChanged(),
             decoration: InputDecoration(
               labelText: widget.labelText ?? l.phone,

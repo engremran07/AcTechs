@@ -250,7 +250,9 @@ class JobDetailsScreen extends ConsumerWidget {
                       // ── Tech transfer request UI ────────────────────────
                       if ((approvalConfig?.techTransferAllowed ?? false) &&
                           !job.isSettlementLocked &&
-                          job.isPending) ...[
+                          job.isPending &&
+                          // UX-002: hide when job is in a locked period
+                          !(approvalConfig?.locksDate(job.date ?? DateTime.now()) ?? false)) ...[
                         const SizedBox(height: 12),
                         if (job.isTransferPending) ...[
                           // Show pending badge + cancel button

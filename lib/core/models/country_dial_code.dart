@@ -61,7 +61,7 @@ class CountryDialCode {
     localPattern: '5X XXX XXXX',
   );
 
-  // ── Full country list (185 countries) ────────────────────────────────────
+  // ── Full country list (~100 countries covering primary deployment regions) ─
 
   static const List<CountryDialCode> all = [
     CountryDialCode(
