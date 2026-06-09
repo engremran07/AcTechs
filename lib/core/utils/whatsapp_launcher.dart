@@ -62,10 +62,9 @@ class WhatsAppLauncher {
   static Future<bool> _isInstalled(String package) async {
     if (kIsWeb || !Platform.isAndroid) return false;
     try {
-      final result = await _channel.invokeMethod<bool>(
-        'isInstalled',
-        {'package': package},
-      );
+      final result = await _channel.invokeMethod<bool>('isInstalled', {
+        'package': package,
+      });
       return result ?? false;
     } on PlatformException {
       return false;
@@ -83,10 +82,9 @@ class WhatsAppLauncher {
     String package, {
     String? message,
   }) async {
-    final textParam =
-        (message != null && message.isNotEmpty)
-            ? '?text=${Uri.encodeComponent(message)}'
-            : '';
+    final textParam = (message != null && message.isNotEmpty)
+        ? '?text=${Uri.encodeComponent(message)}'
+        : '';
     if (!kIsWeb) {
       final intentUri = Uri.parse(
         'intent://send?phone=$normalized'
@@ -121,7 +119,10 @@ class WhatsAppLauncher {
     String? message,
     CountryDialCode defaultCountry = CountryDialCode.ksa,
   }) async {
-    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
+    final normalized = normalizeNumber(
+      rawPhone,
+      defaultCountry: defaultCountry,
+    );
     if (normalized.isEmpty) return;
 
     final hasBiz = await _isInstalled(_waBizPackage);
@@ -131,10 +132,9 @@ class WhatsAppLauncher {
 
     // Neither installed — open wa.me directly (browser or OS handler).
     if (!hasBiz && !hasWa) {
-      final textParam =
-          (message != null && message.isNotEmpty)
-              ? '?text=${Uri.encodeComponent(message)}'
-              : '';
+      final textParam = (message != null && message.isNotEmpty)
+          ? '?text=${Uri.encodeComponent(message)}'
+          : '';
       await launchUrl(
         Uri.parse('https://wa.me/$normalized$textParam'),
         mode: LaunchMode.externalApplication,
@@ -166,7 +166,11 @@ class WhatsAppLauncher {
               title: Text(l.whatsappBusinessLabel),
               onTap: () async {
                 Navigator.of(ctx).pop();
-                await _openInPackage(normalized, _waBizPackage, message: message);
+                await _openInPackage(
+                  normalized,
+                  _waBizPackage,
+                  message: message,
+                );
               },
             ),
             ListTile(
@@ -198,7 +202,10 @@ class WhatsAppLauncher {
     String rawPhone, {
     CountryDialCode defaultCountry = CountryDialCode.ksa,
   }) async {
-    final normalized = normalizeNumber(rawPhone, defaultCountry: defaultCountry);
+    final normalized = normalizeNumber(
+      rawPhone,
+      defaultCountry: defaultCountry,
+    );
     if (normalized.isEmpty) return false;
     try {
       return launchUrl(
@@ -211,7 +218,10 @@ class WhatsAppLauncher {
   }
 
   /// Direct open with message via wa.me (no chooser).
-  static Future<bool> openChatWithMessage(String rawPhone, String message) async {
+  static Future<bool> openChatWithMessage(
+    String rawPhone,
+    String message,
+  ) async {
     final normalized = normalizeNumber(rawPhone);
     if (normalized.isEmpty) return false;
     try {

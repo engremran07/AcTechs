@@ -15,8 +15,6 @@
 - Zero `flutter analyze` issues confirmed before build
 - Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
 
-
-
 - Scope: Full implementation of all P1/P2 findings from the v9 ultimate audit report.
 - Critical fixes:
   - AUTH-003: Added `allJobsProvider` + `pendingTransferRequestsProvider` to `signOut()` invalidation list in `auth_providers.dart`
@@ -39,8 +37,6 @@
 - Device: uninstalled + installed arm64 APK on R5GL22RGT9V
 - Committed and pushed
 
-
-
 - Scope: WhatsApp chooser, phone field in user creation, transferred badge, multi-select bulk actions in admin all-jobs screen, allJobs() limit, What's New dialog, governance docs sync.
 - Bug fixes (shipped as v2.2.1+90 earlier in session):
   - Fixed "Request Transfer" button shown when `techTransferRequiresApproval` is false — now performs direct transfer
@@ -60,8 +56,6 @@
 - Device: uninstalled + installed arm64 APK on R5GL22RGT9V
 - APK copy pushed to `/sdcard/Download/AcTechs-v2.2.2+91-arm64.apk`
 - Committed as `cfcadc7` — pre-commit hook bumped pubspec to v2.2.3+92
-
-
 
 - Scope: Full implementation of all 30 findings from the v8 audit report; new Job Transfer admin feature; enforceMinimumBuild runtime gate; per-ABI APK build + deployment.
 - Security:

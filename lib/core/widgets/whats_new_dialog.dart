@@ -9,6 +9,24 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.2.9': {
+    'en': [
+      'Deep audit: 8 new Dart lint rules added (safety-focused: avoid_slow_async_io, cancel_subscriptions, throw_in_finally, and more)',
+      'Code fix: file cleanup now uses synchronous File API (avoid_slow_async_io compliance)',
+      'Docs: PRD.md and ADR.md added to /docs/ — full product and architecture decision records',
+      'Docs: MASTER_BLUEPRINT.md table formatting improved',
+    ],
+    'ur': [
+      'گہرا آڈٹ: 8 نئے Dart لنٹ قوانین شامل کیے گئے (حفاظتی توجہ)',
+      'کوڈ درست: فائل صفائی اب sync API استعمال کرتی ہے',
+      'دستاویزات: /docs/ میں PRD.md اور ADR.md شامل کیے گئے',
+    ],
+    'ar': [
+      'تدقيق معمّق: إضافة 8 قواعد Dart جديدة مركّزة على الأمان',
+      'إصلاح: تنظيف الملفات يستخدم الآن File API المتزامن',
+      'توثيق: إضافة PRD.md وADR.md إلى مجلد /docs/',
+    ],
+  },
   '2.2.8': {
     'en': [
       'Fixed: WhatsApp chooser now correctly detects which apps are installed — tapping Business or Personal opens the right app every time',

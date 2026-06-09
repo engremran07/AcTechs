@@ -23,8 +23,8 @@ Future<void> cleanupPickedFile(PlatformFile source) async {
 
   try {
     final file = File(path);
-    if (await file.exists()) {
-      await file.delete();
+    if (file.existsSync()) {
+      file.deleteSync();
     }
   } catch (_) {
     // Best effort only.

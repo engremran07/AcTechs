@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.2.9+98
+
+- Code quality: 7 new Dart lint rules in `analysis_options.yaml` — `use_string_in_part_of_directives`, `avoid_slow_async_io`, `cancel_subscriptions`, `literal_only_boolean_expressions`, `test_types_in_equals`, `throw_in_finally`, `unnecessary_statements`
+- Fix: `picked_file_bytes_io.dart` — replaced async `file.exists()`/`file.delete()` with sync equivalents to comply with `avoid_slow_async_io` rule
+- Docs: `docs/PRD.md` created — full product requirements document (features, user stories, NFRs, roadmap)
+- Docs: `docs/ADR.md` created — 10 Architecture Decision Records (Riverpod, soft-delete, Spark tier, GoRouter, Freezed, RTL, WhatsApp MethodChannel, period lock, shared installs, FLAG_SECURE)
+- Docs: `MASTER_BLUEPRINT.md` Known Limitations table separator spacing fixed (MD060)
+- Docs: `SESSION_LOG.md` consecutive blank lines removed (MD012)
+- Docs: `.claude/CLAUDE.md` sign-off checklist code block indentation fixed (MD029)
+
 ## 2.2.8+97
 
 - Fix [P0]: WhatsApp chooser root cause fixed — `_isInstalled()` now uses a native `MethodChannel` calling `PackageManager.getPackageInfo()` instead of `canLaunchUrl()` which cannot distinguish between `com.whatsapp` and `com.whatsapp.w4b`; `_openInPackage()` now has correct `try/catch` fallback to `wa.me` when the intent fails; `MainActivity.kt` extended with `com.actechs.pk/packages` channel

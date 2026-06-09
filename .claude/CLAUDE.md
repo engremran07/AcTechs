@@ -128,12 +128,12 @@ The VS Code Problems panel AND `flutter analyze` output MUST show **zero issues 
 11. Build APK: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
 12. **Uninstall old APK first**, then install new one:
 
-   ```powershell
-   $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
-   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> uninstall com.actechs.pk
-   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
-   & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> push "d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk" /sdcard/Download/AcTechs-vX.X.X+N-arm64.apk
-   ```
+    ```powershell
+    $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+    & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> uninstall com.actechs.pk
+    & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> install d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
+    & "$env:ANDROID_HOME\platform-tools\adb.exe" -s <deviceId> push "d:\AcTechs\build\app\outputs\flutter-apk\app-arm64-v8a-release.apk" /sdcard/Download/AcTechs-vX.X.X+N-arm64.apk
+    ```
 
 13. `git add -A && git commit` — pre-commit hook will bump the version; update MASTER_BLUEPRINT after if the version changed.
 14. `git push origin main`
