@@ -1,5 +1,23 @@
 # SESSION_LOG
 
+## 2026-06-09 — v12 Audit Implementation — deep audit cross-check + web surface
+
+- **P0 deploy-web.yml App Check fix**: Added `--dart-define=FIREBASE_APP_CHECK_WEB_KEY` + App Check secret verification (exit 1) to deploy-web.yml build step — every live web deployment now has App Check protection
+- **deploy-web.yml flutter version**: Changed to `flutter-version-file: .flutter-version` (was hardcoded 3.41.6)
+- **build-apk.yml flutter version**: Changed default path to `flutter-version-file: .flutter-version`
+- **deploy-web.yml dead fallback removed**: Removed `elif [ -f lib/firebase_options.dart ]` (file not checked in since v2.1.0+87)
+- **P0 IMPLEMENTATION_PLAN.md rewrite**: Updated from v2.0.6+82 to v2.2.9+98 — full current architecture, all known constraints, genuine next priorities
+- **CI gate: IMPLEMENTATION_PLAN.md version sync**: New hygiene gate added to ci.yml
+- **Responsive.dart desktop breakpoints**: Added `desktop = 1024`, `desktopWide = 1440`, `isDesktop()`, `isDesktopWide()`, `maxContentWidth()` returns 900/1200px for desktop
+- **SecureScreen expanded**: Added to admin_all_jobs_screen, analytics_screen, flush_database_screen, reports_hub_screen (4 new screens; was 1 screen only)
+- **Settings company phone → PhoneInputField**: Replaced plain TextFormField in branding dialog with PhoneInputField (E.164 normalization, country picker)
+- **web/index.html**: Added viewport meta tag (WEB-011), loading spinner (WEB-010) with brand colours and fade-on-ready
+- **normalize_invoice_data.js production guard**: Added SEC-004 guard — script refuses to run unless `FIRESTORE_EMULATOR_HOST` is set or `FORCE_PRODUCTION=1` is explicit
+- **analysis_options.yaml**: Added `cancel_subscriptions` rule; verified zero issues
+- Zero `flutter analyze --no-pub` issues confirmed before build
+- Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
+- Device: uninstalled + installed arm64 APK on R5GL22RGT9V
+
 ## 2026-06-09 — v11 Audit Implementation — APK v2.2.7+96 → v2.2.8+97
 
 - **P0 WhatsApp Fix**: Root cause confirmed — `canLaunchUrl()` cannot distinguish packages; fixed with `MethodChannel('com.actechs.pk/packages')` calling `PackageManager.getPackageInfo()` in `MainActivity.kt`; `_openInPackage()` now has `try/catch` fallback to `wa.me`; both bugs documented in REG-013

@@ -10,7 +10,51 @@ It is updated at the end of every session that produces meaningful code changes.
 
 ---
 
-## Current Status — version 2.0.6+82 (as of 2026-05-28)
+## Current Status — version 2.2.9+98 (as of 2026-06-09)
+
+The codebase is **production-clean** for Android internal distribution.
+The v9–v12 audit series has addressed every P0/P1 critical finding.
+Current focus: web surface quality + remaining test coverage gaps.
+
+### Architecture (current)
+- Flutter 3.44.0 (CI) / local still on 3.41.6 (upgrade pending)
+- Dart SDK: ^3.11.0 (CI uses 3.12.1; local constraint upgrade pending local Flutter upgrade)
+- Firebase Spark tier — Auth + Firestore + Hosting + App Check
+- Riverpod 3.x (StreamProvider.autoDispose + derived Providers)
+- GoRouter 17.x (shell routes, role-based redirects)
+- Freezed 3.x (immutable models with @Default for Firestore field migration)
+- MethodChannel 'com.actechs.pk/packages' — WhatsApp package detection, SecureScreen
+- 3 independent domains: Jobs / In-Out (expenses+earnings) / AC Installs
+
+### What was implemented (v2.2.9+98 and prior sessions)
+- WhatsApp chooser: MethodChannel (PackageManager.getPackageInfo) — REG-013
+- Bulk transfer: parallel Future.wait — REG-014
+- Settlement cap UI warning — REG-015
+- SecureScreen (FLAG_SECURE) on: invoice_settlements, admin_all_jobs, analytics, flush_database, reports_hub
+- PhoneInputField with country picker (KSA default, E.164 normalization)
+- JobSearchFilter / UserSearchFilter (phone + job ID search)
+- Tech transfer UI on job_details_screen
+- What's New dialog (once per version, locale-aware)
+- CI: 80% coverage gate, version-drift gate, _changelog gate, Colors.white gate, App Check gate
+- Pre-commit hook: skips version bump on docs-only commits
+- docs/PRD.md + docs/ADR.md (10 architecture decisions)
+- 7 new Dart lint rules in analysis_options.yaml
+
+### Known Limitations (accepted — documented in MASTER_BLUEPRINT.md)
+- Settlement view capped at 200 records (.limit(200))
+- Settlement summary capped at 500 records (.limit(500))
+- allJobs() capped at 150 documents
+- No Crashlytics / crash reporting
+- Phone numbers not retroactively normalized
+- Dart SDK ^3.12.0 pending local Flutter SDK upgrade
+
+### Genuine next priorities (from v11/v12 audit)
+1. **TEST COVERAGE**: JobSearchFilter unit tests (12+ cases), WhatsAppLauncher.normalizeNumber() tests, transfer rule emulator tests
+2. **WEB NAVIGATION**: ZoomDrawer → NavigationRail/persistent nav at desktop widths (>1024px)
+3. **APP SHORTCUTS**: Wire Ctrl+F, Ctrl+E, Ctrl+P to admin_all_jobs_screen, analytics_screen, reports_hub_screen
+4. **ResponsiveBody**: Apply to remaining 25+ screens that lack maxContentWidth constraint
+5. **RESEND INVITATION**: Add "Resend Invitation" button in team screen for techs who never opened email
+6. **PWA SCREENSHOTS**: Replace icon images in manifest.json with real app screenshots
 
 The codebase is **production-clean**. The comprehensive 30-domain audit (D01–D30) confirmed by `flutter analyze --no-pub`, `flutter test` (423/423), and a full Firestore rules review is complete.
 

@@ -9,6 +9,24 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.0': {
+    'en': [
+      'Web App Check now active on every live deployment — admin data is properly protected',
+      'Screen recording protection expanded to All Jobs, Analytics, Flush Database, and Reports screens',
+      'Company phone number field now has country code picker (same as technician phone)',
+      'Website loading improved with branded spinner while app initialises',
+    ],
+    'ur': [
+      'ویب App Check اب ہر لائیو ڈیپلوئمنٹ پر فعال — ایڈمن ڈیٹا مناسب طور پر محفوظ',
+      'اسکرین ریکارڈنگ پروٹیکشن تمام جابز، اینالیٹکس، فلش ڈیٹابیس اور رپورٹس اسکرینز تک بڑھائی',
+      'کمپنی فون نمبر فیلڈ میں اب کنٹری کوڈ پِکر موجود ہے',
+    ],
+    'ar': [
+      'App Check للويب نشط الآن في كل عملية نشر مباشرة — بيانات المسؤول محمية بشكل صحيح',
+      'حماية تسجيل الشاشة موسّعة لتشمل كل المهام والتحليلات وتنظيف قاعدة البيانات والتقارير',
+      'حقل رقم هاتف الشركة يحتوي الآن على منتقي رمز الدولة',
+    ],
+  },
   '2.2.9': {
     'en': [
       'Deep audit: 8 new Dart lint rules added (safety-focused: avoid_slow_async_io, cancel_subscriptions, throw_in_finally, and more)',

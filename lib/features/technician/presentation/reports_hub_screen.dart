@@ -16,6 +16,7 @@ import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 
 class ReportsHubScreen extends ConsumerStatefulWidget {
   const ReportsHubScreen({super.key});
@@ -27,6 +28,18 @@ class ReportsHubScreen extends ConsumerStatefulWidget {
 class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   bool _isGenerating = false;
   String? _activeReport;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

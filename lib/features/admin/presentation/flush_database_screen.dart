@@ -10,6 +10,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 
 /// A two-step, time-delayed database flush confirmation screen.
 ///
@@ -42,11 +43,13 @@ class _FlushDatabaseScreenState extends ConsumerState<FlushDatabaseScreen> {
   @override
   void initState() {
     super.initState();
+    SecureScreen.enable();
     _startCountdown();
   }
 
   @override
   void dispose() {
+    SecureScreen.disable();
     _timer?.cancel();
     _passwordCtrl.dispose();
     super.dispose();

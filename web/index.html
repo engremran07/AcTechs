@@ -18,6 +18,8 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <!-- WEB-011: viewport meta tag for correct mobile browser rendering -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AC Technician Management System for Saudi Arabia operations.">
 
   <!-- Use CanvasKit renderer for correct complex-script (Urdu/Arabic) shaping -->
@@ -37,13 +39,30 @@
 </head>
 <body>
   <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
+    WEB-010: Loading spinner shown while Flutter initialises.
+    Automatically removed by Flutter once the engine takes over the DOM.
   -->
+  <div id="flutter-loading" style="
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; height:100vh; background:#0a0e14;
+    color:#00D4FF; font-family:sans-serif; gap:16px;">
+    <img src="icons/ac-techs-icon-192-v2.png" alt="AC Techs"
+         style="width:72px; height:72px; border-radius:16px;">
+    <div style="font-size:18px; font-weight:600; letter-spacing:1px;">AC Techs</div>
+    <div style="
+      width:40px; height:40px; border:4px solid #00D4FF33;
+      border-top-color:#00D4FF; border-radius:50%;
+      animation:spin 0.9s linear infinite;">
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
+  <script>
+    // Remove loading screen once Flutter signals it's ready.
+    window.addEventListener('flutter-first-frame', function() {
+      var el = document.getElementById('flutter-loading');
+      if (el) el.style.display = 'none';
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

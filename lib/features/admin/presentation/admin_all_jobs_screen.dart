@@ -10,6 +10,7 @@ import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/core/utils/job_search_filter.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class AdminAllJobsScreen extends ConsumerStatefulWidget {
@@ -25,6 +26,18 @@ class _AdminAllJobsScreenState extends ConsumerState<AdminAllJobsScreen> {
   String _techFilter = ''; // techId, or '' for all
   final Set<String> _selectedJobIds = {};
   bool _isBulkProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   List<JobModel> _applyFilters(List<JobModel> all) {
     var result = all;

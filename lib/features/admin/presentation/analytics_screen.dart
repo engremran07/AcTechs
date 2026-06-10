@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
@@ -54,6 +55,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   String _reportPreset = 'all';
   String _technicianFilter = 'all';
   DateTimeRange? _customDateRange;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   Color _chartLabelColor(BuildContext context, Color background) {
     final theme = Theme.of(context);

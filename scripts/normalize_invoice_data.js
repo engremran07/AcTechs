@@ -3,10 +3,30 @@
  * 1) Remove leading INV-/INV prefix from invoiceNumber.
  * 2) Merge duplicate job docs with same normalized invoice into one document.
  *
- * Usage:
+ * Usage (emulator only by default):
  *   cd scripts
- *   node normalize_invoice_data.js
+ *   FIRESTORE_EMULATOR_HOST=localhost:8080 node normalize_invoice_data.js
+ *
+ * To run against production (DESTRUCTIVE — data loss risk):
+ *   FORCE_PRODUCTION=1 node normalize_invoice_data.js
  */
+
+// SEC-004: prevent accidental production execution
+const IS_EMULATOR = process.env.FIRESTORE_EMULATOR_HOST;
+const FORCE_PROD = process.env.FORCE_PRODUCTION === '1';
+
+if (!IS_EMULATOR && !FORCE_PROD) {
+  console.error('❌ SAFETY GUARD: This script targets production Firestore.');
+  console.error('   Run against emulator:   FIRESTORE_EMULATOR_HOST=localhost:8080 node normalize_invoice_data.js');
+  console.error('   Run against production: FORCE_PRODUCTION=1 node normalize_invoice_data.js');
+  console.error('   Production use removes invoice prefixes and MERGES duplicates (data loss risk).');
+  process.exit(1);
+}
+
+if (FORCE_PROD) {
+  console.warn('⚠️  WARNING: Running against PRODUCTION Firestore. FORCE_PRODUCTION=1 was set.');
+  console.warn('   This will permanently modify invoice numbers. Ensure you have a Firestore backup.');
+}
 
 const admin = require('firebase-admin');
 const path = require('path');

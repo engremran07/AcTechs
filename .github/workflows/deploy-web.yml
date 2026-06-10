@@ -51,7 +51,7 @@ jobs:
       - name: Set up Flutter stable
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.6'
+          flutter-version-file: .flutter-version
           channel: stable
           cache: true
 
@@ -64,8 +64,6 @@ jobs:
           if [ -n "$FIREBASE_OPTIONS_DART" ]; then
             echo "$FIREBASE_OPTIONS_DART" | base64 --decode > lib/firebase_options.dart
             echo "Using firebase_options.dart from FIREBASE_OPTIONS_DART secret"
-          elif [ -f lib/firebase_options.dart ]; then
-            echo "Using checked-in lib/firebase_options.dart"
           fi
 
           if [ ! -f lib/firebase_options.dart ]; then
@@ -123,8 +121,22 @@ jobs:
       - name: Run web-safe test suite gate
         run: flutter test
 
+      - name: Verify App Check web key (required for production)
+        env:
+          WEB_APP_CHECK_KEY: ${{ secrets.FIREBASE_APP_CHECK_WEB_KEY }}
+        run: |
+          if [ -z "$WEB_APP_CHECK_KEY" ]; then
+            echo "\u274c FAIL: FIREBASE_APP_CHECK_WEB_KEY secret is not set."
+            echo "   Every live web deployment will have App Check disabled."
+            echo "   Register reCAPTCHA v3 key in Firebase Console and add as a GitHub secret."
+            exit 1
+          fi
+          echo "\u2705 FIREBASE_APP_CHECK_WEB_KEY is configured"
+
       - name: Build web
-        run: flutter build web --release --no-wasm-dry-run
+        run: >-
+          flutter build web --release --no-wasm-dry-run
+          --dart-define=FIREBASE_APP_CHECK_WEB_KEY=${{ secrets.FIREBASE_APP_CHECK_WEB_KEY }}
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v4

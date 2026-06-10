@@ -356,6 +356,18 @@ jobs:
           fi
           echo "✅ MASTER_BLUEPRINT version is in sync"
 
+      - name: Gate — IMPLEMENTATION_PLAN.md version matches pubspec
+        run: |
+          IMPL_VER=$(grep 'Current Status.*version' IMPLEMENTATION_PLAN.md | grep -oP '[\d]+\.[\d]+\.[\d]+\+[\d]+' | head -1)
+          PUBSPEC_VER=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | tr -d '\r')
+          echo "IMPLEMENTATION_PLAN: ${IMPL_VER}  pubspec: ${PUBSPEC_VER}"
+          if [ "$IMPL_VER" != "$PUBSPEC_VER" ]; then
+            echo "❌ FAIL: IMPLEMENTATION_PLAN.md version '${IMPL_VER}' does not match pubspec '${PUBSPEC_VER}'."
+            echo "Fix: update the 'Current Status -- version X.Y.Z+N' line in IMPLEMENTATION_PLAN.md"
+            exit 1
+          fi
+          echo "✅ IMPLEMENTATION_PLAN.md version is in sync"
+
       - name: Gate — Collection name consistency
         run: |
           if grep -rn "ac_installations" .claude/ .github/instructions/ README.md 2>/dev/null | grep -v "\.git"; then

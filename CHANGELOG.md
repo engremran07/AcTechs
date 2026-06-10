@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2.3.0+99
+
+- Fix [P0]: deploy-web.yml now passes `--dart-define=FIREBASE_APP_CHECK_WEB_KEY` — every live web deployment has App Check enabled (was silently disabled since deploy-web.yml was created)
+- Fix [P0]: IMPLEMENTATION_PLAN.md rewritten from v2.0.6+82 to v2.2.9+98 — all current architecture, constraints, and genuine next priorities documented
+- CI: IMPLEMENTATION_PLAN.md version gate added to ci.yml — fails if version drifts behind pubspec.yaml
+- CI: deploy-web.yml and build-apk.yml now use `flutter-version-file: .flutter-version` (was hardcoded 3.41.6)
+- CI: deploy-web.yml dead `firebase_options.dart` fallback removed
+- SecureScreen (FLAG_SECURE): expanded from 1 screen to 5 — now on admin_all_jobs_screen, analytics_screen, flush_database_screen, reports_hub_screen (settlement screen was already covered)
+- Settings: company phone now uses PhoneInputField (E.164 normalization, country picker) instead of plain TextFormField
+- Web: viewport meta tag added to index.html (WEB-011 fix)
+- Web: branded loading spinner added to index.html while Flutter initialises (WEB-010 fix)
+- Web: responsive.dart now has `desktop=1024` and `desktopWide=1440` breakpoints; `maxContentWidth()` returns 900–1200px for desktop widths
+- Security: normalize_invoice_data.js now refuses to run against production unless `FORCE_PRODUCTION=1` is explicitly set
+- Governance: analysis_options.yaml `cancel_subscriptions` rule added
+
 ## 2.2.9+98
 
 - Code quality: 7 new Dart lint rules in `analysis_options.yaml` — `use_string_in_part_of_directives`, `avoid_slow_async_io`, `cancel_subscriptions`, `literal_only_boolean_expressions`, `test_types_in_equals`, `throw_in_finally`, `unnecessary_statements`

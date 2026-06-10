@@ -1272,21 +1272,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: phoneCtrl,
-                        textInputAction: TextInputAction.done,
-                        keyboardType: TextInputType.phone,
-                        enableInteractiveSelection: true,
-                        onChanged: (_) => setDialogState(() {}),
-                        decoration: InputDecoration(
-                          hintText: l.companyPhoneNumber,
-                          prefixIcon: const Icon(Icons.phone_outlined),
-                        ),
-                        validator: (value) {
-                          final trimmed = value?.trim() ?? '';
-                          if (trimmed.isEmpty) return null;
-                          return trimmed.length < 7 ? l.enterValidPhone : null;
+                      PhoneInputField(
+                        initialValue: phoneCtrl.text,
+                        onChanged: (e164) {
+                          phoneCtrl.text = e164;
+                          setDialogState(() {});
                         },
+                        labelText: l.companyPhoneNumber,
+                        optional: true,
                       ),
                     ],
                   ),
