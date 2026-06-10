@@ -1,6 +1,6 @@
 # SESSION_LOG
 
-## 2026-06-11 — Open-items closure pass — APK v2.3.3+102
+## 2026-06-11 — Open-items closure pass — APK v2.3.4+103
 
 - **WA-003**: `WhatsAppLauncher.normalizeNumber()` now detects NANP local format (`NXXNXXXXXX`) and prefixes `1`; added table-driven tests in `test/unit/core/utils/whatsapp_launcher_test.dart`
 - **WA-004**: `TechProfileScreen` edit dialog now uses `PhoneInputField`; added `AuthRepository.updateOwnProfile(name, phone)` so techs can update phone + name in one action

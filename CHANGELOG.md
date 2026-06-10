@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.3.3+102
+## 2.3.4+103
 
 - Fix [WA-003]: `WhatsAppLauncher.normalizeNumber()` now detects NANP local 10-digit numbers and prepends `1` automatically; added table-driven unit tests for KSA + NANP normalization cases
 - Fix [WA-004]: `TechProfileScreen` edit dialog now includes `PhoneInputField`; profile update persists both name and phone via `AuthRepository.updateOwnProfile()`

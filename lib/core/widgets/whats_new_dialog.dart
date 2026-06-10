@@ -9,7 +9,7 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
-  '2.3.3': {
+  '2.3.4': {
     'en': [
       'Phone editing in Profile now uses country-code aware input and saves in E.164 format',
       'Improved WhatsApp number normalization for North American (NANP) local numbers',
