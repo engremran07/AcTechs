@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.3.3+102
+
+- Fix [WA-003]: `WhatsAppLauncher.normalizeNumber()` now detects NANP local 10-digit numbers and prepends `1` automatically; added table-driven unit tests for KSA + NANP normalization cases
+- Fix [WA-004]: `TechProfileScreen` edit dialog now includes `PhoneInputField`; profile update persists both name and phone via `AuthRepository.updateOwnProfile()`
+- Fix [WEB-002]: `ResponsiveBody` now wraps `TechShell` and `AdminShell` route children (`padding: EdgeInsets.zero`) to apply centered width constraints across all shell screens
+- Fix [PLAY-002]: Firebase Crashlytics integrated for non-web builds (`main.dart` handlers + collection toggle + pubspec dependency)
+- Fix [PLAY-001/003]: Added hosted privacy policy page scaffold (`web/privacy-policy.html`) and Play Store metadata checklist (`docs/play-store-metadata.md`)
+
 ## 2.3.2+101
 
 - Governance: version sync after pre-commit hook bump

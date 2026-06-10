@@ -4,7 +4,7 @@
 
 - Project: AC Techs
 - Date: 2026-06-11
-- Current app version: 2.3.2+101
+- Current app version: 2.3.3+102
 - Release surfaces: Android APK and Flutter web
 - Backend: Firebase Auth, Cloud Firestore, Hosting, App Check
 
@@ -73,7 +73,6 @@ These domains are intentionally separate. Expense and earning data never live in
 | Settlement view capped at 200 records | `fetchSettlementCandidates()` | Spark free-tier 50k reads/day; current operation never exceeds 200 unsettled jobs simultaneously | v8 audit |
 | Settlement summary capped at 500 records | `fetchSettlementSummary()` | Same Spark tier constraint | v8 audit |
 | allJobs() capped at 150 documents | `AdminAllJobsScreen` | Bounded to prevent quota exhaustion; server-side filtering deferred to Blaze tier | v9 audit |
-| No Crashlytics / crash reporting | Whole app | Internal deployment; field crashes reported manually until Play Store publish | v9 audit |
 | Phone numbers not retroactively normalized | `UserModel.phone` | One-time migration requires re-saving all technician records; safe to skip until next admin review | v11 audit |
 
 ## Supported platforms

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
@@ -71,7 +72,10 @@ class _TechShellState extends ConsumerState<TechShell> {
         isHome: isHome,
         homeRoute: '/tech',
         child: Scaffold(
-          body: widget.child,
+          body: ResponsiveBody(
+            padding: EdgeInsets.zero,
+            child: widget.child,
+          ),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               border: Border(

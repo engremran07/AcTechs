@@ -1,5 +1,13 @@
 # SESSION_LOG
 
+## 2026-06-11 — Open-items closure pass — APK v2.3.3+102
+
+- **WA-003**: `WhatsAppLauncher.normalizeNumber()` now detects NANP local format (`NXXNXXXXXX`) and prefixes `1`; added table-driven tests in `test/unit/core/utils/whatsapp_launcher_test.dart`
+- **WA-004**: `TechProfileScreen` edit dialog now uses `PhoneInputField`; added `AuthRepository.updateOwnProfile(name, phone)` so techs can update phone + name in one action
+- **WEB-002**: `ResponsiveBody` applied at shell level (`TechShell` + `AdminShell`) with zero extra padding for consistent width constraints across shell-routed screens
+- **PLAY-002**: Crashlytics integrated in `main.dart` for non-web builds with fatal/error handlers and release-only collection enablement
+- **PLAY-001/003**: Added `web/privacy-policy.html` (hostable policy page) and `docs/play-store-metadata.md` (Play listing + Data Safety checklist)
+
 ## 2026-06-11 — v12 Audit Implementation — APK v2.3.1+100
 
 - **P0 WA-001/REG-016**: Samsung One UI always opened Business when Personal was selected — root cause: Samsung ActivityManagerService ignores `intent://` `package=` parameter; fix: added `openWhatsApp` handler to `MainActivity.kt` using `Intent.setPackage()`; updated `_openInPackage()` in `whatsapp_launcher.dart` to route through `MethodChannel` instead of `launchUrl()`

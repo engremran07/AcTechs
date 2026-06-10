@@ -45,11 +45,31 @@ class WhatsAppLauncher {
     if (n.isEmpty) return '';
     if (n.startsWith('+')) n = n.substring(1);
     if (n.startsWith('00')) n = n.substring(2);
+    n = n.replaceAll(RegExp(r'\D'), '');
+
+    if (_looksLikeNanpLocal(n)) {
+      return '1$n';
+    }
+
+    if (_looksLikeSaudiLocal(n) && defaultCountry == CountryDialCode.ksa) {
+      return '${defaultCountry.dialCode}$n';
+    }
+
     // Strip ALL leading zeros then prepend country code
     if (n.startsWith('0')) {
       n = '${defaultCountry.dialCode}${n.replaceFirst(RegExp(r'^0+'), '')}';
     }
-    return n.replaceAll(RegExp(r'\D'), '');
+    return n;
+  }
+
+  /// NANP local format: NXXNXXXXXX where N is 2-9.
+  static bool _looksLikeNanpLocal(String digits) {
+    return RegExp(r'^[2-9]\d{2}[2-9]\d{6}$').hasMatch(digits);
+  }
+
+  /// KSA local mobile format (9 digits starting with 5).
+  static bool _looksLikeSaudiLocal(String digits) {
+    return RegExp(r'^5\d{8}$').hasMatch(digits);
   }
 
   // ── Reliable package detection via MethodChannel ──────────────────────────

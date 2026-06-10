@@ -59,13 +59,9 @@ class _AdminShellState extends State<AdminShell> {
       isHome: isHome,
       homeRoute: '/admin',
       child: Scaffold(
-        body: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: Responsive.maxContentWidth(context),
-            ),
-            child: widget.child,
-          ),
+        body: ResponsiveBody(
+          padding: EdgeInsets.zero,
+          child: widget.child,
         ),
         bottomNavigationBar: isDesktop
             ? null

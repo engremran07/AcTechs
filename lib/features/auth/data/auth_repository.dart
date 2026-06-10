@@ -209,6 +209,36 @@ class AuthRepository {
     }
   }
 
+  Future<void> updateOwnProfile({
+    required String name,
+    required String phone,
+  }) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) throw AuthException.sessionExpired();
+
+      final trimmedName = name.trim();
+      if (trimmedName.isEmpty) throw AuthException.updateFailed();
+
+      final normalizedPhone = phone.trim();
+      final updates = <String, dynamic>{
+        'name': trimmedName,
+        'phone': normalizedPhone,
+      };
+
+      if ((user.displayName ?? '').trim() != trimmedName) {
+        await user.updateDisplayName(trimmedName);
+      }
+
+      await _userDocRef(user.uid).update(updates);
+    } on AuthException {
+      rethrow;
+    } on FirebaseException catch (e) {
+      debugPrint('updateOwnProfile error: ${e.code} — ${e.message}');
+      throw AuthException.updateFailed();
+    }
+  }
+
   Future<void> updateLanguage(String language) async {
     try {
       final user = auth.currentUser;

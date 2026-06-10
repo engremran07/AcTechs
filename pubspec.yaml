@@ -1,7 +1,7 @@
 name: ac_techs
 description: "AC Techs - Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 2.3.2+101
+version: 2.3.4+103
 
 environment:
   sdk: ^3.11.0
@@ -17,6 +17,7 @@ dependencies:
   firebase_auth: ^6.3.0
   cloud_firestore: ^6.2.0
   firebase_app_check: ^0.4.2
+  firebase_crashlytics: ^5.0.0
 
   # State Management
   flutter_riverpod: ^3.3.1

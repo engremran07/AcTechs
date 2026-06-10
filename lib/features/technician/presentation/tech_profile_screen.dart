@@ -31,12 +31,13 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _showEditNameDialog() async {
+  Future<void> _showEditProfileDialog() async {
     final l = AppLocalizations.of(context)!;
     final user = ref.read(currentUserProvider).value;
     if (user == null) return;
 
     final nameCtrl = TextEditingController(text: user.name);
+    var phoneValue = user.phone;
     final formKey = GlobalKey<FormState>();
 
     final confirmed = await showDialog<bool>(
@@ -45,22 +46,35 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
         title: Text(l.editProfile),
         content: Form(
           key: formKey,
-          child: TextFormField(
-            controller: nameCtrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.done,
-            enableInteractiveSelection: true,
-            decoration: InputDecoration(
-              hintText: l.name,
-              helperText: l.changeYourName,
-              prefixIcon: const Icon(Icons.person_outline),
-            ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? l.required : null,
-            onFieldSubmitted: (_) {
-              if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
-            },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameCtrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
+                enableInteractiveSelection: true,
+                decoration: InputDecoration(
+                  hintText: l.name,
+                  helperText: l.changeYourName,
+                  prefixIcon: const Icon(Icons.person_outline),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? l.required : null,
+                onFieldSubmitted: (_) {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(ctx, true);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              PhoneInputField(
+                initialValue: user.phone,
+                onChanged: (value) => phoneValue = value,
+                optional: true,
+              ),
+            ],
           ),
         ),
         actions: [
@@ -80,12 +94,14 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
 
     if (confirmed != true || !mounted) return;
     final newName = nameCtrl.text.trim();
-    if (newName == user.name) return;
+    final normalizedPhone = phoneValue.trim();
+    if (newName == user.name && normalizedPhone == user.phone) return;
 
     final locale = Localizations.localeOf(context).languageCode;
     try {
-      // Update Firebase Auth displayName + Firestore in one call
-      await ref.read(authRepositoryProvider).updateDisplayName(newName);
+      await ref
+          .read(authRepositoryProvider)
+          .updateOwnProfile(name: newName, phone: normalizedPhone);
       if (!mounted) return;
       AppFeedback.success(
         context,
@@ -109,7 +125,7 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: l.editProfile,
-            onPressed: _showEditNameDialog,
+            onPressed: _showEditProfileDialog,
           ),
         ],
       ),
@@ -151,6 +167,11 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
                   user?.email ?? '',
                   style: Theme.of(context).textTheme.bodySmall,
                 ).animate().fadeIn(delay: 200.ms),
+                if ((user?.phone ?? '').isNotEmpty)
+                  Text(
+                    user!.phone.toDisplayPhone(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ).animate().fadeIn(delay: 260.ms),
               ],
             ),
           ),

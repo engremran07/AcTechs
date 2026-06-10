@@ -9,6 +9,26 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.3': {
+    'en': [
+      'Phone editing in Profile now uses country-code aware input and saves in E.164 format',
+      'Improved WhatsApp number normalization for North American (NANP) local numbers',
+      'Responsive width wrapper now applies consistently across technician and admin shell screens',
+      'Crashlytics crash reporting enabled for Android release builds',
+    ],
+    'ur': [
+      'پروفائل میں فون ایڈیٹنگ اب کنٹری کوڈ والے ان پٹ کے ساتھ E.164 فارمیٹ میں محفوظ ہوتی ہے',
+      'شمالی امریکہ (NANP) کے لوکل نمبرز کے لیے واٹس ایپ نمبر نارملائزیشن بہتر کی گئی',
+      'ریسپانسیو چوڑائی ریپر اب ٹیکنیشن اور ایڈمن دونوں شیل اسکرینز پر یکساں طور پر لاگو ہے',
+      'Android ریلیز بلڈز کے لیے Crashlytics فعال کر دیا گیا',
+    ],
+    'ar': [
+      'تحرير رقم الهاتف في الملف الشخصي أصبح يدعم رمز الدولة ويحفظ بصيغة E.164',
+      'تحسين تطبيع أرقام واتساب لأرقام أمريكا الشمالية المحلية (NANP)',
+      'تطبيق غلاف العرض المتجاوب بشكل موحّد على شاشات الفني والمسؤول داخل الشِل',
+      'تم تفعيل Crashlytics لبُنى Android الإصدارية',
+    ],
+  },
   '2.3.2': {
     'en': ['Governance: version sync (docs-only)'],
     'ur': ['ورژن سنک'],

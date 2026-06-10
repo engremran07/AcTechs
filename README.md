@@ -32,6 +32,7 @@ The data model is intentionally split into three separate business domains: Jobs
 - [Developer Commands](#developer-commands)
 - [Testing](#-testing)
 - [Governance Files](#-governance-files)
+- [Play Store Readiness](#-play-store-readiness)
 - [Operational Notes](#-operational-notes)
 
 ## ✨ Overview
@@ -370,6 +371,16 @@ Additional references:
 | `docs/domain-architecture.md` | Human-readable domain and ownership guide |
 | `docs/audits/README.md` | Index of audit artifacts |
 | `.github/workflows/README.md` | Workflow summary and local equivalents |
+
+## 📱 Play Store Readiness
+
+- Privacy policy page (hosted): `web/privacy-policy.html`
+- Play listing + data safety checklist: `docs/play-store-metadata.md`
+- Crash reporting: Firebase Crashlytics enabled in release-mode Android builds
+
+Before Play submission, publish the web build and set the listing policy URL to:
+
+- `https://<your-hosting-domain>/privacy-policy.html`
 
 ## 🧭 Operational Notes
 
