@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.2.10+99
+
+- Governance: version sync after pre-commit hook bump
+
 ## 2.3.0+99
 
 - Fix [P0]: deploy-web.yml now passes `--dart-define=FIREBASE_APP_CHECK_WEB_KEY` — every live web deployment has App Check enabled (was silently disabled since deploy-web.yml was created)

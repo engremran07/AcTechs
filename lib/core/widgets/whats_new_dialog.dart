@@ -9,6 +9,11 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.2.10': {
+    'en': ['Governance: version sync (docs-only)'],
+    'ur': ['ورژن سنک'],
+    'ar': ['مزامنة الإصدار'],
+  },
   '2.3.0': {
     'en': [
       'Web App Check now active on every live deployment — admin data is properly protected',
