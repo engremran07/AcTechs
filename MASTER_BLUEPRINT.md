@@ -4,7 +4,7 @@
 
 - Project: AC Techs
 - Date: 2026-06-11
-- Current app version: 2.3.1+100
+- Current app version: 2.3.2+101
 - Release surfaces: Android APK and Flutter web
 - Backend: Firebase Auth, Cloud Firestore, Hosting, App Check
 

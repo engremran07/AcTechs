@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.3.2+101
+
+- Governance: version sync after pre-commit hook bump
+
 ## 2.3.1+100
 
 - Fix [P0/REG-016]: WhatsApp always opened Business on Samsung One UI — root cause: `intent://` `package=` ignored by Samsung ActivityManagerService; fix: `MethodChannel` `Intent.setPackage()` in Kotlin `openWhatsApp` handler; `_openInPackage()` now routes through `MethodChannel` not `launchUrl()`

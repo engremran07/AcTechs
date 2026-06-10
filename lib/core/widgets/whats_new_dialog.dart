@@ -9,6 +9,11 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.2': {
+    'en': ['Governance: version sync (docs-only)'],
+    'ur': ['ورژن سنک'],
+    'ar': ['مزامنة الإصدار'],
+  },
   '2.3.1': {
     'en': [
       'Fixed: WhatsApp now opens the correct app on Samsung Galaxy devices — Business and Personal work correctly on all Android skins',
