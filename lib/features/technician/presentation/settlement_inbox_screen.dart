@@ -9,6 +9,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 
 class SettlementInboxScreen extends ConsumerStatefulWidget {
   const SettlementInboxScreen({super.key});
@@ -20,6 +21,18 @@ class SettlementInboxScreen extends ConsumerStatefulWidget {
 
 class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
   final Set<String> _processingBatchIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   Future<String?> _promptComment(BuildContext context) async {
     final controller = TextEditingController();

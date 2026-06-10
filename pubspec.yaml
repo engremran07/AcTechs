@@ -1,10 +1,10 @@
 name: ac_techs
 description: "AC Techs - Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 2.2.10+99
+version: 2.3.2+101
 
 environment:
-  sdk: ^3.11.0 # CI uses Flutter 3.44.0 (Dart 3.12.1); update to ^3.12.0 after local flutter upgrade
+  sdk: ^3.11.0
 
 dependencies:
   flutter:

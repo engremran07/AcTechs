@@ -643,17 +643,13 @@ class _SubmitJobScreenState extends ConsumerState<SubmitJobScreen> {
               );
               for (final phone in teamPhones) {
                 if (!mounted) break;
-                final opened = await WhatsAppLauncher.openChatWithMessage(
+                // WA-002: use showChooserWithMessage so the tech can pick
+                // Business vs Personal WhatsApp for each team notification.
+                await WhatsAppLauncher.showChooserWithMessage(
+                  context, // ignore: use_build_context_synchronously
                   phone,
                   message,
                 );
-                if (!opened && mounted) {
-                  AppFeedback.error(
-                    context, // ignore: use_build_context_synchronously
-                    message: l.whatsappNotAvailable,
-                  );
-                  break;
-                }
               }
             }
           }

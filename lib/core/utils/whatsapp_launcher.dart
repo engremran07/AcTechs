@@ -75,33 +75,40 @@ class WhatsAppLauncher {
 
   // ── Open in a specific WhatsApp package ────────────────────────────────────
 
-  /// Opens [normalized] phone in [package] via Android intent, with a
-  /// guaranteed fallback to the universal wa.me link if the intent fails.
+  /// Opens [normalized] phone in [package] using Intent.setPackage() via
+  /// MethodChannel — the only reliable mechanism on Samsung One UI and other
+  /// OEM Android skins where intent:// package= constraints are silently
+  /// ignored by the modified ActivityManagerService.
+  ///
+  /// Falls back to the universal wa.me link when:
+  ///   - Running on web or non-Android platform
+  ///   - MethodChannel reports ActivityNotFoundException (app not installed)
+  ///   - Any exception occurs
   static Future<void> _openInPackage(
     String normalized,
     String package, {
     String? message,
   }) async {
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final launched = await _channel.invokeMethod<bool>('openWhatsApp', {
+          'phone': normalized,
+          'package': package,
+          'message': message ?? '',
+        });
+        if (launched == true) return;
+        // false = ActivityNotFoundException — package not installed.
+        // Fall through to wa.me universal link.
+      } on PlatformException {
+        // Channel error — fall through.
+      } on MissingPluginException {
+        // Test environment — fall through.
+      }
+    }
+    // Universal fallback: opens in browser or OS default WA handler.
     final textParam = (message != null && message.isNotEmpty)
         ? '?text=${Uri.encodeComponent(message)}'
         : '';
-    if (!kIsWeb) {
-      final intentUri = Uri.parse(
-        'intent://send?phone=$normalized'
-        '#Intent;scheme=whatsapp;package=$package;end',
-      );
-      try {
-        final launched = await launchUrl(
-          intentUri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (launched) return;
-        // launchUrl returned false — package not resolved. Fall through.
-      } on PlatformException {
-        // Intent rejected by platform. Fall through to wa.me.
-      }
-    }
-    // Universal fallback — works even if neither app is installed (opens browser).
     await launchUrl(
       Uri.parse('https://wa.me/$normalized$textParam'),
       mode: LaunchMode.externalApplication,

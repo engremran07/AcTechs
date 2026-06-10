@@ -9,6 +9,26 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.1': {
+    'en': [
+      'Fixed: WhatsApp now opens the correct app on Samsung Galaxy devices — Business and Personal work correctly on all Android skins',
+      'Fixed: Version numbering corrected (2.3.1 replaces incorrect 2.2.10)',
+      'New: Admin web interface now shows a navigation rail on desktop (1024px+) instead of the mobile drawer',
+      'Security: Screen recording protection expanded to Approvals, Settlement Inbox, and Profile screens',
+    ],
+    'ur': [
+      'درست کیا: واٹس ایپ اب سام سنگ گلیکسی ڈیوائسز پر درست ایپ کھولتا ہے',
+      'درست کیا: ورژن نمبر درست کیا گیا (2.3.1 نے 2.2.10 کی جگہ لی)',
+      'نیا: ایڈمن ویب انٹرفیس اب ڈیسک ٹاپ پر نیویگیشن ریل دکھاتا ہے',
+      'سیکیورٹی: اسکرین پروٹیکشن اپروولز اور پروفائل اسکرینز تک بڑھائی',
+    ],
+    'ar': [
+      'إصلاح: واتساب يفتح الآن التطبيق الصحيح على أجهزة سامسونج جالاكسي',
+      'إصلاح: تصحيح ترقيم الإصدار (2.3.1 يحل محل 2.2.10 الخاطئ)',
+      'جديد: واجهة ويب المسؤول تعرض الآن شريط تنقل على سطح المكتب (1024 بكسل+)',
+      'أمان: حماية تسجيل الشاشة موسّعة لتشمل الموافقات وصندوق التسويات والملف الشخصي',
+    ],
+  },
   '2.2.10': {
     'en': ['Governance: version sync (docs-only)'],
     'ur': ['ورژن سنک'],

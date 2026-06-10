@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2.3.1+100
+
+- Fix [P0/REG-016]: WhatsApp always opened Business on Samsung One UI — root cause: `intent://` `package=` ignored by Samsung ActivityManagerService; fix: `MethodChannel` `Intent.setPackage()` in Kotlin `openWhatsApp` handler; `_openInPackage()` now routes through `MethodChannel` not `launchUrl()`
+- Fix [P0/REG-017]: Version name collision — `2.2.10+99` and `2.3.0+99` shared versionCode=99; corrected to `2.3.1+100`
+- Fix [WA-002]: submit_job_screen team notification now uses `showChooserWithMessage` instead of `openChatWithMessage` — techs get Business/Personal chooser when notifying colleagues
+- Fix [SEC-001]: SecureScreen now active on `approvals_screen`, `settlement_inbox_screen`, `tech_profile_screen` — 7 screens total now protected
+- Fix [WEB-001]: Admin shell now shows `NavigationRail` on desktop widths (kIsWeb + ≥1024px); ZoomDrawer still used on mobile/tablet
+- Fix [WEB-001]: Admin shell body constrained via `Responsive.maxContentWidth()` — prevents full-browser-width layouts on desktop
+- Fix [WEB-005]: deploy-web.yml now runs `flutter test` before building web (was missing)
+- Fix [PLAY-005]: release.yml now archives ProGuard `mapping.txt` as a 365-day artifact — required for Crashlytics stack trace deobfuscation
+- Governance: REG-016 (Samsung WA bug) and REG-017 (version collision) added to REGRESSION_REGISTRY
+
 ## 2.2.10+99
 
 - Governance: version sync after pre-commit hook bump

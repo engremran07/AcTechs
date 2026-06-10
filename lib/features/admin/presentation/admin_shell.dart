@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ac_techs/core/utils/responsive.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -48,70 +50,128 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final idx = _currentIndex(context);
     final isHome = idx == 0;
-    return ZoomDrawerWrapper(
-      controller: _drawerController,
-      menuScreen: const DrawerMenuContent(isAdmin: true),
-      mainScreen: ShellBackNavigationScope(
-        isHome: isHome,
-        homeRoute: '/admin',
-        child: Scaffold(
-          body: widget.child,
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
-                  width: 0.5,
+    final isDesktop = kIsWeb && Responsive.isDesktop(context);
+
+    final mainContent = ShellBackNavigationScope(
+      isHome: isHome,
+      homeRoute: '/admin',
+      child: Scaffold(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: Responsive.maxContentWidth(context),
+            ),
+            child: widget.child,
+          ),
+        ),
+        bottomNavigationBar: isDesktop
+            ? null
+            : Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.6),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                child: NavigationBar(
+                  selectedIndex: idx < 0 ? 0 : idx,
+                  onDestinationSelected: (index) {
+                    final current = idx;
+                    if (current == index) {
+                      HapticFeedback.selectionClick();
+                      return;
+                    }
+                    _navigateTo(context, index);
+                  },
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.dashboard_outlined),
+                      selectedIcon: const Icon(Icons.dashboard_rounded),
+                      label: l.dashboard,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.pending_actions_outlined),
+                      selectedIcon: const Icon(Icons.pending_actions_rounded),
+                      label: l.approvals,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.analytics_outlined),
+                      selectedIcon: const Icon(Icons.analytics_rounded),
+                      label: l.analytics,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.people_outline_rounded),
+                      selectedIcon: const Icon(Icons.people_rounded),
+                      label: l.team,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            child: NavigationBar(
+      ),
+    );
+
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
               selectedIndex: idx < 0 ? 0 : idx,
-              onDestinationSelected: (index) {
-                final current = idx;
-                if (current == index) {
-                  HapticFeedback.selectionClick();
-                  return;
-                }
-                switch (index) {
-                  case 0:
-                    context.go('/admin');
-                  case 1:
-                    context.go('/admin/approvals');
-                  case 2:
-                    context.go('/admin/analytics');
-                  case 3:
-                    context.go('/admin/team');
-                }
-              },
+              labelType: NavigationRailLabelType.all,
+              onDestinationSelected: (index) => _navigateTo(context, index),
               destinations: [
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.dashboard_outlined),
                   selectedIcon: const Icon(Icons.dashboard_rounded),
-                  label: AppLocalizations.of(context)!.dashboard,
+                  label: Text(l.dashboard),
                 ),
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.pending_actions_outlined),
                   selectedIcon: const Icon(Icons.pending_actions_rounded),
-                  label: AppLocalizations.of(context)!.approvals,
+                  label: Text(l.approvals),
                 ),
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.analytics_outlined),
                   selectedIcon: const Icon(Icons.analytics_rounded),
-                  label: AppLocalizations.of(context)!.analytics,
+                  label: Text(l.analytics),
                 ),
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.people_outline_rounded),
                   selectedIcon: const Icon(Icons.people_rounded),
-                  label: AppLocalizations.of(context)!.team,
+                  label: Text(l.team),
                 ),
               ],
             ),
-          ),
+            const VerticalDivider(thickness: 0.5, width: 1),
+            Expanded(child: mainContent),
+          ],
         ),
-      ),
+      );
+    }
+
+    return ZoomDrawerWrapper(
+      controller: _drawerController,
+      menuScreen: const DrawerMenuContent(isAdmin: true),
+      mainScreen: mainContent,
     );
+  }
+
+  void _navigateTo(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        context.go('/admin');
+      case 1:
+        context.go('/admin/approvals');
+      case 2:
+        context.go('/admin/analytics');
+      case 3:
+        context.go('/admin/team');
+    }
   }
 }

@@ -11,6 +11,7 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/category_translator.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/utils/job_search_filter.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
@@ -34,6 +35,18 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   final Set<String> _selected = {};
   bool _isBulkProcessing = false;
   bool _isApprovingInOut = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   Map<String, List<JobModel>> _sharedJobGroups(List<JobModel> jobs) {
     final groups = <String, List<JobModel>>{};

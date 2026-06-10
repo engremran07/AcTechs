@@ -1,5 +1,18 @@
 # SESSION_LOG
 
+## 2026-06-11 — v12 Audit Implementation — APK v2.3.1+100
+
+- **P0 WA-001/REG-016**: Samsung One UI always opened Business when Personal was selected — root cause: Samsung ActivityManagerService ignores `intent://` `package=` parameter; fix: added `openWhatsApp` handler to `MainActivity.kt` using `Intent.setPackage()`; updated `_openInPackage()` in `whatsapp_launcher.dart` to route through `MethodChannel` instead of `launchUrl()`
+- **P0 GOV-P0-001/REG-017**: Version collision `2.2.10+99` and `2.3.0+99` shared versionCode=99; pre-commit hook produced wrong version name; manually corrected to `2.3.1+100`
+- **WA-002**: submit_job_screen team notification → `showChooserWithMessage` (was `openChatWithMessage`)
+- **SEC-001**: SecureScreen added to `approvals_screen`, `settlement_inbox_screen`, `tech_profile_screen` — 7 screens now protected total
+- **WEB-001**: Admin shell now shows `NavigationRail` on desktop (kIsWeb + ≥1024px); body constrained to `Responsive.maxContentWidth()`
+- **WEB-005**: deploy-web.yml — added `flutter test` step before web build
+- **PLAY-005**: release.yml — ProGuard `mapping.txt` archived as 365-day artifact
+- **Governance**: REG-016, REG-017 added to REGRESSION_REGISTRY; `_changelog` `2.3.1` entry added; all governance docs synced to `2.3.1+100`
+- Zero `flutter analyze --no-pub` issues confirmed before build
+- Build: `flutter build apk --release --split-per-abi --no-tree-shake-icons`
+
 ## 2026-06-09 — v12 Audit Implementation — deep audit cross-check + web surface
 
 - **P0 deploy-web.yml App Check fix**: Added `--dart-define=FIREBASE_APP_CHECK_WEB_KEY` + App Check secret verification (exit 1) to deploy-web.yml build step — every live web deployment now has App Check protection

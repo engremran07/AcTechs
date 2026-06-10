@@ -342,6 +342,16 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
+      # ── Upload ProGuard mapping (PLAY-005) ──────────────────────────────────
+      # Required for deobfuscating Crashlytics stack traces from this exact build.
+      - name: Upload ProGuard mapping
+        uses: actions/upload-artifact@v4
+        with:
+          name: ac-techs-${{ steps.app_version.outputs.full }}-mapping
+          path: build/app/outputs/mapping/release/mapping.txt
+          if-no-files-found: warn
+          retention-days: 365
+
       # ── Generate changelog from commits since last tag ─────────────────────
       - name: Generate changelog
         id: changelog

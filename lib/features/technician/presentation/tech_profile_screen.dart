@@ -9,6 +9,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 
 class TechProfileScreen extends ConsumerStatefulWidget {
   const TechProfileScreen({super.key});
@@ -18,6 +19,18 @@ class TechProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
+
   Future<void> _showEditNameDialog() async {
     final l = AppLocalizations.of(context)!;
     final user = ref.read(currentUserProvider).value;
