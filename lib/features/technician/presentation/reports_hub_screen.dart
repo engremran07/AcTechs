@@ -160,11 +160,12 @@ class _ReportsHubScreenState extends ConsumerState<ReportsHubScreen> {
   // ── Report generation helpers ──────────────────────────────────────────
 
   ReportBrandingContext? _buildBranding() {
+    final l = AppLocalizations.of(context)!;
     final appBranding =
         ref.read(appBrandingProvider).value ?? AppBrandingConfig.defaults();
     return ReportBrandingContext.fromAppBranding(
       appBranding: appBranding,
-      fallbackServiceName: 'AC Techs',
+      fallbackServiceName: l.appName,
     );
   }
 

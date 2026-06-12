@@ -1,4 +1,6 @@
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/core/utils/month_palette.dart';
+import 'package:flutter/material.dart';
 
 /// Centralized date/time formatting that respects locale.
 class AppFormatters {
@@ -42,6 +44,11 @@ class AppFormatters {
     return normalized.contains('cash') ||
         normalized.contains('customer paid') ||
         normalized.contains('paid by customer');
+  }
+
+  /// Gives each month key a stable color for chips and badges.
+  static Color monthColor(String monthKey) {
+    return MonthPalette.forMonthKey(monthKey);
   }
 
   /// Midnight at the start of [dt] (defaults to today).

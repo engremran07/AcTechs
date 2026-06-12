@@ -154,7 +154,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get invoicePeriodHelp =>
-      'اس کمپنی کے لیے کسٹم بلنگ ونڈو استعمال کریں۔ ڈیفالٹ 1–31 ہے۔';
+      'اس کمپنی کے لیے کسٹم بلنگ ونڈو استعمال کریں۔ ڈیفالٹ 1–31 ہے۔ مہینے کے اختتام کے بعد اگلا بلنگ پیریڈ خودکار طور پر اگلے دن سے شروع ہو جاتا ہے۔';
 
   @override
   String get clientName => 'کلائنٹ کا نام';
@@ -984,7 +984,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get companyName => 'کمپنی کا نام';
 
   @override
-  String get ambiguousCompanyName => 'امبیگوس';
+  String get ambiguousCompanyName => 'Aeonis Labs';
 
   @override
   String get companyPhoneNumber => 'کمپنی کا فون نمبر';
@@ -1033,14 +1033,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get manageLogoAndBranding => 'لوگو اور برانڈنگ مینیج کریں';
 
   @override
-  String get editOwnCompanyBranding => 'AC Techs برانڈنگ تبدیل کریں';
+  String get editOwnCompanyBranding => 'بلڈر برانڈنگ تبدیل کریں';
 
   @override
   String get manageClientCompanyBranding => 'کلائنٹ کمپنی برانڈنگ مینیج کریں';
 
   @override
   String get ownCompanyBrandingUpdated =>
-      'AC Techs برانڈنگ کامیابی سے اپ ڈیٹ ہو گئی!';
+      'بلڈر برانڈنگ کامیابی سے اپ ڈیٹ ہو گئی!';
 
   @override
   String get workExpenses => 'کام کے اخراجات';
@@ -1765,10 +1765,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get adminAboutBuiltBy =>
-      'یہ ایپ اے سی ٹیکس کے لیے بنائی اور سپورٹ کی گئی ہے۔';
+      'ایپ برانڈ: AC Techs۔ انجینئرنگ اور مینٹیننس: Aeonis Labs۔';
 
   @override
-  String get developedByMuhammadImran => 'محمد عمران نے تیار کیا';
+  String get developedByMuhammadImran => 'ڈیلیوری پارٹنر: Aeonis Labs';
 
   @override
   String get tapToUploadLogo => 'لوگو اپ لوڈ کرنے کے لیے ٹیپ کریں';
@@ -2236,4 +2236,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get aboutUs => 'ہمارے بارے میں';
+
+  @override
+  String get closeCompanyMonth => 'کمپنی کا مہینہ بند کریں';
+
+  @override
+  String get closeMonthSuccess =>
+      'مہینہ کامیابی سے بند ہو گیا۔ نئی انوائسز اگلے مہینے میں شمار ہوں گی۔';
+
+  @override
+  String get selectCompanyMonthTech => 'کمپنی، مہینہ اور ٹیکنیشن منتخب کریں';
 }

@@ -154,7 +154,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get invoicePeriodHelp =>
-      'استخدم نافذة فوترة مخصصة لهذه الشركة. الافتراضي هو 1–31.';
+      'استخدم نافذة فوترة مخصصة لهذه الشركة. الافتراضي هو 1–31. بعد إغلاق نهاية الشهر، تبدأ فترة الفوترة التالية تلقائياً من اليوم التالي.';
 
   @override
   String get clientName => 'اسم العميل';
@@ -981,7 +981,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get companyName => 'اسم الشركة';
 
   @override
-  String get ambiguousCompanyName => 'أمبيغوس';
+  String get ambiguousCompanyName => 'Aeonis Labs';
 
   @override
   String get companyPhoneNumber => 'رقم هاتف الشركة';
@@ -1029,13 +1029,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get manageLogoAndBranding => 'إدارة الشعار وهوية الشركة';
 
   @override
-  String get editOwnCompanyBranding => 'تعديل هوية AC Techs';
+  String get editOwnCompanyBranding => 'تعديل هوية الجهة المطورة';
 
   @override
   String get manageClientCompanyBranding => 'إدارة هوية شركات العملاء';
 
   @override
-  String get ownCompanyBrandingUpdated => 'تم تحديث هوية AC Techs بنجاح!';
+  String get ownCompanyBrandingUpdated => 'تم تحديث هوية الجهة المطورة بنجاح!';
 
   @override
   String get workExpenses => 'مصروفات العمل';
@@ -1757,10 +1757,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get companyLogo => 'شعار الشركة';
 
   @override
-  String get adminAboutBuiltBy => 'تم تطوير هذا التطبيق ودعمه لصالح AC Techs.';
+  String get adminAboutBuiltBy =>
+      'علامة التطبيق: AC Techs. التطوير والصيانة: Aeonis Labs.';
 
   @override
-  String get developedByMuhammadImran => 'تم التطوير بواسطة محمد عمران';
+  String get developedByMuhammadImran => 'شريك التسليم: Aeonis Labs';
 
   @override
   String get tapToUploadLogo => 'اضغط لتحميل الشعار';
@@ -2222,4 +2223,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aboutUs => 'من نحن';
+
+  @override
+  String get closeCompanyMonth => 'إغلاق شهر الشركة';
+
+  @override
+  String get closeMonthSuccess =>
+      'تم إغلاق الشهر بنجاح. سيتم احتساب الفواتير الجديدة ضمن الشهر التالي.';
+
+  @override
+  String get selectCompanyMonthTech => 'اختر الشركة والشهر والفني';
 }

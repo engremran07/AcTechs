@@ -1335,6 +1335,33 @@ class _HistoryJobCard extends StatelessWidget {
                     color: ArcticTheme.arcticWarning,
                   ),
                 ),
+              const SizedBox(width: 12),
+              _InfoChip(
+                icon: Icons.calendar_month_rounded,
+                label: AppFormatters.monthLabel(
+                  l,
+                  job.date ?? DateTime.now(),
+                ),
+                color: ArcticTheme.arcticBlue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _InfoChip(
+                icon: Icons.payments_outlined,
+                label: job.isSettlementConfirmed
+                    ? l.paymentConfirmed
+                    : (job.isSettlementAwaitingTechnician
+                          ? l.awaitingTechnicianConfirmation
+                          : l.unpaid),
+                color: job.isSettlementConfirmed
+                    ? ArcticTheme.arcticSuccess
+                    : (job.isSettlementAwaitingTechnician
+                          ? ArcticTheme.arcticPending
+                          : ArcticTheme.arcticWarning),
+              ),
             ],
           ),
           if (job.isSharedInstall) ...[

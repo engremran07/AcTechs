@@ -13,6 +13,7 @@ import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 // Top-level function for compute() isolate — must be top-level for Flutter compute
@@ -65,12 +66,18 @@ class _ReconcileResults {
     required this.notInReport,
     required this.alreadyPaid,
     required this.excelCount,
+    required this.reportedAmount,
+    required this.systemAmount,
   });
 
   final List<_ReconcileEntry> matched;
   final List<_ReconcileEntry> notInReport;
   final List<_ReconcileEntry> alreadyPaid;
   final int excelCount;
+  final double reportedAmount;
+  final double systemAmount;
+
+  double get difference => reportedAmount - systemAmount;
 
   bool get isEmpty =>
       matched.isEmpty && notInReport.isEmpty && alreadyPaid.isEmpty;
@@ -87,9 +94,46 @@ class InvoiceReconciliationScreen extends ConsumerStatefulWidget {
 class _InvoiceReconciliationScreenState
     extends ConsumerState<InvoiceReconciliationScreen> {
   CompanyModel? _selectedCompany;
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _fileName;
   _ReconcileResults? _results;
   bool _isProcessing = false;
+
+  DateTimeRange get _selectedMonthRange {
+    final start = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
+    final end = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59, 999);
+    return DateTimeRange(start: start, end: end);
+  }
+
+  Future<double> _promptReportedAmount() async {
+    final l = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    final value = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l.amountLabel),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(hintText: l.amountLabel),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(
+              double.tryParse(controller.text.trim()) ?? 0,
+            ),
+            child: Text(l.save),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return value ?? 0;
+  }
 
   Future<void> _pickAndReconcile() async {
     final l = AppLocalizations.of(context)!;
@@ -147,13 +191,20 @@ class _InvoiceReconciliationScreenState
       final candidates = await repo.fetchSettlementCandidates();
       final history = await repo.fetchSettlementHistory();
 
+        final monthStart = _selectedMonthRange.start;
+        final monthEnd = _selectedMonthRange.end;
+
       // Filter by selected company
       final companyId = _selectedCompany!.id;
       final companyCandidates = candidates
           .where((j) => j.companyId == companyId)
+          .where((j) => j.date != null)
+          .where((j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd))
           .toList();
       final companyHistory = history
           .where((j) => j.companyId == companyId)
+          .where((j) => j.date != null)
+          .where((j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd))
           .toList();
 
       // Reconcile candidates (unpaid / correction-required)
@@ -187,6 +238,16 @@ class _InvoiceReconciliationScreenState
         }
       }
 
+      final reportedAmount = await _promptReportedAmount();
+      if (!mounted) return;
+      final systemAmount = companyCandidates.fold<double>(
+        0,
+        (sum, job) => sum + job.settlementAmount,
+      ) + companyHistory.fold<double>(
+        0,
+        (sum, job) => sum + job.settlementAmount,
+      );
+
       if (mounted) {
         setState(() {
           _results = _ReconcileResults(
@@ -194,6 +255,8 @@ class _InvoiceReconciliationScreenState
             notInReport: notInReport,
             alreadyPaid: alreadyPaid,
             excelCount: excelInvoices.length,
+            reportedAmount: reportedAmount,
+            systemAmount: systemAmount,
           );
         });
       }
@@ -346,6 +409,11 @@ class _InvoiceReconciliationScreenState
     }
   }
 
+  Future<void> _openCorrection(_ReconcileEntry entry) async {
+    if (!mounted) return;
+    context.push('/admin/job/${entry.job.id}', extra: entry.job);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -391,6 +459,39 @@ class _InvoiceReconciliationScreenState
                 exception: e is AppException
                     ? e
                     : NetworkException.syncFailed(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            ArcticCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.selectMonth,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedMonth,
+                        firstDate: DateTime(DateTime.now().year - 3, 1, 1),
+                        lastDate: DateTime(DateTime.now().year + 1, 12, 31),
+                        initialDatePickerMode: DatePickerMode.year,
+                      );
+                      if (picked == null) return;
+                      setState(() {
+                        _selectedMonth = DateTime(picked.year, picked.month);
+                        _results = null;
+                        _fileName = null;
+                      });
+                    },
+                    icon: const Icon(Icons.calendar_month_rounded),
+                    label: Text(AppFormatters.monthLabel(l, _selectedMonth)),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -449,11 +550,28 @@ class _InvoiceReconciliationScreenState
             // Results
             if (_results != null) ...[
               const SizedBox(height: 24),
+              ArcticCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.reconciliation,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text('${l.totalLabel}: ${AppFormatters.currency(_results!.reportedAmount)}'),
+                    Text('System: ${AppFormatters.currency(_results!.systemAmount)}'),
+                    Text('Difference: ${AppFormatters.currency(_results!.difference)}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               _buildSection(
                 context,
                 label: '${l.matchedInvoices} (${_results!.matched.length})',
                 color: ArcticTheme.arcticSuccess,
                 entries: _results!.matched,
+                allowCorrection: true,
               ),
               if (_results!.matched.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -473,6 +591,7 @@ class _InvoiceReconciliationScreenState
                     '${l.unmatchedInvoices} (${_results!.notInReport.length})',
                 color: ArcticTheme.arcticWarning,
                 entries: _results!.notInReport,
+                allowCorrection: false,
               ),
               const SizedBox(height: 24),
               _buildSection(
@@ -481,6 +600,7 @@ class _InvoiceReconciliationScreenState
                     '${l.alreadyPaidInvoices} (${_results!.alreadyPaid.length})',
                 color: ArcticTheme.arcticTextSecondary,
                 entries: _results!.alreadyPaid,
+                allowCorrection: false,
               ),
 
               if (_results!.isEmpty) ...[
@@ -506,6 +626,7 @@ class _InvoiceReconciliationScreenState
     required String label,
     required Color color,
     required List<_ReconcileEntry> entries,
+    required bool allowCorrection,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -538,13 +659,17 @@ class _InvoiceReconciliationScreenState
           )
         else ...[
           const SizedBox(height: 8),
-          ...entries.map((e) => _buildJobTile(context, e)),
+          ...entries.map((e) => _buildJobTile(context, e, allowCorrection)),
         ],
       ],
     );
   }
 
-  Widget _buildJobTile(BuildContext context, _ReconcileEntry entry) {
+  Widget _buildJobTile(
+    BuildContext context,
+    _ReconcileEntry entry,
+    bool allowCorrection,
+  ) {
     final job = entry.job;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -580,6 +705,13 @@ class _InvoiceReconciliationScreenState
               AppFormatters.units(job.totalUnits),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (allowCorrection) ...[
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () => _openCorrection(entry),
+                child: const Text('Open Correction'),
+              ),
+            ],
           ],
         ),
       ),

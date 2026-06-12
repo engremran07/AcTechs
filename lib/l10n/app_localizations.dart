@@ -385,7 +385,7 @@ abstract class AppLocalizations {
   /// No description provided for @invoicePeriodHelp.
   ///
   /// In en, this message translates to:
-  /// **'Use a custom billing window for this company. Default is 1–31.'**
+  /// **'Use a custom billing window for this company. Default is 1–31. After month-end close, the next billing period starts automatically on the next day.'**
   String get invoicePeriodHelp;
 
   /// No description provided for @clientName.
@@ -1951,7 +1951,7 @@ abstract class AppLocalizations {
   /// No description provided for @ambiguousCompanyName.
   ///
   /// In en, this message translates to:
-  /// **'Ambiguous'**
+  /// **'Aeonis Labs'**
   String get ambiguousCompanyName;
 
   /// No description provided for @companyPhoneNumber.
@@ -2047,7 +2047,7 @@ abstract class AppLocalizations {
   /// No description provided for @editOwnCompanyBranding.
   ///
   /// In en, this message translates to:
-  /// **'Edit AC Techs Branding'**
+  /// **'Edit Builder Branding'**
   String get editOwnCompanyBranding;
 
   /// No description provided for @manageClientCompanyBranding.
@@ -2059,7 +2059,7 @@ abstract class AppLocalizations {
   /// No description provided for @ownCompanyBrandingUpdated.
   ///
   /// In en, this message translates to:
-  /// **'AC Techs branding updated successfully!'**
+  /// **'Builder branding updated successfully!'**
   String get ownCompanyBrandingUpdated;
 
   /// No description provided for @workExpenses.
@@ -3360,13 +3360,13 @@ abstract class AppLocalizations {
   /// No description provided for @adminAboutBuiltBy.
   ///
   /// In en, this message translates to:
-  /// **'Built and supported for AC Techs.'**
+  /// **'Application brand: AC Techs. Engineered and maintained by Aeonis Labs.'**
   String get adminAboutBuiltBy;
 
   /// No description provided for @developedByMuhammadImran.
   ///
   /// In en, this message translates to:
-  /// **'Developed By Muhammad Imran'**
+  /// **'Delivery Partner: Aeonis Labs'**
   String get developedByMuhammadImran;
 
   /// No description provided for @tapToUploadLogo.
@@ -4202,6 +4202,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About Us'**
   String get aboutUs;
+
+  /// No description provided for @closeCompanyMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Company Month'**
+  String get closeCompanyMonth;
+
+  /// No description provided for @closeMonthSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Month closed successfully. New invoices will be tracked under the next month.'**
+  String get closeMonthSuccess;
+
+  /// No description provided for @selectCompanyMonthTech.
+  ///
+  /// In en, this message translates to:
+  /// **'Select company, month, and technician'**
+  String get selectCompanyMonthTech;
 }
 
 class _AppLocalizationsDelegate

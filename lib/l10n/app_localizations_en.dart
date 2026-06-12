@@ -154,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invoicePeriodHelp =>
-      'Use a custom billing window for this company. Default is 1–31.';
+      'Use a custom billing window for this company. Default is 1–31. After month-end close, the next billing period starts automatically on the next day.';
 
   @override
   String get clientName => 'Client Name';
@@ -983,7 +983,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyName => 'Company Name';
 
   @override
-  String get ambiguousCompanyName => 'Ambiguous';
+  String get ambiguousCompanyName => 'Aeonis Labs';
 
   @override
   String get companyPhoneNumber => 'Company Phone Number';
@@ -1032,14 +1032,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manageLogoAndBranding => 'Manage Logo and Branding';
 
   @override
-  String get editOwnCompanyBranding => 'Edit AC Techs Branding';
+  String get editOwnCompanyBranding => 'Edit Builder Branding';
 
   @override
   String get manageClientCompanyBranding => 'Manage Client Company Branding';
 
   @override
   String get ownCompanyBrandingUpdated =>
-      'AC Techs branding updated successfully!';
+      'Builder branding updated successfully!';
 
   @override
   String get workExpenses => 'Work Expenses';
@@ -1756,10 +1756,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get companyLogo => 'Company Logo';
 
   @override
-  String get adminAboutBuiltBy => 'Built and supported for AC Techs.';
+  String get adminAboutBuiltBy =>
+      'Application brand: AC Techs. Engineered and maintained by Aeonis Labs.';
 
   @override
-  String get developedByMuhammadImran => 'Developed By Muhammad Imran';
+  String get developedByMuhammadImran => 'Delivery Partner: Aeonis Labs';
 
   @override
   String get tapToUploadLogo => 'Tap to upload logo';
@@ -2226,4 +2227,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutUs => 'About Us';
+
+  @override
+  String get closeCompanyMonth => 'Close Company Month';
+
+  @override
+  String get closeMonthSuccess =>
+      'Month closed successfully. New invoices will be tracked under the next month.';
+
+  @override
+  String get selectCompanyMonthTech => 'Select company, month, and technician';
 }

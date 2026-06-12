@@ -50,7 +50,7 @@
   "invoicePeriod": "Invoice Period",
   "invoicePeriodStartDay": "Invoice Period Start Day",
   "invoicePeriodEndDay": "Invoice Period End Day",
-  "invoicePeriodHelp": "Use a custom billing window for this company. Default is 1–31.",
+  "invoicePeriodHelp": "Use a custom billing window for this company. Default is 1–31. After month-end close, the next billing period starts automatically on the next day.",
   "clientName": "Client Name",
   "clientNameOptional": "Client Name (optional)",
   "clientContact": "Client Contact",
@@ -350,7 +350,7 @@
   "addCompany": "Add Company",
   "editCompany": "Edit Company",
   "companyName": "Company Name",
-  "ambiguousCompanyName": "Ambiguous",
+  "ambiguousCompanyName": "Aeonis Labs",
   "companyPhoneNumber": "Company Phone Number",
   "invoicePrefix": "Invoice Prefix",
   "invoiceSuffix": "Invoice Number",
@@ -366,9 +366,9 @@
   "companyActivated": "Company activated",
   "companyDeactivated": "Company deactivated",
   "manageLogoAndBranding": "Manage Logo and Branding",
-  "editOwnCompanyBranding": "Edit AC Techs Branding",
+  "editOwnCompanyBranding": "Edit Builder Branding",
   "manageClientCompanyBranding": "Manage Client Company Branding",
-  "ownCompanyBrandingUpdated": "AC Techs branding updated successfully!",
+  "ownCompanyBrandingUpdated": "Builder branding updated successfully!",
   "workExpenses": "Work Expenses",
   "homeExpenses": "Home Expenses",
   "importHistoryData": "Import Historical Data",
@@ -667,8 +667,8 @@
   "enterAtLeastOneUnit": "Enter at least one AC unit quantity.",
   "acInstallNote": "Note (optional)",
   "companyLogo": "Company Logo",
-  "adminAboutBuiltBy": "Built and supported for AC Techs.",
-  "developedByMuhammadImran": "Developed By Muhammad Imran",
+  "adminAboutBuiltBy": "Application brand: AC Techs. Engineered and maintained by Aeonis Labs.",
+  "developedByMuhammadImran": "Delivery Partner: Aeonis Labs",
   "tapToUploadLogo": "Tap to upload logo",
   "uploadLogo": "Upload Logo",
   "replaceLogo": "Replace Logo",
@@ -860,4 +860,7 @@
   "contactAdminForHelp": "Contact Admin for Help",
   "about": "About",
   "aboutUs": "About Us"
+  ,"closeCompanyMonth": "Close Company Month"
+  ,"closeMonthSuccess": "Month closed successfully. New invoices will be tracked under the next month."
+  ,"selectCompanyMonthTech": "Select company, month, and technician"
 }

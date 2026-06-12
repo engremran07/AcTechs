@@ -288,6 +288,30 @@ class JobRepository {
     return claimSnap.data();
   }
 
+  Future<List<InvoiceClaimModel>> fetchInvoiceClaimsForCompany(
+    String companyId, {
+    DateTime? month,
+  }) async {
+    final trimmedCompanyId = companyId.trim();
+    if (trimmedCompanyId.isEmpty) return const <InvoiceClaimModel>[];
+
+    Query<Map<String, dynamic>> query = _invoiceClaimsRef
+        .where('companyId', isEqualTo: trimmedCompanyId)
+        .orderBy('createdAt', descending: true)
+        .limit(1000);
+
+    if (month != null) {
+      final start = DateTime(month.year, month.month, 1);
+      final end = DateTime(month.year, month.month + 1, 1);
+      query = query
+          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('createdAt', isLessThan: Timestamp.fromDate(end));
+    }
+
+    final snap = await query.get();
+    return snap.docs.map(InvoiceClaimModel.fromFirestore).toList(growable: false);
+  }
+
   void _validateInvoiceClaimReuse(
     JobModel submittedJob,
     Map<String, dynamic>? existingClaim,

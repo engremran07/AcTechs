@@ -13,6 +13,9 @@ import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
+import 'package:ac_techs/features/settings/data/month_closure_notice_repository.dart';
+import 'package:ac_techs/features/settings/providers/month_closure_provider.dart';
+import 'package:ac_techs/features/technician/providers/technician_summary_providers.dart';
 
 class TechDashboardScreen extends ConsumerStatefulWidget {
   const TechDashboardScreen({super.key});
@@ -50,6 +53,30 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     HapticFeedback.lightImpact();
     ref.invalidate(todaysJobsProvider);
     ref.invalidate(technicianJobsProvider);
+    ref.invalidate(unreadMonthClosureProvider);
+  }
+
+  List<_YearSummary> _buildYearSummaries(Iterable<JobModel> jobs) {
+    final summaries = <int, _YearSummary>{};
+    for (final job in jobs) {
+      final date = job.date;
+      if (date == null || job.isDeleted) continue;
+      final entry = summaries.putIfAbsent(
+        date.year,
+        () => _YearSummary(year: date.year),
+      );
+      entry.totalJobs += 1;
+      if (job.isApproved) entry.approvedJobs += 1;
+      if (job.isPending) entry.pendingJobs += 1;
+      if (job.isRejected) entry.rejectedJobs += 1;
+      entry.splitUnits += job.unitsForType('Split AC');
+      entry.windowUnits += job.unitsForType('Window AC');
+      entry.freestandingUnits += job.unitsForType('Freestanding AC');
+      entry.bracketCount += job.effectiveBracketCount;
+    }
+    final values = summaries.values.toList()
+      ..sort((a, b) => b.year.compareTo(a.year));
+    return values;
   }
 
   @override
@@ -61,6 +88,13 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final settlementInbox = ref.watch(technicianSettlementInboxProvider);
     final sharedAggregates = ref.watch(pendingSharedInstallAggregatesProvider);
     final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final unreadClosure = ref.watch(unreadMonthClosureProvider).value;
+    final currentMonthStats = ref.watch(
+      monthlyTechnicianStatsProvider(DateTime(DateTime.now().year, DateTime.now().month)),
+    );
+    final yearSummaries = _buildYearSummaries(
+      ref.watch(technicianJobsProvider).value ?? const <JobModel>[],
+    );
     final companiesById = {
       for (final company in activeCompanies) company.id: company,
     };
@@ -85,6 +119,41 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                 // (FAB height 56 + 16 margin + 16 content gap = 88).
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 88),
                 children: [
+                  // Month-close unread notice (one-time per tech/company/month)
+                  if (unreadClosure != null)
+                    ArcticCard(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.notifications_active_outlined,
+                            color: ArcticTheme.arcticBlue,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${unreadClosure.companyName}: ${AppFormatters.monthLabel(l, unreadClosure.month)} ${l.lockRecordsBefore}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final tech = ref.read(currentUserProvider).value;
+                              if (tech == null) return;
+                              await ref
+                                  .read(monthClosureNoticeRepositoryProvider)
+                                  .markSeen(
+                                    techId: tech.uid,
+                                    companyId: unreadClosure.companyId,
+                                    monthKey: unreadClosure.monthKey,
+                                  );
+                              ref.invalidate(unreadMonthClosureProvider);
+                            },
+                            child: Text(l.whatsNewGotIt),
+                          ),
+                        ],
+                      ),
+                    ),
                   // Welcome
                   Text(
                     l.welcomeBack,
@@ -224,6 +293,139 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // ── Current Month Snapshot (jobs + In/Out net) ──
+                  currentMonthStats.when(
+                    data: (stats) => ArcticCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${l.monthlySummary} • ${AppFormatters.monthLabel(l, DateTime.now())}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatCard(
+                                  title: l.totalJobs,
+                                  value: '${stats.jobs.totalJobs}',
+                                  icon: Icons.work_outline_rounded,
+                                  color: ArcticTheme.arcticBlue,
+                                  onTap: () => context.push('/tech/history'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _StatCard(
+                                  title: l.totalLabel,
+                                  value: AppFormatters.currency(stats.inOut.net),
+                                  icon: Icons.account_balance_wallet_outlined,
+                                  color: ArcticTheme.arcticSuccess,
+                                  onTap: () => context.push('/tech/summary'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Year-based summaries ──
+                  if (yearSummaries.isNotEmpty) ...[
+                    Text(
+                      l.monthlySummary,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    ...yearSummaries.map(
+                      (yearSummary) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ArcticCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${yearSummary.year}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: ArcticTheme.arcticBlue.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      '${yearSummary.totalJobs} ${l.jobs}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: ArcticTheme.arcticBlue,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _YearSummaryChip(
+                                    label: l.approved,
+                                    value: yearSummary.approvedJobs,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.pending,
+                                    value: yearSummary.pendingJobs,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.rejected,
+                                    value: yearSummary.rejectedJobs,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.splits,
+                                    value: yearSummary.splitUnits,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.windowAc,
+                                    value: yearSummary.windowUnits,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.standing,
+                                    value: yearSummary.freestandingUnits,
+                                  ),
+                                  _YearSummaryChip(
+                                    label: l.acOutdoorBracket,
+                                    value: yearSummary.bracketCount,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   settlementInbox.when(
                     data: (items) {
@@ -807,6 +1009,48 @@ class _DashboardInfoChip extends StatelessWidget {
             ).textTheme.labelSmall?.copyWith(color: color),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Mutable per-year aggregation of a technician's job history, built by
+/// [_TechDashboardScreenState._buildYearSummaries] from the monthly jobs
+/// stream (no extra Firestore listener).
+class _YearSummary {
+  _YearSummary({required this.year});
+
+  final int year;
+  int totalJobs = 0;
+  int approvedJobs = 0;
+  int pendingJobs = 0;
+  int rejectedJobs = 0;
+  int splitUnits = 0;
+  int windowUnits = 0;
+  int freestandingUnits = 0;
+  int bracketCount = 0;
+}
+
+class _YearSummaryChip extends StatelessWidget {
+  const _YearSummaryChip({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: ArcticTheme.arcticBlue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: ArcticTheme.arcticBlue.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Text(
+        '$label: $value',
+        style: Theme.of(context).textTheme.labelSmall,
       ),
     );
   }

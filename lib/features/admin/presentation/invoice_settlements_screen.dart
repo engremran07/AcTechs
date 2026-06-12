@@ -9,9 +9,11 @@ import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/utils/settlement_breakdown.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 class InvoiceSettlementsScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,9 @@ class _InvoiceSettlementsScreenState
   String _scope = _scopePending;
   DateTimeRange? _dateRange;
   bool _isProcessing = false;
+  String _companyFilter = '__all__';
+  String _techFilter = '__all__';
+  DateTime _monthFilter = DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   void initState() {
@@ -71,7 +76,13 @@ class _InvoiceSettlementsScreenState
                       59,
                     ),
                   ));
-          return matchesSearch && matchesDate;
+          final matchesCompany =
+              _companyFilter == '__all__' || job.companyId == _companyFilter;
+          final matchesTech = _techFilter == '__all__' || job.techId == _techFilter;
+          final matchesMonth = job.date != null &&
+              job.date!.year == _monthFilter.year &&
+              job.date!.month == _monthFilter.month;
+          return matchesSearch && matchesDate && matchesCompany && matchesTech && matchesMonth;
         })
         .toList(growable: false);
   }
@@ -367,6 +378,7 @@ class _InvoiceSettlementsScreenState
         ? ref.watch(adminSettlementHistoryProvider)
         : ref.watch(adminSettlementCandidatesProvider);
     final technicians = ref.watch(allTechniciansProvider).value ?? [];
+    final companies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
 
     return Scaffold(
       appBar: AppBar(title: Text(l.invoiceSettlements)),
@@ -377,6 +389,7 @@ class _InvoiceSettlementsScreenState
             final selectedJobs = filtered
                 .where((job) => _selected.contains(job.id))
                 .toList(growable: false);
+            final payoutBreakdown = SettlementBreakdown.fromJobs(filtered);
             final canMarkPaid =
                 selectedJobs.isNotEmpty &&
                 selectedJobs.every((job) => job.isUnpaid);
@@ -389,6 +402,61 @@ class _InvoiceSettlementsScreenState
 
             return Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: ArcticCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.monthlySummary,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${l.totalJobs}: ${filtered.length}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        Text(
+                          '${l.totalLabel}: ${AppFormatters.currency(payoutBreakdown.totalAmount)}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        Text(
+                          '${l.totalLabel}: ${AppFormatters.currency(payoutBreakdown.dueAmount)} due • ${AppFormatters.currency(payoutBreakdown.paidAmount)} paid',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _SummaryChip(
+                              label: l.splits,
+                              value: payoutBreakdown.splitUnits,
+                            ),
+                            _SummaryChip(
+                              label: l.windowAc,
+                              value: payoutBreakdown.windowUnits,
+                            ),
+                            _SummaryChip(
+                              label: l.standing,
+                              value: payoutBreakdown.freestandingUnits,
+                            ),
+                            _SummaryChip(
+                              label: l.acOutdoorBracket,
+                              value: payoutBreakdown.bracketCount,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${l.deliveryCharge}: ${AppFormatters.currency(payoutBreakdown.deliveryAmount)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 // PER-001: warn when the 200-record cap was hit
                 if (jobs.length >= 200)
                   Padding(
@@ -451,6 +519,79 @@ class _InvoiceSettlementsScreenState
                       onPressed: _pickRange,
                       icon: const Icon(Icons.date_range_rounded),
                       tooltip: l.filterByDateRange,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _companyFilter,
+                          decoration: InputDecoration(labelText: l.company, isDense: true),
+                          items: [
+                            DropdownMenuItem(value: '__all__', child: Text(l.all)),
+                            ...companies.map(
+                              (company) => DropdownMenuItem(
+                                value: company.id,
+                                child: Text(company.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) => setState(() => _companyFilter = value ?? '__all__'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _techFilter,
+                          decoration: InputDecoration(labelText: l.technician, isDense: true),
+                          items: [
+                            DropdownMenuItem(value: '__all__', child: Text(l.all)),
+                            ...technicians.map(
+                              (tech) => DropdownMenuItem(
+                                value: tech.uid,
+                                child: Text(tech.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) => setState(() => _techFilter = value ?? '__all__'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 6),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      l.selectCompanyMonthTech,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: ArcticTheme.arcticTextSecondary,
+                          ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _monthFilter,
+                          firstDate: DateTime(DateTime.now().year - 2, 1, 1),
+                          lastDate: DateTime(DateTime.now().year + 1, 12, 31),
+                          initialDatePickerMode: DatePickerMode.year,
+                        );
+                        if (picked == null) return;
+                        setState(() => _monthFilter = DateTime(picked.year, picked.month));
+                      },
+                      icon: const Icon(Icons.calendar_month_rounded),
+                      label: Text(AppFormatters.monthLabel(l, _monthFilter)),
                     ),
                   ),
                 ),
@@ -635,5 +776,17 @@ class _InvoiceSettlementsScreenState
         ),
       ),
     );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  const _SummaryChip({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(label: Text('$label: $value'));
   }
 }

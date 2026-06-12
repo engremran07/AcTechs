@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.3.10+109
+
+- Feat: Technician dashboard now shows a dual layout with current-month stats above year-based summaries
+- Feat: Month-close notices now appear as unread banners per technician and dismiss after first view
+- Feat: Admin monthly received invoices intake now compares company uploads against invoice claims
+- Feat: Admin reconciliation mismatch correction now opens the existing job correction flow directly
+
 ## 2.3.8+107
 
 - Release: Completed full sign-off sequence with analyzer, tests, Firestore rules lint/tests, web build, and APK build gates

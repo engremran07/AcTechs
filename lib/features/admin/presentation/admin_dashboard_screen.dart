@@ -146,6 +146,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             ],
                           ),
                           const SizedBox(height: 12),
+                          _DashCard(
+                            title: l.reconcileInvoices,
+                            value: l.monthlySummary,
+                            icon: Icons.fact_check_outlined,
+                            color: ArcticTheme.arcticPurple,
+                            onTap: () => context.push('/admin/received-invoices'),
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(

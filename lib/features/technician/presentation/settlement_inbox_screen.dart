@@ -8,6 +8,7 @@ import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
+import 'package:ac_techs/features/jobs/utils/settlement_breakdown.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/core/utils/secure_screen.dart';
 
@@ -61,6 +62,55 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
     );
     controller.dispose();
     return value;
+  }
+
+  Future<bool> _confirmReceipt(
+    BuildContext context,
+    String batchId,
+    List<JobModel> jobs,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final breakdown = SettlementBreakdown.fromJobs(jobs);
+    return (await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l.confirmPaymentReceived),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${l.settlementBatch}: ${batchId.substring(0, batchId.length > 12 ? 12 : batchId.length)}'),
+                  const SizedBox(height: 8),
+                  Text('${jobs.first.companyName} • ${AppFormatters.monthLabel(l, jobs.first.date ?? DateTime.now())}'),
+                  const SizedBox(height: 8),
+                  Text('${l.totalLabel}: ${AppFormatters.currency(breakdown.totalAmount)}'),
+                  Text('${l.totalLabel}: ${AppFormatters.currency(breakdown.dueAmount)} due • ${AppFormatters.currency(breakdown.paidAmount)} paid'),
+                  Text('${l.totalJobs}: ${jobs.length}'),
+                  const SizedBox(height: 8),
+                  Text('${l.splits}: ${breakdown.splitUnits}'),
+                  Text('${l.windowAc}: ${breakdown.windowUnits}'),
+                  Text('${l.standing}: ${breakdown.freestandingUnits}'),
+                  Text('${l.acOutdoorBracket}: ${breakdown.bracketCount}'),
+                  Text('${l.deliveryCharge}: ${AppFormatters.currency(breakdown.deliveryAmount)}'),
+                  const SizedBox(height: 8),
+                  Text('${l.paymentMethod}: ${jobs.first.settlementPaymentMethod}'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l.confirm),
+              ),
+            ],
+          ),
+        )) ??
+        false;
   }
 
   Future<void> _confirmBatch(String batchId) async {
@@ -186,6 +236,7 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                   final items = entries[index].value;
                   final first = items.first;
                   final isProcessing = _processingBatchIds.contains(batchId);
+                  final breakdown = SettlementBreakdown.fromJobs(items);
                   return ArcticCard(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: Column(
@@ -202,6 +253,26 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                                   ?.copyWith(
                                     color: ArcticTheme.arcticTextSecondary,
                                   ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                Chip(
+                                  label: Text(AppFormatters.monthLabel(l, first.date ?? DateTime.now())),
+                                  avatar: CircleAvatar(
+                                    backgroundColor: AppFormatters.monthColor(
+                                      first.date == null
+                                          ? ''
+                                          : '${first.date!.year}-${first.date!.month.toString().padLeft(2, '0')}',
+                                    ),
+                                    radius: 6,
+                                  ),
+                                ),
+                                Chip(label: Text('${l.totalLabel}: ${AppFormatters.currency(first.settlementAmount)}')),
+                                Chip(label: Text('${AppFormatters.currency(breakdown.dueAmount)} due')),
+                              ],
                             ),
                             if (first.settlementAdminNote
                                 .trim()
@@ -257,7 +328,16 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                                   child: FilledButton.icon(
                                     onPressed: isProcessing
                                         ? null
-                                        : () => _confirmBatch(batchId),
+                                        : () async {
+                                            final ok = await _confirmReceipt(
+                                              context,
+                                              batchId,
+                                              items,
+                                            );
+                                            if (ok == true) {
+                                              await _confirmBatch(batchId);
+                                            }
+                                          },
                                     icon: const Icon(
                                       Icons.check_circle_outline,
                                     ),

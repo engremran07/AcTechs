@@ -9,6 +9,26 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.10': {
+    'en': [
+      'Feature: Technician dashboard now combines current-month stats with year-based summaries',
+      'Feature: Month-close notices now show as unread banners until each technician opens them once',
+      'Feature: Admin monthly received invoices intake now compares uploads against invoice claims',
+      'Feature: Reconciliation mismatches now open the existing job correction flow directly',
+    ],
+    'ur': [
+      'خصوصیت: ٹیکنیشن ڈیش بورڈ اب موجودہ ماہ کے اعداد اور سالانہ خلاصے ساتھ دکھاتا ہے',
+      'خصوصیت: ماہانہ بندش نوٹس اب ہر ٹیکنیشن کے لیے unread banner کی صورت میں نظر آتے ہیں',
+      'خصوصیت: ایڈمن received invoices intake اب اپ لوڈز کو invoice claims سے ملا کر دیکھتا ہے',
+      'خصوصیت: reconciliation mismatch اب سیدھا موجودہ job correction flow کھولتا ہے',
+    ],
+    'ar': [
+      'ميزة: لوحة تحكم الفني تعرض الآن إحصاءات الشهر الحالي مع ملخصات سنوية',
+      'ميزة: إشعارات إغلاق الشهر تظهر الآن كبانر غير مقروء حتى يفتحها كل فني مرة واحدة',
+      'ميزة: شاشة إدخال الفواتير المستلمة للمسؤول تقارن الآن الرفع مع مطالبات الفواتير',
+      'ميزة: عدم تطابق التسوية يفتح الآن مسار تصحيح المهمة الحالي مباشرة',
+    ],
+  },
   '2.3.8': {
     'en': [
       'Release: Full sign-off gates completed (analyze, tests, Firestore rules lint/tests, web and APK builds)',

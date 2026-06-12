@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/base64_image_codec.dart';
+import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
@@ -21,8 +22,11 @@ import 'package:ac_techs/features/auth/data/auth_repository.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
+import 'package:ac_techs/features/settings/providers/month_closure_provider.dart';
 import 'package:ac_techs/features/settings/data/approval_config_repository.dart';
 import 'package:ac_techs/features/settings/data/app_branding_repository.dart';
+import 'package:ac_techs/features/settings/data/month_closure_repository.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
@@ -100,6 +104,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appBrandingAsync = ref.watch(appBrandingProvider);
     final appBuildAsync = ref.watch(appBuildNumberProvider);
     final appVersionAsync = ref.watch(appVersionLabelProvider);
+    final monthClosuresAsync = ref.watch(monthClosuresProvider);
+    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -117,6 +123,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 : () => _showEditProfileDialog(context, user),
           ).animate().fadeIn(duration: 300.ms),
           const SizedBox(height: 24),
+
+          if (user?.isAdmin ?? false) ...[
+            _SectionTitle(title: l.lockRecordsBefore),
+            const SizedBox(height: 8),
+            ArcticCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.invoicePeriodHelp,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: activeCompanies.isEmpty
+                            ? null
+                            : () => _showCloseMonthDialog(activeCompanies),
+                        icon: const Icon(Icons.event_busy_rounded),
+                        label: Text(l.closeCompanyMonth),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  monthClosuresAsync.when(
+                    data: (items) {
+                      if (items.isEmpty) {
+                        return Text(
+                          l.noPeriodLock,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        );
+                      }
+                      final latest = items.first;
+                      return Text(
+                        '${latest.companyName} • ${AppFormatters.monthLabel(l, latest.month)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 210.ms).slideY(begin: 0.03),
+            const SizedBox(height: 24),
+          ],
 
           // ── Theme Section ──
           _SectionTitle(title: l.appearance),
@@ -500,7 +563,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               appBrandingAsync.maybeWhen(
                                 data: (branding) =>
                                     _displayAppBrandingName(l, branding),
-                                orElse: () => 'AC Techs',
+                                orElse: () => l.appName,
                               ),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
@@ -511,6 +574,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   ?.copyWith(
                                     color: ArcticTheme.arcticTextSecondary,
                                   ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_outlined,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    l.developedByMuhammadImran,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: ArcticTheme.arcticTextSecondary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -535,8 +619,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                _DevelopedBySignature(label: l.developedByMuhammadImran),
                 const SizedBox(height: 16),
                 ...appBrandingAsync.maybeWhen(
                   data: (branding) {
@@ -980,6 +1062,89 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } finally {
       emailCtrl.dispose();
       currentPasswordCtrl.dispose();
+    }
+  }
+
+  Future<void> _showCloseMonthDialog(List<CompanyModel> companies) async {
+    final l = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    CompanyModel? selectedCompany = companies.firstOrNull;
+    DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l.lockRecordsBefore),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<CompanyModel>(
+                initialValue: selectedCompany,
+                decoration: InputDecoration(labelText: l.company),
+                items: companies
+                    .map(
+                      (company) => DropdownMenuItem<CompanyModel>(
+                        value: company,
+                        child: Text(company.name),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) => setDialogState(() => selectedCompany = value),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: selectedMonth,
+                    firstDate: DateTime(DateTime.now().year - 2, 1, 1),
+                    lastDate: DateTime(DateTime.now().year + 1, 12, 31),
+                    initialDatePickerMode: DatePickerMode.year,
+                  );
+                  if (picked == null) return;
+                  setDialogState(() {
+                    selectedMonth = DateTime(picked.year, picked.month);
+                  });
+                },
+                icon: const Icon(Icons.calendar_month_rounded),
+                label: Text(AppFormatters.monthLabel(l, selectedMonth)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: selectedCompany == null
+                  ? null
+                  : () => Navigator.pop(ctx, true),
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || selectedCompany == null || !mounted) return;
+    try {
+      final admin = ref.read(currentUserProvider).value;
+      if (admin == null) return;
+      await ref
+          .read(monthClosureRepositoryProvider)
+          .closeCompanyMonth(
+            company: selectedCompany!,
+            month: selectedMonth,
+            adminUid: admin.uid,
+          );
+      if (!mounted) return;
+      AppFeedback.success(context, message: l.closeMonthSuccess);
+    } on AppException catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(context, message: error.message(locale));
     }
   }
 
@@ -1617,41 +1782,6 @@ class _SupportContactRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         actions,
-      ],
-    );
-  }
-}
-
-class _DevelopedBySignature extends StatelessWidget {
-  const _DevelopedBySignature({required this.label});
-
-  final String label;
-
-  static const String _heartSvg = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff8a9b"/>
-      <stop offset="100%" stop-color="#d90429"/>
-    </linearGradient>
-  </defs>
-  <path d="M32 56c-1.1 0-2.2-.4-3.1-1.2C12.2 39.7 4 31.9 4 20.5 4 12.6 10.3 6 18.2 6c5 0 9.6 2.4 12.5 6.4C33.6 8.4 38.2 6 43.2 6 51.1 6 57.4 12.6 57.4 20.5c0 11.4-8.2 19.2-24.9 34.3-.9.8-2 1.2-3.1 1.2z" fill="url(#heartGradient)"/>
-  <path d="M43.2 10c-4.3 0-8.2 2.3-10.3 6.1L32 17.7l-.9-1.6C29 12.3 25.1 10 20.8 10 14.8 10 10 14.9 10 20.9c0 9 6.7 15.6 22 29.5 15.3-13.9 22-20.5 22-29.5C54 14.9 49.2 10 43.2 10z" fill="#fff" fill-opacity="0.18"/>
-</svg>
-''';
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: ArcticTheme.arcticTextSecondary,
-          ),
-        ),
-        const SizedBox(width: 6),
-        SizedBox(width: 14, height: 14, child: SvgPicture.string(_heartSvg)),
       ],
     );
   }
