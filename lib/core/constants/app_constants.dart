@@ -115,7 +115,10 @@ class AppConstants {
 
   // Firebase / Android deployment constants (CQA-003)
   static const String webAppUrl = 'https://actechs-d415e.web.app';
-  static const String privacyPolicyUrl = 'https://actechs-d415e.web.app/privacy-policy.html';
+  static const String aboutUsUrl =
+      'https://actechs-d415e.web.app/about-us.html';
+  static const String privacyPolicyUrl =
+      'https://actechs-d415e.web.app/privacy-policy.html';
   static const String androidPackageName = 'com.actechs.pk';
   static const String androidMinimumVersion = '29';
 }

@@ -480,9 +480,11 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     if (_search.isEmpty) return users;
     final query = _search.toLowerCase();
     return users
-        .where((u) =>
-            u.name.toLowerCase().contains(query) ||
-            u.email.toLowerCase().contains(query))
+        .where(
+          (u) =>
+              u.name.toLowerCase().contains(query) ||
+              u.email.toLowerCase().contains(query),
+        )
         .toList();
   }
 

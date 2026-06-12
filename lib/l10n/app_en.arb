@@ -854,5 +854,6 @@
   "settlementCapWarning": "Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results.",
   "privacyPolicy": "Privacy Policy",
   "contactAdminForHelp": "Contact Admin for Help",
-  "about": "About"
+  "about": "About",
+  "aboutUs": "About Us"
 }

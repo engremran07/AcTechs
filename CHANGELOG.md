@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.3.6+105
+
+- Fix [SEC-001]: `JobDetailsScreen` now uses `ConsumerStatefulWidget` with `SecureScreen` lifecycle — screen recording protection active for sensitive job data
+- Fix [SEC-002]: `AdminDashboardScreen` now uses `SecureScreen` lifecycle — dashboard with aggregate statistics protected
+- Fix [SEC-003]: `SettingsScreen` now uses `SecureScreen` lifecycle with restored helper methods — company phone and approval config protected
+- Fix [SEC-004]: `TeamScreen` now uses `SecureScreen` lifecycle with restored selection and bulk action methods — technician contact information protected
+- Fix [WA-002]: `WhatsAppLauncher.normalizeNumber()` NANP detection now guards with country context (only applies when dialCode='1') — eliminates false positive prepending of '1' to Pakistan numbers when default is KSA
+- Fix [WA-001]: `UpdateRequiredScreen` now displays admin contact button with WhatsApp integration — users can reach support without updating
+- Feat [PLAY-001/002]: Privacy policy infrastructure complete — `AppConstants.privacyPolicyUrl` added, localization strings (EN/UR/AR) for `privacyPolicy`, `contactAdminForHelp`, `about` keys
+- Feat [WEB-001]: `AdminShell` desktop navigation — `NavigationDrawer` with all 11 admin routes displayed on desktop (1024px+)
+- Feat [WEB-002]: `TechShell` desktop navigation — `NavigationRail` with all 8 technician routes displayed on desktop (1024px+)
+- Refactor: Removed unused `_desktopSelectedIndex` field from `AdminShell` — unnecessary state variable replaced by `_currentIndex()` route-based detection
+- Test: Extended `whatsapp_launcher_test.dart` with country-parameterized test cases validating NANP guard behavior
+
 ## 2.3.4+103
 
 - Fix [WA-003]: `WhatsAppLauncher.normalizeNumber()` now detects NANP local 10-digit numbers and prepends `1` automatically; added table-driven unit tests for KSA + NANP normalization cases

@@ -2220,4 +2220,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get contactAdminForHelp => 'مدد کے لیے ایڈمن سے رابطہ کریں';
+
+  @override
+  String get aboutUs => 'ہمارے بارے میں';
 }

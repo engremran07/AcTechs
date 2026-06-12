@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/utils/base64_image_codec.dart';
 import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
@@ -60,6 +61,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (normalized.isEmpty) return;
     final uri = Uri(scheme: 'tel', path: normalized);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _launchUrl(String rawUrl) async {
+    final url = rawUrl.trim();
+    if (url.isEmpty) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   Future<bool> _confirmDiscardChangesDialog(BuildContext context) async {
@@ -548,6 +555,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ];
                   },
                   orElse: () => const <Widget>[],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _launchUrl(AppConstants.aboutUsUrl),
+                      icon: const Icon(Icons.info_outline_rounded),
+                      label: Text(l.aboutUs),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _launchUrl(AppConstants.privacyPolicyUrl),
+                      icon: const Icon(Icons.privacy_tip_outlined),
+                      label: Text(l.privacyPolicy),
+                    ),
+                  ],
                 ),
               ],
             ),

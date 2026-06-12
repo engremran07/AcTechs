@@ -11,7 +11,8 @@
 
 ## Policy and Privacy (PLAY-001)
 
-- Privacy policy URL: `https://your-hosting-domain/privacy-policy.html`
+- Privacy policy URL: `https://actechs-d415e.web.app/privacy-policy.html`
+- About Us URL: `https://actechs-d415e.web.app/about-us.html`
 - Ensure policy URL is publicly accessible without authentication
 - Keep policy content aligned with actual data usage and Crashlytics collection
 

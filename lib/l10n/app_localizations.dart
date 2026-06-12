@@ -4172,6 +4172,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Admin for Help'**
   String get contactAdminForHelp;
+
+  /// No description provided for @aboutUs.
+  ///
+  /// In en, this message translates to:
+  /// **'About Us'**
+  String get aboutUs;
 }
 
 class _AppLocalizationsDelegate

@@ -2210,4 +2210,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactAdminForHelp => 'Contact Admin for Help';
+
+  @override
+  String get aboutUs => 'About Us';
 }

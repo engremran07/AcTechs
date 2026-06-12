@@ -13,28 +13,63 @@ void main() {
     );
 
     final cases = <({String input, String expected, CountryDialCode country})>[
-      (input: '+966554123456', expected: '966554123456', country: CountryDialCode.ksa),
-      (input: '00966554123456', expected: '966554123456', country: CountryDialCode.ksa),
-      (input: '0554123456', expected: '966554123456', country: CountryDialCode.ksa),
-      (input: '00554123456', expected: '966554123456', country: CountryDialCode.ksa),
-      (input: '+1 (415) 555-0123', expected: '14155550123', country: CountryDialCode.ksa),
-      (input: '14155550123', expected: '14155550123', country: CountryDialCode.ksa),
+      (
+        input: '+966554123456',
+        expected: '966554123456',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '00966554123456',
+        expected: '966554123456',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '0554123456',
+        expected: '966554123456',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '00554123456',
+        expected: '966554123456',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '+1 (415) 555-0123',
+        expected: '14155550123',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '14155550123',
+        expected: '14155550123',
+        country: CountryDialCode.ksa,
+      ),
       (input: '4155550123', expected: '14155550123', country: usLike),
       (input: '   ', expected: '', country: CountryDialCode.ksa),
       // WA-002 fix: Pakistan 10-digit numbers without leading 0 are returned as-is
       // (the function only prepends country code for recognized local formats)
-      (input: '3221234567', expected: '3221234567', country: CountryDialCode.ksa),
-      (input: '3001234567', expected: '3001234567', country: CountryDialCode.ksa),
+      (
+        input: '3221234567',
+        expected: '3221234567',
+        country: CountryDialCode.ksa,
+      ),
+      (
+        input: '3001234567',
+        expected: '3001234567',
+        country: CountryDialCode.ksa,
+      ),
     ];
 
     for (final c in cases) {
-      test('normalizes "${c.input}" -> "${c.expected}" (country: ${c.country.dialCode})', () {
-        final normalized = WhatsAppLauncher.normalizeNumber(
-          c.input,
-          defaultCountry: c.country,
-        );
-        expect(normalized, c.expected);
-      });
+      test(
+        'normalizes "${c.input}" -> "${c.expected}" (country: ${c.country.dialCode})',
+        () {
+          final normalized = WhatsAppLauncher.normalizeNumber(
+            c.input,
+            defaultCountry: c.country,
+          );
+          expect(normalized, c.expected);
+        },
+      );
     }
 
     // NANP only applies when context country is US/Canada (dialCode 1)

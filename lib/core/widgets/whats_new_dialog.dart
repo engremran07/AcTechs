@@ -9,6 +9,32 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.6': {
+    'en': [
+      'Security: Screen recording protection (FLAG_SECURE) extended to Job Details, Dashboard, Settings, and Team screens',
+      'Fixed: Admin contact button now appears in Update Required screen with WhatsApp integration for support access',
+      'Fixed: WhatsApp number normalization corrected for Pakistan numbers with Saudi Arabia context (NANP false positive)',
+      'New: Privacy Policy infrastructure complete with URL constant and multi-language support',
+      'Desktop: Admin shell now displays NavigationDrawer with all 11 admin routes on desktop (1024px+)',
+      'Desktop: Tech shell now displays NavigationRail with all 8 technician routes on desktop (1024px+)',
+    ],
+    'ur': [
+      'سیکیورٹی: اسکرین ریکارڈنگ محفوظیت جاب ڈیٹیلز، ڈیش بورڈ، ترتیبات، اور ٹیم اسکرینز تک بڑھائی',
+      'درست کیا: ایڈمن رابطہ بٹن اپڈیٹ رکھی گئی اسکرین میں واٹس ایپ انضمام کے ساتھ ظاہر ہو رہا ہے',
+      'درست کیا: واٹس ایپ نمبر ہنگامی نمبروں کے لیے درست کیا گیا (NANP غلط مثبت)',
+      'نیا: رازداری کی پالیسی بنیادی ڈھانچہ مکمل اور کثیر لسانی معاونت کے ساتھ',
+      'ڈیسک ٹاپ: ایڈمن شیل اب 11 ایڈمن راستوں کے ساتھ NavigationDrawer ظاہر کرتا ہے',
+      'ڈیسک ٹاپ: ٹیک شیل اب 8 ٹیکنیشن راستوں کے ساتھ NavigationRail ظاہر کرتا ہے',
+    ],
+    'ar': [
+      'الأمان: توسيع حماية تسجيل الشاشة لتشمل شاشات التفاصيل والعروض والإعدادات والفريق',
+      'إصلاح: ظهور زر الاتصال بالمسؤول الآن في شاشة التحديث المطلوب مع تكامل واتساب',
+      'إصلاح: تصحيح تطبيع أرقام واتساب للأرقام الباكستانية مع سياق المملكة العربية السعودية',
+      'جديد: بنية سياسة الخصوصية كاملة مع دعم اللغات المتعددة',
+      'سطح المكتب: يعرض غلاف المسؤول الآن درج التنقل مع جميع مسارات المسؤول على سطح المكتب',
+      'سطح المكتب: يعرض غلاف الفني الآن سكة التنقل مع جميع مسارات الفني على سطح المكتب',
+    ],
+  },
   '2.3.4': {
     'en': [
       'Phone editing in Profile now uses country-code aware input and saves in E.164 format',
@@ -28,11 +54,6 @@ const Map<String, Map<String, List<String>>> _changelog = {
       'تطبيق غلاف العرض المتجاوب بشكل موحّد على شاشات الفني والمسؤول داخل الشِل',
       'تم تفعيل Crashlytics لبُنى Android الإصدارية',
     ],
-  },
-  '2.3.2': {
-    'en': ['Governance: version sync (docs-only)'],
-    'ur': ['ورژن سنک'],
-    'ar': ['مزامنة الإصدار'],
   },
   '2.3.1': {
     'en': [

@@ -1,7 +1,7 @@
 name: ac_techs
 description: "AC Techs - Multi-role AC Technician Management App"
 publish_to: 'none'
-version: 2.3.6+105
+version: 2.3.7+106
 
 environment:
   sdk: ^3.11.0

@@ -208,7 +208,9 @@ class _AdminShellState extends State<AdminShell> {
                   ),
                   NavigationDrawerDestination(
                     icon: const Icon(Icons.assignment_turned_in_outlined),
-                    selectedIcon: const Icon(Icons.assignment_turned_in_rounded),
+                    selectedIcon: const Icon(
+                      Icons.assignment_turned_in_rounded,
+                    ),
                     label: Text(l.reconciliation),
                   ),
                   const Divider(),

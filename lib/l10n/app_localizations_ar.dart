@@ -2206,4 +2206,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get contactAdminForHelp => 'تواصل مع المسؤول للحصول على المساعدة';
+
+  @override
+  String get aboutUs => 'من نحن';
 }

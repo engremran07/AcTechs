@@ -81,8 +81,9 @@ class _TechShellState extends ConsumerState<TechShell> {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color:
-                          Theme.of(context).dividerColor.withValues(alpha: 0.6),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.6),
                       width: 0.5,
                     ),
                   ),
@@ -124,9 +125,7 @@ class _TechShellState extends ConsumerState<TechShell> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .tertiary,
+                                  color: Theme.of(context).colorScheme.tertiary,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -145,9 +144,7 @@ class _TechShellState extends ConsumerState<TechShell> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .tertiary,
+                                  color: Theme.of(context).colorScheme.tertiary,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -179,9 +176,7 @@ class _TechShellState extends ConsumerState<TechShell> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .error,
+                                  color: Theme.of(context).colorScheme.error,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -200,9 +195,7 @@ class _TechShellState extends ConsumerState<TechShell> {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .error,
+                                  color: Theme.of(context).colorScheme.error,
                                   shape: BoxShape.circle,
                                 ),
                               ),
