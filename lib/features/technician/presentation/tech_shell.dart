@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,33 +66,171 @@ class _TechShellState extends ConsumerState<TechShell> {
         .watch(pendingSharedInstallAggregatesProvider)
         .maybeWhen(data: (aggs) => aggs.length, orElse: () => 0);
     final isHome = _currentIndex(context) == 0;
-    return ZoomDrawerWrapper(
-      controller: _drawerController,
-      menuScreen: const DrawerMenuContent(isAdmin: false),
-      mainScreen: ShellBackNavigationScope(
-        isHome: isHome,
-        homeRoute: '/tech',
-        child: Scaffold(
-          body: ResponsiveBody(padding: EdgeInsets.zero, child: widget.child),
-          bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
-                  width: 0.5,
+    final isDesktop = kIsWeb && Responsive.isDesktop(context);
+    final idx = _currentIndex(context);
+    final l = AppLocalizations.of(context)!;
+
+    final mainContent = ShellBackNavigationScope(
+      isHome: isHome,
+      homeRoute: '/tech',
+      child: Scaffold(
+        body: ResponsiveBody(padding: EdgeInsets.zero, child: widget.child),
+        bottomNavigationBar: isDesktop
+            ? null
+            : Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color:
+                          Theme.of(context).dividerColor.withValues(alpha: 0.6),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                child: NavigationBar(
+                  selectedIndex: _currentIndex(context) < 0
+                      ? 0
+                      : _currentIndex(context),
+                  onDestinationSelected: (index) {
+                    final current = _currentIndex(context);
+                    if (current == index) {
+                      HapticFeedback.selectionClick();
+                      return;
+                    }
+                    switch (index) {
+                      case 0:
+                        context.go('/tech');
+                      case 1:
+                        context.go('/tech/submit');
+                      case 2:
+                        context.go('/tech/inout');
+                      case 3:
+                        context.go('/tech/history');
+                      case 4:
+                        context.go('/tech/reports');
+                    }
+                  },
+                  destinations: [
+                    NavigationDestination(
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.dashboard_outlined),
+                          if (sharedTeamsCount > 0)
+                            Positioned(
+                              right: -2,
+                              top: -1,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .tertiary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      selectedIcon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.dashboard_rounded),
+                          if (sharedTeamsCount > 0)
+                            Positioned(
+                              right: -2,
+                              top: -1,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .tertiary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      label: AppLocalizations.of(context)!.home,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.add_circle_outline_rounded),
+                      selectedIcon: const Icon(Icons.add_circle_rounded),
+                      label: AppLocalizations.of(context)!.submit,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.swap_vert_outlined),
+                      selectedIcon: const Icon(Icons.swap_vert_rounded),
+                      label: AppLocalizations.of(context)!.inOut,
+                    ),
+                    NavigationDestination(
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.history_outlined),
+                          if (pendingSettlementBatches > 0)
+                            Positioned(
+                              right: -2,
+                              top: -1,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      selectedIcon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.history_rounded),
+                          if (pendingSettlementBatches > 0)
+                            Positioned(
+                              right: -2,
+                              top: -1,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      label: AppLocalizations.of(context)!.history,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.summarize_outlined),
+                      selectedIcon: const Icon(Icons.summarize_rounded),
+                      label: AppLocalizations.of(context)!.reports,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            child: NavigationBar(
-              selectedIndex: _currentIndex(context) < 0
-                  ? 0
-                  : _currentIndex(context),
+      ),
+    );
+
+    if (isDesktop) {
+      // Desktop: NavigationRail with 5 core + 3 drawer destinations
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: idx < 0 ? 0 : idx,
+              labelType: NavigationRailLabelType.all,
               onDestinationSelected: (index) {
-                final current = _currentIndex(context);
-                if (current == index) {
-                  HapticFeedback.selectionClick();
-                  return;
-                }
                 switch (index) {
                   case 0:
                     context.go('/tech');
@@ -103,111 +242,68 @@ class _TechShellState extends ConsumerState<TechShell> {
                     context.go('/tech/history');
                   case 4:
                     context.go('/tech/reports');
+                  case 5:
+                    context.push('/tech/ac-installs');
+                  case 6:
+                    context.push('/tech/settlements');
+                  case 7:
+                    context.push('/tech/settings');
                 }
               },
               destinations: [
-                NavigationDestination(
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.dashboard_outlined),
-                      if (sharedTeamsCount > 0)
-                        Positioned(
-                          right: -2,
-                          top: -1,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.tertiary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+                NavigationRailDestination(
+                  icon: Icon(
+                    sharedTeamsCount > 0
+                        ? Icons.dashboard_rounded
+                        : Icons.dashboard_outlined,
                   ),
-                  selectedIcon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.dashboard_rounded),
-                      if (sharedTeamsCount > 0)
-                        Positioned(
-                          right: -2,
-                          top: -1,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.tertiary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  label: AppLocalizations.of(context)!.home,
+                  label: Text(l.home),
                 ),
-                NavigationDestination(
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  selectedIcon: const Icon(Icons.add_circle_rounded),
-                  label: AppLocalizations.of(context)!.submit,
+                NavigationRailDestination(
+                  icon: const Icon(Icons.add_circle_outlined),
+                  label: Text(l.submit),
                 ),
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.swap_vert_outlined),
-                  selectedIcon: const Icon(Icons.swap_vert_rounded),
-                  label: AppLocalizations.of(context)!.inOut,
+                  label: Text(l.inOut),
                 ),
-                NavigationDestination(
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.history_outlined),
-                      if (pendingSettlementBatches > 0)
-                        Positioned(
-                          right: -2,
-                          top: -1,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.error,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
+                NavigationRailDestination(
+                  icon: Icon(
+                    pendingSettlementBatches > 0
+                        ? Icons.history_rounded
+                        : Icons.history_outlined,
                   ),
-                  selectedIcon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.history_rounded),
-                      if (pendingSettlementBatches > 0)
-                        Positioned(
-                          right: -2,
-                          top: -1,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.error,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  label: AppLocalizations.of(context)!.history,
+                  label: Text(l.history),
                 ),
-                NavigationDestination(
+                NavigationRailDestination(
                   icon: const Icon(Icons.summarize_outlined),
-                  selectedIcon: const Icon(Icons.summarize_rounded),
-                  label: AppLocalizations.of(context)!.reports,
+                  label: Text(l.reports),
+                ),
+                const NavigationRailDestination(
+                  icon: Icon(Icons.ac_unit_outlined),
+                  label: Text('AC Installs'),
+                ),
+                const NavigationRailDestination(
+                  icon: Icon(Icons.handshake_outlined),
+                  label: Text('Settlements'),
+                ),
+                const NavigationRailDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  label: Text('Settings'),
                 ),
               ],
             ),
-          ),
+            const VerticalDivider(thickness: 0.5, width: 1),
+            Expanded(child: mainContent),
+          ],
         ),
-      ),
+      );
+    }
+
+    return ZoomDrawerWrapper(
+      controller: _drawerController,
+      menuScreen: const DrawerMenuContent(isAdmin: false),
+      mainScreen: mainContent,
     );
   }
 }

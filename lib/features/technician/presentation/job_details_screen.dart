@@ -6,6 +6,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
@@ -14,16 +15,30 @@ import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 
-class JobDetailsScreen extends ConsumerWidget {
+class JobDetailsScreen extends ConsumerStatefulWidget {
   const JobDetailsScreen({required this.jobId, this.initialJob, super.key});
 
   final String jobId;
   final JobModel? initialJob;
 
-  Future<List<String>> _sharedTechnicianNames(
-    WidgetRef ref,
-    JobModel job,
-  ) async {
+  @override
+  ConsumerState<JobDetailsScreen> createState() => _JobDetailsScreenState();
+}
+
+class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
+
+  Future<List<String>> _sharedTechnicianNames(JobModel job) async {
     if (!job.isSharedInstall || job.sharedInstallGroupKey.trim().isEmpty) {
       return const <String>[];
     }
@@ -43,14 +58,14 @@ class JobDetailsScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final jobsAsync = ref.watch(technicianJobsProvider);
     final approvalConfig = ref.watch(approvalConfigProvider).value;
     final currentUser = ref.watch(currentUserProvider).value;
     final resolvedJob = jobsAsync.maybeWhen(
-      data: (jobs) => initialJob ?? _findJob(jobs, jobId),
-      orElse: () => initialJob,
+      data: (jobs) => widget.initialJob ?? _findJob(jobs, widget.jobId),
+      orElse: () => widget.initialJob,
     );
     final title = (resolvedJob?.invoiceNumber.trim().isNotEmpty ?? false)
         ? resolvedJob!.invoiceNumber.trim()
@@ -61,7 +76,7 @@ class JobDetailsScreen extends ConsumerWidget {
       body: SafeArea(
         child: jobsAsync.when(
           data: (jobs) {
-            final job = initialJob ?? _findJob(jobs, jobId);
+            final job = widget.initialJob ?? _findJob(jobs, widget.jobId);
             if (job == null) {
               return Center(
                 child: Padding(
@@ -433,7 +448,7 @@ class JobDetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 10),
                         FutureBuilder<List<String>>(
-                          future: _sharedTechnicianNames(ref, job),
+                          future: _sharedTechnicianNames(job),
                           builder: (context, snapshot) {
                             final names = snapshot.data ?? const <String>[];
                             if (names.isEmpty) return const SizedBox.shrink();

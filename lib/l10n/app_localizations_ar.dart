@@ -2199,5 +2199,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settlementCapWarning =>
-      'يعرض آخر 200 سجل. قد تكون بعض المهام غير المسوَّاة الأقدم غير ظاهرة — استخدم فلاتر التاريخ.';
+      'يعرض آخر 200 سجل. قد تكون بعض المهام غير المسوَّاة الأقدم غير ظاهرة — استخدم فلاتر التاريخ.';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get contactAdminForHelp => 'تواصل مع المسؤول للحصول على المساعدة';
 }

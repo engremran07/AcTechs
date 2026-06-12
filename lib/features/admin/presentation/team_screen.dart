@@ -5,9 +5,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/constants/app_constants.dart';
 import 'package:ac_techs/core/models/models.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
-import 'package:ac_techs/core/utils/job_search_filter.dart';
 import 'package:ac_techs/features/admin/providers/admin_providers.dart';
 import 'package:ac_techs/features/admin/data/user_repository.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -24,30 +24,19 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   final Set<String> _selectedIds = {};
   bool _selectMode = false;
 
-  List<UserModel> _filter(List<UserModel> techs) {
-    return UserSearchFilter.apply(techs, query: _search);
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
   }
 
-  void _toggleSelect(String uid) {
-    setState(() {
-      if (_selectedIds.contains(uid)) {
-        _selectedIds.remove(uid);
-        if (_selectedIds.isEmpty) _selectMode = false;
-      } else {
-        _selectedIds.add(uid);
-        _selectMode = true;
-      }
-    });
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
   }
 
-  void _clearSelection() {
-    setState(() {
-      _selectedIds.clear();
-      _selectMode = false;
-    });
-  }
-
-  Future<void> _bulkActivate(bool activate) async {
+  Future<void> _bulkToggleActive(bool activate) async {
     if (_selectedIds.isEmpty) return;
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
@@ -463,6 +452,38 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
       if (!mounted) return;
       AppFeedback.error(context, message: e.message(locale));
     }
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedIds.clear();
+      _selectMode = false;
+    });
+  }
+
+  void _toggleSelect(String uid) {
+    setState(() {
+      if (_selectedIds.contains(uid)) {
+        _selectedIds.remove(uid);
+      } else {
+        _selectedIds.add(uid);
+      }
+      _selectMode = _selectedIds.isNotEmpty;
+    });
+  }
+
+  void _bulkActivate(bool activate) {
+    _bulkToggleActive(activate);
+  }
+
+  List<UserModel> _filter(List<UserModel> users) {
+    if (_search.isEmpty) return users;
+    final query = _search.toLowerCase();
+    return users
+        .where((u) =>
+            u.name.toLowerCase().contains(query) ||
+            u.email.toLowerCase().contains(query))
+        .toList();
   }
 
   @override

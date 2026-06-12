@@ -47,7 +47,8 @@ class WhatsAppLauncher {
     if (n.startsWith('00')) n = n.substring(2);
     n = n.replaceAll(RegExp(r'\D'), '');
 
-    if (_looksLikeNanpLocal(n)) {
+    // Only apply NANP detection when context is a NANP country (US/Canada)
+    if (_looksLikeNanpLocal(n) && _nanpCountryApplies(defaultCountry)) {
       return '1$n';
     }
 
@@ -65,6 +66,11 @@ class WhatsAppLauncher {
   /// NANP local format: NXXNXXXXXX where N is 2-9.
   static bool _looksLikeNanpLocal(String digits) {
     return RegExp(r'^[2-9]\d{2}[2-9]\d{6}$').hasMatch(digits);
+  }
+
+  /// Returns true only if NANP detection should be applied (i.e., country is US/Canada).
+  static bool _nanpCountryApplies(CountryDialCode country) {
+    return country.dialCode == '1';
   }
 
   /// KSA local mobile format (9 digits starting with 5).

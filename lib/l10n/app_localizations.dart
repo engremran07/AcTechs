@@ -4160,6 +4160,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results.'**
   String get settlementCapWarning;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @contactAdminForHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact Admin for Help'**
+  String get contactAdminForHelp;
 }
 
 class _AppLocalizationsDelegate

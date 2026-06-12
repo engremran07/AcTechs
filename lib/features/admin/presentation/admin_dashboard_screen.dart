@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/responsive.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
@@ -30,6 +31,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
+    SecureScreen.enable();
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -42,6 +44,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
 
   @override
   void dispose() {
+    SecureScreen.disable();
     _fadeController.dispose();
     super.dispose();
   }

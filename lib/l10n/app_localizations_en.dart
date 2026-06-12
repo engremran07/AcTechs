@@ -2204,4 +2204,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settlementCapWarning =>
       'Showing 200 most-recent records. Some older unsettled jobs may not be visible — use date filters to narrow results.';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get contactAdminForHelp => 'Contact Admin for Help';
 }

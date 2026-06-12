@@ -514,7 +514,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get themeHighContrastDesc => 'زیادہ سے زیادہ پڑھنے کی صلاحیت';
 
   @override
-  String get about => 'تعارف';
+  String get about => 'مختصر تعارف';
 
   @override
   String get version => 'ورژن';
@@ -2214,4 +2214,10 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get settlementCapWarning =>
       'آخری 200 ریکارڈ دکھائے جا رہے ہیں۔ بعض پرانی غیر ادا کی گئی جابز نظر نہیں آ سکتیں — تاریخ فلٹر استعمال کریں۔';
+
+  @override
+  String get privacyPolicy => 'رازداری کی پالیسی';
+
+  @override
+  String get contactAdminForHelp => 'مدد کے لیے ایڈمن سے رابطہ کریں';
 }

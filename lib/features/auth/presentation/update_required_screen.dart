@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/providers/app_build_provider.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
+import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/settings/providers/approval_config_provider.dart';
+import 'package:ac_techs/features/settings/providers/app_branding_provider.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
 
 /// Shown when the admin has enabled enforceMinimumBuild and the current
@@ -17,6 +20,7 @@ class UpdateRequiredScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
     final buildAsync = ref.watch(appBuildNumberProvider);
+    final brandingAsync = ref.watch(appBrandingProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -64,6 +68,30 @@ class UpdateRequiredScreen extends ConsumerWidget {
                 label: Text(l.iUpdatedRefresh),
               ),
               const SizedBox(height: 12),
+              // Admin contact for help
+              brandingAsync.maybeWhen(
+                data: (branding) {
+                  if (branding.phoneNumber.trim().isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ElevatedButton.icon(
+                      onPressed: () => WhatsAppLauncher.showChooser(
+                        context,
+                        branding.phoneNumber,
+                      ),
+                      icon: const FaIcon(FontAwesomeIcons.whatsapp),
+                      label: Text(l.contactAdminForHelp),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  );
+                },
+                orElse: () => const SizedBox.shrink(),
+              ),
               TextButton(
                 onPressed: () async {
                   await ref.read(signInProvider.notifier).signOut();

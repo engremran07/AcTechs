@@ -8,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:ac_techs/core/utils/base64_image_codec.dart';
+import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/providers/theme_provider.dart';
@@ -33,6 +34,18 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sendingReset = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
+  void dispose() {
+    SecureScreen.disable();
+    super.dispose();
+  }
 
   String _displayAppBrandingName(
     AppLocalizations l,
