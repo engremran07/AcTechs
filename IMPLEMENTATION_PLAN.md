@@ -17,6 +17,7 @@ The v13 audit identified 45 calibrated findings (2 P0, 8 P1, 18 P2, 17 P3).
 Current focus: P0 emergency fixes (data removal, CI gate enforcement) + P1 navigation & security.
 
 ### Architecture (current)
+
 - Flutter 3.44.0 (CI) / local still on 3.41.6 (upgrade pending)
 - Dart SDK: ^3.11.0 (CI uses 3.12.1; local constraint upgrade pending local Flutter upgrade)
 - Firebase Spark tier — Auth + Firestore + Hosting + App Check
@@ -27,6 +28,7 @@ Current focus: P0 emergency fixes (data removal, CI gate enforcement) + P1 navig
 - 3 independent domains: Jobs / In-Out (expenses+earnings) / AC Installs
 
 ### What was implemented (v2.2.9+98 and prior sessions)
+
 - WhatsApp chooser: MethodChannel (PackageManager.getPackageInfo) — REG-013
 - Bulk transfer: parallel Future.wait — REG-014
 - Settlement cap UI warning — REG-015
@@ -41,6 +43,7 @@ Current focus: P0 emergency fixes (data removal, CI gate enforcement) + P1 navig
 - 7 new Dart lint rules in analysis_options.yaml
 
 ### Known Limitations (accepted — documented in MASTER_BLUEPRINT.md)
+
 - Settlement view capped at 200 records (.limit(200))
 - Settlement summary capped at 500 records (.limit(500))
 - allJobs() capped at 150 documents
@@ -49,6 +52,7 @@ Current focus: P0 emergency fixes (data removal, CI gate enforcement) + P1 navig
 - Dart SDK ^3.12.0 pending local Flutter SDK upgrade
 
 ### Genuine next priorities (from v11/v12 audit)
+
 1. **TEST COVERAGE**: JobSearchFilter unit tests (12+ cases), WhatsAppLauncher.normalizeNumber() tests, transfer rule emulator tests
 2. **WEB NAVIGATION**: ZoomDrawer → NavigationRail/persistent nav at desktop widths (>1024px)
 3. **APP SHORTCUTS**: Wire Ctrl+F, Ctrl+E, Ctrl+P to admin_all_jobs_screen, analytics_screen, reports_hub_screen

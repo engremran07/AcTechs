@@ -144,6 +144,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get invoiceNumber => 'انوائس نمبر';
 
   @override
+  String get invoicePeriod => 'انوائس مدت';
+
+  @override
+  String get invoicePeriodStartDay => 'انوائس مدت شروع ہونے کا دن';
+
+  @override
+  String get invoicePeriodEndDay => 'انوائس مدت ختم ہونے کا دن';
+
+  @override
+  String get invoicePeriodHelp =>
+      'اس کمپنی کے لیے کسٹم بلنگ ونڈو استعمال کریں۔ ڈیفالٹ 1–31 ہے۔';
+
+  @override
   String get clientName => 'کلائنٹ کا نام';
 
   @override

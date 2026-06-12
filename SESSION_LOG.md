@@ -1,12 +1,15 @@
 # SESSION_LOG
+
 ## 2026-06-12 — v13 Audit Implementation — APK v2.3.4+103
 
 **Scope**: Implement 45 audit findings from v13 master audit (2 P0, 8 P1, 18 P2, 17 P3)  
 **In-Progress**: P0/P1 implementation phase  
-**Changes planned**: 
+**Changes planned**:
+
 - P0: Remove Excel data files, enforce CI gate (GitHub settings)
 - P1: Desktop nav (admin + tech shells), SecureScreen (4 screens), privacy policy, WA fixes
 - P2/P3: Lower-priority fixes (NANP false positive, AppShortcuts, accessibility, etc.)
+
 ## 2026-06-11 — Open-items closure pass — APK v2.3.4+103
 
 - **WA-003**: `WhatsAppLauncher.normalizeNumber()` now detects NANP local format (`NXXNXXXXXX`) and prefixes `1`; added table-driven tests in `test/unit/core/utils/whatsapp_launcher_test.dart`

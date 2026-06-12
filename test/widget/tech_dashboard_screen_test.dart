@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/theme/arctic_theme.dart';
 import 'package:ac_techs/core/utils/technician_job_summary.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
@@ -36,6 +37,8 @@ void main() {
   Future<GoRouter> pumpDashboard(
     WidgetTester tester, {
     MediaQueryData? mediaQuery,
+    List<JobModel>? todaysJobs,
+    List<CompanyModel>? activeCompanies,
   }) async {
     final router = GoRouter(
       initialLocation: '/tech',
@@ -72,7 +75,10 @@ void main() {
         overrides: [
           currentUserProvider.overrideWith((ref) => Stream.value(technician)),
           todaysJobsProvider.overrideWith(
-            (ref) => const AsyncData(<JobModel>[]),
+            (ref) => AsyncData(todaysJobs ?? const <JobModel>[]),
+          ),
+          activeCompaniesProvider.overrideWith(
+            (ref) => Stream.value(activeCompanies ?? const <CompanyModel>[]),
           ),
           technicianJobSummaryProvider.overrideWith(
             (ref) => const AsyncData(summary),
@@ -141,5 +147,37 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Submit Route'), findsOneWidget);
+  });
+
+  testWidgets('job card shows invoice period badge when company has custom period', (
+    tester,
+  ) async {
+    const company = CompanyModel(
+      id: 'company-1',
+      name: 'Test Company',
+      invoicePeriodStartDay: 1,
+      invoicePeriodEndDay: 30,
+    );
+    final job = JobModel(
+      id: 'job-1',
+      techId: technician.uid,
+      techName: technician.name,
+      companyId: company.id,
+      companyName: company.name,
+      invoiceNumber: 'INV-123',
+      clientName: 'Client One',
+      date: DateTime(2026, 6, 12),
+    );
+
+    await pumpDashboard(
+      tester,
+      todaysJobs: [job],
+      activeCompanies: [company],
+    );
+
+    expect(
+      find.text('Invoice Period: 01/06/2026 - 30/06/2026'),
+      findsOneWidget,
+    );
   });
 }

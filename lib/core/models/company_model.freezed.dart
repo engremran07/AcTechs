@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CompanyModel {
 
- String get id; String get name; String get invoicePrefix; bool get isActive; String get logoBase64;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;
+ String get id; String get name; String get invoicePrefix; int get invoicePeriodStartDay; int get invoicePeriodEndDay; bool get isActive; String get logoBase64;@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? get createdAt;
 /// Create a copy of CompanyModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $CompanyModelCopyWith<$Res>  {
   factory $CompanyModelCopyWith(CompanyModel value, $Res Function(CompanyModel) _then) = _$CompanyModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String invoicePrefix, bool isActive, String logoBase64,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
+ String id, String name, String invoicePrefix, int invoicePeriodStartDay, int invoicePeriodEndDay, bool isActive, String logoBase64,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
 });
 
 
@@ -65,12 +65,14 @@ class _$CompanyModelCopyWithImpl<$Res>
 
 /// Create a copy of CompanyModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? invoicePrefix = null,Object? isActive = null,Object? logoBase64 = null,Object? createdAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? invoicePrefix = null,Object? invoicePeriodStartDay = null,Object? invoicePeriodEndDay = null,Object? isActive = null,Object? logoBase64 = null,Object? createdAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,invoicePrefix: null == invoicePrefix ? _self.invoicePrefix : invoicePrefix // ignore: cast_nullable_to_non_nullable
-as String,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as String,invoicePeriodStartDay: null == invoicePeriodStartDay ? _self.invoicePeriodStartDay : invoicePeriodStartDay // ignore: cast_nullable_to_non_nullable
+as int,invoicePeriodEndDay: null == invoicePeriodEndDay ? _self.invoicePeriodEndDay : invoicePeriodEndDay // ignore: cast_nullable_to_non_nullable
+as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,logoBase64: null == logoBase64 ? _self.logoBase64 : logoBase64 // ignore: cast_nullable_to_non_nullable
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
@@ -158,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String invoicePrefix,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String invoicePrefix,  int invoicePeriodStartDay,  int invoicePeriodEndDay,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CompanyModel() when $default != null:
-return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.logoBase64,_that.createdAt);case _:
+return $default(_that.id,_that.name,_that.invoicePrefix,_that.invoicePeriodStartDay,_that.invoicePeriodEndDay,_that.isActive,_that.logoBase64,_that.createdAt);case _:
   return orElse();
 
 }
@@ -179,10 +181,10 @@ return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.log
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String invoicePrefix,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String invoicePrefix,  int invoicePeriodStartDay,  int invoicePeriodEndDay,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _CompanyModel():
-return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.logoBase64,_that.createdAt);case _:
+return $default(_that.id,_that.name,_that.invoicePrefix,_that.invoicePeriodStartDay,_that.invoicePeriodEndDay,_that.isActive,_that.logoBase64,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +201,10 @@ return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.log
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String invoicePrefix,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String invoicePrefix,  int invoicePeriodStartDay,  int invoicePeriodEndDay,  bool isActive,  String logoBase64, @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson)  DateTime? createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _CompanyModel() when $default != null:
-return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.logoBase64,_that.createdAt);case _:
+return $default(_that.id,_that.name,_that.invoicePrefix,_that.invoicePeriodStartDay,_that.invoicePeriodEndDay,_that.isActive,_that.logoBase64,_that.createdAt);case _:
   return null;
 
 }
@@ -214,12 +216,14 @@ return $default(_that.id,_that.name,_that.invoicePrefix,_that.isActive,_that.log
 @JsonSerializable()
 
 class _CompanyModel implements CompanyModel {
-  const _CompanyModel({this.id = '', required this.name, this.invoicePrefix = '', this.isActive = true, this.logoBase64 = '', @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt});
+  const _CompanyModel({this.id = '', required this.name, this.invoicePrefix = '', this.invoicePeriodStartDay = 1, this.invoicePeriodEndDay = 31, this.isActive = true, this.logoBase64 = '', @JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) this.createdAt});
   factory _CompanyModel.fromJson(Map<String, dynamic> json) => _$CompanyModelFromJson(json);
 
 @override@JsonKey() final  String id;
 @override final  String name;
 @override@JsonKey() final  String invoicePrefix;
+@override@JsonKey() final  int invoicePeriodStartDay;
+@override@JsonKey() final  int invoicePeriodEndDay;
 @override@JsonKey() final  bool isActive;
 @override@JsonKey() final  String logoBase64;
 @override@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) final  DateTime? createdAt;
@@ -237,16 +241,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompanyModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.invoicePrefix, invoicePrefix) || other.invoicePrefix == invoicePrefix)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.logoBase64, logoBase64) || other.logoBase64 == logoBase64)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompanyModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.invoicePrefix, invoicePrefix) || other.invoicePrefix == invoicePrefix)&&(identical(other.invoicePeriodStartDay, invoicePeriodStartDay) || other.invoicePeriodStartDay == invoicePeriodStartDay)&&(identical(other.invoicePeriodEndDay, invoicePeriodEndDay) || other.invoicePeriodEndDay == invoicePeriodEndDay)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.logoBase64, logoBase64) || other.logoBase64 == logoBase64)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,invoicePrefix,isActive,logoBase64,createdAt);
+int get hashCode => Object.hash(runtimeType,id,name,invoicePrefix,invoicePeriodStartDay,invoicePeriodEndDay,isActive,logoBase64,createdAt);
 
 @override
 String toString() {
-  return 'CompanyModel(id: $id, name: $name, invoicePrefix: $invoicePrefix, isActive: $isActive, logoBase64: $logoBase64, createdAt: $createdAt)';
+  return 'CompanyModel(id: $id, name: $name, invoicePrefix: $invoicePrefix, invoicePeriodStartDay: $invoicePeriodStartDay, invoicePeriodEndDay: $invoicePeriodEndDay, isActive: $isActive, logoBase64: $logoBase64, createdAt: $createdAt)';
 }
 
 
@@ -257,7 +261,7 @@ abstract mixin class _$CompanyModelCopyWith<$Res> implements $CompanyModelCopyWi
   factory _$CompanyModelCopyWith(_CompanyModel value, $Res Function(_CompanyModel) _then) = __$CompanyModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String invoicePrefix, bool isActive, String logoBase64,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
+ String id, String name, String invoicePrefix, int invoicePeriodStartDay, int invoicePeriodEndDay, bool isActive, String logoBase64,@JsonKey(fromJson: _timestampFromJson, toJson: _timestampToJson) DateTime? createdAt
 });
 
 
@@ -274,12 +278,14 @@ class __$CompanyModelCopyWithImpl<$Res>
 
 /// Create a copy of CompanyModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? invoicePrefix = null,Object? isActive = null,Object? logoBase64 = null,Object? createdAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? invoicePrefix = null,Object? invoicePeriodStartDay = null,Object? invoicePeriodEndDay = null,Object? isActive = null,Object? logoBase64 = null,Object? createdAt = freezed,}) {
   return _then(_CompanyModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,invoicePrefix: null == invoicePrefix ? _self.invoicePrefix : invoicePrefix // ignore: cast_nullable_to_non_nullable
-as String,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as String,invoicePeriodStartDay: null == invoicePeriodStartDay ? _self.invoicePeriodStartDay : invoicePeriodStartDay // ignore: cast_nullable_to_non_nullable
+as int,invoicePeriodEndDay: null == invoicePeriodEndDay ? _self.invoicePeriodEndDay : invoicePeriodEndDay // ignore: cast_nullable_to_non_nullable
+as int,isActive: null == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
 as bool,logoBase64: null == logoBase64 ? _self.logoBase64 : logoBase64 // ignore: cast_nullable_to_non_nullable
 as String,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,

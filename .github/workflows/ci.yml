@@ -279,11 +279,15 @@ jobs:
             cp "$apk" "build/app/outputs/flutter-apk/ac-techs-${abi}-debug-$(date +%Y%m%d-%H%M).apk"
           done
 
+      - name: Verify renamed debug APK artifacts
+        run: |
+          ls -1 build/app/outputs/flutter-apk/ac-techs-*-debug-*.apk
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: ac-techs-debug-${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/ac-techs-debug-*.apk
+          path: build/app/outputs/flutter-apk/ac-techs-*-debug-*.apk
           retention-days: 14
 
   build-web:

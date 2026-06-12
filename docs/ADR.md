@@ -1,4 +1,4 @@
-# AcTechs — Architecture Decision Records (ADRs)
+# AC Techs — Architecture Decision Records (ADRs)
 
 **Format:** Title · Status · Context · Decision · Consequences
 
@@ -14,6 +14,7 @@
 **Decision:** Use `flutter_riverpod: ^3.3.1` with `StreamProvider.autoDispose` for Firestore streams and derived `Provider.family` for filtered views.
 
 **Consequences:**
+
 - ✅ Zero boilerplate compared to BLoC events/states
 - ✅ autoDispose prevents stale Firestore listeners when navigating away
 - ✅ StreamProvider deduplicates identical subscriptions automatically
@@ -31,6 +32,7 @@
 **Decision:** All technician-owned documents use `isDeleted: bool` + `deletedAt: Timestamp`. Archive methods set these fields instead of calling `.delete()`.
 
 **Consequences:**
+
 - ✅ Settlement history remains accurate even after tech "deletes" a record
 - ✅ Period lock enforcement still works (no need to handle delete edge case)
 - ⚠️ Collections grow indefinitely — acceptable for current scale
@@ -48,6 +50,7 @@
 **Decision:** Use Firestore for all business logic that can be expressed as Firestore rules. No Cloud Functions. No Cloud Messaging. Spark free tier.
 
 **Consequences:**
+
 - ✅ Zero monthly cost
 - ✅ Firestore rules provide server-side enforcement without Cloud Functions
 - ⚠️ 50,000 reads/day limit — requires careful query design (allJobs .limit(150), etc.)
@@ -65,6 +68,7 @@
 **Decision:** Use `go_router: ^17.2.0` with shell routes, redirect guards, and `context.push()` vs `context.go()` discipline.
 
 **Consequences:**
+
 - ✅ Native support for shell routes (bottom nav + drawer)
 - ✅ Redirect guards enforce auth + role + minimum-build gates
 - ✅ `context.go()` for shell tabs; `context.push()` for detail routes (REG-006 prevention)
@@ -81,6 +85,7 @@
 **Decision:** Use `freezed: ^3.0.6` + `json_serializable` for all domain models.
 
 **Consequences:**
+
 - ✅ Zero runtime equality bugs (value equality by default)
 - ✅ `@Default` annotations handle missing Firestore fields gracefully
 - ✅ copyWith prevents accidental mutation
@@ -98,6 +103,7 @@
 **Decision:** Use Flutter's `flutter_localizations` + ARB files for EN, UR, AR. CI enforces key parity across all three. NotoNastaliqUrdu + NotoNaskhArabic bundled for offline PDF generation.
 
 **Consequences:**
+
 - ✅ Native RTL layout for Arabic and Urdu
 - ✅ Font bundling enables offline PDF generation with correct script rendering
 - ⚠️ All three ARB files must be updated synchronously on every string addition
@@ -115,6 +121,7 @@
 **Decision:** Implement `MethodChannel('com.actechs.pk/packages')` in `MainActivity.kt` calling `PackageManager.getPackageInfo()`. Both packages declared in `<queries>` in AndroidManifest.xml.
 
 **Consequences:**
+
 - ✅ Reliable per-package detection on Android 11+ (confirmed via REG-013)
 - ✅ Chooser only appears when BOTH apps are installed
 - ✅ Fallback chain: specific intent → wa.me universal → browser
@@ -131,6 +138,7 @@
 **Decision:** `approvalConfig.lockedBeforeDate` Firestore field. `dateIsUnlocked()` Firestore rule function guards job/expense/earning creates and edits. Settlement _responses_ intentionally exempt (REG-011).
 
 **Consequences:**
+
 - ✅ Historical period integrity preserved
 - ✅ Settlement workflow unblocked after lock (REG-011)
 - ⚠️ Historical import tool can bypass lock with admin confirmation — partial-success UX risk (FEAT-005)
@@ -146,6 +154,7 @@
 **Decision:** Deterministic group key `{companyId}-{invoiceNumber}`. `shared_install_aggregates` collection holds running totals. Each tech contribution triggers an increment. Consumer-side delivery calculation from aggregate snapshot.
 
 **Consequences:**
+
 - ✅ No Cloud Functions required
 - ✅ Reproducible group key prevents duplicates
 - ⚠️ Counter rollback on archive not implemented (Spark tier constraint)
@@ -163,6 +172,7 @@
 **Decision:** `SecureScreen` utility using `MethodChannel` → `WindowManager.LayoutParams.FLAG_SECURE`. Enabled in `initState()`, disabled in `dispose()`.
 
 **Consequences:**
+
 - ✅ Screenshots and screen recordings blocked on settlement screens
 - ✅ No UI impact — invisible to user unless they attempt screenshot
 - ⚠️ Only implemented for InvoiceSettlementsScreen currently; JobDetailsScreen deferred

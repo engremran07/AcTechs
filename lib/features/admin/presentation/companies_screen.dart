@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
@@ -22,6 +23,12 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   Future<void> _showCompanyDialog([CompanyModel? company]) async {
     final l = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(text: company?.name ?? '');
+    final startDayCtrl = TextEditingController(
+      text: company?.invoicePeriodStartDay.toString() ?? '1',
+    );
+    final endDayCtrl = TextEditingController(
+      text: company?.invoicePeriodEndDay.toString() ?? '31',
+    );
     final formKey = GlobalKey<FormState>();
     // logoBase64 held in dialog-local state via StatefulBuilder
     String pendingLogo = company?.logoBase64 ?? '';
@@ -180,6 +187,62 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                         ? l.required
                         : null,
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: startDayCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: l.invoicePeriodStartDay,
+                            labelText: l.invoicePeriodStartDay,
+                            prefixIcon: const Icon(Icons.calendar_today),
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          validator: (value) {
+                            final parsed = int.tryParse(value ?? '');
+                            if (parsed == null || parsed < 1 || parsed > 31) {
+                              return l.required;
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: endDayCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: l.invoicePeriodEndDay,
+                            labelText: l.invoicePeriodEndDay,
+                            prefixIcon: const Icon(Icons.calendar_month),
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          validator: (value) {
+                            final parsed = int.tryParse(value ?? '');
+                            if (parsed == null || parsed < 1 || parsed > 31) {
+                              return l.required;
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l.invoicePeriodHelp,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ArcticTheme.arcticTextSecondary,
+                        ),
+                  ),
                 ],
               ),
             ),
@@ -212,6 +275,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             .createCompany(
               name: nameCtrl.text.trim(),
               invoicePrefix: '',
+              invoicePeriodStartDay: int.tryParse(startDayCtrl.text.trim()) ?? 1,
+              invoicePeriodEndDay: int.tryParse(endDayCtrl.text.trim()) ?? 31,
               logoBase64: pendingLogo,
             );
         if (!mounted) return;
@@ -223,6 +288,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               id: company.id,
               name: nameCtrl.text.trim(),
               invoicePrefix: company.invoicePrefix,
+              invoicePeriodStartDay: int.tryParse(startDayCtrl.text.trim()) ?? 1,
+              invoicePeriodEndDay: int.tryParse(endDayCtrl.text.trim()) ?? 31,
               logoBase64: pendingLogo,
             );
         if (!mounted) return;

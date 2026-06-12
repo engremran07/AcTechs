@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0   # full history for changelog generation
 
@@ -124,13 +124,13 @@ jobs:
           echo "versionCode monotonic check passed: ${PREV_CODE} -> ${CURRENT_CODE}"
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.1
         with:
           distribution: 'zulu'
           java-version: '17'
 
       - name: Set up Flutter stable
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: '3.44.0'
           channel: 'stable'
@@ -246,7 +246,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: '20'
           cache: npm
@@ -314,9 +314,6 @@ jobs:
             abi=$(basename "$apk" | sed -E 's/^app-(.*)-debug\.apk$/\1/')
             mv "$apk" "build/app/outputs/flutter-apk/ac-techs-${{ steps.app_version.outputs.full }}-${abi}-debug.apk"
           done
-
-      - name: Build release APK
-        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       - name: Rename release APK
         run: |

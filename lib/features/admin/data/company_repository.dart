@@ -34,12 +34,16 @@ class CompanyRepository {
   Future<void> createCompany({
     required String name,
     required String invoicePrefix,
+    int invoicePeriodStartDay = 1,
+    int invoicePeriodEndDay = 31,
     String logoBase64 = '',
   }) async {
     try {
       await _ref.add({
         'name': name,
         'invoicePrefix': invoicePrefix,
+        'invoicePeriodStartDay': invoicePeriodStartDay,
+        'invoicePeriodEndDay': invoicePeriodEndDay,
         'isActive': true,
         'logoBase64': logoBase64,
         'createdAt': FieldValue.serverTimestamp(),
@@ -54,12 +58,16 @@ class CompanyRepository {
     required String id,
     required String name,
     required String invoicePrefix,
+    required int invoicePeriodStartDay,
+    required int invoicePeriodEndDay,
     String logoBase64 = '',
   }) async {
     try {
       await _ref.doc(id).update({
         'name': name,
         'invoicePrefix': invoicePrefix,
+        'invoicePeriodStartDay': invoicePeriodStartDay,
+        'invoicePeriodEndDay': invoicePeriodEndDay,
         'logoBase64': logoBase64,
       });
     } on FirebaseException catch (e) {

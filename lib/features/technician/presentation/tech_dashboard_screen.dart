@@ -9,6 +9,7 @@ import 'package:ac_techs/core/models/models.dart';
 import 'package:ac_techs/core/utils/app_formatters.dart';
 import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/providers/shared_install_providers.dart';
@@ -59,6 +60,10 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final jobSummary = ref.watch(technicianJobSummaryProvider);
     final settlementInbox = ref.watch(technicianSettlementInboxProvider);
     final sharedAggregates = ref.watch(pendingSharedInstallAggregatesProvider);
+    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final companiesById = {
+      for (final company in activeCompanies) company.id: company,
+    };
 
     return AppShortcuts(
       onRefresh: _refresh,
@@ -430,6 +435,7 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                 },
                                 child: _JobCard(
                                   job: job,
+                                  company: companiesById[job.companyId.trim()],
                                   onTap: () => context.push(
                                     '/tech/job/${job.id}',
                                     extra: job,
@@ -513,9 +519,10 @@ class _StatCard extends StatelessWidget {
 }
 
 class _JobCard extends StatelessWidget {
-  const _JobCard({required this.job, required this.onTap});
+  const _JobCard({required this.job, required this.company, required this.onTap});
 
   final JobModel job;
+  final CompanyModel? company;
   final VoidCallback onTap;
 
   int get _displayUnits {
@@ -528,6 +535,10 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final company = this.company;
+    final periodLabel = (company != null && job.date != null)
+        ? '${l.invoicePeriod}: ${AppFormatters.date(company.invoicePeriodForDate(job.date!).start)} - ${AppFormatters.date(company.invoicePeriodForDate(job.date!).end)}'
+        : null;
     return ArcticCard(
       onTap: onTap,
       child: Column(
@@ -570,6 +581,14 @@ class _JobCard extends StatelessWidget {
               ),
             ],
           ),
+          if (periodLabel != null) ...[
+            const SizedBox(height: 8),
+            _DashboardInfoChip(
+              icon: Icons.calendar_today_outlined,
+              label: periodLabel,
+              color: ArcticTheme.arcticTextSecondary,
+            ),
+          ],
           if (job.isSharedInstall) ...[
             const SizedBox(height: 8),
             Wrap(

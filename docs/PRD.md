@@ -1,4 +1,4 @@
-# AcTechs — Product Requirements Document (PRD)
+# AC Techs — Product Requirements Document (PRD)
 
 **Version:** 2.2.8+97  
 **Last Updated:** 2026-06-09  
@@ -13,6 +13,7 @@ It digitises the entire job lifecycle — from technician submission through adm
 screenshots and manual Excel tracking.
 
 **Core value proposition:**
+
 - Technicians submit jobs from the field via Android APK; no data-entry lag.
 - Admins approve, reject, transfer, and settle jobs from the same app.
 - All financial records (jobs, expenses, earnings) are tied to a locked-period audit trail.
@@ -32,6 +33,7 @@ screenshots and manual Excel tracking.
 ## 3. Feature Inventory
 
 ### 3.1 Job Management
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Job submission (tech) | ✅ Shipped | Multi-AC-type, client contact, company, shared install |
@@ -45,6 +47,7 @@ screenshots and manual Excel tracking.
 | Shared installs | ✅ Shipped | Multi-tech contribution, team split, aggregate tracking |
 
 ### 3.2 Settlement
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Settlement batch initiation | ✅ Shipped | Admin marks approved+unpaid jobs as awaiting_technician |
@@ -54,6 +57,7 @@ screenshots and manual Excel tracking.
 | Settlement cap warning | ✅ Shipped | Banner when >200 records (PER-001) |
 
 ### 3.3 In/Out (Expense & Earning Tracking)
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Daily expense/earning entry | ✅ Shipped | Work + Home categories |
@@ -63,6 +67,7 @@ screenshots and manual Excel tracking.
 | Period lock | ✅ Shipped | Admin can lock historical periods |
 
 ### 3.4 Team Management
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Add/edit technician | ✅ Shipped | PhoneInputField with country code (KSA default) |
@@ -72,6 +77,7 @@ screenshots and manual Excel tracking.
 | Resend invitation | ❌ Not shipped | Currently no resend button |
 
 ### 3.5 Analytics & Reports
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Admin analytics dashboard | ✅ Shipped | Job counts, settlement summaries, fl_chart |
@@ -80,6 +86,7 @@ screenshots and manual Excel tracking.
 | Historical import | ✅ Shipped | Excel → Firestore with locked-period warning |
 
 ### 3.6 Settings & Configuration
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Job approval toggle | ✅ Shipped | Per approval config |
@@ -90,6 +97,7 @@ screenshots and manual Excel tracking.
 | Tech transfer toggles | ✅ Shipped | Allow + requires-approval flags |
 
 ### 3.7 Infrastructure
+
 | Feature | Status | Notes |
 | --- | --- | --- |
 | Multilingual (EN/UR/AR) | ✅ Shipped | RTL support, locale-aware fonts |

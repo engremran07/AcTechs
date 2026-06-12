@@ -2,5 +2,8 @@
   "markdownlint.ignore": [
     ".claude/**",
     ".github/instructions/**"
-  ]
+  ],
+  "yaml.validate": true,
+  "github-actions.workflows.validate.enabled": false,
+  "github-actions.workflows.validation.enabled": false
 }

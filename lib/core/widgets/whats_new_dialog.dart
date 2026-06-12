@@ -9,6 +9,40 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.3.8': {
+    'en': [
+      'Release: Full sign-off gates completed (analyze, tests, Firestore rules lint/tests, web and APK builds)',
+      'Fix: Session auth loading flow stabilized by avoiding silent null stream emissions',
+      'Reliability: Release workflow and governance sync improved for safer production delivery',
+    ],
+    'ur': [
+      'ریلیز: مکمل سائن آف گیٹس مکمل (analyze، tests، Firestore rules lint/tests، web اور APK builds)',
+      'درستگی: سیشن auth loading فلو کو silent null stream سے بچا کر مستحکم کیا گیا',
+      'اعتمادی: ریلیز workflow اور governance sync بہتر کی گئی تاکہ پیداوار میں ترسیل محفوظ رہے',
+    ],
+    'ar': [
+      'إصدار: إكمال بوابات التوقيع النهائية بالكامل (التحليل، الاختبارات، تدقيق/اختبارات قواعد Firestore، وبناء الويب وAPK)',
+      'إصلاح: تحسين استقرار تدفق تحميل المصادقة عبر تجنب بث null الصامت',
+      'موثوقية: تحسين مسار الإصدار ومزامنة الحوكمة لتسليم إنتاجي أكثر أمانا',
+    ],
+  },
+  '2.3.7': {
+    'en': [
+      'Feature: Technician dashboard job cards now surface company-specific invoice period ranges',
+      'Feature: Job details screen now shows invoice period for company billing windows',
+      'Test: Added regression coverage for invoice period badge rendering on technician dashboard',
+    ],
+    'ur': [
+      'خصوصیت: ٹیکنیشن ڈیش بورڈ جاب کارڈز اب کمپنی کے مخصوص انوائس دورانیہ کو ظاہر کرتے ہیں',
+      'خصوصیت: جاب تفصیل اسکرین اب کمپنی کے بلنگ ونڈوز کے لئے انوائس مدت دکھاتی ہے',
+      'ٹیسٹ: ٹیکنیشن ڈیش بورڈ پر انوائس مدت بیج رینڈرنگ کے لئے ریگریشن کورج شامل کیا گیا',
+    ],
+    'ar': [
+      'ميزة: بطاقات الوظائف في لوحة التحكم تظهر الآن نطاقات فترة الفاتورة الخاصة بالشركة',
+      'ميزة: شاشة تفاصيل الوظيفة تعرض الآن فترة الفاتورة لنوافذ الفوترة الخاصة بالشركة',
+      'اختبار: تمت إضافة تغطية انحدار لعرض شارة فترة الفاتورة في لوحة تحكم الفني',
+    ],
+  },
   '2.3.6': {
     'en': [
       'Security: Screen recording protection (FLAG_SECURE) extended to Job Details, Dashboard, Settings, and Team screens',

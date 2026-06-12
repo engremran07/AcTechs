@@ -364,6 +364,30 @@ abstract class AppLocalizations {
   /// **'Invoice Number'**
   String get invoiceNumber;
 
+  /// No description provided for @invoicePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Period'**
+  String get invoicePeriod;
+
+  /// No description provided for @invoicePeriodStartDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Period Start Day'**
+  String get invoicePeriodStartDay;
+
+  /// No description provided for @invoicePeriodEndDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice Period End Day'**
+  String get invoicePeriodEndDay;
+
+  /// No description provided for @invoicePeriodHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a custom billing window for this company. Default is 1–31.'**
+  String get invoicePeriodHelp;
+
   /// No description provided for @clientName.
   ///
   /// In en, this message translates to:

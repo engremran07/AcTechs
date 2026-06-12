@@ -144,6 +144,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invoiceNumber => 'رقم الفاتورة';
 
   @override
+  String get invoicePeriod => 'فترة الفاتورة';
+
+  @override
+  String get invoicePeriodStartDay => 'اليوم الأول لفترة الفاتورة';
+
+  @override
+  String get invoicePeriodEndDay => 'اليوم الأخير لفترة الفاتورة';
+
+  @override
+  String get invoicePeriodHelp =>
+      'استخدم نافذة فوترة مخصصة لهذه الشركة. الافتراضي هو 1–31.';
+
+  @override
   String get clientName => 'اسم العميل';
 
   @override

@@ -144,6 +144,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invoiceNumber => 'Invoice Number';
 
   @override
+  String get invoicePeriod => 'Invoice Period';
+
+  @override
+  String get invoicePeriodStartDay => 'Invoice Period Start Day';
+
+  @override
+  String get invoicePeriodEndDay => 'Invoice Period End Day';
+
+  @override
+  String get invoicePeriodHelp =>
+      'Use a custom billing window for this company. Default is 1–31.';
+
+  @override
   String get clientName => 'Client Name';
 
   @override

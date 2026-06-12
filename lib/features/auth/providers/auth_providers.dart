@@ -31,7 +31,8 @@ final currentUserProvider = StreamProvider<UserModel?>((ref) {
       if (user == null) return Stream.value(null);
       return ref.watch(authRepositoryProvider).userStream(user.uid);
     },
-    loading: () => Stream.value(null),
+    // Keep provider in loading state while auth/profile state resolves.
+    loading: () => const Stream<UserModel?>.empty(),
     error: (e, st) =>
         Stream.error(e, st), // propagate — don't swallow to silent null
   );

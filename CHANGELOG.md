@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2.3.8+107
+
+- Release: Completed full sign-off sequence with analyzer, tests, Firestore rules lint/tests, web build, and APK build gates
+- Fix: Auth provider loading path no longer emits silent null stream values, improving session stability behavior
+- Fix: Workflow and governance sync improvements for release reliability and consistency
+- Test: Verified invoice period dashboard regression coverage passes and release artifacts build successfully
+
+## 2.3.7+106
+
+- Feat: Technician dashboard job cards now show company-specific invoice period ranges when available
+- Feat: Job Details screen now includes invoice period information for company billing windows
+- Test: Added regression coverage for invoice period badge rendering on technician dashboard
+
 ## 2.3.6+105
 
 - Fix [SEC-001]: `JobDetailsScreen` now uses `ConsumerStatefulWidget` with `SecureScreen` lifecycle — screen recording protection active for sensitive job data

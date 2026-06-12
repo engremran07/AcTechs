@@ -9,6 +9,7 @@ import 'package:ac_techs/core/utils/whatsapp_launcher.dart';
 import 'package:ac_techs/core/utils/secure_screen.dart';
 import 'package:ac_techs/core/widgets/widgets.dart';
 import 'package:ac_techs/l10n/app_localizations.dart';
+import 'package:ac_techs/features/admin/providers/company_providers.dart';
 import 'package:ac_techs/features/jobs/providers/job_providers.dart';
 import 'package:ac_techs/features/jobs/data/job_repository.dart';
 import 'package:ac_techs/features/auth/providers/auth_providers.dart';
@@ -63,6 +64,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
     final jobsAsync = ref.watch(technicianJobsProvider);
     final approvalConfig = ref.watch(approvalConfigProvider).value;
     final currentUser = ref.watch(currentUserProvider).value;
+    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
     final resolvedJob = jobsAsync.maybeWhen(
       data: (jobs) => widget.initialJob ?? _findJob(jobs, widget.jobId),
       orElse: () => widget.initialJob,
@@ -384,6 +386,21 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                         label: l.company,
                         value: job.companyName,
                       ),
+                      if (job.companyId.trim().isNotEmpty)
+                        _DetailRow(
+                          icon: Icons.calendar_today_outlined,
+                          label: l.invoicePeriod,
+                          value: (() {
+                            final company = activeCompanies
+                                .where((c) => c.id == job.companyId.trim())
+                                .toList();
+                            if (company.isEmpty || job.date == null) {
+                              return '-';
+                            }
+                            final period = company.first.invoicePeriodForDate(job.date!);
+                            return '${AppFormatters.date(period.start)} - ${AppFormatters.date(period.end)}';
+                          })(),
+                        ),
                       _DetailRow(
                         icon: Icons.receipt_long_outlined,
                         label: l.invoiceNumber,
