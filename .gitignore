@@ -70,3 +70,4 @@ app.*.map.json
 
 # Reference clones (temp)
 .tmp/
+docs/*.xlsx

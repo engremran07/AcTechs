@@ -10,11 +10,11 @@ It is updated at the end of every session that produces meaningful code changes.
 
 ---
 
-## Current Status — version 2.3.2+101 (as of 2026-06-11)
+## Current Status — version 2.3.4+103 (as of 2026-06-12)
 
-The codebase is **production-clean** for Android internal distribution.
-The v9–v12 audit series has addressed every P0/P1 critical finding.
-Current focus: web surface quality + remaining test coverage gaps.
+The codebase is **production-ready** for Play Store submission pending P0/P1 fixes.
+The v13 audit identified 45 calibrated findings (2 P0, 8 P1, 18 P2, 17 P3).
+Current focus: P0 emergency fixes (data removal, CI gate enforcement) + P1 navigation & security.
 
 ### Architecture (current)
 - Flutter 3.44.0 (CI) / local still on 3.41.6 (upgrade pending)

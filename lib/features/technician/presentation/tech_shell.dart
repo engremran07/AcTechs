@@ -72,10 +72,7 @@ class _TechShellState extends ConsumerState<TechShell> {
         isHome: isHome,
         homeRoute: '/tech',
         child: Scaffold(
-          body: ResponsiveBody(
-            padding: EdgeInsets.zero,
-            child: widget.child,
-          ),
+          body: ResponsiveBody(padding: EdgeInsets.zero, child: widget.child),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               border: Border(

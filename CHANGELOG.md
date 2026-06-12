@@ -8,6 +8,10 @@
 - Fix [PLAY-002]: Firebase Crashlytics integrated for non-web builds (`main.dart` handlers + collection toggle + pubspec dependency)
 - Fix [PLAY-001/003]: Added hosted privacy policy page scaffold (`web/privacy-policy.html`) and Play Store metadata checklist (`docs/play-store-metadata.md`)
 
+## 2.3.3+102
+
+- Governance: intermediate version bump during governance consolidation (within 2.3.4+103 session)
+
 ## 2.3.2+101
 
 - Governance: version sync after pre-commit hook bump
