@@ -3711,6 +3711,30 @@ abstract class AppLocalizations {
   /// **'Not Found'**
   String get unmatchedInvoices;
 
+  /// No description provided for @uploadedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get uploadedLabel;
+
+  /// No description provided for @extraLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra'**
+  String get extraLabel;
+
+  /// No description provided for @extraInUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra in upload'**
+  String get extraInUpload;
+
+  /// No description provided for @openCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Correction'**
+  String get openCorrection;
+
   /// No description provided for @alreadyPaidInvoices.
   ///
   /// In en, this message translates to:

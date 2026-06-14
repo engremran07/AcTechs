@@ -24,19 +24,22 @@ class MonthClosureRepository {
       firestore.collection(AppConstants.appSettingsCollection);
 
   DocumentReference<Map<String, dynamic>> get _monthClosuresDoc =>
-      _appSettingsRef.doc('month_closures');
+      _appSettingsRef.doc(AppConstants.monthClosuresDocId);
 
   Stream<List<MonthClosureEvent>> watchMonthClosures() {
     return _monthClosuresDoc.snapshots().map((doc) {
       final data = doc.data() ?? const <String, dynamic>{};
       final entries = (data['entries'] as List?) ?? const [];
-      final parsed = entries
-          .whereType<Map>()
-          .map((entry) => MonthClosureEvent.fromMap(
-                entry.map((key, value) => MapEntry(key.toString(), value)),
-              ))
-          .toList(growable: false)
-        ..sort((a, b) => b.closedAt.compareTo(a.closedAt));
+      final parsed =
+          entries
+              .whereType<Map>()
+              .map(
+                (entry) => MonthClosureEvent.fromMap(
+                  entry.map((key, value) => MapEntry(key.toString(), value)),
+                ),
+              )
+              .toList(growable: false)
+            ..sort((a, b) => b.closedAt.compareTo(a.closedAt));
       return parsed;
     });
   }
@@ -65,13 +68,10 @@ class MonthClosureRepository {
       lockedBefore: lockedBefore,
     );
 
-    await _monthClosuresDoc.set(
-      {
-        'entries': FieldValue.arrayUnion([event.toMap()]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _monthClosuresDoc.set({
+      'entries': FieldValue.arrayUnion([event.toMap()]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
 
     // Move global lock so old records cannot be edited post close.
     await approvalConfigRepository.setLockedBeforeDate(lockedBefore);

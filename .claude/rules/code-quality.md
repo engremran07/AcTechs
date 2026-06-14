@@ -4,6 +4,21 @@ applies_to: "lib/**/*.dart,pubspec.yaml"
 
 # Code Quality Rules — AC Techs
 
+## ⛔ Large-File Edit Protocol (REG-018) — STRICT
+
+For any file > 800 lines (notably `tech_dashboard_screen.dart`, `settings_screen.dart`,
+`submit_job_screen.dart`, `approvals_screen.dart`, `job_repository.dart`):
+
+1. **One logical block per edit** — never apply multi-hunk structural patches.
+2. **Run `get_errors` after EVERY edit** — a single error is a hard stop until fixed.
+3. **Three-strike restore rule** — if ≥ 3 patches fail or drift on the same file,
+   STOP: `git checkout HEAD -- <file>` and re-apply changes incrementally on the
+   clean base. Do NOT keep patching a corrupted tree.
+4. Anchor edits with ≥ 3 lines of unique context before and after the target.
+
+This protocol exists because repeated large patches structurally corrupted the
+technician dashboard (orphaned widget fragments, ~500 cascade errors). See REG-018.
+
 ## ⛔ ZERO Problems Policy — Workspace Must Stay Clean Always
 
 **This is the highest-priority rule. It overrides all other rules if they conflict.**

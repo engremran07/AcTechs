@@ -826,7 +826,7 @@ class _TechCard extends ConsumerWidget {
               IconButton(
                 icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 20),
                 color: ArcticTheme.arcticSuccess,
-                tooltip: 'WhatsApp',
+                tooltip: l.whatsApp,
                 onPressed: onWhatsApp,
               ),
             PopupMenuButton<String>(

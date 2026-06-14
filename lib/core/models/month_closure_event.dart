@@ -17,7 +17,8 @@ class MonthClosureEvent {
   final DateTime closedAt;
   final DateTime lockedBefore;
 
-  String get monthKey => '${month.year}-${month.month.toString().padLeft(2, '0')}';
+  String get monthKey =>
+      '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
   factory MonthClosureEvent.fromMap(Map<String, dynamic>? data) {
     final rawMonth = data?['month'];
@@ -39,17 +40,20 @@ class MonthClosureEvent {
       month: DateTime(month.year, month.month),
       closedBy: (data?['closedBy'] as String? ?? '').trim(),
       closedAt: parseDate(rawClosedAt, now),
-      lockedBefore: parseDate(rawLockedBefore, DateTime(now.year, now.month, now.day)),
+      lockedBefore: parseDate(
+        rawLockedBefore,
+        DateTime(now.year, now.month, now.day),
+      ),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'companyId': companyId,
-        'companyName': companyName,
-        'month': Timestamp.fromDate(DateTime(month.year, month.month)),
-        'monthKey': monthKey,
-        'closedBy': closedBy,
-        'closedAt': Timestamp.fromDate(closedAt),
-        'lockedBefore': Timestamp.fromDate(lockedBefore),
-      };
+    'companyId': companyId,
+    'companyName': companyName,
+    'month': Timestamp.fromDate(DateTime(month.year, month.month)),
+    'monthKey': monthKey,
+    'closedBy': closedBy,
+    'closedAt': Timestamp.fromDate(closedAt),
+    'lockedBefore': Timestamp.fromDate(lockedBefore),
+  };
 }

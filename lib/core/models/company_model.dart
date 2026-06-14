@@ -67,15 +67,32 @@ extension CompanyModelX on CompanyModel {
       if (date.isBefore(periodStart)) {
         final previousMonth = DateTime(date.year, date.month - 1);
         return DateTimeRange(
-          start: clampToMonth(previousMonth.year, previousMonth.month, startDay),
+          start: clampToMonth(
+            previousMonth.year,
+            previousMonth.month,
+            startDay,
+          ),
           end: clampToMonth(previousMonth.year, previousMonth.month, endDay)
-              .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999)),
+              .add(
+                const Duration(
+                  hours: 23,
+                  minutes: 59,
+                  seconds: 59,
+                  milliseconds: 999,
+                ),
+              ),
         );
       }
       return DateTimeRange(
         start: periodStart,
-        end: clampToMonth(date.year, date.month, endDay)
-            .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999)),
+        end: clampToMonth(date.year, date.month, endDay).add(
+          const Duration(
+            hours: 23,
+            minutes: 59,
+            seconds: 59,
+            milliseconds: 999,
+          ),
+        ),
       );
     }
 
@@ -84,16 +101,23 @@ extension CompanyModelX on CompanyModel {
       final nextMonth = DateTime(date.year, date.month + 1);
       return DateTimeRange(
         start: periodStart,
-        end: clampToMonth(nextMonth.year, nextMonth.month, endDay)
-            .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999)),
+        end: clampToMonth(nextMonth.year, nextMonth.month, endDay).add(
+          const Duration(
+            hours: 23,
+            minutes: 59,
+            seconds: 59,
+            milliseconds: 999,
+          ),
+        ),
       );
     }
 
     final previousMonth = DateTime(date.year, date.month - 1);
     return DateTimeRange(
       start: clampToMonth(previousMonth.year, previousMonth.month, startDay),
-      end: clampToMonth(date.year, date.month, endDay)
-          .add(const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999)),
+      end: clampToMonth(date.year, date.month, endDay).add(
+        const Duration(hours: 23, minutes: 59, seconds: 59, milliseconds: 999),
+      ),
     );
   }
 }

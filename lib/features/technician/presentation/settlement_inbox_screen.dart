@@ -80,21 +80,33 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${l.settlementBatch}: ${batchId.substring(0, batchId.length > 12 ? 12 : batchId.length)}'),
+                  Text(
+                    '${l.settlementBatch}: ${batchId.substring(0, batchId.length > 12 ? 12 : batchId.length)}',
+                  ),
                   const SizedBox(height: 8),
-                  Text('${jobs.first.companyName} • ${AppFormatters.monthLabel(l, jobs.first.date ?? DateTime.now())}'),
+                  Text(
+                    '${jobs.first.companyName} • ${AppFormatters.monthLabel(l, jobs.first.date ?? DateTime.now())}',
+                  ),
                   const SizedBox(height: 8),
-                  Text('${l.totalLabel}: ${AppFormatters.currency(breakdown.totalAmount)}'),
-                  Text('${l.totalLabel}: ${AppFormatters.currency(breakdown.dueAmount)} due • ${AppFormatters.currency(breakdown.paidAmount)} paid'),
+                  Text(
+                    '${l.totalLabel}: ${AppFormatters.currency(breakdown.totalAmount)}',
+                  ),
+                  Text(
+                    '${l.totalLabel}: ${AppFormatters.currency(breakdown.dueAmount)} due • ${AppFormatters.currency(breakdown.paidAmount)} paid',
+                  ),
                   Text('${l.totalJobs}: ${jobs.length}'),
                   const SizedBox(height: 8),
                   Text('${l.splits}: ${breakdown.splitUnits}'),
                   Text('${l.windowAc}: ${breakdown.windowUnits}'),
                   Text('${l.standing}: ${breakdown.freestandingUnits}'),
                   Text('${l.acOutdoorBracket}: ${breakdown.bracketCount}'),
-                  Text('${l.deliveryCharge}: ${AppFormatters.currency(breakdown.deliveryAmount)}'),
+                  Text(
+                    '${l.deliveryCharge}: ${AppFormatters.currency(breakdown.deliveryAmount)}',
+                  ),
                   const SizedBox(height: 8),
-                  Text('${l.paymentMethod}: ${jobs.first.settlementPaymentMethod}'),
+                  Text(
+                    '${l.paymentMethod}: ${jobs.first.settlementPaymentMethod}',
+                  ),
                 ],
               ),
             ),
@@ -260,7 +272,12 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                               runSpacing: 8,
                               children: [
                                 Chip(
-                                  label: Text(AppFormatters.monthLabel(l, first.date ?? DateTime.now())),
+                                  label: Text(
+                                    AppFormatters.monthLabel(
+                                      l,
+                                      first.date ?? DateTime.now(),
+                                    ),
+                                  ),
                                   avatar: CircleAvatar(
                                     backgroundColor: AppFormatters.monthColor(
                                       first.date == null
@@ -270,8 +287,16 @@ class _SettlementInboxScreenState extends ConsumerState<SettlementInboxScreen> {
                                     radius: 6,
                                   ),
                                 ),
-                                Chip(label: Text('${l.totalLabel}: ${AppFormatters.currency(first.settlementAmount)}')),
-                                Chip(label: Text('${AppFormatters.currency(breakdown.dueAmount)} due')),
+                                Chip(
+                                  label: Text(
+                                    '${l.totalLabel}: ${AppFormatters.currency(first.settlementAmount)}',
+                                  ),
+                                ),
+                                Chip(
+                                  label: Text(
+                                    '${AppFormatters.currency(breakdown.dueAmount)} due',
+                                  ),
+                                ),
                               ],
                             ),
                             if (first.settlementAdminNote

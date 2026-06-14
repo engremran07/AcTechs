@@ -191,6 +191,28 @@ A custom zoom-drawer implementation (zero external dependencies) provides side n
 - **Usage**: Both `TechShell` and `AdminShell` wrap their scaffold in `ZoomDrawerWrapper(mainScreen: ..., menuScreen: DrawerMenuContent(...))`
 - **Controller Access**: `ZoomDrawerScope.of(context).toggle()`, `.open()`, `.close()` from any child
 
+## Month Closure & Invoice Claims (Admin Features)
+
+Three related admin surfaces around company billing periods:
+
+- **Month closure** (`SettingsScreen` admin card): admin closes a company's month →
+  `MonthClosureRepository.closeCompanyMonth()` appends a `MonthClosureEvent` to the
+  `entries` array on the `app_settings/month_closures` document (NOT a collection),
+  then sets the period lock. Techs see a one-time unread banner on the dashboard
+  (`unreadMonthClosureProvider`, seen-state in SharedPreferences via
+  `MonthClosureNoticeRepository`).
+- **Monthly received invoices intake** (`/admin/received-invoices`): admin uploads a
+  company Excel sheet; invoices are normalized with `InvoiceUtils.normalizeWithCompanyPrefix`
+  and compared against `invoice_claims` via `JobRepository.fetchInvoiceClaimsForCompany()`.
+  NOTE: claims filter by `createdAt` (submission month), not billing-period date.
+- **Historical reconciliation** (`/admin/reconcile`): period-based Excel comparison
+  against system jobs; mismatch rows expose a localized "Open Correction" action that
+  pushes the existing admin job editor (`adminUpdateJob` path — never a parallel editor).
+
+Rules coverage: the `app_settings` match block governs month closures (admin write,
+active-user read). `invoice_claims` has its own validators. No new indexes needed
+(single-doc watch for closures; companyId+createdAt for claims).
+
 ## Stale Shared Install Cleanup (Admin Feature)
 
 Admin dashboard includes a cleanup card for archiving permanently-unconsumed team aggregates.

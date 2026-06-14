@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2.5.0+111
+
+- Audit: 28-domain v15 exhaustive audit (247 findings, 6 P0/P1 fixes applied)
+- Fix: Sign-out state isolation — 4 missing providers added to session invalidation list (REG-019)
+- Fix: `AppConstants.monthClosuresDocId` constant added; hardcoded `'month_closures'` eliminated (REG-020)
+- Fix: `fetchInvoiceClaimsForCompany()` now catches FirebaseException and rethrows as JobException
+- Fix: CI `flutter-version` unified to `.flutter-version` file reference in both analyse and test jobs
+- Docs: Ultimate Master Audit Report v15 written to `docs/audits/ultimate_master_audit_report_v15.md`
+- Docs: REG-019 and REG-020 added to REGRESSION_REGISTRY
+
+## 2.4.0+110
+
+- Feat: Admin monthly received-invoices intake screen compares company uploads against the invoice claim registry
+- Feat: Reconciliation mismatch rows open the existing job correction flow directly (localized "Open Correction")
+- Feat: Month-close notices show as unread banners per technician until first viewed
+- Feat: Technician dashboard dual layout — current-month snapshot card plus year-based summaries
+- Fix: Restored technician dashboard from corruption; re-applied features with verified incremental edits
+- Fix: Localized hardcoded strings (received-invoices labels, tech rail nav, profile language tiles, WhatsApp tooltip)
+- Governance: 50-domain master audit v14 completed (3,000+ instance findings); coverage gate unified at 80%
+- Governance: whats_new dialog entry for 2.4.0 in en/ur/ar; MASTER_BLUEPRINT version synced
+
 ## 2.3.10+109
 
 - Feat: Technician dashboard now shows a dual layout with current-month stats above year-based summaries

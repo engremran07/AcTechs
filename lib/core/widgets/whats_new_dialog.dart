@@ -9,6 +9,52 @@ import 'package:ac_techs/l10n/app_localizations.dart';
 // Key: versionName (e.g. '2.2.2').  Value: locale → list of bullet items.
 // ---------------------------------------------------------------------------
 const Map<String, Map<String, List<String>>> _changelog = {
+  '2.5.0': {
+    'en': [
+      'Audit: 28-domain v15 master audit — 247 findings reviewed, 6 P0/P1 fixes applied',
+      'Fix: Sign-out now clears all session-scoped providers (month closure, tech stats)',
+      'Fix: AppConstants.monthClosuresDocId constant added; no more hardcoded strings',
+      'Fix: Invoice claims fetch now handles Firebase errors gracefully',
+      'Quality: CI Flutter version now tracked from single .flutter-version file',
+    ],
+    'ur': [
+      'آڈٹ: 28 ڈومین v15 ماسٹر آڈٹ — 247 نتائج، 6 P0/P1 اصلاحات',
+      'درستگی: سائن آؤٹ اب تمام سیشن providers صاف کرتا ہے',
+      'درستگی: AppConstants.monthClosuresDocId مستقل شامل — کوئی hardcoded string نہیں',
+      'درستگی: انوائس کلیمز فیچ اب Firebase غلطیاں سنبھالتا ہے',
+      'معیار: CI Flutter ورژن اب .flutter-version فائل سے',
+    ],
+    'ar': [
+      'تدقيق: تدقيق شامل لـ 28 مجالاً — 247 نتيجة، 6 إصلاحات P0/P1',
+      'إصلاح: تسجيل الخروج يمسح الآن جميع موفرات الجلسة',
+      'إصلاح: إضافة ثابت AppConstants.monthClosuresDocId — لا نصوص مضمنة',
+      'إصلاح: جلب مطالبات الفواتير يتعامل الآن مع أخطاء Firebase بشكل صحيح',
+      'جودة: إصدار Flutter في CI يتتبع الآن من ملف .flutter-version',
+    ],
+  },
+  '2.4.0': {
+    'en': [
+      'Feature: Admin monthly received-invoices intake compares company uploads against invoice claims',
+      'Feature: Reconciliation mismatches open the existing job correction flow directly',
+      'Feature: Month-close notices appear as unread banners until each technician views them',
+      'Feature: Technician dashboard adds current-month snapshot and year-based summaries',
+      'Quality: Full 50-domain master audit completed; localization and stability fixes shipped',
+    ],
+    'ur': [
+      'خصوصیت: ایڈمن ماہانہ موصولہ انوائس ان ٹیک کمپنی اپ لوڈز کو انوائس کلیمز سے ملاتا ہے',
+      'خصوصیت: عدم مطابقت اب سیدھا جاب درستگی فلو کھولتی ہے',
+      'خصوصیت: ماہانہ بندش نوٹس ہر ٹیکنیشن کے لیے unread banner کی صورت میں ظاہر ہوتے ہیں',
+      'خصوصیت: ٹیکنیشن ڈیش بورڈ میں موجودہ ماہ اور سالانہ خلاصے شامل',
+      'معیار: 50 ڈومین ماسٹر آڈٹ مکمل۔ لوکلائزیشن اور استحکام کی اصلاحات',
+    ],
+    'ar': [
+      'ميزة: إدخال الفواتير الشهرية المستلمة يقارن مرفوعات الشركة بمطالبات الفواتير',
+      'ميزة: عدم التطابق يفتح مسار تصحيح المهمة الحالي مباشرة',
+      'ميزة: إشعارات إغلاق الشهر تظهر كبانر غير مقروء حتى يفتحها كل فني',
+      'ميزة: لوحة الفني تضيف لقطة الشهر الحالي وملخصات سنوية',
+      'جودة: اكتمل تدقيق شامل لـ 50 مجالاً مع إصلاحات الترجمة والاستقرار',
+    ],
+  },
   '2.3.10': {
     'en': [
       'Feature: Technician dashboard now combines current-month stats with year-based summaries',

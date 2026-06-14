@@ -188,19 +188,19 @@ class _TechProfileScreenState extends ConsumerState<TechProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 _LanguageTile(
-                  label: 'English',
+                  label: l.english,
                   code: 'en',
                   selected: user?.language == 'en',
                   onTap: () => _updateLanguage(ref, 'en'),
                 ),
                 _LanguageTile(
-                  label: 'اردو',
+                  label: l.urdu,
                   code: 'ur',
                   selected: user?.language == 'ur',
                   onTap: () => _updateLanguage(ref, 'ur'),
                 ),
                 _LanguageTile(
-                  label: 'العربية',
+                  label: l.arabic,
                   code: 'ar',
                   selected: user?.language == 'ar',
                   onTap: () => _updateLanguage(ref, 'ar'),

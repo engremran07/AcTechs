@@ -288,6 +288,14 @@ class JobRepository {
     return claimSnap.data();
   }
 
+  /// Fetches invoice claims for [companyId], optionally filtered to claims
+  /// CREATED during [month].
+  ///
+  /// NOTE: filtering is by claim `createdAt` (submission month), not by the
+  /// invoice's billing-period date — claims don't carry a period field. For
+  /// company sheets that list invoices by billing period, late-submitted jobs
+  /// may appear in the next month's intake run; admins reconcile those via the
+  /// historical reconciliation screen instead.
   Future<List<InvoiceClaimModel>> fetchInvoiceClaimsForCompany(
     String companyId, {
     DateTime? month,
@@ -308,8 +316,14 @@ class JobRepository {
           .where('createdAt', isLessThan: Timestamp.fromDate(end));
     }
 
-    final snap = await query.get();
-    return snap.docs.map(InvoiceClaimModel.fromFirestore).toList(growable: false);
+    try {
+      final snap = await query.get();
+      return snap.docs
+          .map(InvoiceClaimModel.fromFirestore)
+          .toList(growable: false);
+    } on FirebaseException catch (_) {
+      throw JobException.saveFailed();
+    }
   }
 
   void _validateInvoiceClaimReuse(

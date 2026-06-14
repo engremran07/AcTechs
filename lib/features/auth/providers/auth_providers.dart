@@ -19,6 +19,8 @@ import 'package:ac_techs/features/expenses/data/earning_repository.dart';
 import 'package:ac_techs/features/expenses/data/ac_install_repository.dart';
 import 'package:ac_techs/features/expenses/providers/ac_install_providers.dart';
 import 'package:ac_techs/core/providers/app_build_provider.dart';
+import 'package:ac_techs/features/settings/providers/month_closure_provider.dart';
+import 'package:ac_techs/features/technician/providers/technician_summary_providers.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
@@ -98,6 +100,10 @@ class SignInNotifier extends AsyncNotifier<void> {
     ref.invalidate(dailyExpensesProvider);
     ref.invalidate(dailyEarningsProvider);
     ref.invalidate(monthlyTechnicianInOutSummaryProvider);
+    ref.invalidate(monthlyTechnicianStatsProvider);
+    ref.invalidate(unreadMonthClosureProvider);
+    ref.invalidate(monthClosuresProvider);
+    ref.invalidate(latestMonthClosureProvider);
     ref.invalidate(pendingAcInstallsProvider);
     ref.invalidate(approvalConfigProvider);
     ref.invalidate(appBrandingProvider);

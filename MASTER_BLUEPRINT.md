@@ -3,8 +3,8 @@
 ## Snapshot
 
 - Project: AC Techs
-- Date: 2026-06-12
-- Current app version: 2.3.10+109
+- Date: 2026-06-14
+- Current app version: 2.5.0+111
 - Release surfaces: Android APK and Flutter web
 - Backend: Firebase Auth, Cloud Firestore, Hosting, App Check
 
@@ -57,6 +57,11 @@ These domains are intentionally separate. Expense and earning data never live in
 
 ## Current implementation focus
 
+- v15 Ultimate Master Audit (28 domains, 247 findings) completed; 6 P0/P1 fixes applied
+- Sign-out state isolation patched: 4 new providers added to invalidation list (REG-019)
+- AppConstants.monthClosuresDocId constant added; hardcoded string eliminated (REG-020)
+- fetchInvoiceClaimsForCompany wrapped in try-catch for robust error propagation
+- CI .flutter-version file now used instead of hardcoded version string in ci.yml
 - Custom zoom drawer navigation integrated into both TechShell and AdminShell
 - Stale shared install cleanup feature added to admin dashboard
 - Comprehensive backend + security audits completed; all critical findings remediated

@@ -87,7 +87,7 @@ jobs:
       - name: Gate — Governance continuity files present
         run: |
           MISSING=""
-          for file in MASTER_BLUEPRINT.md REGRESSION_REGISTRY.md SESSION_LOG.md CHANGELOG.md; do
+          for file in MASTER_BLUEPRINT.md REGRESSION_REGISTRY.md SESSION_LOG.md CHANGELOG.md docs/governance/ZERO_TOLERANCE_SIGNOFF.md; do
             if [ ! -f "$file" ]; then
               MISSING="$MISSING $file"
             fi
@@ -97,6 +97,44 @@ jobs:
             exit 1
           fi
           echo "✅ Governance continuity files are present"
+
+      - name: Gate — whats_new covers current version
+        run: |
+          VERSION=$(grep -oP '^version: \K[0-9]+\.[0-9]+\.[0-9]+' pubspec.yaml)
+          if ! grep -q "'$VERSION'" lib/core/widgets/whats_new_dialog.dart; then
+            echo "❌ FAIL: whats_new_dialog.dart _changelog has no entry for $VERSION"
+            exit 1
+          fi
+          echo "✅ whats_new_dialog covers $VERSION"
+
+      - name: Gate — ARB key parity across locales
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          def keys(path):
+              with open(path, encoding='utf-8') as f:
+                  return {k for k in json.load(f) if not k.startswith('@')}
+          en = keys('lib/l10n/app_en.arb')
+          ur = keys('lib/l10n/app_ur.arb')
+          ar = keys('lib/l10n/app_ar.arb')
+          problems = []
+          for name, s in (('ur', ur), ('ar', ar)):
+              missing = en - s
+              extra = s - en
+              if missing: problems.append(f'app_{name}.arb missing: {sorted(missing)[:10]}')
+              if extra: problems.append(f'app_{name}.arb extra: {sorted(extra)[:10]}')
+          if problems:
+              print('\u274c FAIL: ARB key drift'); [print(' ', p) for p in problems]; sys.exit(1)
+          print(f'\u2705 ARB key parity: {len(en)} keys \u00d7 3 locales')
+          EOF
+
+      - name: Gate — Coverage threshold matches CI (single source of truth)
+        run: |
+          if grep -q 'COVERAGE < 60' .github/workflows/audit.yml; then
+            echo "❌ FAIL: audit.yml still uses a 60% threshold — must match ci.yml at 80%"
+            exit 1
+          fi
+          echo "✅ Coverage thresholds unified"
 
       - name: Gate — CI validates web build
         run: |
@@ -220,7 +258,7 @@ jobs:
           print('✅ No duplicate allow rules in firestore.rules')
           EOF
 
-      - name: Gate — Coverage threshold (60%)
+      - name: Gate — Coverage threshold (80%)
         run: |
           if ! command -v lcov &> /dev/null; then
             sudo apt-get install -y lcov --quiet
@@ -231,8 +269,8 @@ jobs:
             echo "WARN: Could not parse lcov summary — skipping threshold check"
             exit 0
           fi
-          if (( $(echo "$COVERAGE < 60" | bc -l) )); then
-            echo "❌ FAIL: Coverage ${COVERAGE}% is below 60% minimum"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ FAIL: Coverage ${COVERAGE}% is below 80% minimum"
             exit 1
           fi
           echo "✅ Coverage ${COVERAGE}% meets minimum threshold"

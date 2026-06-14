@@ -272,17 +272,17 @@ class _TechShellState extends ConsumerState<TechShell> {
                   icon: const Icon(Icons.summarize_outlined),
                   label: Text(l.reports),
                 ),
-                const NavigationRailDestination(
-                  icon: Icon(Icons.ac_unit_outlined),
-                  label: Text('AC Installs'),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.ac_unit_outlined),
+                  label: Text(l.acInstallations),
                 ),
-                const NavigationRailDestination(
-                  icon: Icon(Icons.handshake_outlined),
-                  label: Text('Settlements'),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.handshake_outlined),
+                  label: Text(l.settlements),
                 ),
-                const NavigationRailDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  label: Text('Settings'),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  label: Text(l.settings),
                 ),
               ],
             ),

@@ -18,6 +18,7 @@ class AppConstants {
   static const String historySubCollection = 'history';
   static const String approvalConfigDocId = 'approval_config';
   static const String companyBrandingDocId = 'company_branding';
+  static const String monthClosuresDocId = 'month_closures';
 
   static const String expenseTypeWork = 'work';
   static const String expenseTypeHome = 'home';

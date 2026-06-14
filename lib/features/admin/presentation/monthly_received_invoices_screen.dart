@@ -77,7 +77,9 @@ class _MonthlyReceivedInvoicesScreenState
       type: FileType.custom,
       allowedExtensions: const ['xlsx', 'xls'],
     );
-    if (picked == null || picked.files.isEmpty || picked.files.first.bytes == null) {
+    if (picked == null ||
+        picked.files.isEmpty ||
+        picked.files.first.bytes == null) {
       _showError(l.importNoFileSelected);
       return;
     }
@@ -90,9 +92,17 @@ class _MonthlyReceivedInvoicesScreenState
 
     try {
       if (!mounted) return;
-      final parsed = await compute(_parseInvoiceSheet, picked.files.first.bytes!);
+      final parsed = await compute(
+        _parseInvoiceSheet,
+        picked.files.first.bytes!,
+      );
       final normalizedUploaded = parsed
-          .map((inv) => InvoiceUtils.normalizeWithCompanyPrefix(inv, companyPrefix: company.invoicePrefix).toLowerCase())
+          .map(
+            (inv) => InvoiceUtils.normalizeWithCompanyPrefix(
+              inv,
+              companyPrefix: company.invoicePrefix,
+            ).toLowerCase(),
+          )
           .toSet();
 
       final repo = ref.read(jobRepositoryProvider);
@@ -157,7 +167,12 @@ class _MonthlyReceivedInvoicesScreenState
               hint: Text(l.selectCompany),
               items: companies
                   .where((company) => company.isActive)
-                  .map((company) => DropdownMenuItem(value: company, child: Text(company.name)))
+                  .map(
+                    (company) => DropdownMenuItem(
+                      value: company,
+                      child: Text(company.name),
+                    ),
+                  )
                   .toList(),
               onChanged: (value) {
                 setState(() {
@@ -169,7 +184,9 @@ class _MonthlyReceivedInvoicesScreenState
             ),
             loading: () => const ArcticShimmer(height: 56, count: 1),
             error: (error, _) => ErrorCard(
-              exception: error is AppException ? error : NetworkException.syncFailed(),
+              exception: error is AppException
+                  ? error
+                  : NetworkException.syncFailed(),
             ),
           ),
           const SizedBox(height: 16),
@@ -177,7 +194,10 @@ class _MonthlyReceivedInvoicesScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l.selectMonth, style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  l.selectMonth,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -189,7 +209,10 @@ class _MonthlyReceivedInvoicesScreenState
                       initialDatePickerMode: DatePickerMode.year,
                     );
                     if (picked == null) return;
-                    setState(() => _selectedMonth = DateTime(picked.year, picked.month));
+                    setState(
+                      () =>
+                          _selectedMonth = DateTime(picked.year, picked.month),
+                    );
                   },
                   icon: const Icon(Icons.calendar_month_rounded),
                   label: Text(AppFormatters.monthLabel(l, _selectedMonth)),
@@ -219,31 +242,40 @@ class _MonthlyReceivedInvoicesScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l.reconciliation, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l.reconciliation,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text('${l.totalJobs}: ${_result!.claimCount}'),
-                  Text('Uploaded: ${_result!.uploadedCount}'),
-                  Text('Matched: ${_result!.matchedInvoices.length}'),
-                  Text('Missing: ${_result!.missingInvoices.length}'),
-                  Text('Extra: ${_result!.extraInvoices.length}'),
+                  Text('${l.uploadedLabel}: ${_result!.uploadedCount}'),
+                  Text(
+                    '${l.matchedInvoices}: ${_result!.matchedInvoices.length}',
+                  ),
+                  Text(
+                    '${l.unmatchedInvoices}: ${_result!.missingInvoices.length}',
+                  ),
+                  Text('${l.extraLabel}: ${_result!.extraInvoices.length}'),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             _ResultBlock(
-              title: '${l.matchedInvoices} (${_result!.matchedInvoices.length})',
+              title:
+                  '${l.matchedInvoices} (${_result!.matchedInvoices.length})',
               color: ArcticTheme.arcticSuccess,
               items: _result!.matchedInvoices,
             ),
             const SizedBox(height: 12),
             _ResultBlock(
-              title: '${l.unmatchedInvoices} (${_result!.missingInvoices.length})',
+              title:
+                  '${l.unmatchedInvoices} (${_result!.missingInvoices.length})',
               color: ArcticTheme.arcticWarning,
               items: _result!.missingInvoices,
             ),
             const SizedBox(height: 12),
             _ResultBlock(
-              title: 'Extra in upload (${_result!.extraInvoices.length})',
+              title: '${l.extraInUpload} (${_result!.extraInvoices.length})',
               color: ArcticTheme.arcticError,
               items: _result!.extraInvoices,
             ),
@@ -290,9 +322,18 @@ class _ResultBlock extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
             const SizedBox(width: 8),
-            Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: color)),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(color: color),
+            ),
           ],
         ),
         const SizedBox(height: 8),

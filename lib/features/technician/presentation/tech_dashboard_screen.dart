@@ -87,10 +87,13 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
     final jobSummary = ref.watch(technicianJobSummaryProvider);
     final settlementInbox = ref.watch(technicianSettlementInboxProvider);
     final sharedAggregates = ref.watch(pendingSharedInstallAggregatesProvider);
-    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final activeCompanies =
+        ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
     final unreadClosure = ref.watch(unreadMonthClosureProvider).value;
     final currentMonthStats = ref.watch(
-      monthlyTechnicianStatsProvider(DateTime(DateTime.now().year, DateTime.now().month)),
+      monthlyTechnicianStatsProvider(
+        DateTime(DateTime.now().year, DateTime.now().month),
+      ),
     );
     final yearSummaries = _buildYearSummaries(
       ref.watch(technicianJobsProvider).value ?? const <JobModel>[],
@@ -320,7 +323,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                               Expanded(
                                 child: _StatCard(
                                   title: l.totalLabel,
-                                  value: AppFormatters.currency(stats.inOut.net),
+                                  value: AppFormatters.currency(
+                                    stats.inOut.net,
+                                  ),
                                   icon: Icons.account_balance_wallet_outlined,
                                   color: ArcticTheme.arcticSuccess,
                                   onTap: () => context.push('/tech/summary'),
@@ -355,9 +360,9 @@ class _TechDashboardScreenState extends ConsumerState<TechDashboardScreen>
                                   Expanded(
                                     child: Text(
                                       '${yearSummary.year}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
                                   ),
                                   Container(
@@ -721,7 +726,11 @@ class _StatCard extends StatelessWidget {
 }
 
 class _JobCard extends StatelessWidget {
-  const _JobCard({required this.job, required this.company, required this.onTap});
+  const _JobCard({
+    required this.job,
+    required this.company,
+    required this.onTap,
+  });
 
   final JobModel job;
   final CompanyModel? company;

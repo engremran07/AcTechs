@@ -101,7 +101,15 @@ class _InvoiceReconciliationScreenState
 
   DateTimeRange get _selectedMonthRange {
     final start = DateTime(_selectedMonth.year, _selectedMonth.month, 1);
-    final end = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0, 23, 59, 59, 999);
+    final end = DateTime(
+      _selectedMonth.year,
+      _selectedMonth.month + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
     return DateTimeRange(start: start, end: end);
   }
 
@@ -123,9 +131,9 @@ class _InvoiceReconciliationScreenState
             child: Text(l.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(
-              double.tryParse(controller.text.trim()) ?? 0,
-            ),
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop(double.tryParse(controller.text.trim()) ?? 0),
             child: Text(l.save),
           ),
         ],
@@ -191,20 +199,24 @@ class _InvoiceReconciliationScreenState
       final candidates = await repo.fetchSettlementCandidates();
       final history = await repo.fetchSettlementHistory();
 
-        final monthStart = _selectedMonthRange.start;
-        final monthEnd = _selectedMonthRange.end;
+      final monthStart = _selectedMonthRange.start;
+      final monthEnd = _selectedMonthRange.end;
 
       // Filter by selected company
       final companyId = _selectedCompany!.id;
       final companyCandidates = candidates
           .where((j) => j.companyId == companyId)
           .where((j) => j.date != null)
-          .where((j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd))
+          .where(
+            (j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd),
+          )
           .toList();
       final companyHistory = history
           .where((j) => j.companyId == companyId)
           .where((j) => j.date != null)
-          .where((j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd))
+          .where(
+            (j) => !j.date!.isBefore(monthStart) && !j.date!.isAfter(monthEnd),
+          )
           .toList();
 
       // Reconcile candidates (unpaid / correction-required)
@@ -240,13 +252,15 @@ class _InvoiceReconciliationScreenState
 
       final reportedAmount = await _promptReportedAmount();
       if (!mounted) return;
-      final systemAmount = companyCandidates.fold<double>(
-        0,
-        (sum, job) => sum + job.settlementAmount,
-      ) + companyHistory.fold<double>(
-        0,
-        (sum, job) => sum + job.settlementAmount,
-      );
+      final systemAmount =
+          companyCandidates.fold<double>(
+            0,
+            (sum, job) => sum + job.settlementAmount,
+          ) +
+          companyHistory.fold<double>(
+            0,
+            (sum, job) => sum + job.settlementAmount,
+          );
 
       if (mounted) {
         setState(() {
@@ -559,9 +573,15 @@ class _InvoiceReconciliationScreenState
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Text('${l.totalLabel}: ${AppFormatters.currency(_results!.reportedAmount)}'),
-                    Text('System: ${AppFormatters.currency(_results!.systemAmount)}'),
-                    Text('Difference: ${AppFormatters.currency(_results!.difference)}'),
+                    Text(
+                      '${l.totalLabel}: ${AppFormatters.currency(_results!.reportedAmount)}',
+                    ),
+                    Text(
+                      'System: ${AppFormatters.currency(_results!.systemAmount)}',
+                    ),
+                    Text(
+                      'Difference: ${AppFormatters.currency(_results!.difference)}',
+                    ),
                   ],
                 ),
               ),
@@ -709,7 +729,7 @@ class _InvoiceReconciliationScreenState
               const SizedBox(width: 8),
               OutlinedButton(
                 onPressed: () => _openCorrection(entry),
-                child: const Text('Open Correction'),
+                child: Text(AppLocalizations.of(context)!.openCorrection),
               ),
             ],
           ],

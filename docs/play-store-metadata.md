@@ -2,6 +2,7 @@
 
 ## Listing Content (PLAY-003)
 
+- Developer / publisher name: **Aeonis Labs**
 - App name: AC Techs
 - Short description: Internal operations app for AC installation technicians and admins
 - Full description: Explain job capture, approvals, in/out tracking, and reporting

@@ -64,7 +64,8 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
     final jobsAsync = ref.watch(technicianJobsProvider);
     final approvalConfig = ref.watch(approvalConfigProvider).value;
     final currentUser = ref.watch(currentUserProvider).value;
-    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final activeCompanies =
+        ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
     final resolvedJob = jobsAsync.maybeWhen(
       data: (jobs) => widget.initialJob ?? _findJob(jobs, widget.jobId),
       orElse: () => widget.initialJob,
@@ -397,7 +398,9 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                             if (company.isEmpty || job.date == null) {
                               return '-';
                             }
-                            final period = company.first.invoicePeriodForDate(job.date!);
+                            final period = company.first.invoicePeriodForDate(
+                              job.date!,
+                            );
                             return '${AppFormatters.date(period.start)} - ${AppFormatters.date(period.end)}';
                           })(),
                         ),

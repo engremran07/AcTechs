@@ -105,7 +105,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final appBuildAsync = ref.watch(appBuildNumberProvider);
     final appVersionAsync = ref.watch(appVersionLabelProvider);
     final monthClosuresAsync = ref.watch(monthClosuresProvider);
-    final activeCompanies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final activeCompanies =
+        ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
     final l = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -589,7 +590,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     l.developedByMuhammadImran,
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
-                                          color: ArcticTheme.arcticTextSecondary,
+                                          color:
+                                              ArcticTheme.arcticTextSecondary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                   ),
@@ -1069,7 +1071,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     CompanyModel? selectedCompany = companies.firstOrNull;
-    DateTime selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+    DateTime selectedMonth = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1091,7 +1096,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     )
                     .toList(growable: false),
-                onChanged: (value) => setDialogState(() => selectedCompany = value),
+                onChanged: (value) =>
+                    setDialogState(() => selectedCompany = value),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(

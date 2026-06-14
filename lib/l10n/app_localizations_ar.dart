@@ -1947,6 +1947,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unmatchedInvoices => 'غير موجود';
 
   @override
+  String get uploadedLabel => 'تم الرفع';
+
+  @override
+  String get extraLabel => 'إضافي';
+
+  @override
+  String get extraInUpload => 'إضافي في الملف المرفوع';
+
+  @override
+  String get openCorrection => 'فتح التصحيح';
+
+  @override
   String get alreadyPaidInvoices => 'مدفوع مسبقاً';
 
   @override

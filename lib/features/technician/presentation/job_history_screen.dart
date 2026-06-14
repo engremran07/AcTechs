@@ -1338,10 +1338,7 @@ class _HistoryJobCard extends StatelessWidget {
               const SizedBox(width: 12),
               _InfoChip(
                 icon: Icons.calendar_month_rounded,
-                label: AppFormatters.monthLabel(
-                  l,
-                  job.date ?? DateTime.now(),
-                ),
+                label: AppFormatters.monthLabel(l, job.date ?? DateTime.now()),
                 color: ArcticTheme.arcticBlue,
               ),
             ],

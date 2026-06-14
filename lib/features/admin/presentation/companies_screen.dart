@@ -240,8 +240,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                   Text(
                     l.invoicePeriodHelp,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ArcticTheme.arcticTextSecondary,
-                        ),
+                      color: ArcticTheme.arcticTextSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -275,7 +275,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             .createCompany(
               name: nameCtrl.text.trim(),
               invoicePrefix: '',
-              invoicePeriodStartDay: int.tryParse(startDayCtrl.text.trim()) ?? 1,
+              invoicePeriodStartDay:
+                  int.tryParse(startDayCtrl.text.trim()) ?? 1,
               invoicePeriodEndDay: int.tryParse(endDayCtrl.text.trim()) ?? 31,
               logoBase64: pendingLogo,
             );
@@ -288,7 +289,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               id: company.id,
               name: nameCtrl.text.trim(),
               invoicePrefix: company.invoicePrefix,
-              invoicePeriodStartDay: int.tryParse(startDayCtrl.text.trim()) ?? 1,
+              invoicePeriodStartDay:
+                  int.tryParse(startDayCtrl.text.trim()) ?? 1,
               invoicePeriodEndDay: int.tryParse(endDayCtrl.text.trim()) ?? 31,
               logoBase64: pendingLogo,
             );

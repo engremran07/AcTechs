@@ -151,7 +151,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen>
                             value: l.monthlySummary,
                             icon: Icons.fact_check_outlined,
                             color: ArcticTheme.arcticPurple,
-                            onTap: () => context.push('/admin/received-invoices'),
+                            onTap: () =>
+                                context.push('/admin/received-invoices'),
                           ),
                           const SizedBox(height: 12),
                           Row(

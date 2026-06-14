@@ -78,11 +78,17 @@ class _InvoiceSettlementsScreenState
                   ));
           final matchesCompany =
               _companyFilter == '__all__' || job.companyId == _companyFilter;
-          final matchesTech = _techFilter == '__all__' || job.techId == _techFilter;
-          final matchesMonth = job.date != null &&
+          final matchesTech =
+              _techFilter == '__all__' || job.techId == _techFilter;
+          final matchesMonth =
+              job.date != null &&
               job.date!.year == _monthFilter.year &&
               job.date!.month == _monthFilter.month;
-          return matchesSearch && matchesDate && matchesCompany && matchesTech && matchesMonth;
+          return matchesSearch &&
+              matchesDate &&
+              matchesCompany &&
+              matchesTech &&
+              matchesMonth;
         })
         .toList(growable: false);
   }
@@ -378,7 +384,8 @@ class _InvoiceSettlementsScreenState
         ? ref.watch(adminSettlementHistoryProvider)
         : ref.watch(adminSettlementCandidatesProvider);
     final technicians = ref.watch(allTechniciansProvider).value ?? [];
-    final companies = ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
+    final companies =
+        ref.watch(activeCompaniesProvider).value ?? const <CompanyModel>[];
 
     return Scaffold(
       appBar: AppBar(title: Text(l.invoiceSettlements)),
@@ -529,9 +536,15 @@ class _InvoiceSettlementsScreenState
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: _companyFilter,
-                          decoration: InputDecoration(labelText: l.company, isDense: true),
+                          decoration: InputDecoration(
+                            labelText: l.company,
+                            isDense: true,
+                          ),
                           items: [
-                            DropdownMenuItem(value: '__all__', child: Text(l.all)),
+                            DropdownMenuItem(
+                              value: '__all__',
+                              child: Text(l.all),
+                            ),
                             ...companies.map(
                               (company) => DropdownMenuItem(
                                 value: company.id,
@@ -539,16 +552,24 @@ class _InvoiceSettlementsScreenState
                               ),
                             ),
                           ],
-                          onChanged: (value) => setState(() => _companyFilter = value ?? '__all__'),
+                          onChanged: (value) => setState(
+                            () => _companyFilter = value ?? '__all__',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: _techFilter,
-                          decoration: InputDecoration(labelText: l.technician, isDense: true),
+                          decoration: InputDecoration(
+                            labelText: l.technician,
+                            isDense: true,
+                          ),
                           items: [
-                            DropdownMenuItem(value: '__all__', child: Text(l.all)),
+                            DropdownMenuItem(
+                              value: '__all__',
+                              child: Text(l.all),
+                            ),
                             ...technicians.map(
                               (tech) => DropdownMenuItem(
                                 value: tech.uid,
@@ -556,7 +577,8 @@ class _InvoiceSettlementsScreenState
                               ),
                             ),
                           ],
-                          onChanged: (value) => setState(() => _techFilter = value ?? '__all__'),
+                          onChanged: (value) =>
+                              setState(() => _techFilter = value ?? '__all__'),
                         ),
                       ),
                     ],
@@ -569,8 +591,8 @@ class _InvoiceSettlementsScreenState
                     child: Text(
                       l.selectCompanyMonthTech,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: ArcticTheme.arcticTextSecondary,
-                          ),
+                        color: ArcticTheme.arcticTextSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -588,7 +610,12 @@ class _InvoiceSettlementsScreenState
                           initialDatePickerMode: DatePickerMode.year,
                         );
                         if (picked == null) return;
-                        setState(() => _monthFilter = DateTime(picked.year, picked.month));
+                        setState(
+                          () => _monthFilter = DateTime(
+                            picked.year,
+                            picked.month,
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.calendar_month_rounded),
                       label: Text(AppFormatters.monthLabel(l, _monthFilter)),

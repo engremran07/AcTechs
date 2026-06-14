@@ -1948,6 +1948,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unmatchedInvoices => 'Not Found';
 
   @override
+  String get uploadedLabel => 'Uploaded';
+
+  @override
+  String get extraLabel => 'Extra';
+
+  @override
+  String get extraInUpload => 'Extra in upload';
+
+  @override
+  String get openCorrection => 'Open Correction';
+
+  @override
   String get alreadyPaidInvoices => 'Already Paid';
 
   @override

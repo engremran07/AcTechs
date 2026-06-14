@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final monthClosureNoticeRepositoryProvider =
     Provider<MonthClosureNoticeRepository>((ref) {
-  return MonthClosureNoticeRepository();
-});
+      return MonthClosureNoticeRepository();
+    });
 
 class MonthClosureNoticeRepository {
   static const String _prefix = 'seen_month_closure_';

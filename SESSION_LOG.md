@@ -1,5 +1,54 @@
 # SESSION_LOG
 
+## 2026-06-14 — v15 Ultimate Master Audit + P0/P1 Fixes + Release — APK v2.5.0+111
+
+**Scope**: 28-domain exhaustive audit (247 findings), 6 P0/P1 fixes, full release sign-off
+
+- **Audit v15**: 5 parallel agents × 5–6 domains each; 28 domains covered:
+  Security/Rules, Auth/RBAC, State/Providers, UI/i18n/RTL/A11y, Web Surface,
+  CI/CD, Testing, Governance, Data/Models/Repos, Settlement/SharedInstall
+- **REG-019 fix (SIGNOUT-001)**: `monthlyTechnicianStatsProvider`,
+  `unreadMonthClosureProvider`, `monthClosuresProvider`, `latestMonthClosureProvider`
+  added to `signOut()` invalidation list in `auth_providers.dart`
+- **REG-020 fix (INPUT-001)**: `AppConstants.monthClosuresDocId = 'month_closures'`
+  added to `app_constants.dart`; `month_closure_repository.dart` updated to use it
+- **ERR-011 fix**: `fetchInvoiceClaimsForCompany()` wrapped in
+  `try on FirebaseException catch → JobException.saveFailed()`
+- **CI-007 fix**: `flutter-version: '3.44.0'` in ci.yml analyse + test jobs replaced
+  with `flutter-version-file: .flutter-version`
+- **Docs**: `docs/audits/ultimate_master_audit_report_v15.md` written;
+  REG-019/020 added to `REGRESSION_REGISTRY.md`;
+  MASTER_BLUEPRINT + CHANGELOG + SESSION_LOG + whats_new synced to 2.5.0+111
+- **Release**: `flutter analyze` clean, `flutter test` 435/435 pass,
+  APK built + installed on R5GL22RGT9V, Firestore rules + Hosting already deployed
+  from prior session (no rule changes this session)
+- **Open P1 backlog**: CI-011 (release.yml missing rules deploy), CI-006
+  (deploy-web.yml missing coverage gate), LISTENER-002 (admin 17 listeners over budget)
+
+**Scope**: Restore corrupted dashboard, run 50-domain master audit (3,214 instances),
+overhaul governance into closed-loop zero-tolerance system, fix P0/P1 findings, release.
+
+- **Stabilize (REG-018)**: `tech_dashboard_screen.dart` restored from git HEAD after
+  structural corruption (~504 cascade errors from repeated large patches); session
+  features re-applied in small verified edits (month-close unread banner, month snapshot
+  card via `monthlyTechnicianStatsProvider`, year summaries via `_buildYearSummaries`);
+  435/435 tests pass, analyzer clean
+- **Audit v14**: 50 domains × 10 waves; report at `docs/audits/ultimate_master_audit_report_v14.md`;
+  2 P0 + 21 P1 grouped findings; both P0s and 8 P1s fixed in-session, rest in backlog
+- **i18n fixes (D27)**: 15 hardcoded strings localized — received-invoices labels
+  (`uploadedLabel`/`extraLabel`/`extraInUpload`), `openCorrection`, tech rail nav
+  (acInstallations/settlements/settings), profile language tiles, WhatsApp tooltip;
+  new keys added to en/ur/ar ARBs
+- **Governance**: coverage gate unified at 80% (audit.yml was 60%); whats_new 2.4.0
+  entry added (en/ur/ar); MASTER_BLUEPRINT + CHANGELOG synced to 2.4.0+110; REG-018
+  filed with large-file edit protocol in code-quality.md; month-closure storage pattern
+  documented in firestore.rules comment + CLAUDE.md section
+- **New governance assets**: `docs/governance/ZERO_TOLERANCE_SIGNOFF.md` (25-gate release
+  contract); 4 new audit.yml gates (sign-off doc presence, whats_new version coverage,
+  ARB key parity, coverage-threshold unification)
+- **Release**: rules deployed (comment-only change), web built + hosted, APK
+  built/installed, committed + pushed
+
 ## 2026-06-12 — v13 Audit Implementation — APK v2.3.4+103
 
 **Scope**: Implement 45 audit findings from v13 master audit (2 P0, 8 P1, 18 P2, 17 P3)  

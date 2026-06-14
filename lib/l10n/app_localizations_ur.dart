@@ -1955,6 +1955,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get unmatchedInvoices => 'نہیں ملا';
 
   @override
+  String get uploadedLabel => 'اپ لوڈ شدہ';
+
+  @override
+  String get extraLabel => 'اضافی';
+
+  @override
+  String get extraInUpload => 'اپ لوڈ میں اضافی';
+
+  @override
+  String get openCorrection => 'درستگی کھولیں';
+
+  @override
   String get alreadyPaidInvoices => 'پہلے سے ادا شدہ';
 
   @override

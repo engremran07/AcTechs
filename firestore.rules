@@ -1588,6 +1588,10 @@ service cloud.firestore {
     }
 
     // ─── App Settings ───
+    // NOTE: month closures are stored as an `entries` array on the
+    // app_settings/month_closures document — NOT a separate collection.
+    // This match block therefore also governs all month-closure reads/writes:
+    // admins close months (write), active techs read closures for banners.
     match /app_settings/{docId} {
       allow read: if isAdmin() || isActiveUser();  // isAuth() too broad — deactivated tokens (live 1h) must not read
       allow write: if isAdmin();

@@ -149,35 +149,36 @@ void main() {
     expect(find.text('Submit Route'), findsOneWidget);
   });
 
-  testWidgets('job card shows invoice period badge when company has custom period', (
-    tester,
-  ) async {
-    const company = CompanyModel(
-      id: 'company-1',
-      name: 'Test Company',
-      invoicePeriodStartDay: 1,
-      invoicePeriodEndDay: 30,
-    );
-    final job = JobModel(
-      id: 'job-1',
-      techId: technician.uid,
-      techName: technician.name,
-      companyId: company.id,
-      companyName: company.name,
-      invoiceNumber: 'INV-123',
-      clientName: 'Client One',
-      date: DateTime(2026, 6, 12),
-    );
+  testWidgets(
+    'job card shows invoice period badge when company has custom period',
+    (tester) async {
+      const company = CompanyModel(
+        id: 'company-1',
+        name: 'Test Company',
+        invoicePeriodStartDay: 1,
+        invoicePeriodEndDay: 30,
+      );
+      final job = JobModel(
+        id: 'job-1',
+        techId: technician.uid,
+        techName: technician.name,
+        companyId: company.id,
+        companyName: company.name,
+        invoiceNumber: 'INV-123',
+        clientName: 'Client One',
+        date: DateTime(2026, 6, 12),
+      );
 
-    await pumpDashboard(
-      tester,
-      todaysJobs: [job],
-      activeCompanies: [company],
-    );
+      await pumpDashboard(
+        tester,
+        todaysJobs: [job],
+        activeCompanies: [company],
+      );
 
-    expect(
-      find.text('Invoice Period: 01/06/2026 - 30/06/2026'),
-      findsOneWidget,
-    );
-  });
+      expect(
+        find.text('Invoice Period: 01/06/2026 - 30/06/2026'),
+        findsOneWidget,
+      );
+    },
+  );
 }
