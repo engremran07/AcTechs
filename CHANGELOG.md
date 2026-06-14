@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.1+112
+
+- Chore: pre-commit hook auto-bumped version from 2.5.0+111 → 2.5.1+112 (monotonicity guard)
+
 ## 2.5.0+111
 
 - Audit: 28-domain v15 exhaustive audit (247 findings, 6 P0/P1 fixes applied)
